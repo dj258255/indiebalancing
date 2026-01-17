@@ -1,5 +1,9 @@
 # 인디밸런싱 - 인디게임 밸런스 툴
 
+![인디밸런싱 스크린샷](docs/images/intro.png)
+
+**배포 URL**: https://indiebalancing.vercel.app/
+
 ## 개요
 
 **인디밸런싱**은 인디게임 개발자를 위한 웹 기반 게임 밸런스 데이터 관리 툴입니다.
