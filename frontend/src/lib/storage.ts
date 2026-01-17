@@ -1,0 +1,249 @@
+import { openDB, DBSchema, IDBPDatabase } from 'idb';
+import type { Project, StorageMetadata } from '@/types';
+
+const DB_NAME = 'powerbalance';
+const DB_VERSION = 1;
+
+interface PowerBalanceDB extends DBSchema {
+  projects: {
+    key: string;
+    value: Project;
+    indexes: { 'by-updated': number };
+  };
+  metadata: {
+    key: string;
+    value: StorageMetadata;
+  };
+  backups: {
+    key: number;
+    value: {
+      timestamp: number;
+      projects: Project[];
+    };
+  };
+}
+
+let db: IDBPDatabase<PowerBalanceDB> | null = null;
+
+// DB 초기화
+export async function initDB(): Promise<IDBPDatabase<PowerBalanceDB>> {
+  if (db) return db;
+
+  db = await openDB<PowerBalanceDB>(DB_NAME, DB_VERSION, {
+    upgrade(database) {
+      // Projects 스토어
+      if (!database.objectStoreNames.contains('projects')) {
+        const projectStore = database.createObjectStore('projects', {
+          keyPath: 'id',
+        });
+        projectStore.createIndex('by-updated', 'updatedAt');
+      }
+
+      // Metadata 스토어
+      if (!database.objectStoreNames.contains('metadata')) {
+        database.createObjectStore('metadata');
+      }
+
+      // Backups 스토어
+      if (!database.objectStoreNames.contains('backups')) {
+        database.createObjectStore('backups', {
+          keyPath: 'timestamp',
+        });
+      }
+    },
+  });
+
+  return db;
+}
+
+// 모든 프로젝트 로드
+export async function loadProjects(): Promise<Project[]> {
+  const database = await initDB();
+  return database.getAll('projects');
+}
+
+// 프로젝트 저장
+export async function saveProject(project: Project): Promise<void> {
+  const database = await initDB();
+  await database.put('projects', project);
+  await updateMetadata({ lastSaved: Date.now() });
+}
+
+// 모든 프로젝트 저장
+export async function saveAllProjects(projects: Project[]): Promise<void> {
+  const database = await initDB();
+  const tx = database.transaction('projects', 'readwrite');
+  await Promise.all([
+    ...projects.map((project) => tx.store.put(project)),
+    tx.done,
+  ]);
+  await updateMetadata({ lastSaved: Date.now() });
+}
+
+// 프로젝트 삭제
+export async function deleteProjectFromDB(projectId: string): Promise<void> {
+  const database = await initDB();
+  await database.delete('projects', projectId);
+}
+
+// 메타데이터 로드
+export async function loadMetadata(): Promise<StorageMetadata | undefined> {
+  const database = await initDB();
+  return database.get('metadata', 'main');
+}
+
+// 메타데이터 업데이트
+export async function updateMetadata(updates: Partial<StorageMetadata>): Promise<void> {
+  const database = await initDB();
+  const current = await database.get('metadata', 'main');
+  const newMetadata: StorageMetadata = {
+    lastSaved: current?.lastSaved || Date.now(),
+    lastBackup: current?.lastBackup || 0,
+    version: '0.1.0',
+    ...updates,
+  };
+  await database.put('metadata', newMetadata, 'main');
+}
+
+// 백업 생성
+export async function createBackup(projects: Project[]): Promise<void> {
+  const database = await initDB();
+  const timestamp = Date.now();
+
+  // 백업 저장
+  await database.put('backups', { timestamp, projects });
+
+  // 오래된 백업 삭제 (최근 10개만 유지)
+  const allBackups = await database.getAllKeys('backups');
+  if (allBackups.length > 10) {
+    const toDelete = allBackups.slice(0, allBackups.length - 10);
+    const tx = database.transaction('backups', 'readwrite');
+    await Promise.all([
+      ...toDelete.map((key) => tx.store.delete(key)),
+      tx.done,
+    ]);
+  }
+
+  await updateMetadata({ lastBackup: timestamp });
+}
+
+// 백업 목록 조회
+export async function listBackups(): Promise<{ timestamp: number }[]> {
+  const database = await initDB();
+  const keys = await database.getAllKeys('backups');
+  return keys.map((timestamp) => ({ timestamp: timestamp as number })).reverse();
+}
+
+// 백업 복원
+export async function restoreBackup(timestamp: number): Promise<Project[] | null> {
+  const database = await initDB();
+  const backup = await database.get('backups', timestamp);
+  return backup?.projects || null;
+}
+
+// JSON 파일로 내보내기
+export function exportToJSON(projects: Project[]): string {
+  return JSON.stringify(
+    {
+      version: '0.1.0',
+      exportedAt: Date.now(),
+      projects,
+    },
+    null,
+    2
+  );
+}
+
+// JSON 파일에서 가져오기
+export function importFromJSON(jsonString: string): Project[] {
+  try {
+    const data = JSON.parse(jsonString);
+    if (data.projects && Array.isArray(data.projects)) {
+      return data.projects;
+    }
+    // 단일 프로젝트인 경우
+    if (data.id && data.sheets) {
+      return [data];
+    }
+    throw new Error('유효하지 않은 파일 형식');
+  } catch {
+    throw new Error('파일을 파싱할 수 없습니다');
+  }
+}
+
+// CSV로 시트 내보내기
+export function exportSheetToCSV(
+  sheet: { columns: { name: string; id: string }[]; rows: { cells: Record<string, unknown> }[] }
+): string {
+  const headers = sheet.columns.map((col) => col.name);
+  const rows = sheet.rows.map((row) =>
+    sheet.columns.map((col) => {
+      const value = row.cells[col.id];
+      if (value === null || value === undefined) return '';
+      // CSV 이스케이프
+      const str = String(value);
+      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
+        return `"${str.replace(/"/g, '""')}"`;
+      }
+      return str;
+    })
+  );
+
+  return [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
+}
+
+// 자동 저장 설정
+let autoSaveInterval: NodeJS.Timeout | null = null;
+
+export function startAutoSave(
+  getProjects: () => Project[],
+  onSave?: () => void,
+  intervalMs: number = 30000
+): void {
+  if (autoSaveInterval) {
+    clearInterval(autoSaveInterval);
+  }
+
+  autoSaveInterval = setInterval(async () => {
+    const projects = getProjects();
+    if (projects.length > 0) {
+      await saveAllProjects(projects);
+      onSave?.();
+    }
+  }, intervalMs);
+}
+
+export function stopAutoSave(): void {
+  if (autoSaveInterval) {
+    clearInterval(autoSaveInterval);
+    autoSaveInterval = null;
+  }
+}
+
+// 자동 백업 설정 (5분마다)
+let autoBackupInterval: NodeJS.Timeout | null = null;
+
+export function startAutoBackup(
+  getProjects: () => Project[],
+  onBackup?: () => void,
+  intervalMs: number = 300000
+): void {
+  if (autoBackupInterval) {
+    clearInterval(autoBackupInterval);
+  }
+
+  autoBackupInterval = setInterval(async () => {
+    const projects = getProjects();
+    if (projects.length > 0) {
+      await createBackup(projects);
+      onBackup?.();
+    }
+  }, intervalMs);
+}
+
+export function stopAutoBackup(): void {
+  if (autoBackupInterval) {
+    clearInterval(autoBackupInterval);
+    autoBackupInterval = null;
+  }
+}
