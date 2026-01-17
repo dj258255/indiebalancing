@@ -416,7 +416,7 @@ function ToolButton({
   onClick,
   badge
 }: {
-  icon: React.ComponentType<{ className?: string }>;
+  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   label: string;
   onClick: () => void;
   badge?: number;
