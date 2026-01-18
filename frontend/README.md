@@ -164,6 +164,62 @@ http://localhost:3000 에서 실행
 
 ---
 
+## 향후 추가 예정 기능
+
+### AI 기반 테이블 자동 생성
+
+자연어 또는 CLI 명령어로 테이블 구조와 수식을 자동 생성하는 기능
+
+#### 자연어 입력 (AI)
+
+```
+"RPG 캐릭터 10레벨까지 성장 테이블 만들어줘.
+HP는 100에서 시작해서 레벨당 1.15배씩 성장하고,
+ATK는 10에서 시작해서 레벨당 +5씩 선형 성장"
+```
+
+#### CLI 명령어 입력
+
+```bash
+# 테이블 생성 명령어
+/create table 캐릭터성장 --rows 10
+
+# 열 추가 명령어
+/add column Level type:number
+/add column HP type:formula formula:"=SCALE(100, Level, 1.15, exponential)"
+/add column ATK type:formula formula:"=10 + (Level * 5)"
+/add column DEF type:formula formula:"=SCALE(5, Level, 1.1, linear)"
+
+# 행 자동 생성
+/generate rows 1-10 Level:auto
+
+# 한 줄로 테이블 생성
+/create table 몬스터 --cols "ID,이름,HP:=100*Level,ATK:=10*Level" --rows 20
+
+# 템플릿 기반 생성
+/create from-template rpg-character --rows 15 --base-hp 150 --growth 1.12
+```
+
+#### 기대 효과
+
+- AI가 자연어를 분석해 적절한 열 구조 생성
+- CLI로 빠른 반복 작업 및 자동화 가능
+- 수식 자동 적용 (SCALE, COMPOUND, DAMAGE 등)
+- 밸런싱 관련 조언 및 권장 수치 제안
+- 스크립트 파일로 저장해 재사용 가능
+
+### 추가 계획 중인 기능
+
+- [ ] AI 테이블 자동 생성 (자연어)
+- [ ] CLI 명령어 인터페이스
+- [ ] CSV 가져오기 지원
+- [ ] 시뮬레이션 결과 리포트 생성
+- [ ] 팀 협업 (실시간 동기화)
+- [ ] 버전 히스토리 관리
+- [ ] 플러그인 시스템 (커스텀 수식 추가)
+
+---
+
 ## 라이선스
 
 MIT

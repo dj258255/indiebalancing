@@ -278,7 +278,7 @@ export default function ComparisonChart({ onClose }: ComparisonChartProps) {
             </div>
 
             <div className="text-xs p-2 rounded-lg" style={{ background: 'var(--bg-primary)', color: 'var(--text-tertiary)' }}>
-              사용법: 시트에서 행 선택 → &quot;모두 추가&quot; 클릭 → 비교할 컬럼 체크 → 차트 확인
+              사용법: 시트에서 행 선택 → &quot;모두 추가&quot; 클릭 → 비교할 열 체크 → 차트 확인
             </div>
           </div>
         )}
@@ -508,7 +508,7 @@ export default function ComparisonChart({ onClose }: ComparisonChartProps) {
           {/* 히스토그램 사이드바 */}
           {activeTab === 'histogram' && (
             <div className="w-64 border-r p-4 overflow-y-auto" style={{ borderColor: 'var(--border-primary)' }}>
-              <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>분석할 컬럼</h4>
+              <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>분석할 열</h4>
               <select
                 value={histogramColumn}
                 onChange={(e) => setHistogramColumn(e.target.value)}
@@ -603,7 +603,7 @@ export default function ComparisonChart({ onClose }: ComparisonChartProps) {
               <>
                 {!histogramColumn ? (
                   <div className="h-full flex items-center justify-center">
-                    <p style={{ color: 'var(--text-tertiary)' }}>왼쪽에서 분석할 컬럼을 선택하세요</p>
+                    <p style={{ color: 'var(--text-tertiary)' }}>왼쪽에서 분석할 열을 선택하세요</p>
                   </div>
                 ) : histogramData.length === 0 ? (
                   <div className="h-full flex items-center justify-center">

@@ -150,11 +150,11 @@ const TUTORIAL_STEPS: TutorialStep[] = [
     description: '셀에 = 로 시작하면 수식으로 인식됩니다. 다른 셀 값을 참조하거나 계산할 수 있어요.',
     action: '셀 클릭 → = 입력 → 수식 작성 → Enter',
     example: {
-      before: 'ATK 컬럼에 100이 있을 때',
+      before: 'ATK 열에 100이 있을 때',
       input: '=ATK * 1.5',
       result: '150 (ATK의 1.5배)',
     },
-    tip: '컬럼 이름으로 같은 행의 다른 값을 참조합니다.',
+    tip: '열 이름으로 같은 행의 다른 값을 참조합니다.',
   },
   {
     id: 'formula-damage',
@@ -229,8 +229,8 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
   const step = TUTORIAL_STEPS[currentStep];
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: 'rgba(0, 0, 0, 0.6)' }}>
-      <div className="rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4" style={{ background: 'rgba(0, 0, 0, 0.6)' }}>
+      <div className="rounded-2xl w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] shadow-2xl overflow-hidden flex flex-col" style={{ background: 'var(--bg-primary)' }}>
         {/* 진행 표시 바 */}
         <div className="h-1" style={{ background: 'var(--bg-tertiary)' }}>
           <div
@@ -242,18 +242,18 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
           />
         </div>
 
-        {/* 헤더 */}
+        {/* 헤더 - 반응형 */}
         <div
-          className="flex items-center justify-between px-6 py-4 border-b"
+          className="flex items-center justify-between px-3 sm:px-6 py-3 sm:py-4 border-b shrink-0"
           style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-primary)' }}
         >
-          <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 text-sm" style={{ color: 'var(--text-tertiary)' }}>
+          <div className="flex items-center gap-2 sm:gap-3 overflow-x-auto">
+            <div className="flex items-center gap-0.5 sm:gap-1 text-sm" style={{ color: 'var(--text-tertiary)' }}>
               {TUTORIAL_STEPS.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentStep(index)}
-                  className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                  className="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-colors shrink-0"
                   style={{
                     background: index === currentStep
                       ? 'var(--primary-blue)'
@@ -268,9 +268,9 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
                   }}
                 >
                   {completedSteps.has(index) ? (
-                    <CheckCircle2 className="w-4 h-4" />
+                    <CheckCircle2 className="w-3 h-3 sm:w-4 sm:h-4" />
                   ) : (
-                    <span className="text-xs font-medium">{index + 1}</span>
+                    <span className="text-[10px] sm:text-xs font-medium">{index + 1}</span>
                   )}
                 </button>
               ))}
@@ -287,14 +287,14 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
           </button>
         </div>
 
-        {/* 컨텐츠 */}
-        <div className={`px-8 py-6 ${step.isGuidelinesStep ? 'min-h-[450px]' : 'min-h-[350px]'}`}>
+        {/* 컨텐츠 - 고정 높이로 일관된 크기 유지 */}
+        <div className="px-4 sm:px-8 py-4 sm:py-6 h-[400px] sm:h-[420px] overflow-y-auto flex flex-col">
           <h2 className="text-xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>{step.title}</h2>
           <p className="mb-6" style={{ color: 'var(--text-secondary)' }}>{step.description}</p>
 
           {/* 권장 수치 가이드라인 UI */}
           {step.isGuidelinesStep && (
-            <div className="grid grid-cols-2 gap-3 mb-4 max-h-[280px] overflow-y-auto pr-2">
+            <div className="grid grid-cols-2 gap-3 mb-4 flex-1 overflow-y-auto pr-2">
               {GUIDELINES_DATA.map((category) => {
                 const IconComponent = category.icon;
                 const colorStyles: Record<string, { bg: string; border: string; text: string; icon: string }> = {

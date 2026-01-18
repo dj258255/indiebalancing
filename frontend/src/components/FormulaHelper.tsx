@@ -259,10 +259,10 @@ export default function FormulaHelper({ onClose }: FormulaHelperProps) {
                 <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>^</code>
               </li>
               <li>
-                다른 셀 참조: 컬럼 이름 사용 (예: <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>=ATK * 1.5</code>)
+                다른 셀 참조: 열 이름 사용 (예: <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>=ATK * 1.5</code>)
               </li>
               <li>
-                다른 시트 참조: <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>REF(&quot;시트명&quot;, &quot;행ID&quot;, &quot;컬럼명&quot;)</code>
+                다른 시트 참조: <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>REF(&quot;시트명&quot;, &quot;행ID&quot;, &quot;열이름&quot;)</code>
               </li>
             </ul>
           </div>

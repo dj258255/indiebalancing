@@ -41,7 +41,10 @@ export function formatRelativeTime(timestamp: number): string {
 }
 
 export function downloadFile(content: string, filename: string, type: string = 'application/json') {
-  const blob = new Blob([content], { type });
+  // CSV 파일인 경우 UTF-8 BOM 추가 (Excel 한글 깨짐 방지)
+  const isCSV = type === 'text/csv' || filename.endsWith('.csv');
+  const bom = isCSV ? '\uFEFF' : '';
+  const blob = new Blob([bom + content], { type: isCSV ? 'text/csv;charset=utf-8' : type });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
   a.href = url;

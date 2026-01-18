@@ -228,17 +228,17 @@ export default function Calculator({ onClose }: CalculatorProps) {
   };
 
   return (
-    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-      <div className="card w-full max-w-2xl max-h-[85vh] flex flex-col animate-fadeIn">
+    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="card w-full max-w-2xl max-h-[95vh] sm:max-h-[85vh] flex flex-col animate-fadeIn">
         {/* 헤더 */}
-        <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border-primary)' }}>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent)' }}>
-              <CalcIcon className="w-5 h-5 text-white" />
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b" style={{ borderColor: 'var(--border-primary)' }}>
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent)' }}>
+              <CalcIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>게임 밸런스 계산기</h2>
-              <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>TTK, DPS, EHP 빠른 계산</p>
+              <h2 className="text-base sm:text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>게임 밸런스 계산기</h2>
+              <p className="text-xs sm:text-sm hidden sm:block" style={{ color: 'var(--text-tertiary)' }}>TTK, DPS, EHP 빠른 계산</p>
             </div>
           </div>
           <button
@@ -250,8 +250,8 @@ export default function Calculator({ onClose }: CalculatorProps) {
           </button>
         </div>
 
-        {/* 탭 */}
-        <div className="flex items-center border-b px-4 gap-1" style={{ borderColor: 'var(--border-primary)' }}>
+        {/* 탭 - 반응형 */}
+        <div className="flex items-center border-b px-2 sm:px-4 gap-0.5 sm:gap-1 overflow-x-auto" style={{ borderColor: 'var(--border-primary)' }}>
           {tabs.map((tab) => {
             const Icon = tab.icon;
             return (
@@ -259,7 +259,7 @@ export default function Calculator({ onClose }: CalculatorProps) {
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
                 className={cn(
-                  'flex items-center gap-2 px-4 py-3 border-b-2 transition-all',
+                  'flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-3 border-b-2 transition-all whitespace-nowrap',
                   activeTab === tab.id
                     ? 'border-current'
                     : 'border-transparent'
@@ -268,8 +268,8 @@ export default function Calculator({ onClose }: CalculatorProps) {
                   color: activeTab === tab.id ? 'var(--accent)' : 'var(--text-tertiary)',
                 }}
               >
-                <Icon className="w-4 h-4" />
-                <span className="text-sm font-medium">{tab.name}</span>
+                <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="text-xs sm:text-sm font-medium">{tab.name}</span>
               </button>
             );
           })}

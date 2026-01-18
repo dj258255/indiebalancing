@@ -78,7 +78,7 @@ function FormulaAutocomplete({
       {matchingColumns.length > 0 && (
         <div>
           <div className="px-3 py-1.5 text-xs font-medium" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>
-            컬럼 참조
+            열 참조
           </div>
           {matchingColumns.slice(0, 5).map((col) => (
             <button
@@ -155,13 +155,13 @@ function ColumnModal({
   };
 
   return (
-    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-      <div className="card w-full max-w-md animate-scaleIn">
-        <div className="border-b px-5 py-4 flex items-center justify-between" style={{
+    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-2 sm:p-4">
+      <div className="card w-full max-w-md animate-scaleIn max-h-[95vh] overflow-y-auto">
+        <div className="border-b px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between" style={{
           borderColor: 'var(--border-primary)'
         }}>
-          <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
-            {mode === 'add' ? '컬럼 추가' : '컬럼 편집'}
+          <h3 className="font-semibold text-sm sm:text-base" style={{ color: 'var(--text-primary)' }}>
+            {mode === 'add' ? '열 추가' : '열 편집'}
           </h3>
           <button
             onClick={onClose}
@@ -171,11 +171,11 @@ function ColumnModal({
             <X className="w-5 h-5" />
           </button>
         </div>
-        <div className="p-5 space-y-4">
-          {/* 컬럼 이름 */}
+        <div className="p-4 sm:p-5 space-y-3 sm:space-y-4">
+          {/* 열 이름 */}
           <div>
             <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-              컬럼 이름
+              열 이름
             </label>
             <input
               ref={nameInputRef}
@@ -183,7 +183,7 @@ function ColumnModal({
               value={name}
               onChange={(e) => setName(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && handleSave()}
-              placeholder="예: 공격력, HP, 레벨"
+              placeholder="예: 공격력, HP, 이름"
               className="w-full px-3 py-2 border rounded-lg text-sm"
               style={{
                 background: 'var(--bg-primary)',
@@ -193,7 +193,7 @@ function ColumnModal({
             />
           </div>
 
-          {/* 컬럼 타입 */}
+          {/* 열 타입 */}
           <div>
             <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
               타입
@@ -231,7 +231,7 @@ function ColumnModal({
                 }}
               >
                 <div className="font-semibold">ƒ 수식</div>
-                <div className="text-xs mt-0.5 opacity-70">컬럼 전체에 수식 적용</div>
+                <div className="text-xs mt-0.5 opacity-70">열 전체에 수식 적용</div>
               </button>
             </div>
           </div>
@@ -269,17 +269,17 @@ function ColumnModal({
                 )}
               </div>
               <p className="text-xs mt-1.5" style={{ color: 'var(--text-tertiary)' }}>
-                다른 컬럼명을 사용하여 수식을 작성하세요. 예: =ATK * 1.5
+                다른 열 이름을 사용하여 수식을 작성하세요. 예: =ATK * 1.5
               </p>
             </div>
           )}
         </div>
-        <div className="border-t px-5 py-4 flex justify-end gap-2" style={{
+        <div className="border-t px-4 sm:px-5 py-3 sm:py-4 flex justify-end gap-2" style={{
           borderColor: 'var(--border-primary)'
         }}>
           <button
             onClick={onClose}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors"
             style={{
               background: 'var(--bg-tertiary)',
               color: 'var(--text-secondary)'
@@ -290,7 +290,7 @@ function ColumnModal({
           <button
             onClick={handleSave}
             disabled={!name.trim()}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
+            className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors disabled:opacity-50"
             style={{
               background: 'var(--accent)',
               color: 'white'
@@ -315,7 +315,7 @@ function FormulaHint({ formula }: { formula: string }) {
   if (!funcMatch) {
     return (
       <div className="absolute top-full left-0 mt-1 bg-gray-800 text-white text-xs px-3 py-2 rounded shadow-lg z-50">
-        <span className="text-gray-300">= 다음에 함수명 또는 컬럼명을 입력하세요</span>
+        <span className="text-gray-300">= 다음에 함수명 또는 열 이름을 입력하세요</span>
       </div>
     );
   }
@@ -691,14 +691,14 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
                 style={{ color: 'var(--text-tertiary)' }}
                 onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary-blue)'}
                 onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
-                title="컬럼 편집"
+                title="열 편집"
               >
                 <Edit3 className="w-3 h-3" />
               </button>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  if (confirm(`"${col.name}" 컬럼을 삭제하시겠습니까?`)) {
+                  if (confirm(`"${col.name}" 열을 삭제하시겠습니까?`)) {
                     deleteColumn(projectId, sheet.id, col.id);
                   }
                 }}
@@ -706,7 +706,7 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
                 style={{ color: 'var(--text-tertiary)' }}
                 onMouseEnter={(e) => e.currentTarget.style.color = 'var(--error)'}
                 onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
-                title="컬럼 삭제"
+                title="열 삭제"
               >
                 <Trash2 className="w-3 h-3" />
               </button>
@@ -732,21 +732,34 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
               <div className="relative">
                 <input
                   ref={inputRef}
+                  key={`edit-${row.original.id}-${col.id}`}
                   type="text"
-                  value={editValue}
-                  onChange={(e) => {
-                    setEditValue(e.target.value);
-                    setFormulaBarValue(e.target.value);
+                  defaultValue={editValue}
+                  onInput={(e) => {
+                    const target = e.target as HTMLInputElement;
+                    setFormulaBarValue(target.value);
                   }}
-                  onBlur={() => {
+                  onBlur={(e) => {
+                    const target = e.target as HTMLInputElement;
                     // 약간의 딜레이로 자동완성 클릭 가능하게
                     setTimeout(() => {
                       if (!showAutocomplete) {
-                        finishEditing();
+                        finishEditing(target.value);
                       }
                     }, 150);
                   }}
-                  onKeyDown={handleKeyDown}
+                  onKeyDown={(e) => {
+                    // 한글 조합 중이면 Enter 키 무시 (keyCode 229는 조합 중)
+                    if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+                    if (e.key === 'Enter') {
+                      const target = e.target as HTMLInputElement;
+                      finishEditing(target.value);
+                    } else if (e.key === 'Escape') {
+                      setEditingCell(null);
+                      setEditValue('');
+                      setShowAutocomplete(false);
+                    }
+                  }}
                   autoFocus
                   className="w-full px-2 py-1 border rounded outline-none"
                   style={{
@@ -754,18 +767,21 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
                     borderColor: editValue.startsWith('=') ? 'var(--primary-purple)' : 'var(--accent)',
                     color: 'var(--text-primary)'
                   }}
-                  placeholder={isFormulaColumn ? `기본 수식: ${col.formula || '없음'}` : (editValue.startsWith('=') ? '수식 입력 중...' : '')}
+                  placeholder={isFormulaColumn ? `기본 수식: ${col.formula || '없음'}` : ''}
                 />
                 {/* 수식 입력 시 힌트 */}
                 {editValue.startsWith('=') && <FormulaHint formula={editValue} />}
                 {/* 자동완성 */}
                 {showAutocomplete && (
                   <FormulaAutocomplete
-                    value={editValue}
+                    value={inputRef.current?.value || editValue}
                     columns={sheet.columns}
                     onSelect={(newValue) => {
-                      setEditValue(newValue);
-                      inputRef.current?.focus();
+                      if (inputRef.current) {
+                        inputRef.current.value = newValue;
+                        inputRef.current.focus();
+                      }
+                      setFormulaBarValue(newValue);
                     }}
                   />
                 )}
@@ -829,7 +845,7 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
                 e.currentTarget.style.background = getCellBackground();
               }}
               title={
-                usesColumnFormula ? `컬럼 수식: ${col.formula}\n값: ${value}` :
+                usesColumnFormula ? `열 수식: ${col.formula}\n값: ${value}` :
                 cellHasFormula ? `셀 수식: ${cellRawValue}\n값: ${value}` :
                 hasCellOverride ? `셀 오버라이드 값: ${value}` :
                 typeof value === 'number' ? String(value) : undefined
@@ -1008,9 +1024,9 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      {/* 수식 입력줄 (Formula Bar) */}
+      {/* 수식 입력줄 (Formula Bar) - 반응형 */}
       <div
-        className="flex items-center gap-2 px-3 py-2 border-b mb-2 rounded-lg"
+        className="flex items-center gap-1.5 sm:gap-2 px-2 sm:px-3 py-1.5 sm:py-2 border-b mb-2 rounded-lg"
         style={{
           background: 'var(--bg-tertiary)',
           borderColor: 'var(--border-primary)'
@@ -1018,7 +1034,7 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
       >
         {/* 셀 참조 표시 */}
         <div
-          className="flex-shrink-0 px-3 py-1.5 rounded text-sm font-mono font-medium min-w-[80px] text-center"
+          className="flex-shrink-0 px-2 sm:px-3 py-1 sm:py-1.5 rounded text-xs sm:text-sm font-mono font-medium min-w-[60px] sm:min-w-[80px] text-center"
           style={{
             background: 'var(--bg-primary)',
             color: selectedCell ? 'var(--accent)' : 'var(--text-tertiary)',
@@ -1028,10 +1044,10 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
           {selectedCellInfo?.cellRef || '-'}
         </div>
 
-        {/* 수식/값 타입 표시 */}
+        {/* 수식/값 타입 표시 - 모바일에서 숨김 */}
         {selectedCell && selectedCellInfo?.column && (
           <div
-            className="flex-shrink-0 px-2 py-1 rounded text-xs font-medium"
+            className="hidden sm:block flex-shrink-0 px-2 py-1 rounded text-xs font-medium"
             style={{
               background: formulaBarValue.startsWith('=') ? 'var(--primary-purple-light)' : 'var(--bg-primary)',
               color: formulaBarValue.startsWith('=') ? 'var(--primary-purple)' : 'var(--text-tertiary)',
@@ -1064,9 +1080,9 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
               }, 200);
             }}
             onKeyDown={handleFormulaBarKeyDown}
-            placeholder={selectedCell ? '값 또는 수식 입력 (=로 시작)' : '셀을 클릭하여 선택하세요'}
+            placeholder={selectedCell ? '값 또는 수식 입력' : '셀 선택'}
             disabled={!selectedCell}
-            className="w-full px-3 py-1.5 text-sm font-mono rounded transition-colors"
+            className="w-full px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-mono rounded transition-colors"
             style={{
               background: isFormulaBarFocused ? 'var(--bg-primary)' : 'var(--bg-secondary)',
               border: isFormulaBarFocused ? '2px solid var(--accent)' : '1px solid var(--border-primary)',
@@ -1273,14 +1289,14 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
         <div style={{ width: tableWidth, height: 1 }} />
       </div>
 
-      {/* 하단 액션 버튼 */}
+      {/* 하단 액션 버튼 - 반응형 */}
       <div
-        className="flex items-center gap-2 mt-3 pt-3 pb-12"
+        className="flex items-center gap-2 mt-2 sm:mt-3 pt-2 sm:pt-3 pb-16 sm:pb-12"
         style={{ borderTop: '1px solid var(--border-primary)' }}
       >
         <button
           onClick={() => addRow(projectId, sheet.id)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded transition-colors"
+          className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded transition-colors"
           style={{
             background: 'var(--primary-green)',
             color: 'white'
@@ -1288,13 +1304,13 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
           onMouseEnter={(e) => e.currentTarget.style.background = '#059669'}
           onMouseLeave={(e) => e.currentTarget.style.background = 'var(--primary-green)'}
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           행 추가
         </button>
 
         <button
           onClick={() => setShowAddColumn(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded transition-colors"
+          className="flex items-center gap-1 sm:gap-1.5 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm font-medium rounded transition-colors"
           style={{
             background: 'var(--bg-tertiary)',
             color: 'var(--text-secondary)'
@@ -1308,12 +1324,12 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
             e.currentTarget.style.color = 'var(--text-secondary)';
           }}
         >
-          <Plus className="w-4 h-4" />
-          컬럼 추가
+          <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+          열 추가
         </button>
       </div>
 
-      {/* 컬럼 추가 모달 */}
+      {/* 열 추가 모달 */}
       {showAddColumn && (
         <ColumnModal
           columns={sheet.columns}
@@ -1330,7 +1346,7 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
         />
       )}
 
-      {/* 컬럼 편집 모달 */}
+      {/* 열 편집 모달 */}
       {editingColumn && (
         <ColumnModal
           column={editingColumn}

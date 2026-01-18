@@ -162,7 +162,7 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
   };
 
   return (
-    <div className="w-64 flex flex-col h-full border-r" style={{
+    <div className="w-56 lg:w-64 flex flex-col h-full border-r shrink-0" style={{
       background: 'var(--bg-primary)',
       borderColor: 'var(--border-primary)'
     }}>
@@ -495,24 +495,24 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
 
       {/* 데이터 */}
       <div className="border-t p-2" style={{ borderColor: 'var(--border-primary)' }}>
-        <div className="flex gap-2">
+        <div className="flex gap-1.5 lg:gap-2">
           {/* 내보내기 드롭다운 */}
-          <div className="flex-1 relative" ref={exportMenuRef}>
+          <div className="flex-1 relative min-w-0" ref={exportMenuRef}>
             <button
               onClick={() => {
                 setShowExportMenu(!showExportMenu);
                 setShowImportMenu(false);
               }}
-              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-colors"
+              className="w-full flex items-center justify-center gap-1 lg:gap-1.5 px-2 lg:px-3 py-2 text-xs lg:text-sm font-medium rounded-lg border transition-colors whitespace-nowrap"
               style={{
                 borderColor: 'var(--border-primary)',
                 color: 'var(--text-secondary)',
                 background: 'var(--bg-primary)'
               }}
             >
-              <Download className="w-4 h-4" />
-              내보내기
-              <ChevronUp className={`w-3 h-3 transition-transform ${showExportMenu ? '' : 'rotate-180'}`} />
+              <Download className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
+              <span className="truncate">내보내기</span>
+              <ChevronUp className={`w-3 h-3 shrink-0 transition-transform ${showExportMenu ? '' : 'rotate-180'}`} />
             </button>
             {showExportMenu && (
               <div
@@ -559,22 +559,22 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
           </div>
 
           {/* 가져오기 드롭다운 */}
-          <div className="flex-1 relative" ref={importMenuRef}>
+          <div className="flex-1 relative min-w-0" ref={importMenuRef}>
             <button
               onClick={() => {
                 setShowImportMenu(!showImportMenu);
                 setShowExportMenu(false);
               }}
-              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-colors"
+              className="w-full flex items-center justify-center gap-1 lg:gap-1.5 px-2 lg:px-3 py-2 text-xs lg:text-sm font-medium rounded-lg border transition-colors whitespace-nowrap"
               style={{
                 borderColor: 'var(--border-primary)',
                 color: 'var(--text-secondary)',
                 background: 'var(--bg-primary)'
               }}
             >
-              <Upload className="w-4 h-4" />
-              가져오기
-              <ChevronUp className={`w-3 h-3 transition-transform ${showImportMenu ? '' : 'rotate-180'}`} />
+              <Upload className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
+              <span className="truncate">가져오기</span>
+              <ChevronUp className={`w-3 h-3 shrink-0 transition-transform ${showImportMenu ? '' : 'rotate-180'}`} />
             </button>
             {showImportMenu && (
               <div

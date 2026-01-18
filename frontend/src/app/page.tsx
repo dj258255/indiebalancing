@@ -21,7 +21,7 @@ import OnboardingGuide, { useOnboardingStatus } from '@/components/OnboardingGui
 import Calculator from '@/components/Calculator';
 import ComparisonChart from '@/components/ComparisonChart';
 import ReferencesModal from '@/components/ReferencesModal';
-import { FileSpreadsheet, Plus, X, ArrowRight, Loader2, FunctionSquare, Shield, TrendingUp } from 'lucide-react';
+import { FileSpreadsheet, Plus, X, ArrowRight, Loader2, FunctionSquare, Shield, TrendingUp, Menu } from 'lucide-react';
 
 export default function Home() {
   const {
@@ -42,6 +42,7 @@ export default function Home() {
   const [showFormulaHelper, setShowFormulaHelper] = useState(false);
   const [showBalanceValidator, setShowBalanceValidator] = useState(false);
   const [showDifficultyCurve, setShowDifficultyCurve] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const { showOnboarding, setShowOnboarding } = useOnboardingStatus();
 
   const currentProject = getCurrentProject();
@@ -115,17 +116,57 @@ export default function Home() {
 
   return (
     <div className="h-screen flex" style={{ background: 'var(--bg-secondary)' }}>
-      {/* 사이드바 */}
-      <Sidebar
-        onShowChart={() => setShowChart(true)}
-        onShowHelp={() => setShowOnboarding(true)}
-        onShowCalculator={() => setShowCalculator(true)}
-        onShowComparison={() => setShowComparison(true)}
-        onShowReferences={() => setShowReferences(true)}
-      />
+      {/* 모바일 헤더 */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 border-b" style={{
+        background: 'var(--bg-primary)',
+        borderColor: 'var(--border-primary)'
+      }}>
+        <button
+          onClick={() => setShowMobileSidebar(true)}
+          className="p-2 rounded-lg transition-colors"
+          style={{ background: 'var(--bg-tertiary)' }}
+        >
+          <Menu className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} />
+        </button>
+        <span className="font-semibold" style={{ color: 'var(--accent)' }}>인디밸런싱</span>
+        <div className="w-9" /> {/* 균형을 위한 빈 공간 */}
+      </div>
+
+      {/* 모바일 사이드바 오버레이 */}
+      {showMobileSidebar && (
+        <div
+          className="md:hidden fixed inset-0 z-50"
+          onClick={() => setShowMobileSidebar(false)}
+        >
+          <div className="absolute inset-0 bg-black/50" />
+          <div
+            className="absolute left-0 top-0 bottom-0 w-72 animate-slideIn"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <Sidebar
+              onShowChart={() => { setShowChart(true); setShowMobileSidebar(false); }}
+              onShowHelp={() => { setShowOnboarding(true); setShowMobileSidebar(false); }}
+              onShowCalculator={() => { setShowCalculator(true); setShowMobileSidebar(false); }}
+              onShowComparison={() => { setShowComparison(true); setShowMobileSidebar(false); }}
+              onShowReferences={() => { setShowReferences(true); setShowMobileSidebar(false); }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* 사이드바 - 데스크톱 */}
+      <div className="hidden md:block">
+        <Sidebar
+          onShowChart={() => setShowChart(true)}
+          onShowHelp={() => setShowOnboarding(true)}
+          onShowCalculator={() => setShowCalculator(true)}
+          onShowComparison={() => setShowComparison(true)}
+          onShowReferences={() => setShowReferences(true)}
+        />
+      </div>
 
       {/* 메인 영역 */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden pt-14 md:pt-0">
         {currentProject ? (
           <>
             {/* 시트 탭 */}
@@ -134,12 +175,12 @@ export default function Home() {
             {/* 시트 내용 */}
             <div className="flex-1 flex overflow-hidden">
               {currentSheet ? (
-                <div className="flex-1 flex flex-col p-6 pb-0 min-h-0 overflow-hidden">
-                  <div className="flex items-center justify-between mb-5 flex-shrink-0">
+                <div className="flex-1 flex flex-col p-3 sm:p-4 lg:p-6 pb-0 min-h-0 overflow-hidden">
+                  <div className="flex items-center justify-between mb-3 sm:mb-4 lg:mb-5 flex-shrink-0">
                     <div>
-                      <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{currentSheet.name}</h2>
-                      <p className="text-sm mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                        {currentSheet.rows.length}개 행 · {currentSheet.columns.length}개 컬럼
+                      <h2 className="text-base sm:text-lg lg:text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{currentSheet.name}</h2>
+                      <p className="text-xs sm:text-sm mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                        {currentSheet.rows.length}개 행 · {currentSheet.columns.length}개 열
                       </p>
                     </div>
                   </div>
@@ -234,13 +275,13 @@ export default function Home() {
 
       {/* 성장 곡선 차트 모달 */}
       {showChart && (
-        <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-          <div className="card w-full max-w-4xl max-h-[90vh] overflow-y-auto animate-scaleIn">
-            <div className="sticky top-0 border-b px-6 py-4 flex items-center justify-between" style={{
+        <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-2 sm:p-4">
+          <div className="card w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto animate-scaleIn">
+            <div className="sticky top-0 border-b px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between" style={{
               background: 'var(--bg-primary)',
               borderColor: 'var(--border-primary)'
             }}>
-              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>성장 곡선 차트</h2>
+              <h2 className="text-base sm:text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>성장 곡선 차트</h2>
               <button
                 onClick={() => setShowChart(false)}
                 className="p-2 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"
@@ -249,7 +290,7 @@ export default function Home() {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-6">
+            <div className="p-4 sm:p-6">
               <GrowthCurveChart />
             </div>
           </div>
@@ -279,125 +320,107 @@ export default function Home() {
       {/* 하단 탭과 패널 - 각각 독립적 */}
       {currentSheet && (
         <>
-          {/* 패널들 - 브라우저 하단에서 바로 시작 */}
+          {/* 패널들 - 모바일에서는 전체 너비 모달, 데스크톱에서는 하단 패널 */}
           {/* 수식 도우미 패널 */}
-          <div
-            className="fixed bottom-0 z-40 transition-all duration-300 ease-out pointer-events-auto"
-            style={{
-              left: 'calc(256px + (100% - 256px) * 0.167 - min(250px, 15vw))',
-              width: 'min(500px, calc(30vw))',
-              height: showFormulaHelper ? '60vh' : 0,
-              opacity: showFormulaHelper ? 1 : 0,
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              className="flex flex-col h-full"
-              style={{
-                background: 'var(--bg-primary)',
-                borderTop: '1px solid var(--border-primary)',
-                borderLeft: '1px solid var(--border-primary)',
-                borderRight: '1px solid var(--border-primary)',
-                borderRadius: '12px 12px 0 0',
-                boxShadow: 'var(--shadow-lg)',
-              }}
-            >
-              <FormulaHelper onClose={() => setShowFormulaHelper(false)} />
+          {showFormulaHelper && (
+            <div className="fixed inset-0 md:inset-auto md:bottom-0 z-40 transition-all duration-300 ease-out pointer-events-auto md:left-[calc(224px+(100%-224px)*0.167-min(250px,15vw))] lg:left-[calc(256px+(100%-256px)*0.167-min(250px,15vw))] md:w-[min(500px,30vw)] md:h-[60vh]">
+              <div
+                className="flex flex-col h-full"
+                style={{
+                  background: 'var(--bg-primary)',
+                  borderTop: '1px solid var(--border-primary)',
+                  borderLeft: '1px solid var(--border-primary)',
+                  borderRight: '1px solid var(--border-primary)',
+                  borderRadius: '12px 12px 0 0',
+                  boxShadow: 'var(--shadow-lg)',
+                }}
+              >
+                <FormulaHelper onClose={() => setShowFormulaHelper(false)} />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* 밸런스 검증기 패널 */}
-          <div
-            className="fixed bottom-0 z-40 transition-all duration-300 ease-out pointer-events-auto"
-            style={{
-              left: 'calc(256px + (100% - 256px) * 0.5 - min(250px, 15vw))',
-              width: 'min(500px, calc(30vw))',
-              height: showBalanceValidator ? '60vh' : 0,
-              opacity: showBalanceValidator ? 1 : 0,
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              className="flex flex-col h-full"
-              style={{
-                background: 'var(--bg-primary)',
-                borderTop: '1px solid var(--border-primary)',
-                borderLeft: '1px solid var(--border-primary)',
-                borderRight: '1px solid var(--border-primary)',
-                borderRadius: '12px 12px 0 0',
-                boxShadow: 'var(--shadow-lg)',
-              }}
-            >
-              <BalanceValidator onClose={() => setShowBalanceValidator(false)} />
+          {showBalanceValidator && (
+            <div className="fixed inset-0 md:inset-auto md:bottom-0 z-40 transition-all duration-300 ease-out pointer-events-auto md:left-[calc(224px+(100%-224px)*0.5-min(250px,15vw))] lg:left-[calc(256px+(100%-256px)*0.5-min(250px,15vw))] md:w-[min(500px,30vw)] md:h-[60vh]">
+              <div
+                className="flex flex-col h-full"
+                style={{
+                  background: 'var(--bg-primary)',
+                  borderTop: '1px solid var(--border-primary)',
+                  borderLeft: '1px solid var(--border-primary)',
+                  borderRight: '1px solid var(--border-primary)',
+                  borderRadius: '12px 12px 0 0',
+                  boxShadow: 'var(--shadow-lg)',
+                }}
+              >
+                <BalanceValidator onClose={() => setShowBalanceValidator(false)} />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* 난이도 곡선 패널 */}
-          <div
-            className="fixed bottom-0 z-40 transition-all duration-300 ease-out pointer-events-auto"
-            style={{
-              left: 'calc(256px + (100% - 256px) * 0.833 - min(250px, 15vw))',
-              width: 'min(500px, calc(30vw))',
-              height: showDifficultyCurve ? '60vh' : 0,
-              opacity: showDifficultyCurve ? 1 : 0,
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              className="flex flex-col h-full"
-              style={{
-                background: 'var(--bg-primary)',
-                borderTop: '1px solid var(--border-primary)',
-                borderLeft: '1px solid var(--border-primary)',
-                borderRight: '1px solid var(--border-primary)',
-                borderRadius: '12px 12px 0 0',
-                boxShadow: 'var(--shadow-lg)',
-              }}
-            >
-              <DifficultyCurve onClose={() => setShowDifficultyCurve(false)} />
+          {showDifficultyCurve && (
+            <div className="fixed inset-0 md:inset-auto md:bottom-0 z-40 transition-all duration-300 ease-out pointer-events-auto md:left-[calc(224px+(100%-224px)*0.833-min(250px,15vw))] lg:left-[calc(256px+(100%-256px)*0.833-min(250px,15vw))] md:w-[min(500px,30vw)] md:h-[60vh]">
+              <div
+                className="flex flex-col h-full"
+                style={{
+                  background: 'var(--bg-primary)',
+                  borderTop: '1px solid var(--border-primary)',
+                  borderLeft: '1px solid var(--border-primary)',
+                  borderRight: '1px solid var(--border-primary)',
+                  borderRadius: '12px 12px 0 0',
+                  boxShadow: 'var(--shadow-lg)',
+                }}
+              >
+                <DifficultyCurve onClose={() => setShowDifficultyCurve(false)} />
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* 버튼들 - Liquid Glass 스타일 */}
-          <div className="fixed bottom-0 left-64 right-0 z-50 pointer-events-none">
+          {/* 버튼들 - Liquid Glass 스타일 (반응형) */}
+          <div className="fixed bottom-0 left-0 md:left-56 lg:left-64 right-0 z-50 pointer-events-none">
             <div className="flex justify-around pointer-events-auto">
               <button
                 onClick={() => !isModalOpen && setShowFormulaHelper(!showFormulaHelper)}
                 disabled={isModalOpen}
-                className={`flex items-center gap-2 px-6 py-2.5 text-base font-semibold transition-all rounded-t-xl ${
+                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 text-xs sm:text-sm lg:text-base font-semibold transition-all rounded-t-xl ${
                   showFormulaHelper
                     ? 'liquid-glass-active text-[var(--primary-blue)]'
                     : 'bg-[var(--bg-primary)] text-[var(--text-secondary)] border-t border-l border-r border-[var(--border-primary)]'
                 } ${isModalOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                <FunctionSquare className="w-5 h-5" />
-                수식 도우미
+                <FunctionSquare className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">수식 도우미</span>
+                <span className="sm:hidden">수식</span>
               </button>
 
               <button
                 onClick={() => !isModalOpen && setShowBalanceValidator(!showBalanceValidator)}
                 disabled={isModalOpen}
-                className={`flex items-center gap-2 px-6 py-2.5 text-base font-semibold transition-all rounded-t-xl ${
+                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 text-xs sm:text-sm lg:text-base font-semibold transition-all rounded-t-xl ${
                   showBalanceValidator
                     ? 'liquid-glass-active text-[var(--primary-green)]'
                     : 'bg-[var(--bg-primary)] text-[var(--text-secondary)] border-t border-l border-r border-[var(--border-primary)]'
                 } ${isModalOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                <Shield className="w-5 h-5" />
-                밸런스 검증기
+                <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">밸런스 검증기</span>
+                <span className="sm:hidden">밸런스</span>
               </button>
 
               <button
                 onClick={() => !isModalOpen && setShowDifficultyCurve(!showDifficultyCurve)}
                 disabled={isModalOpen}
-                className={`flex items-center gap-2 px-6 py-2.5 text-base font-semibold transition-all rounded-t-xl ${
+                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 text-xs sm:text-sm lg:text-base font-semibold transition-all rounded-t-xl ${
                   showDifficultyCurve
                     ? 'liquid-glass-active text-[var(--primary-purple)]'
                     : 'bg-[var(--bg-primary)] text-[var(--text-secondary)] border-t border-l border-r border-[var(--border-primary)]'
                 } ${isModalOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
-                <TrendingUp className="w-5 h-5" />
-                난이도 곡선
+                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
+                <span className="hidden sm:inline">난이도 곡선</span>
+                <span className="sm:hidden">난이도</span>
               </button>
             </div>
           </div>
