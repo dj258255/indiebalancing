@@ -672,47 +672,44 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
         id: col.id,
         accessorFn: (row) => getCellValue(row, col),
         header: () => (
-          <div className="relative group">
-            {/* 컬럼 헤더: 이름 왼쪽, 타입 오른쪽 */}
-            <div className="flex items-center justify-between">
+          <div className="group/col flex items-center justify-between">
+            {/* 컬럼 이름 + 타입 */}
+            <div className="flex items-center gap-1 min-w-0">
               <span className="font-medium truncate">{col.name}</span>
-              <span className="text-xs shrink-0" style={{ color: 'var(--text-tertiary)' }}>
-                {col.type === 'formula' ? 'ƒ' : ''}
-              </span>
+              {col.type === 'formula' && (
+                <span className="text-xs shrink-0" style={{ color: 'var(--text-tertiary)' }}>ƒ</span>
+              )}
             </div>
-            {/* 호버 시 아래에 떠있는 버튼들 */}
-            <div className="absolute top-full left-1/2 -translate-x-1/2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-              <div className="flex items-center gap-0.5 px-1.5 py-1 rounded-md shadow-lg border"
-                style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setEditingColumn(col);
-                  }}
-                  className="p-1 rounded transition-colors"
-                  style={{ color: 'var(--text-tertiary)' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary-blue)'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
-                  title="컬럼 편집"
-                >
-                  <Edit3 className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    if (confirm(`"${col.name}" 컬럼을 삭제하시겠습니까?`)) {
-                      deleteColumn(projectId, sheet.id, col.id);
-                    }
-                  }}
-                  className="p-1 rounded transition-colors"
-                  style={{ color: 'var(--text-tertiary)' }}
-                  onMouseEnter={(e) => e.currentTarget.style.color = 'var(--error)'}
-                  onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
-                  title="컬럼 삭제"
-                >
-                  <Trash2 className="w-3.5 h-3.5" />
-                </button>
-              </div>
+            {/* 호버 시 오른쪽에 버튼 표시 */}
+            <div className="hidden group-hover/col:flex items-center shrink-0 ml-1">
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setEditingColumn(col);
+                }}
+                className="p-0.5 rounded transition-colors hover:bg-black/10 dark:hover:bg-white/10"
+                style={{ color: 'var(--text-tertiary)' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary-blue)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
+                title="컬럼 편집"
+              >
+                <Edit3 className="w-3 h-3" />
+              </button>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (confirm(`"${col.name}" 컬럼을 삭제하시겠습니까?`)) {
+                    deleteColumn(projectId, sheet.id, col.id);
+                  }
+                }}
+                className="p-0.5 rounded transition-colors hover:bg-black/10 dark:hover:bg-white/10"
+                style={{ color: 'var(--text-tertiary)' }}
+                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--error)'}
+                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
+                title="컬럼 삭제"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
             </div>
           </div>
         ),
