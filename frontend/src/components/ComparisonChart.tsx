@@ -63,18 +63,30 @@ export default function ComparisonChart({ onClose }: ComparisonChartProps) {
   // 행 데이터 (비교 대상)
   const availableRows = useMemo(() => {
     if (!currentSheet) return [];
-    return currentSheet.rows.map((row) => {
-      const nameCol = currentSheet.columns.find(
-        (c) => c.name === '이름' || c.name === 'name' || c.name === 'Name'
-      );
-      const idCol = currentSheet.columns.find(
-        (c) => c.name === 'ID' || c.name === 'id'
-      );
-      const name = nameCol
-        ? String(row.cells[nameCol.id] || '')
-        : idCol
-        ? String(row.cells[idCol.id] || '')
-        : row.id.slice(0, 8);
+    return currentSheet.rows.map((row, index) => {
+      // 이름으로 사용할 컬럼 찾기 (우선순위 순)
+      const namePatterns = ['이름', 'name', 'Name', '캐릭터', '캐릭터명', '유닛', '아이템', '무기', '스킬'];
+      const idPatterns = ['ID', 'id', 'Id'];
+
+      let nameCol = currentSheet.columns.find((c) => namePatterns.includes(c.name));
+
+      // 이름 컬럼이 없으면 첫 번째 텍스트 컬럼 사용
+      if (!nameCol) {
+        nameCol = currentSheet.columns.find((c) => c.type === 'text');
+      }
+
+      const idCol = currentSheet.columns.find((c) => idPatterns.includes(c.name));
+
+      let name = '';
+      if (nameCol && row.cells[nameCol.id]) {
+        name = String(row.cells[nameCol.id]);
+      } else if (idCol && row.cells[idCol.id]) {
+        name = String(row.cells[idCol.id]);
+      } else {
+        // 아무것도 없으면 "행 N" 형식
+        name = `행 ${index + 1}`;
+      }
+
       return { id: row.id, name, cells: row.cells };
     });
   }, [currentSheet]);

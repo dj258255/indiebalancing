@@ -2,25 +2,38 @@
 @tailwind components;
 @tailwind utilities;
 
-/* 라이트 모드 - 소프트 블루 */
+/* 라이트 모드 - 기본 */
 :root {
   --bg-primary: #ffffff;
   --bg-secondary: #f8fafc;
   --bg-tertiary: #f1f5f9;
   --bg-hover: #e2e8f0;
+  --bg-sidebar: #1e293b;
+  --bg-sidebar-hover: #334155;
+  --bg-sidebar-active: #0ea5e9;
 
   --text-primary: #0f172a;
   --text-secondary: #475569;
   --text-tertiary: #94a3b8;
+  --text-sidebar: #f8fafc;
+  --text-sidebar-muted: rgba(248, 250, 252, 0.7);
 
   --border-primary: #e2e8f0;
   --border-secondary: #cbd5e1;
 
-  /* 소프트 블루 */
-  --accent: #3b82f6;
-  --accent-hover: #2563eb;
-  --accent-light: rgba(59, 130, 246, 0.1);
-  --accent-text: #1d4ed8;
+  /* 메인 액센트 - 청록/민트 계열 */
+  --accent: #0ea5e9;
+  --accent-hover: #0284c7;
+  --accent-light: rgba(14, 165, 233, 0.1);
+  --accent-text: #0284c7;
+
+  /* 보조 컬러 */
+  --primary-green: #10b981;
+  --primary-green-light: rgba(16, 185, 129, 0.1);
+  --primary-blue: #3b82f6;
+  --primary-blue-light: rgba(59, 130, 246, 0.1);
+  --primary-purple: #8b5cf6;
+  --primary-purple-light: rgba(139, 92, 246, 0.1);
 
   --success: #10b981;
   --success-light: rgba(16, 185, 129, 0.1);
@@ -29,29 +42,34 @@
   --error: #ef4444;
   --error-light: rgba(239, 68, 68, 0.1);
 
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
-/* 다크 모드 - 슬레이트 블루 */
+/* 다크 모드 */
 .dark {
   --bg-primary: #0f172a;
   --bg-secondary: #1e293b;
   --bg-tertiary: #334155;
   --bg-hover: #475569;
+  --bg-sidebar: #0f172a;
+  --bg-sidebar-hover: #1e293b;
+  --bg-sidebar-active: #0ea5e9;
 
-  --text-primary: #f8fafc;
+  --text-primary: #f1f5f9;
   --text-secondary: #cbd5e1;
   --text-tertiary: #64748b;
+  --text-sidebar: #f1f5f9;
+  --text-sidebar-muted: rgba(241, 245, 249, 0.7);
 
   --border-primary: #334155;
   --border-secondary: #475569;
 
-  --accent: #60a5fa;
-  --accent-hover: #93c5fd;
-  --accent-light: rgba(96, 165, 250, 0.15);
-  --accent-text: #93c5fd;
+  --accent: #38bdf8;
+  --accent-hover: #0ea5e9;
+  --accent-light: rgba(56, 189, 248, 0.15);
+  --accent-text: #38bdf8;
 
   --success: #34d399;
   --success-light: rgba(52, 211, 153, 0.15);
@@ -60,9 +78,9 @@
   --error: #f87171;
   --error-light: rgba(248, 113, 113, 0.15);
 
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.4);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.5);
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
 }
 
 * {
@@ -72,18 +90,18 @@
 body {
   color: var(--text-primary);
   background: var(--bg-secondary);
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', 'Noto Sans KR', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   font-size: 14px;
-  line-height: 1.6;
-  transition: background-color 0.2s ease, color 0.2s ease;
+  line-height: 1.5;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
 }
 
 /* 스크롤바 */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 8px;
+  height: 8px;
 }
 
 ::-webkit-scrollbar-track {
@@ -92,37 +110,38 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: var(--border-secondary);
-  border-radius: 100px;
+  border-radius: 4px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
   background: var(--text-tertiary);
 }
 
-/* 버튼 */
+/* 버튼 스타일 */
 .btn-primary {
-  @apply px-5 py-2.5 font-semibold rounded-lg transition-all duration-200;
+  @apply px-4 py-2 font-semibold rounded-lg transition-all duration-150;
   background: var(--accent);
   color: white;
 }
 
 .btn-primary:hover {
   background: var(--accent-hover);
+  box-shadow: 0 2px 8px rgba(14, 165, 233, 0.3);
 }
 
 .btn-secondary {
-  @apply px-5 py-2.5 font-semibold rounded-lg border transition-all duration-200;
-  background: transparent;
-  color: var(--accent);
-  border-color: var(--accent);
+  @apply px-4 py-2 font-medium rounded-lg border transition-all duration-150;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  border-color: var(--border-secondary);
 }
 
 .btn-secondary:hover {
-  background: var(--accent-light);
+  background: var(--bg-tertiary);
 }
 
 .btn-ghost {
-  @apply px-4 py-2 text-sm font-medium rounded-lg transition-all duration-200;
+  @apply px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-150;
   color: var(--text-secondary);
 }
 
@@ -137,17 +156,9 @@ body {
   border: 1px solid var(--border-primary);
   border-radius: 12px;
   box-shadow: var(--shadow-sm);
-  transition: box-shadow 0.2s ease;
 }
 
 .card:hover {
-  box-shadow: var(--shadow-md);
-}
-
-.card-glow {
-  background: var(--bg-primary);
-  border: 1px solid var(--border-primary);
-  border-radius: 12px;
   box-shadow: var(--shadow-md);
 }
 
@@ -157,11 +168,13 @@ input[type="number"],
 input[type="email"],
 textarea,
 select {
-  background: var(--bg-tertiary);
-  border: 1px solid var(--border-primary);
+  background: var(--bg-primary);
+  border: 1px solid var(--border-secondary);
   color: var(--text-primary);
   border-radius: 8px;
-  transition: all 0.2s ease;
+  padding: 8px 12px;
+  font-size: 14px;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 
 input[type="text"]:focus,
@@ -170,7 +183,6 @@ input[type="email"]:focus,
 textarea:focus,
 select:focus {
   outline: none;
-  background: var(--bg-primary);
   border-color: var(--accent);
   box-shadow: 0 0 0 3px var(--accent-light);
 }
@@ -182,11 +194,11 @@ textarea::placeholder {
 
 /* 테이블 셀 */
 .cell-editing {
-  box-shadow: 0 0 0 2px var(--accent), 0 0 0 4px var(--accent-light);
+  box-shadow: 0 0 0 2px var(--accent);
 }
 
 .cell-formula {
-  background: var(--accent-light);
+  background: var(--primary-blue-light);
 }
 
 .cell-error {
@@ -196,15 +208,19 @@ textarea::placeholder {
 
 /* 체크박스 */
 input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 4px;
   border: 2px solid var(--border-secondary);
   background: var(--bg-primary);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all 0.15s ease;
   appearance: none;
   -webkit-appearance: none;
+}
+
+input[type="checkbox"]:hover {
+  border-color: var(--accent);
 }
 
 input[type="checkbox"]:checked {
@@ -218,25 +234,25 @@ input[type="checkbox"]:checked::after {
   align-items: center;
   justify-content: center;
   color: white;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: bold;
 }
 
 /* 모달 */
 .modal-overlay {
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba(15, 23, 42, 0.6);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
 }
 
 /* 배지 */
 .badge {
-  @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold;
+  @apply inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold;
 }
 
 .badge-primary {
   background: var(--accent-light);
-  color: var(--accent);
+  color: var(--accent-text);
 }
 
 .badge-success {
@@ -256,66 +272,44 @@ input[type="checkbox"]:checked::after {
 
 /* 애니메이션 */
 @keyframes fadeIn {
-  from {
-    opacity: 0;
-    transform: translateY(10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
 .animate-fadeIn {
-  animation: fadeIn 0.3s ease-out;
+  animation: fadeIn 0.2s ease-out;
 }
 
 @keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateX(-10px);
-  }
-  to {
-    opacity: 1;
-    transform: translateX(0);
-  }
+  from { opacity: 0; transform: translateX(-8px); }
+  to { opacity: 1; transform: translateX(0); }
 }
 
 .animate-slideIn {
-  animation: slideIn 0.3s ease-out;
+  animation: slideIn 0.2s ease-out;
 }
 
 @keyframes scaleIn {
-  from {
-    opacity: 0;
-    transform: scale(0.95);
-  }
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
+  from { opacity: 0; transform: scale(0.96); }
+  to { opacity: 1; transform: scale(1); }
 }
 
 .animate-scaleIn {
-  animation: scaleIn 0.2s ease-out;
+  animation: scaleIn 0.15s ease-out;
 }
 
-@keyframes pulse-soft {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.6;
-  }
+@keyframes slideUp {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 
-.animate-pulse-soft {
-  animation: pulse-soft 2s ease-in-out infinite;
+.animate-slideUp {
+  animation: slideUp 0.2s ease-out;
 }
 
 /* 호버 효과 */
 .hover-lift {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
 }
 
 .hover-lift:hover {
@@ -327,4 +321,173 @@ input[type="checkbox"]:checked::after {
 .focus-ring:focus {
   outline: none;
   box-shadow: 0 0 0 3px var(--accent-light);
+}
+
+/* 사이드바 아이템 */
+.sidebar-item {
+  @apply flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-colors;
+  color: var(--text-sidebar-muted);
+}
+
+.sidebar-item:hover {
+  background: var(--bg-sidebar-hover);
+  color: var(--text-sidebar);
+}
+
+.sidebar-item.active {
+  background: var(--bg-sidebar-active);
+  color: var(--text-sidebar);
+}
+
+/* 패널 헤더 */
+.panel-header {
+  @apply flex items-center justify-between px-4 py-3;
+  background: var(--bg-tertiary);
+  border-bottom: 1px solid var(--border-primary);
+}
+
+.panel-header-title {
+  @apply flex items-center gap-2 font-semibold text-sm;
+  color: var(--text-primary);
+}
+
+/* 스크롤바 완전 숨김 (커스텀 스크롤바 사용) */
+.hide-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.hide-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+/* Liquid Glass 스타일 */
+.liquid-glass-active {
+  background: rgba(255, 255, 255, 0.25);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border-top: 1px solid rgba(255, 255, 255, 0.3);
+  border-left: 1px solid rgba(255, 255, 255, 0.3);
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
+  border-bottom: none;
+  box-shadow: 0 8px 32px rgba(31, 38, 135, 0.15), inset 0 1px 0 rgba(255, 255, 255, 0.4);
+}
+
+.dark .liquid-glass-active {
+  background: rgba(255, 255, 255, 0.1);
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  border-left: 1px solid rgba(255, 255, 255, 0.15);
+  border-right: 1px solid rgba(255, 255, 255, 0.15);
+  border-bottom: none;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* Liquid Glass 텍스트 스타일 */
+.liquid-glass-text {
+  background: linear-gradient(
+    135deg,
+    rgba(255, 255, 255, 0.95) 0%,
+    rgba(255, 255, 255, 0.7) 50%,
+    rgba(255, 255, 255, 0.95) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow:
+    0 1px 2px rgba(255, 255, 255, 0.3),
+    0 0 20px rgba(255, 255, 255, 0.1);
+  position: relative;
+}
+
+.liquid-glass-text::before {
+  content: attr(data-text);
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.4) 0%,
+    transparent 50%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  pointer-events: none;
+}
+
+/* 라이트 모드 Liquid Glass 텍스트 */
+.liquid-glass-text-light {
+  background: linear-gradient(
+    135deg,
+    rgba(30, 41, 59, 0.95) 0%,
+    rgba(51, 65, 85, 0.8) 50%,
+    rgba(30, 41, 59, 0.95) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.5),
+    0 -1px 0 rgba(0, 0, 0, 0.1);
+  filter: drop-shadow(0 1px 1px rgba(255, 255, 255, 0.3));
+}
+
+/* 컬러 Liquid Glass 텍스트 - 블루 */
+.liquid-glass-text-blue {
+  background: linear-gradient(
+    135deg,
+    rgba(59, 130, 246, 0.85) 0%,
+    rgba(96, 165, 250, 0.6) 25%,
+    rgba(191, 219, 254, 0.4) 50%,
+    rgba(96, 165, 250, 0.6) 75%,
+    rgba(59, 130, 246, 0.85) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow:
+    0 0 40px rgba(59, 130, 246, 0.5),
+    0 0 80px rgba(59, 130, 246, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.1);
+  filter: drop-shadow(0 0 8px rgba(59, 130, 246, 0.4));
+}
+
+/* 컬러 Liquid Glass 텍스트 - 그린 */
+.liquid-glass-text-green {
+  background: linear-gradient(
+    135deg,
+    rgba(16, 185, 129, 0.85) 0%,
+    rgba(52, 211, 153, 0.6) 25%,
+    rgba(167, 243, 208, 0.4) 50%,
+    rgba(52, 211, 153, 0.6) 75%,
+    rgba(16, 185, 129, 0.85) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow:
+    0 0 40px rgba(16, 185, 129, 0.5),
+    0 0 80px rgba(16, 185, 129, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.1);
+  filter: drop-shadow(0 0 8px rgba(16, 185, 129, 0.4));
+}
+
+/* 컬러 Liquid Glass 텍스트 - 퍼플 */
+.liquid-glass-text-purple {
+  background: linear-gradient(
+    135deg,
+    rgba(139, 92, 246, 0.85) 0%,
+    rgba(167, 139, 250, 0.6) 25%,
+    rgba(221, 214, 254, 0.4) 50%,
+    rgba(167, 139, 250, 0.6) 75%,
+    rgba(139, 92, 246, 0.85) 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  text-shadow:
+    0 0 40px rgba(139, 92, 246, 0.5),
+    0 0 80px rgba(139, 92, 246, 0.3),
+    0 2px 4px rgba(0, 0, 0, 0.1);
+  filter: drop-shadow(0 0 8px rgba(139, 92, 246, 0.4));
 }

@@ -3,7 +3,6 @@
 import { useState } from 'react';
 import { Plus, X, Edit2, Copy, Check, LayoutTemplate } from 'lucide-react';
 import { useProjectStore } from '@/stores/projectStore';
-import { cn } from '@/lib/utils';
 import type { Project } from '@/types';
 import TemplateSelector from './TemplateSelector';
 
@@ -55,87 +54,115 @@ export default function SheetTabs({ project }: SheetTabsProps) {
   };
 
   return (
-    <div className="flex items-center gap-1 border-b bg-gray-50 px-2 py-1 overflow-x-auto">
-      {project.sheets.map((sheet) => (
-        <div
-          key={sheet.id}
-          className={cn(
-            'group flex items-center gap-1 px-3 py-1.5 rounded-t border border-b-0 cursor-pointer min-w-[80px]',
-            currentSheetId === sheet.id
-              ? 'bg-white border-gray-300 -mb-px'
-              : 'bg-gray-100 border-transparent hover:bg-gray-200'
-          )}
-          onClick={() => setCurrentSheet(sheet.id)}
-        >
-          {editingSheetId === sheet.id ? (
-            <div className="flex items-center gap-1">
-              <input
-                type="text"
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-                onBlur={handleFinishEdit}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleFinishEdit();
-                  if (e.key === 'Escape') {
-                    setEditingSheetId(null);
-                    setEditName('');
-                  }
-                }}
-                onClick={(e) => e.stopPropagation()}
-                className="w-24 px-1 py-0.5 text-sm border rounded"
-                autoFocus
-              />
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  handleFinishEdit();
-                }}
-                className="text-green-600 hover:text-green-700"
-              >
-                <Check className="w-3 h-3" />
-              </button>
-            </div>
-          ) : (
-            <>
-              <span className="text-sm truncate max-w-[100px]">{sheet.name}</span>
-              <div className="hidden group-hover:flex items-center gap-0.5 ml-1">
+    <div
+      className="flex items-center gap-1 border-b px-2 py-1 overflow-x-auto"
+      style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-primary)' }}
+    >
+      {project.sheets.map((sheet) => {
+        const isActive = currentSheetId === sheet.id;
+        return (
+          <div
+            key={sheet.id}
+            className="group flex items-center gap-1 px-3 py-1.5 rounded-t border border-b-0 cursor-pointer min-w-[80px] transition-colors"
+            style={{
+              background: isActive ? 'var(--bg-primary)' : 'var(--bg-secondary)',
+              borderColor: isActive ? 'var(--border-primary)' : 'transparent',
+              marginBottom: isActive ? '-1px' : '0',
+            }}
+            onClick={() => setCurrentSheet(sheet.id)}
+            onMouseEnter={(e) => {
+              if (!isActive) e.currentTarget.style.background = 'var(--bg-hover)';
+            }}
+            onMouseLeave={(e) => {
+              if (!isActive) e.currentTarget.style.background = 'var(--bg-secondary)';
+            }}
+          >
+            {editingSheetId === sheet.id ? (
+              <div className="flex items-center gap-1">
+                <input
+                  type="text"
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  onBlur={handleFinishEdit}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter') handleFinishEdit();
+                    if (e.key === 'Escape') {
+                      setEditingSheetId(null);
+                      setEditName('');
+                    }
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                  className="w-24 px-1 py-0.5 text-sm border rounded"
+                  style={{
+                    background: 'var(--bg-primary)',
+                    borderColor: 'var(--border-primary)',
+                    color: 'var(--text-primary)'
+                  }}
+                  autoFocus
+                />
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
-                    handleStartEdit(sheet.id, sheet.name);
+                    handleFinishEdit();
                   }}
-                  className="p-0.5 text-gray-400 hover:text-gray-600"
-                  title="이름 변경"
+                  style={{ color: 'var(--primary-green)' }}
                 >
-                  <Edit2 className="w-3 h-3" />
+                  <Check className="w-3 h-3" />
                 </button>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    duplicateSheet(project.id, sheet.id);
-                  }}
-                  className="p-0.5 text-gray-400 hover:text-gray-600"
-                  title="복제"
-                >
-                  <Copy className="w-3 h-3" />
-                </button>
-                {project.sheets.length > 1 && (
+              </div>
+            ) : (
+              <>
+                <span className="text-sm truncate max-w-[100px]" style={{ color: 'var(--text-primary)' }}>
+                  {sheet.name}
+                </span>
+                <div className="hidden group-hover:flex items-center gap-0.5 ml-1">
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      handleDeleteSheet(sheet.id, sheet.name);
+                      handleStartEdit(sheet.id, sheet.name);
                     }}
-                    className="p-0.5 text-gray-400 hover:text-red-500"
-                    title="삭제"
+                    className="p-0.5 transition-colors"
+                    style={{ color: 'var(--text-tertiary)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
+                    title="이름 변경"
                   >
-                    <X className="w-3 h-3" />
+                    <Edit2 className="w-3 h-3" />
                   </button>
-                )}
-              </div>
-            </>
-          )}
-        </div>
-      ))}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      duplicateSheet(project.id, sheet.id);
+                    }}
+                    className="p-0.5 transition-colors"
+                    style={{ color: 'var(--text-tertiary)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
+                    title="복제"
+                  >
+                    <Copy className="w-3 h-3" />
+                  </button>
+                  {project.sheets.length > 1 && (
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDeleteSheet(sheet.id, sheet.name);
+                      }}
+                      className="p-0.5 transition-colors"
+                      style={{ color: 'var(--text-tertiary)' }}
+                      onMouseEnter={(e) => e.currentTarget.style.color = 'var(--error)'}
+                      onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
+                      title="삭제"
+                    >
+                      <X className="w-3 h-3" />
+                    </button>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+        );
+      })}
 
       {showNewSheet ? (
         <div className="flex items-center gap-1 px-2">
@@ -152,11 +179,17 @@ export default function SheetTabs({ project }: SheetTabsProps) {
             }}
             placeholder="시트 이름"
             className="w-24 px-2 py-1 text-sm border rounded"
+            style={{
+              background: 'var(--bg-primary)',
+              borderColor: 'var(--border-primary)',
+              color: 'var(--text-primary)'
+            }}
             autoFocus
           />
           <button
             onClick={handleCreateSheet}
-            className="px-2 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+            className="px-2 py-1 text-sm rounded transition-colors"
+            style={{ background: 'var(--primary-blue)', color: 'white' }}
           >
             추가
           </button>
@@ -165,7 +198,8 @@ export default function SheetTabs({ project }: SheetTabsProps) {
               setShowNewSheet(false);
               setNewSheetName('');
             }}
-            className="px-2 py-1 text-sm bg-gray-300 rounded hover:bg-gray-400"
+            className="px-2 py-1 text-sm rounded transition-colors"
+            style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
           >
             취소
           </button>
@@ -174,14 +208,30 @@ export default function SheetTabs({ project }: SheetTabsProps) {
         <div className="flex items-center gap-1">
           <button
             onClick={() => setShowNewSheet(true)}
-            className="flex items-center gap-1 px-2 py-1.5 text-sm text-gray-500 hover:text-gray-700 hover:bg-gray-200 rounded"
+            className="flex items-center gap-1 px-2 py-1.5 text-sm rounded transition-colors"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.color = 'var(--text-primary)';
+              e.currentTarget.style.background = 'var(--bg-hover)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+              e.currentTarget.style.background = 'transparent';
+            }}
             title="빈 시트 추가"
           >
             <Plus className="w-4 h-4" />
           </button>
           <button
             onClick={() => setShowTemplateSelector(true)}
-            className="flex items-center gap-1 px-2 py-1.5 text-sm text-blue-500 hover:text-blue-700 hover:bg-blue-50 rounded"
+            className="flex items-center gap-1 px-2 py-1.5 text-sm rounded transition-colors"
+            style={{ color: 'var(--primary-blue)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--primary-blue-light)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+            }}
             title="템플릿에서 추가"
           >
             <LayoutTemplate className="w-4 h-4" />

@@ -14,12 +14,14 @@ import Sidebar from '@/components/Sidebar';
 import SheetTabs from '@/components/SheetTabs';
 import SheetTable from '@/components/SheetTable';
 import FormulaHelper from '@/components/FormulaHelper';
+import BalanceValidator from '@/components/BalanceValidator';
+import DifficultyCurve from '@/components/DifficultyCurve';
 import GrowthCurveChart from '@/components/GrowthCurveChart';
 import OnboardingGuide, { useOnboardingStatus } from '@/components/OnboardingGuide';
 import Calculator from '@/components/Calculator';
 import ComparisonChart from '@/components/ComparisonChart';
 import ReferencesModal from '@/components/ReferencesModal';
-import { FileSpreadsheet, Plus, X, ArrowRight, Loader2 } from 'lucide-react';
+import { FileSpreadsheet, Plus, X, ArrowRight, Loader2, FunctionSquare, Shield, TrendingUp } from 'lucide-react';
 
 export default function Home() {
   const {
@@ -36,6 +38,10 @@ export default function Home() {
   const [showCalculator, setShowCalculator] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
   const [showReferences, setShowReferences] = useState(false);
+  // 각 도구 패널 개별 토글 상태
+  const [showFormulaHelper, setShowFormulaHelper] = useState(false);
+  const [showBalanceValidator, setShowBalanceValidator] = useState(false);
+  const [showDifficultyCurve, setShowDifficultyCurve] = useState(false);
   const { showOnboarding, setShowOnboarding } = useOnboardingStatus();
 
   const currentProject = getCurrentProject();
@@ -123,10 +129,10 @@ export default function Home() {
             <SheetTabs project={currentProject} />
 
             {/* 시트 내용 */}
-            <div className="flex-1 overflow-hidden flex">
+            <div className="flex-1 flex overflow-hidden">
               {currentSheet ? (
-                <div className="flex-1 flex flex-col p-6 overflow-hidden">
-                  <div className="flex items-center justify-between mb-5">
+                <div className="flex-1 flex flex-col p-6 pb-0 min-h-0 overflow-hidden">
+                  <div className="flex items-center justify-between mb-5 flex-shrink-0">
                     <div>
                       <h2 className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{currentSheet.name}</h2>
                       <p className="text-sm mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
@@ -135,14 +141,13 @@ export default function Home() {
                     </div>
                   </div>
 
-                  <div className="flex-1 overflow-hidden">
-                    <SheetTable projectId={currentProject.id} sheet={currentSheet} />
+                  <div className="flex-1 min-h-0 overflow-hidden">
+                    <SheetTable
+                      projectId={currentProject.id}
+                      sheet={currentSheet}
+                    />
                   </div>
 
-                  {/* 수식 도우미 */}
-                  <div className="mt-4">
-                    <FormulaHelper />
-                  </div>
                 </div>
               ) : (
                 <div className="flex-1 flex flex-col items-center justify-center">
@@ -185,6 +190,14 @@ export default function Home() {
                   <FeatureItem
                     title="게임 특화 수식"
                     desc="DAMAGE, DPS, TTK, EHP 등"
+                  />
+                  <FeatureItem
+                    title="밸런스 검증기"
+                    desc="역할별 DPS/EHP 자동 검증"
+                  />
+                  <FeatureItem
+                    title="난이도 곡선"
+                    desc="벽 구간, 마일스톤 설계"
                   />
                   <FeatureItem
                     title="시트 간 연동"
@@ -258,6 +271,131 @@ export default function Home() {
       {/* 참고 자료 모달 */}
       {showReferences && (
         <ReferencesModal onClose={() => setShowReferences(false)} />
+      )}
+
+      {/* 하단 탭과 패널 - 각각 독립적 */}
+      {currentSheet && (
+        <>
+          {/* 패널들 - 브라우저 하단에서 바로 시작 */}
+          {/* 수식 도우미 패널 */}
+          <div
+            className="fixed bottom-0 z-40 transition-all duration-300 ease-out pointer-events-auto"
+            style={{
+              left: 'calc(256px + (100% - 256px) * 0.167 - min(250px, 15vw))',
+              width: 'min(500px, calc(30vw))',
+              height: showFormulaHelper ? '60vh' : 0,
+              opacity: showFormulaHelper ? 1 : 0,
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              className="flex flex-col h-full"
+              style={{
+                background: 'var(--bg-primary)',
+                borderTop: '1px solid var(--border-primary)',
+                borderLeft: '1px solid var(--border-primary)',
+                borderRight: '1px solid var(--border-primary)',
+                borderRadius: '12px 12px 0 0',
+                boxShadow: 'var(--shadow-lg)',
+              }}
+            >
+              <FormulaHelper onClose={() => setShowFormulaHelper(false)} />
+            </div>
+          </div>
+
+          {/* 밸런스 검증기 패널 */}
+          <div
+            className="fixed bottom-0 z-40 transition-all duration-300 ease-out pointer-events-auto"
+            style={{
+              left: 'calc(256px + (100% - 256px) * 0.5 - min(250px, 15vw))',
+              width: 'min(500px, calc(30vw))',
+              height: showBalanceValidator ? '60vh' : 0,
+              opacity: showBalanceValidator ? 1 : 0,
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              className="flex flex-col h-full"
+              style={{
+                background: 'var(--bg-primary)',
+                borderTop: '1px solid var(--border-primary)',
+                borderLeft: '1px solid var(--border-primary)',
+                borderRight: '1px solid var(--border-primary)',
+                borderRadius: '12px 12px 0 0',
+                boxShadow: 'var(--shadow-lg)',
+              }}
+            >
+              <BalanceValidator onClose={() => setShowBalanceValidator(false)} />
+            </div>
+          </div>
+
+          {/* 난이도 곡선 패널 */}
+          <div
+            className="fixed bottom-0 z-40 transition-all duration-300 ease-out pointer-events-auto"
+            style={{
+              left: 'calc(256px + (100% - 256px) * 0.833 - min(250px, 15vw))',
+              width: 'min(500px, calc(30vw))',
+              height: showDifficultyCurve ? '60vh' : 0,
+              opacity: showDifficultyCurve ? 1 : 0,
+              overflow: 'hidden',
+            }}
+          >
+            <div
+              className="flex flex-col h-full"
+              style={{
+                background: 'var(--bg-primary)',
+                borderTop: '1px solid var(--border-primary)',
+                borderLeft: '1px solid var(--border-primary)',
+                borderRight: '1px solid var(--border-primary)',
+                borderRadius: '12px 12px 0 0',
+                boxShadow: 'var(--shadow-lg)',
+              }}
+            >
+              <DifficultyCurve onClose={() => setShowDifficultyCurve(false)} />
+            </div>
+          </div>
+
+          {/* 버튼들 - Liquid Glass 스타일 */}
+          <div className="fixed bottom-0 left-64 right-0 z-50 pointer-events-none">
+            <div className="flex justify-around pointer-events-auto">
+              <button
+                onClick={() => setShowFormulaHelper(!showFormulaHelper)}
+                className={`flex items-center gap-2 px-6 py-2.5 text-base font-semibold transition-all rounded-t-xl ${
+                  showFormulaHelper
+                    ? 'liquid-glass-active text-[var(--primary-blue)]'
+                    : 'bg-[var(--bg-primary)] text-[var(--text-secondary)] border-t border-l border-r border-[var(--border-primary)]'
+                }`}
+              >
+                <FunctionSquare className="w-5 h-5" />
+                수식 도우미
+              </button>
+
+              <button
+                onClick={() => setShowBalanceValidator(!showBalanceValidator)}
+                className={`flex items-center gap-2 px-6 py-2.5 text-base font-semibold transition-all rounded-t-xl ${
+                  showBalanceValidator
+                    ? 'liquid-glass-active text-[var(--primary-green)]'
+                    : 'bg-[var(--bg-primary)] text-[var(--text-secondary)] border-t border-l border-r border-[var(--border-primary)]'
+                }`}
+              >
+                <Shield className="w-5 h-5" />
+                밸런스 검증기
+              </button>
+
+              <button
+                onClick={() => setShowDifficultyCurve(!showDifficultyCurve)}
+                className={`flex items-center gap-2 px-6 py-2.5 text-base font-semibold transition-all rounded-t-xl ${
+                  showDifficultyCurve
+                    ? 'liquid-glass-active text-[var(--primary-purple)]'
+                    : 'bg-[var(--bg-primary)] text-[var(--text-secondary)] border-t border-l border-r border-[var(--border-primary)]'
+                }`}
+              >
+                <TrendingUp className="w-5 h-5" />
+                난이도 곡선
+              </button>
+            </div>
+          </div>
+        </>
       )}
     </div>
   );

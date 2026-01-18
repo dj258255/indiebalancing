@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import {
   FolderPlus,
   FileSpreadsheet,
@@ -17,9 +17,13 @@ import {
   Calculator,
   PieChart,
   BookOpen,
+  GripVertical,
+  FileJson,
+  FileText,
+  ChevronUp,
 } from 'lucide-react';
 import { useProjectStore } from '@/stores/projectStore';
-import { exportToJSON, importFromJSON, saveAllProjects } from '@/lib/storage';
+import { exportToJSON, importFromJSON, exportSheetToCSV, saveAllProjects, deleteProjectFromDB } from '@/lib/storage';
 import { downloadFile, formatRelativeTime } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import ThemeToggle from '@/components/ThemeToggle';
@@ -46,6 +50,7 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
     loadProjects,
     selectedRows,
     clearSelectedRows,
+    reorderSheets,
   } = useProjectStore();
 
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
@@ -53,6 +58,29 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
   const [editName, setEditName] = useState('');
   const [showNewProject, setShowNewProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
+  const [showExportMenu, setShowExportMenu] = useState(false);
+  const [showImportMenu, setShowImportMenu] = useState(false);
+  const exportMenuRef = useRef<HTMLDivElement>(null);
+  const importMenuRef = useRef<HTMLDivElement>(null);
+
+  // 메뉴 외부 클릭 시 닫기
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
+        setShowExportMenu(false);
+      }
+      if (importMenuRef.current && !importMenuRef.current.contains(e.target as Node)) {
+        setShowImportMenu(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  // 드래그 앤 드롭 상태
+  const [draggedSheetIndex, setDraggedSheetIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [dragProjectId, setDragProjectId] = useState<string | null>(null);
 
   const toggleProject = (projectId: string) => {
     const newExpanded = new Set(expandedProjects);
@@ -86,12 +114,28 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
     setEditName('');
   };
 
-  const handleExport = () => {
+  // 현재 프로젝트와 시트 가져오기
+  const currentProject = projects.find(p => p.id === currentProjectId);
+  const currentSheet = currentProject?.sheets.find(s => s.id === currentSheetId);
+
+  const handleExportJSON = () => {
     const json = exportToJSON(projects);
     downloadFile(json, `indiebalancing-${new Date().toISOString().slice(0, 10)}.json`);
+    setShowExportMenu(false);
   };
 
-  const handleImport = () => {
+  const handleExportCSV = () => {
+    if (!currentSheet) {
+      alert('내보낼 시트를 먼저 선택해주세요.');
+      return;
+    }
+    const csv = exportSheetToCSV(currentSheet);
+    const projectName = currentProject?.name || 'project';
+    downloadFile(csv, `${projectName}-${currentSheet.name}.csv`, 'text/csv');
+    setShowExportMenu(false);
+  };
+
+  const handleImportJSON = () => {
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = '.json';
@@ -110,6 +154,7 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
       }
     };
     input.click();
+    setShowImportMenu(false);
   };
 
   return (
@@ -256,10 +301,11 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
                           <Edit2 className="w-3.5 h-3.5" />
                         </button>
                         <button
-                          onClick={(e) => {
+                          onClick={async (e) => {
                             e.stopPropagation();
                             if (confirm(`"${project.name}" 프로젝트를 삭제하시겠습니까?`)) {
                               deleteProject(project.id);
+                              await deleteProjectFromDB(project.id);
                             }
                           }}
                           className="p-1 rounded transition-colors hover:text-red-500"
@@ -274,20 +320,57 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
 
                 {expandedProjects.has(project.id) && (
                   <div className="ml-5 mt-0.5 space-y-0.5">
-                    {project.sheets.map((sheet) => (
+                    {project.sheets.map((sheet, index) => (
                       <div
                         key={sheet.id}
+                        draggable
+                        onDragStart={(e) => {
+                          setDraggedSheetIndex(index);
+                          setDragProjectId(project.id);
+                          e.dataTransfer.effectAllowed = 'move';
+                        }}
+                        onDragEnd={() => {
+                          setDraggedSheetIndex(null);
+                          setDragOverIndex(null);
+                          setDragProjectId(null);
+                        }}
+                        onDragOver={(e) => {
+                          e.preventDefault();
+                          if (dragProjectId === project.id) {
+                            setDragOverIndex(index);
+                          }
+                        }}
+                        onDragLeave={() => {
+                          setDragOverIndex(null);
+                        }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          if (draggedSheetIndex !== null && dragProjectId === project.id && draggedSheetIndex !== index) {
+                            reorderSheets(project.id, draggedSheetIndex, index);
+                          }
+                          setDraggedSheetIndex(null);
+                          setDragOverIndex(null);
+                          setDragProjectId(null);
+                        }}
                         onClick={() => {
                           setCurrentProject(project.id);
                           setCurrentSheet(sheet.id);
                         }}
-                        className="flex items-center gap-2 px-2 py-1.5 rounded-lg cursor-pointer text-sm transition-colors"
+                        className={cn(
+                          "flex items-center gap-1 px-2 py-1.5 rounded-lg cursor-pointer text-sm transition-colors group",
+                          dragOverIndex === index && dragProjectId === project.id && "ring-2 ring-blue-400"
+                        )}
                         style={{
-                          background: currentSheetId === sheet.id ? 'var(--accent)' : 'transparent',
+                          background: currentSheetId === sheet.id ? 'var(--accent)' :
+                                     (draggedSheetIndex === index && dragProjectId === project.id) ? 'var(--bg-tertiary)' : 'transparent',
                           color: currentSheetId === sheet.id ? 'white' : 'var(--text-tertiary)',
+                          opacity: draggedSheetIndex === index && dragProjectId === project.id ? 0.5 : 1,
                         }}
                       >
-                        <FileSpreadsheet className="w-4 h-4" />
+                        <GripVertical
+                          className="w-3 h-3 opacity-0 group-hover:opacity-50 cursor-grab active:cursor-grabbing flex-shrink-0"
+                        />
+                        <FileSpreadsheet className="w-4 h-4 flex-shrink-0" />
                         <span className="truncate">{sheet.name}</span>
                       </div>
                     ))}
@@ -341,30 +424,121 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
       {/* 데이터 */}
       <div className="border-t p-2" style={{ borderColor: 'var(--border-primary)' }}>
         <div className="flex gap-2">
-          <button
-            onClick={handleExport}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-colors"
-            style={{
-              borderColor: 'var(--border-primary)',
-              color: 'var(--text-secondary)',
-              background: 'var(--bg-primary)'
-            }}
-          >
-            <Download className="w-4 h-4" />
-            내보내기
-          </button>
-          <button
-            onClick={handleImport}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-colors"
-            style={{
-              borderColor: 'var(--border-primary)',
-              color: 'var(--text-secondary)',
-              background: 'var(--bg-primary)'
-            }}
-          >
-            <Upload className="w-4 h-4" />
-            가져오기
-          </button>
+          {/* 내보내기 드롭다운 */}
+          <div className="flex-1 relative" ref={exportMenuRef}>
+            <button
+              onClick={() => {
+                setShowExportMenu(!showExportMenu);
+                setShowImportMenu(false);
+              }}
+              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-colors"
+              style={{
+                borderColor: 'var(--border-primary)',
+                color: 'var(--text-secondary)',
+                background: 'var(--bg-primary)'
+              }}
+            >
+              <Download className="w-4 h-4" />
+              내보내기
+              <ChevronUp className={`w-3 h-3 transition-transform ${showExportMenu ? '' : 'rotate-180'}`} />
+            </button>
+            {showExportMenu && (
+              <div
+                className="absolute bottom-full left-0 right-0 mb-1 rounded-lg border shadow-lg overflow-hidden animate-fadeIn"
+                style={{
+                  background: 'var(--bg-primary)',
+                  borderColor: 'var(--border-primary)'
+                }}
+              >
+                <button
+                  onClick={handleExportJSON}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm transition-colors text-left"
+                  style={{ color: 'var(--text-secondary)' }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  <FileJson className="w-4 h-4" style={{ color: 'var(--primary-blue)' }} />
+                  <div>
+                    <div className="font-medium">JSON 내보내기</div>
+                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>모든 프로젝트 · 수식 포함</div>
+                  </div>
+                </button>
+                <div style={{ borderTop: '1px solid var(--border-primary)' }} />
+                <button
+                  onClick={handleExportCSV}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm transition-colors text-left"
+                  style={{
+                    color: currentSheet ? 'var(--text-secondary)' : 'var(--text-tertiary)',
+                    opacity: currentSheet ? 1 : 0.6
+                  }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  <FileText className="w-4 h-4" style={{ color: 'var(--success)' }} />
+                  <div>
+                    <div className="font-medium">CSV 내보내기</div>
+                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                      {currentSheet ? `현재 시트만 · 계산된 값` : '시트를 먼저 선택하세요'}
+                    </div>
+                  </div>
+                </button>
+              </div>
+            )}
+          </div>
+
+          {/* 가져오기 드롭다운 */}
+          <div className="flex-1 relative" ref={importMenuRef}>
+            <button
+              onClick={() => {
+                setShowImportMenu(!showImportMenu);
+                setShowExportMenu(false);
+              }}
+              className="w-full flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-colors"
+              style={{
+                borderColor: 'var(--border-primary)',
+                color: 'var(--text-secondary)',
+                background: 'var(--bg-primary)'
+              }}
+            >
+              <Upload className="w-4 h-4" />
+              가져오기
+              <ChevronUp className={`w-3 h-3 transition-transform ${showImportMenu ? '' : 'rotate-180'}`} />
+            </button>
+            {showImportMenu && (
+              <div
+                className="absolute bottom-full left-0 right-0 mb-1 rounded-lg border shadow-lg overflow-hidden animate-fadeIn"
+                style={{
+                  background: 'var(--bg-primary)',
+                  borderColor: 'var(--border-primary)'
+                }}
+              >
+                <button
+                  onClick={handleImportJSON}
+                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm transition-colors text-left"
+                  style={{ color: 'var(--text-secondary)' }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                >
+                  <FileJson className="w-4 h-4" style={{ color: 'var(--primary-blue)' }} />
+                  <div>
+                    <div className="font-medium">JSON 가져오기</div>
+                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>프로젝트 추가 · 기존 데이터 유지</div>
+                  </div>
+                </button>
+                <div style={{ borderTop: '1px solid var(--border-primary)' }} />
+                <div
+                  className="flex items-center gap-2 px-3 py-2.5 text-sm"
+                  style={{ color: 'var(--text-tertiary)', opacity: 0.6 }}
+                >
+                  <FileText className="w-4 h-4" />
+                  <div>
+                    <div className="font-medium">CSV 가져오기</div>
+                    <div className="text-xs">추후 지원 예정</div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -33,6 +33,7 @@ interface ProjectState {
   deleteSheet: (projectId: string, sheetId: string) => void;
   setCurrentSheet: (id: string | null) => void;
   duplicateSheet: (projectId: string, sheetId: string) => string;
+  reorderSheets: (projectId: string, fromIndex: number, toIndex: number) => void;
 
   // 컬럼 액션
   addColumn: (projectId: string, sheetId: string, column: Omit<Column, 'id'>) => string;
@@ -206,6 +207,19 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }));
 
     return newId;
+  },
+
+  reorderSheets: (projectId, fromIndex, toIndex) => {
+    const now = Date.now();
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id !== projectId) return p;
+        const sheets = [...p.sheets];
+        const [removed] = sheets.splice(fromIndex, 1);
+        sheets.splice(toIndex, 0, removed);
+        return { ...p, sheets, updatedAt: now };
+      }),
+    }));
   },
 
   // 컬럼 액션

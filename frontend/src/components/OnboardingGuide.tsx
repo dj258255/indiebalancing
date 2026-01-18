@@ -9,6 +9,12 @@ import {
   Lightbulb,
   MousePointer,
   Keyboard,
+  Target,
+  TrendingUp,
+  Coins,
+  Sparkles,
+  Layers,
+  Swords,
 } from 'lucide-react';
 
 interface OnboardingGuideProps {
@@ -26,7 +32,78 @@ interface TutorialStep {
     result: string;
   };
   tip?: string;
+  isGuidelinesStep?: boolean;
 }
+
+// 권장 수치 가이드라인 데이터
+const GUIDELINES_DATA = [
+  {
+    id: 'ttk',
+    icon: Swords,
+    title: 'TTK (Time To Kill)',
+    color: 'red',
+    items: [
+      { label: 'FPS/슈터', value: '0.3~1.5초', desc: '빠른 전투, 높은 긴장감' },
+      { label: 'MOBA', value: '3~8초', desc: '팀 협동 여유' },
+      { label: 'MMO/RPG', value: '5~30초', desc: '전략적 스킬 사용' },
+    ],
+  },
+  {
+    id: 'damage',
+    icon: Target,
+    title: '데미지 공식',
+    color: 'orange',
+    items: [
+      { label: '최소 데미지', value: '공격력의 10~20%', desc: '0 데미지 방지' },
+      { label: '방어력 감소율', value: '50~70% 상한', desc: '탱커도 죽을 수 있게' },
+      { label: 'EHP 비율', value: '탱커 2~3배', desc: '탱커가 딜러보다 버티는 시간' },
+    ],
+  },
+  {
+    id: 'growth',
+    icon: TrendingUp,
+    title: '성장 곡선',
+    color: 'green',
+    items: [
+      { label: '선형 (Linear)', value: '레벨당 +5~10%', desc: '예측 쉬움, 후반 약함' },
+      { label: '지수 (Exponential)', value: '1.05~1.15 배율', desc: '후반 급성장' },
+      { label: '로그 (Logarithmic)', value: 'ln(레벨) 계수', desc: '초반 빠름, 후반 완만' },
+    ],
+  },
+  {
+    id: 'economy',
+    icon: Coins,
+    title: '경제 시스템',
+    color: 'yellow',
+    items: [
+      { label: 'Faucet-Sink 비율', value: '획득:소비 = 1:0.7~0.9', desc: '약간의 잉여 허용' },
+      { label: '화폐 교환율', value: '프리미엄 1 = 일반 100', desc: '과금 가치 체감' },
+      { label: '인플레이션율', value: '주당 2~5%', desc: '장기 운영 기준' },
+    ],
+  },
+  {
+    id: 'gacha',
+    icon: Sparkles,
+    title: '가챠/뽑기',
+    color: 'purple',
+    items: [
+      { label: '최고 등급 확률', value: '0.5~3%', desc: '희귀성 유지' },
+      { label: '천장 (Pity)', value: '70~100회', desc: '업계 표준' },
+      { label: '기대 비용', value: '최고 1개당 $50~100', desc: '과금 설계 기준' },
+    ],
+  },
+  {
+    id: 'flow',
+    icon: Layers,
+    title: '몰입 이론 (Flow)',
+    color: 'blue',
+    items: [
+      { label: '난이도 증가율', value: '스테이지당 5~15%', desc: '점진적 도전' },
+      { label: '실패 허용 횟수', value: '2~3회', desc: '좌절 전 재시도' },
+      { label: '보상 간격', value: '3~5분', desc: '작은 성취감 유지' },
+    ],
+  },
+];
 
 const TUTORIAL_STEPS: TutorialStep[] = [
   {
@@ -34,6 +111,13 @@ const TUTORIAL_STEPS: TutorialStep[] = [
     title: '게임 밸런스 툴에 오신 걸 환영합니다',
     description: '이 툴은 게임 기획자가 캐릭터 스탯, 무기 데미지, 레벨 테이블 등을 관리하고 계산하는 도구입니다.',
     tip: '엑셀처럼 사용하되, 게임에 특화된 수식을 바로 쓸 수 있어요.',
+  },
+  {
+    id: 'guidelines',
+    title: '권장 수치 가이드',
+    description: '게임 밸런싱에 자주 사용되는 업계 표준 수치들입니다. 작업할 때 참고하세요.',
+    tip: '이 가이드는 상단 메뉴의 "레퍼런스"에서 언제든 다시 볼 수 있어요.',
+    isGuidelinesStep: true,
   },
   {
     id: 'create-project',
@@ -145,31 +229,43 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
   const step = TUTORIAL_STEPS[currentStep];
 
   return (
-    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-50 p-4">
-      <div className="bg-white rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden">
+    <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: 'rgba(0, 0, 0, 0.6)' }}>
+      <div className="rounded-2xl w-full max-w-2xl shadow-2xl overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
         {/* 진행 표시 바 */}
-        <div className="h-1 bg-gray-200">
+        <div className="h-1" style={{ background: 'var(--bg-tertiary)' }}>
           <div
-            className="h-full bg-blue-500 transition-all duration-300"
-            style={{ width: `${((currentStep + 1) / TUTORIAL_STEPS.length) * 100}%` }}
+            className="h-full transition-all duration-300"
+            style={{
+              width: `${((currentStep + 1) / TUTORIAL_STEPS.length) * 100}%`,
+              background: 'var(--primary-blue)'
+            }}
           />
         </div>
 
         {/* 헤더 */}
-        <div className="flex items-center justify-between px-6 py-4 border-b bg-gray-50">
+        <div
+          className="flex items-center justify-between px-6 py-4 border-b"
+          style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-primary)' }}
+        >
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-1 text-sm text-gray-500">
+            <div className="flex items-center gap-1 text-sm" style={{ color: 'var(--text-tertiary)' }}>
               {TUTORIAL_STEPS.map((_, index) => (
                 <button
                   key={index}
                   onClick={() => setCurrentStep(index)}
-                  className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${
-                    index === currentStep
-                      ? 'bg-blue-500 text-white'
+                  className="w-8 h-8 rounded-full flex items-center justify-center transition-colors"
+                  style={{
+                    background: index === currentStep
+                      ? 'var(--primary-blue)'
                       : completedSteps.has(index)
-                      ? 'bg-green-100 text-green-600'
-                      : 'bg-gray-200 text-gray-500 hover:bg-gray-300'
-                  }`}
+                      ? 'var(--success-light)'
+                      : 'var(--bg-hover)',
+                    color: index === currentStep
+                      ? 'white'
+                      : completedSteps.has(index)
+                      ? 'var(--success)'
+                      : 'var(--text-tertiary)'
+                  }}
                 >
                   {completedSteps.has(index) ? (
                     <CheckCircle2 className="w-4 h-4" />
@@ -182,36 +278,83 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
           </div>
           <button
             onClick={handleSkip}
-            className="text-sm text-gray-400 hover:text-gray-600"
+            className="text-sm transition-colors"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
+            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
           >
             건너뛰기
           </button>
         </div>
 
         {/* 컨텐츠 */}
-        <div className="px-8 py-6 min-h-[350px]">
-          <h2 className="text-xl font-bold text-gray-800 mb-3">{step.title}</h2>
-          <p className="text-gray-600 mb-6">{step.description}</p>
+        <div className={`px-8 py-6 ${step.isGuidelinesStep ? 'min-h-[450px]' : 'min-h-[350px]'}`}>
+          <h2 className="text-xl font-bold mb-3" style={{ color: 'var(--text-primary)' }}>{step.title}</h2>
+          <p className="mb-6" style={{ color: 'var(--text-secondary)' }}>{step.description}</p>
+
+          {/* 권장 수치 가이드라인 UI */}
+          {step.isGuidelinesStep && (
+            <div className="grid grid-cols-2 gap-3 mb-4 max-h-[280px] overflow-y-auto pr-2">
+              {GUIDELINES_DATA.map((category) => {
+                const IconComponent = category.icon;
+                const colorStyles: Record<string, { bg: string; border: string; text: string; icon: string }> = {
+                  red: { bg: 'var(--error-light)', border: 'var(--error)', text: 'var(--error)', icon: 'var(--error)' },
+                  orange: { bg: 'var(--warning-light)', border: 'var(--warning)', text: 'var(--warning)', icon: 'var(--warning)' },
+                  green: { bg: 'var(--success-light)', border: 'var(--success)', text: 'var(--success)', icon: 'var(--success)' },
+                  yellow: { bg: 'var(--warning-light)', border: 'var(--warning)', text: 'var(--warning)', icon: 'var(--warning)' },
+                  purple: { bg: 'var(--primary-purple-light)', border: 'var(--primary-purple)', text: 'var(--primary-purple)', icon: 'var(--primary-purple)' },
+                  blue: { bg: 'var(--primary-blue-light)', border: 'var(--primary-blue)', text: 'var(--primary-blue)', icon: 'var(--primary-blue)' },
+                };
+                const style = colorStyles[category.color];
+                return (
+                  <div
+                    key={category.id}
+                    className="p-3 rounded-lg border"
+                    style={{ background: style.bg, borderColor: style.border }}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <IconComponent className="w-4 h-4" style={{ color: style.icon }} />
+                      <span className="font-semibold text-sm" style={{ color: style.text }}>{category.title}</span>
+                    </div>
+                    <div className="space-y-1">
+                      {category.items.map((item, idx) => (
+                        <div key={idx} className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                          <span className="font-medium">{item.label}:</span>{' '}
+                          <span className="opacity-90">{item.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
 
           {/* 액션 가이드 */}
           {step.action && (
-            <div className="flex items-center gap-2 mb-4 p-3 bg-blue-50 rounded-lg">
-              <MousePointer className="w-5 h-5 text-blue-500 flex-shrink-0" />
-              <span className="text-sm text-blue-700 font-medium">{step.action}</span>
+            <div
+              className="flex items-center gap-2 mb-4 p-3 rounded-lg"
+              style={{ background: 'var(--primary-blue-light)' }}
+            >
+              <MousePointer className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--primary-blue)' }} />
+              <span className="text-sm font-medium" style={{ color: 'var(--primary-blue)' }}>{step.action}</span>
             </div>
           )}
 
           {/* 예제 */}
           {step.example && (
-            <div className="bg-gray-900 rounded-lg p-4 mb-4 font-mono text-sm">
+            <div
+              className="rounded-lg p-4 mb-4 font-mono text-sm"
+              style={{ background: 'var(--bg-sidebar)' }}
+            >
               {step.example.before && (
-                <div className="text-gray-400 mb-2 text-xs">{`// ${step.example.before}`}</div>
+                <div className="mb-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>{`// ${step.example.before}`}</div>
               )}
               <div className="flex items-center gap-2 mb-2">
-                <Keyboard className="w-4 h-4 text-gray-500" />
-                <span className="text-green-400">{step.example.input}</span>
+                <Keyboard className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+                <span style={{ color: 'var(--success)' }}>{step.example.input}</span>
               </div>
-              <div className="flex items-center gap-2 text-yellow-300">
+              <div className="flex items-center gap-2" style={{ color: 'var(--warning)' }}>
                 <Play className="w-4 h-4" />
                 <span>→ {step.example.result}</span>
               </div>
@@ -220,23 +363,32 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
 
           {/* 팁 */}
           {step.tip && (
-            <div className="flex items-start gap-2 p-3 bg-amber-50 rounded-lg">
-              <Lightbulb className="w-5 h-5 text-amber-500 flex-shrink-0 mt-0.5" />
-              <span className="text-sm text-amber-700">{step.tip}</span>
+            <div
+              className="flex items-start gap-2 p-3 rounded-lg"
+              style={{ background: 'var(--warning-light)' }}
+            >
+              <Lightbulb className="w-5 h-5 flex-shrink-0 mt-0.5" style={{ color: 'var(--warning)' }} />
+              <span className="text-sm" style={{ color: 'var(--warning)' }}>{step.tip}</span>
             </div>
           )}
         </div>
 
         {/* 푸터 */}
-        <div className="px-6 py-4 border-t bg-gray-50 flex items-center justify-between">
-          <div className="text-sm text-gray-500">
+        <div
+          className="px-6 py-4 border-t flex items-center justify-between"
+          style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-primary)' }}
+        >
+          <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
             {currentStep + 1} / {TUTORIAL_STEPS.length}
           </div>
           <div className="flex items-center gap-2">
             {currentStep > 0 && (
               <button
                 onClick={handlePrev}
-                className="flex items-center gap-1 px-4 py-2 text-gray-600 hover:bg-gray-200 rounded-lg"
+                className="flex items-center gap-1 px-4 py-2 rounded-lg transition-colors"
+                style={{ color: 'var(--text-secondary)' }}
+                onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+                onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
                 <ChevronLeft className="w-4 h-4" />
                 이전
@@ -244,7 +396,10 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
             )}
             <button
               onClick={handleNext}
-              className="flex items-center gap-1 px-5 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              className="flex items-center gap-1 px-5 py-2 rounded-lg transition-colors"
+              style={{ background: 'var(--primary-blue)', color: 'white' }}
+              onMouseEnter={(e) => e.currentTarget.style.opacity = '0.9'}
+              onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
             >
               {currentStep === TUTORIAL_STEPS.length - 1 ? (
                 '시작하기'
