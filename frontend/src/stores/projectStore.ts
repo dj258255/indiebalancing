@@ -122,8 +122,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       id,
       name,
       columns: [
-        { id: uuidv4(), name: 'ID', type: 'text' as ColumnType, width: 80 },
-        { id: uuidv4(), name: '이름', type: 'text' as ColumnType, width: 150 },
+        { id: uuidv4(), name: 'ID', type: 'general' as ColumnType, width: 80 },
+        { id: uuidv4(), name: '이름', type: 'general' as ColumnType, width: 150 },
       ],
       rows: [],
       createdAt: now,

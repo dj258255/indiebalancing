@@ -6,6 +6,13 @@ import { cn } from '@/lib/utils';
 import { DPS, TTK, EHP, DAMAGE, SCALE } from '@/lib/formulaEngine';
 import { useProjectStore } from '@/stores/projectStore';
 
+// 행 표시명 생성 헬퍼
+function getRowDisplayName(rowId: string, currentSheet: { name: string; rows: { id: string }[] } | undefined): string {
+  if (!currentSheet) return '행';
+  const rowIndex = currentSheet.rows.findIndex(r => r.id === rowId);
+  return `${currentSheet.name} - ${rowIndex + 1}행`;
+}
+
 interface CalculatorProps {
   onClose: () => void;
 }
@@ -104,7 +111,11 @@ const CURVE_TYPE_HELP: Record<string, { name: string; formula: string; descripti
 export default function Calculator({ onClose }: CalculatorProps) {
   const [activeTab, setActiveTab] = useState<CalculatorTab>('dps');
   const [showHelp, setShowHelp] = useState(false);
-  const { selectedRows, clearSelectedRows, deselectRow } = useProjectStore();
+  const { selectedRows, clearSelectedRows, deselectRow, projects, currentProjectId, currentSheetId } = useProjectStore();
+
+  // 현재 시트 가져오기
+  const currentProject = projects.find(p => p.id === currentProjectId);
+  const currentSheet = currentProject?.sheets.find(s => s.id === currentSheetId);
 
   // DPS 계산기 상태
   const [dpsInputs, setDpsInputs] = useState({
@@ -335,7 +346,7 @@ export default function Calculator({ onClose }: CalculatorProps) {
                     borderColor: 'var(--border-primary)'
                   }}
                 >
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{row.name}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{getRowDisplayName(row.rowId, currentSheet)}</span>
                   <button
                     onClick={() => loadFromSelectedRow(row)}
                     className="px-2 py-0.5 rounded text-xs transition-colors"

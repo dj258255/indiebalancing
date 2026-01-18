@@ -12,6 +12,9 @@ import {
   Target,
   Zap,
   Play,
+  HelpCircle,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -186,6 +189,7 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
   ]);
   const [selectedUnits, setSelectedUnits] = useState<[number, number]>([0, 0]);
   const [simResult, setSimResult] = useState<{ winner: string; rounds: number; hpRemaining: number } | null>(null);
+  const [showHelp, setShowHelp] = useState(false);
 
   const addUnit = () => {
     setUnits([
@@ -267,15 +271,25 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
             {overallBalance.isBalanced ? '양호' : '조정 필요'}
           </span>
         </div>
-        {onClose && (
+        <div className="flex items-center gap-1">
           <button
-            onClick={onClose}
+            onClick={() => setShowHelp(!showHelp)}
             className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-            style={{ color: 'var(--text-tertiary)' }}
+            style={{ color: showHelp ? 'var(--accent)' : 'var(--text-tertiary)' }}
+            title="사용법 보기"
           >
-            <X className="w-4 h-4" />
+            <HelpCircle className="w-4 h-4" />
           </button>
-        )}
+          {onClose && (
+            <button
+              onClick={onClose}
+              className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              <X className="w-4 h-4" />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="p-3 pb-12 space-y-3 overflow-y-auto flex-1">
@@ -544,21 +558,139 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
           </div>
 
           {/* 도움말 */}
-          <div
-            className="rounded-lg p-3 text-xs border"
-            style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-primary)' }}
-          >
-            <div className="font-medium mb-1 flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
-              <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px]" style={{ background: 'var(--accent)', color: 'white' }}>?</span>
-              도움말
+          {showHelp && (
+            <div
+              className="rounded-lg p-4 border space-y-4 animate-fadeIn"
+              style={{ background: 'var(--bg-secondary)', borderColor: 'var(--accent)' }}
+            >
+              <div className="flex items-center gap-2">
+                <HelpCircle className="w-5 h-5" style={{ color: 'var(--accent)' }} />
+                <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
+                  밸런스 검증기 사용법
+                </span>
+              </div>
+
+              {/* 개요 */}
+              <div className="space-y-1">
+                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>개요</div>
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  밸런스 검증기는 게임 캐릭터/유닛의 DPS(초당 데미지)와 EHP(유효 체력)를 분석하여
+                  역할에 맞는 밸런스를 갖추고 있는지 검증합니다.
+                </p>
+              </div>
+
+              {/* 사용 방법 */}
+              <div className="space-y-2">
+                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>사용 방법</div>
+                <div className="space-y-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  <div className="flex gap-2">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
+                          style={{ background: 'var(--accent)', color: 'white' }}>1</span>
+                    <span><strong>유닛 추가:</strong> "유닛 추가" 버튼으로 비교할 캐릭터를 추가합니다.</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
+                          style={{ background: 'var(--accent)', color: 'white' }}>2</span>
+                    <span><strong>역할 설정:</strong> 탱커/딜러/서포터/밸런스 중 해당 역할을 선택합니다.</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
+                          style={{ background: 'var(--accent)', color: 'white' }}>3</span>
+                    <span><strong>스탯 입력:</strong> HP, ATK, DEF, 공속, 크리율, 크리뎀을 입력합니다.</span>
+                  </div>
+                  <div className="flex gap-2">
+                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
+                          style={{ background: 'var(--accent)', color: 'white' }}>4</span>
+                    <span><strong>결과 확인:</strong> DPS/EHP가 역할 기대치 범위에 있는지 확인합니다.</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* 역할별 기대치 설명 */}
+              <div className="space-y-2">
+                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>역할별 특성</div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
+                    <div className="flex items-center gap-1 mb-1">
+                      <Shield className="w-3 h-3" style={{ color: '#3b82f6' }} />
+                      <span className="font-medium" style={{ color: 'var(--text-primary)' }}>탱커</span>
+                    </div>
+                    <div style={{ color: 'var(--text-tertiary)' }}>
+                      EHP 180-250%, DPS 50-90%<br/>
+                      높은 생존력으로 적의 공격을 흡수
+                    </div>
+                  </div>
+                  <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
+                    <div className="flex items-center gap-1 mb-1">
+                      <Swords className="w-3 h-3" style={{ color: '#ef4444' }} />
+                      <span className="font-medium" style={{ color: 'var(--text-primary)' }}>딜러</span>
+                    </div>
+                    <div style={{ color: 'var(--text-tertiary)' }}>
+                      DPS 130-200%, EHP 60-90%<br/>
+                      높은 화력으로 적을 빠르게 제거
+                    </div>
+                  </div>
+                  <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
+                    <div className="flex items-center gap-1 mb-1">
+                      <Heart className="w-3 h-3" style={{ color: '#10b981' }} />
+                      <span className="font-medium" style={{ color: 'var(--text-primary)' }}>서포터</span>
+                    </div>
+                    <div style={{ color: 'var(--text-tertiary)' }}>
+                      DPS 40-70%, EHP 90-130%<br/>
+                      유틸리티 스킬로 팀 보조
+                    </div>
+                  </div>
+                  <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
+                    <div className="flex items-center gap-1 mb-1">
+                      <Target className="w-3 h-3" style={{ color: '#f59e0b' }} />
+                      <span className="font-medium" style={{ color: 'var(--text-primary)' }}>밸런스</span>
+                    </div>
+                    <div style={{ color: 'var(--text-tertiary)' }}>
+                      DPS 90-110%, EHP 90-110%<br/>
+                      균형잡힌 올라운더 타입
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* 1:1 시뮬레이션 설명 */}
+              <div className="space-y-1">
+                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>1:1 시뮬레이션</div>
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  두 유닛을 선택하고 ▶ 버튼을 누르면 1:1 전투를 시뮬레이션합니다.
+                  승자, 전투 시간, 잔여 HP를 확인하여 상성 관계를 파악할 수 있습니다.
+                </p>
+              </div>
+
+              {/* 팁 */}
+              <div className="space-y-1">
+                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>밸런싱 팁</div>
+                <ul className="text-xs space-y-0.5" style={{ color: 'var(--text-secondary)' }}>
+                  <li>• 같은 역할의 유닛은 DPS/EHP가 유사해야 합니다</li>
+                  <li>• 탱커 vs 딜러는 승률 50% 근처가 이상적입니다</li>
+                  <li>• 총 가치 = (DPS% + EHP%) / 2가 비슷하면 밸런스 양호</li>
+                  <li>• 표준편차 15% 이하면 전체적으로 균형잡힌 밸런스입니다</li>
+                </ul>
+              </div>
             </div>
-            <ul className="space-y-1" style={{ color: 'var(--text-secondary)' }}>
-              <li>- 같은 역할의 유닛은 DPS/EHP가 유사해야 함</li>
-              <li>- 탱커 vs 딜러는 승률 50% 근처가 이상적</li>
-              <li>- 총 가치(DPS%+EHP%)/2가 비슷하면 밸런스 양호</li>
-              <li>- 표준편차 15% 이하면 전체 밸런스 양호</li>
-            </ul>
-          </div>
+          )}
+
+          {/* 간단 도움말 (접힌 상태) */}
+          {!showHelp && (
+            <div
+              className="rounded-lg p-3 text-xs border cursor-pointer hover:border-opacity-70 transition-colors"
+              style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-primary)' }}
+              onClick={() => setShowHelp(true)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
+                  <HelpCircle className="w-3.5 h-3.5" />
+                  <span>도움말 보기 (사용법, 역할별 특성, 팁)</span>
+                </div>
+                <ChevronDown className="w-3.5 h-3.5" style={{ color: 'var(--text-tertiary)' }} />
+              </div>
+            </div>
+          )}
       </div>
     </div>
   );

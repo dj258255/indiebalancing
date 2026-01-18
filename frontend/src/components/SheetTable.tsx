@@ -94,7 +94,7 @@ function FormulaAutocomplete({
             >
               <span className="font-medium text-sm" style={{ color: 'var(--primary-green)' }}>{col.name}</span>
               <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                ({col.type === 'number' ? '숫자' : col.type === 'formula' ? '수식' : '텍스트'})
+                ({col.type === 'formula' ? '수식' : '일반'})
               </span>
             </button>
           ))}
@@ -104,23 +104,31 @@ function FormulaAutocomplete({
   );
 }
 
-// 컬럼 편집 모달
-function ColumnEditModal({
+// 컬럼 추가/편집 모달
+function ColumnModal({
   column,
   columns,
   onSave,
   onClose,
+  mode,
 }: {
-  column: Column;
+  column?: Column;
   columns: Column[];
-  onSave: (updates: Partial<Column>) => void;
+  onSave: (data: { name: string; type: ColumnType; formula?: string }) => void;
   onClose: () => void;
+  mode: 'add' | 'edit';
 }) {
-  const [name, setName] = useState(column.name);
-  const [type, setType] = useState<ColumnType>(column.type);
-  const [formula, setFormula] = useState(column.formula || '');
+  const [name, setName] = useState(column?.name || '');
+  const [type, setType] = useState<ColumnType>(column?.type || 'general');
+  const [formula, setFormula] = useState(column?.formula || '');
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    // 모달 열릴 때 이름 입력에 포커스
+    nameInputRef.current?.focus();
+  }, []);
 
   useEffect(() => {
     if (formula.startsWith('=') && formula.length > 1) {
@@ -131,16 +139,18 @@ function ColumnEditModal({
   }, [formula]);
 
   const handleSave = () => {
-    const updates: Partial<Column> = { name };
-    if (type !== column.type) {
-      updates.type = type;
-    }
+    if (!name.trim()) return;
+
+    const data: { name: string; type: ColumnType; formula?: string } = {
+      name: name.trim(),
+      type,
+    };
+
     if (type === 'formula') {
-      updates.formula = formula.startsWith('=') ? formula : `=${formula}`;
-    } else {
-      updates.formula = undefined;
+      data.formula = formula.startsWith('=') ? formula : `=${formula}`;
     }
-    onSave(updates);
+
+    onSave(data);
     onClose();
   };
 
@@ -150,7 +160,9 @@ function ColumnEditModal({
         <div className="border-b px-5 py-4 flex items-center justify-between" style={{
           borderColor: 'var(--border-primary)'
         }}>
-          <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>컬럼 편집</h3>
+          <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+            {mode === 'add' ? '컬럼 추가' : '컬럼 편집'}
+          </h3>
           <button
             onClick={onClose}
             className="p-1.5 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"
@@ -166,9 +178,12 @@ function ColumnEditModal({
               컬럼 이름
             </label>
             <input
+              ref={nameInputRef}
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+              placeholder="예: 공격력, HP, 레벨"
               className="w-full px-3 py-2 border rounded-lg text-sm"
               style={{
                 background: 'var(--bg-primary)',
@@ -183,21 +198,42 @@ function ColumnEditModal({
             <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
               타입
             </label>
-            <select
-              value={type}
-              onChange={(e) => setType(e.target.value as ColumnType)}
-              className="w-full px-3 py-2 border rounded-lg text-sm"
-              style={{
-                background: 'var(--bg-primary)',
-                borderColor: 'var(--border-primary)',
-                color: 'var(--text-primary)'
-              }}
-            >
-              <option value="number">숫자</option>
-              <option value="text">텍스트</option>
-              <option value="formula">수식</option>
-              <option value="reference">참조</option>
-            </select>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={() => setType('general')}
+                className={`px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
+                  type === 'general' ? 'ring-2 ring-offset-1' : ''
+                }`}
+                style={{
+                  background: type === 'general' ? 'var(--accent-light)' : 'var(--bg-primary)',
+                  borderColor: type === 'general' ? 'var(--accent)' : 'var(--border-primary)',
+                  color: type === 'general' ? 'var(--accent)' : 'var(--text-secondary)',
+                  // @ts-expect-error CSS custom property
+                  '--tw-ring-color': 'var(--accent)',
+                }}
+              >
+                <div className="font-semibold">일반</div>
+                <div className="text-xs mt-0.5 opacity-70">숫자/텍스트 자동 감지</div>
+              </button>
+              <button
+                type="button"
+                onClick={() => setType('formula')}
+                className={`px-4 py-3 rounded-lg border text-sm font-medium transition-all ${
+                  type === 'formula' ? 'ring-2 ring-offset-1' : ''
+                }`}
+                style={{
+                  background: type === 'formula' ? 'var(--primary-purple-light)' : 'var(--bg-primary)',
+                  borderColor: type === 'formula' ? 'var(--primary-purple)' : 'var(--border-primary)',
+                  color: type === 'formula' ? 'var(--primary-purple)' : 'var(--text-secondary)',
+                  // @ts-expect-error CSS custom property
+                  '--tw-ring-color': 'var(--primary-purple)',
+                }}
+              >
+                <div className="font-semibold">ƒ 수식</div>
+                <div className="text-xs mt-0.5 opacity-70">컬럼 전체에 수식 적용</div>
+              </button>
+            </div>
           </div>
 
           {/* 수식 입력 (수식 타입일 때만) */}
@@ -212,18 +248,19 @@ function ColumnEditModal({
                   type="text"
                   value={formula}
                   onChange={(e) => setFormula(e.target.value)}
-                  placeholder="=공격력*레벨"
+                  onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+                  placeholder="=ATK * LEVEL"
                   className="w-full px-3 py-2 border rounded-lg text-sm font-mono"
                   style={{
                     background: 'var(--bg-tertiary)',
-                    borderColor: 'var(--accent)',
+                    borderColor: 'var(--primary-purple)',
                     color: 'var(--text-primary)'
                   }}
                 />
                 {showAutocomplete && (
                   <FormulaAutocomplete
                     value={formula}
-                    columns={columns.filter(c => c.id !== column.id)}
+                    columns={columns.filter(c => c.id !== column?.id)}
                     onSelect={(newValue) => {
                       setFormula(newValue);
                       inputRef.current?.focus();
@@ -232,7 +269,7 @@ function ColumnEditModal({
                 )}
               </div>
               <p className="text-xs mt-1.5" style={{ color: 'var(--text-tertiary)' }}>
-                다른 컬럼명을 사용하여 수식을 작성하세요. 예: =공격력*레벨
+                다른 컬럼명을 사용하여 수식을 작성하세요. 예: =ATK * 1.5
               </p>
             </div>
           )}
@@ -252,13 +289,14 @@ function ColumnEditModal({
           </button>
           <button
             onClick={handleSave}
-            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+            disabled={!name.trim()}
+            className="px-4 py-2 rounded-lg text-sm font-medium transition-colors disabled:opacity-50"
             style={{
               background: 'var(--accent)',
               color: 'white'
             }}
           >
-            저장
+            {mode === 'add' ? '추가' : '저장'}
           </button>
         </div>
       </div>
@@ -301,8 +339,6 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
   const [editingCell, setEditingCell] = useState<{ rowId: string; columnId: string } | null>(null);
   const [editValue, setEditValue] = useState<string>('');
   const [showAddColumn, setShowAddColumn] = useState(false);
-  const [newColumnName, setNewColumnName] = useState('');
-  const [newColumnType, setNewColumnType] = useState<'text' | 'number' | 'formula'>('number');
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
@@ -514,14 +550,15 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
   const finishEditing = useCallback((valueToSave?: string) => {
     if (!editingCell) return;
 
-    const column = sheet.columns.find((c) => c.id === editingCell.columnId);
     const finalValue = valueToSave !== undefined ? valueToSave : editValue;
     let value: CellValue = finalValue;
 
-    // 숫자 컬럼이고 수식이 아니면 숫자로 변환
-    if (column?.type === 'number' && !finalValue.startsWith('=')) {
+    // 수식이 아니면 숫자 변환 시도 (자동 감지)
+    if (!finalValue.startsWith('=')) {
       const num = parseFloat(finalValue);
-      value = isNaN(num) ? null : num;
+      if (!isNaN(num) && finalValue.trim() !== '') {
+        value = num;
+      }
     }
 
     updateCell(projectId, sheet.id, editingCell.rowId, editingCell.columnId, value);
@@ -530,24 +567,25 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
     setShowAutocomplete(false);
     // 포뮬라 바 값도 업데이트
     setFormulaBarValue(finalValue);
-  }, [editingCell, editValue, projectId, sheet.id, sheet.columns, updateCell]);
+  }, [editingCell, editValue, projectId, sheet.id, updateCell]);
 
   // 수식바에서 편집 완료
   const finishFormulaBarEditing = useCallback(() => {
     if (!selectedCell) return;
 
-    const column = sheet.columns.find((c) => c.id === selectedCell.columnId);
     let value: CellValue = formulaBarValue;
 
-    // 숫자 컬럼이고 수식이 아니면 숫자로 변환
-    if (column?.type === 'number' && !formulaBarValue.startsWith('=')) {
+    // 수식이 아니면 숫자 변환 시도 (자동 감지)
+    if (!formulaBarValue.startsWith('=')) {
       const num = parseFloat(formulaBarValue);
-      value = isNaN(num) ? null : num;
+      if (!isNaN(num) && formulaBarValue.trim() !== '') {
+        value = num;
+      }
     }
 
     updateCell(projectId, sheet.id, selectedCell.rowId, selectedCell.columnId, value);
     setIsFormulaBarFocused(false);
-  }, [selectedCell, formulaBarValue, projectId, sheet.id, sheet.columns, updateCell]);
+  }, [selectedCell, formulaBarValue, projectId, sheet.id, updateCell]);
 
   // 키보드 이벤트 처리
   const handleKeyDown = useCallback(
@@ -590,18 +628,6 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
     },
     [finishFormulaBarEditing, selectedCell, sheet.rows]
   );
-
-  // 컬럼 추가
-  const handleAddColumn = useCallback(() => {
-    if (!newColumnName.trim()) return;
-    addColumn(projectId, sheet.id, {
-      name: newColumnName,
-      type: newColumnType,
-      width: 120,
-    });
-    setNewColumnName('');
-    setShowAddColumn(false);
-  }, [addColumn, projectId, sheet.id, newColumnName, newColumnType]);
 
   // TanStack Table 컬럼 정의
   const columns = useMemo<ColumnDef<Row>[]>(() => {
@@ -651,7 +677,7 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
             <div className="flex items-center justify-between">
               <span className="font-medium truncate">{col.name}</span>
               <span className="text-xs shrink-0" style={{ color: 'var(--text-tertiary)' }}>
-                {col.type === 'formula' ? 'ƒ' : col.type === 'number' ? '#' : 'T'}
+                {col.type === 'formula' ? 'ƒ' : ''}
               </span>
             </div>
             {/* 호버 시 아래에 떠있는 버튼들 */}
@@ -1015,7 +1041,7 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
               border: '1px solid var(--border-primary)'
             }}
           >
-            {formulaBarValue.startsWith('=') ? 'ƒx' : selectedCellInfo.column.type === 'number' ? '#' : 'T'}
+            {formulaBarValue.startsWith('=') ? 'ƒx' : ''}
           </div>
         )}
 
@@ -1121,8 +1147,9 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
                     <th
                       key={header.id}
                       className={cn(
-                        "px-3 py-2 text-left text-xs font-bold uppercase tracking-wide relative",
-                        isActions && "px-1"
+                        "px-3 py-2 text-xs font-bold uppercase tracking-wide relative",
+                        isActions && "px-1",
+                        isRowNumber ? "text-center" : "text-left"
                       )}
                       style={{
                         width,
@@ -1177,7 +1204,11 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
                     return (
                       <td
                         key={cell.id}
-                        className={cn("text-[15px]", isActions && "px-1")}
+                        className={cn(
+                          "text-[15px]",
+                          isActions && "px-1",
+                          isRowNumber && "text-center"
+                        )}
                         style={{
                           width,
                           minWidth: isActions ? 36 : 60,
@@ -1264,73 +1295,56 @@ export default function SheetTable({ projectId, sheet }: SheetTableProps) {
           행 추가
         </button>
 
-        {showAddColumn ? (
-          <div className="flex items-center gap-2">
-            <input
-              type="text"
-              placeholder="컬럼 이름"
-              value={newColumnName}
-              onChange={(e) => setNewColumnName(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleAddColumn()}
-              className="px-2 py-1.5 text-sm w-32"
-              autoFocus
-            />
-            <select
-              value={newColumnType}
-              onChange={(e) => setNewColumnType(e.target.value as 'text' | 'number' | 'formula')}
-              className="px-2 py-1.5 text-sm"
-            >
-              <option value="number">숫자</option>
-              <option value="text">텍스트</option>
-            </select>
-            <button
-              onClick={handleAddColumn}
-              className="px-3 py-1.5 text-sm font-medium rounded"
-              style={{ background: 'var(--primary-blue)', color: 'white' }}
-            >
-              추가
-            </button>
-            <button
-              onClick={() => {
-                setShowAddColumn(false);
-                setNewColumnName('');
-              }}
-              className="px-3 py-1.5 text-sm font-medium rounded"
-              style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-            >
-              취소
-            </button>
-          </div>
-        ) : (
-          <button
-            onClick={() => setShowAddColumn(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded transition-colors"
-            style={{
-              background: 'var(--bg-tertiary)',
-              color: 'var(--text-secondary)'
-            }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = 'var(--bg-hover)';
-              e.currentTarget.style.color = 'var(--text-primary)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'var(--bg-tertiary)';
-              e.currentTarget.style.color = 'var(--text-secondary)';
-            }}
-          >
-            <Plus className="w-4 h-4" />
-            컬럼 추가
-          </button>
-        )}
+        <button
+          onClick={() => setShowAddColumn(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded transition-colors"
+          style={{
+            background: 'var(--bg-tertiary)',
+            color: 'var(--text-secondary)'
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = 'var(--bg-hover)';
+            e.currentTarget.style.color = 'var(--text-primary)';
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = 'var(--bg-tertiary)';
+            e.currentTarget.style.color = 'var(--text-secondary)';
+          }}
+        >
+          <Plus className="w-4 h-4" />
+          컬럼 추가
+        </button>
       </div>
+
+      {/* 컬럼 추가 모달 */}
+      {showAddColumn && (
+        <ColumnModal
+          columns={sheet.columns}
+          mode="add"
+          onSave={(data) => {
+            addColumn(projectId, sheet.id, {
+              name: data.name,
+              type: data.type,
+              formula: data.formula,
+              width: 120,
+            });
+          }}
+          onClose={() => setShowAddColumn(false)}
+        />
+      )}
 
       {/* 컬럼 편집 모달 */}
       {editingColumn && (
-        <ColumnEditModal
+        <ColumnModal
           column={editingColumn}
           columns={sheet.columns}
-          onSave={(updates) => {
-            updateColumn(projectId, sheet.id, editingColumn.id, updates);
+          mode="edit"
+          onSave={(data) => {
+            updateColumn(projectId, sheet.id, editingColumn.id, {
+              name: data.name,
+              type: data.type,
+              formula: data.type === 'formula' ? data.formula : undefined,
+            });
           }}
           onClose={() => setEditingColumn(null)}
         />

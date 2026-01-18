@@ -52,11 +52,12 @@ export default function ComparisonChart({ onClose }: ComparisonChartProps) {
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [showHelp, setShowHelp] = useState(false);
 
-  // 숫자 컬럼만 필터링
+  // 숫자 컬럼만 필터링 (general 타입도 숫자일 수 있음)
   const numericColumns = useMemo(() => {
     if (!currentSheet) return [];
+    // general과 formula 타입 모두 숫자 데이터를 가질 수 있음
     return currentSheet.columns.filter(
-      (col) => col.type === 'number' || col.type === 'formula'
+      (col) => col.type === 'general' || col.type === 'formula'
     );
   }, [currentSheet]);
 
@@ -70,9 +71,9 @@ export default function ComparisonChart({ onClose }: ComparisonChartProps) {
 
       let nameCol = currentSheet.columns.find((c) => namePatterns.includes(c.name));
 
-      // 이름 컬럼이 없으면 첫 번째 텍스트 컬럼 사용
+      // 이름 컬럼이 없으면 첫 번째 일반 컬럼 사용
       if (!nameCol) {
-        nameCol = currentSheet.columns.find((c) => c.type === 'text');
+        nameCol = currentSheet.columns.find((c) => c.type === 'general');
       }
 
       const idCol = currentSheet.columns.find((c) => idPatterns.includes(c.name));
@@ -328,11 +329,13 @@ export default function ComparisonChart({ onClose }: ComparisonChartProps) {
                             if (!isNaN(num)) values[key] = num;
                           }
                         });
+                        const rowIdx = currentSheet?.rows.findIndex(r => r.id === row.rowId) ?? -1;
+                        const itemName = `${currentSheet?.name || '시트'} - ${rowIdx + 1}행`;
                         setItems((prev) => [
                           ...prev,
                           {
                             id: row.rowId,
-                            name: row.name,
+                            name: itemName,
                             color: COLORS[(prev.length + index) % COLORS.length],
                             values,
                           },
@@ -364,6 +367,9 @@ export default function ComparisonChart({ onClose }: ComparisonChartProps) {
             <div className="flex flex-wrap gap-2">
               {selectedRows.map((row) => {
                 const isAdded = items.some((i) => i.id === row.rowId);
+                // 시트명 + 행 번호로 표시
+                const rowIndex = currentSheet?.rows.findIndex(r => r.id === row.rowId) ?? -1;
+                const displayName = `${currentSheet?.name || '시트'} - ${rowIndex + 1}행`;
                 return (
                   <div
                     key={row.rowId}
@@ -374,7 +380,7 @@ export default function ComparisonChart({ onClose }: ComparisonChartProps) {
                     }}
                   >
                     {isAdded && <Check className="w-3 h-3" style={{ color: 'var(--success)' }} />}
-                    <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{row.name}</span>
+                    <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{displayName}</span>
                     {!isAdded && (
                       <button
                         onClick={() => {
@@ -391,7 +397,7 @@ export default function ComparisonChart({ onClose }: ComparisonChartProps) {
                             ...prev,
                             {
                               id: row.rowId,
-                              name: row.name,
+                              name: displayName,
                               color: COLORS[prev.length % COLORS.length],
                               values,
                             },
@@ -466,22 +472,34 @@ export default function ComparisonChart({ onClose }: ComparisonChartProps) {
               {/* 비교 항목 (컬럼) 선택 */}
               <div>
                 <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>비교 항목</h4>
-                <div className="space-y-1">
-                  {numericColumns.map((col) => (
-                    <label
-                      key={col.id}
-                      className="flex items-center gap-2 text-sm cursor-pointer"
-                      style={{ color: 'var(--text-primary)' }}
-                    >
-                      <input
-                        type="checkbox"
-                        checked={selectedColumns.includes(col.name)}
-                        onChange={() => toggleColumn(col.name)}
-                        className="rounded"
-                      />
-                      {col.name}
-                    </label>
-                  ))}
+                <div className="space-y-1.5">
+                  {numericColumns.map((col) => {
+                    const isChecked = selectedColumns.includes(col.name);
+                    return (
+                      <label
+                        key={col.id}
+                        className="flex items-center gap-2.5 text-sm cursor-pointer py-1 px-2 rounded-lg transition-colors hover:bg-[var(--bg-tertiary)]"
+                        style={{ color: 'var(--text-primary)' }}
+                      >
+                        <div
+                          className="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0"
+                          style={{
+                            background: isChecked ? 'var(--accent)' : 'var(--bg-primary)',
+                            borderColor: isChecked ? 'var(--accent)' : 'var(--border-secondary)',
+                          }}
+                        >
+                          {isChecked && <Check className="w-3 h-3 text-white" />}
+                        </div>
+                        <input
+                          type="checkbox"
+                          checked={isChecked}
+                          onChange={() => toggleColumn(col.name)}
+                          className="sr-only"
+                        />
+                        <span>{col.name}</span>
+                      </label>
+                    );
+                  })}
                 </div>
               </div>
             </div>

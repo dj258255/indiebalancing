@@ -18,8 +18,8 @@ export interface Sheet {
   updatedAt: number;
 }
 
-// 컬럼 타입
-export type ColumnType = 'text' | 'number' | 'formula' | 'reference';
+// 컬럼 타입 (일반: 자동 감지, 수식: 컬럼 전체 수식)
+export type ColumnType = 'general' | 'formula';
 
 export interface Column {
   id: string;
@@ -27,8 +27,6 @@ export interface Column {
   type: ColumnType;
   width?: number;
   formula?: string; // type이 'formula'일 때
-  referenceSheetId?: string; // type이 'reference'일 때
-  referenceColumnId?: string; // type이 'reference'일 때
 }
 
 // 행 타입

@@ -47,6 +47,9 @@ export default function Home() {
   const currentProject = getCurrentProject();
   const currentSheet = getCurrentSheet();
 
+  // 모달이 열려있는지 확인
+  const isModalOpen = showChart || showOnboarding || showCalculator || showComparison || showReferences;
+
   // 초기 데이터 로드
   useEffect(() => {
     const init = async () => {
@@ -359,36 +362,39 @@ export default function Home() {
           <div className="fixed bottom-0 left-64 right-0 z-50 pointer-events-none">
             <div className="flex justify-around pointer-events-auto">
               <button
-                onClick={() => setShowFormulaHelper(!showFormulaHelper)}
+                onClick={() => !isModalOpen && setShowFormulaHelper(!showFormulaHelper)}
+                disabled={isModalOpen}
                 className={`flex items-center gap-2 px-6 py-2.5 text-base font-semibold transition-all rounded-t-xl ${
                   showFormulaHelper
                     ? 'liquid-glass-active text-[var(--primary-blue)]'
                     : 'bg-[var(--bg-primary)] text-[var(--text-secondary)] border-t border-l border-r border-[var(--border-primary)]'
-                }`}
+                } ${isModalOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <FunctionSquare className="w-5 h-5" />
                 수식 도우미
               </button>
 
               <button
-                onClick={() => setShowBalanceValidator(!showBalanceValidator)}
+                onClick={() => !isModalOpen && setShowBalanceValidator(!showBalanceValidator)}
+                disabled={isModalOpen}
                 className={`flex items-center gap-2 px-6 py-2.5 text-base font-semibold transition-all rounded-t-xl ${
                   showBalanceValidator
                     ? 'liquid-glass-active text-[var(--primary-green)]'
                     : 'bg-[var(--bg-primary)] text-[var(--text-secondary)] border-t border-l border-r border-[var(--border-primary)]'
-                }`}
+                } ${isModalOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <Shield className="w-5 h-5" />
                 밸런스 검증기
               </button>
 
               <button
-                onClick={() => setShowDifficultyCurve(!showDifficultyCurve)}
+                onClick={() => !isModalOpen && setShowDifficultyCurve(!showDifficultyCurve)}
+                disabled={isModalOpen}
                 className={`flex items-center gap-2 px-6 py-2.5 text-base font-semibold transition-all rounded-t-xl ${
                   showDifficultyCurve
                     ? 'liquid-glass-active text-[var(--primary-purple)]'
                     : 'bg-[var(--bg-primary)] text-[var(--text-secondary)] border-t border-l border-r border-[var(--border-primary)]'
-                }`}
+                } ${isModalOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
               >
                 <TrendingUp className="w-5 h-5" />
                 난이도 곡선

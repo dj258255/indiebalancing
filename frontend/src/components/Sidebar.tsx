@@ -47,6 +47,8 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
     createProject,
     deleteProject,
     updateProject,
+    updateSheet,
+    deleteSheet,
     loadProjects,
     selectedRows,
     clearSelectedRows,
@@ -60,6 +62,8 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
   const [newProjectName, setNewProjectName] = useState('');
   const [showExportMenu, setShowExportMenu] = useState(false);
   const [showImportMenu, setShowImportMenu] = useState(false);
+  const [editingSheetId, setEditingSheetId] = useState<string | null>(null);
+  const [editSheetName, setEditSheetName] = useState('');
   const exportMenuRef = useRef<HTMLDivElement>(null);
   const importMenuRef = useRef<HTMLDivElement>(null);
 
@@ -323,8 +327,9 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
                     {project.sheets.map((sheet, index) => (
                       <div
                         key={sheet.id}
-                        draggable
+                        draggable={editingSheetId !== sheet.id}
                         onDragStart={(e) => {
+                          if (editingSheetId === sheet.id) return;
                           setDraggedSheetIndex(index);
                           setDragProjectId(project.id);
                           e.dataTransfer.effectAllowed = 'move';
@@ -353,8 +358,10 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
                           setDragProjectId(null);
                         }}
                         onClick={() => {
-                          setCurrentProject(project.id);
-                          setCurrentSheet(sheet.id);
+                          if (editingSheetId !== sheet.id) {
+                            setCurrentProject(project.id);
+                            setCurrentSheet(sheet.id);
+                          }
                         }}
                         className={cn(
                           "flex items-center gap-1 px-2 py-1.5 rounded-lg cursor-pointer text-sm transition-colors group",
@@ -371,7 +378,72 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
                           className="w-3 h-3 opacity-0 group-hover:opacity-50 cursor-grab active:cursor-grabbing flex-shrink-0"
                         />
                         <FileSpreadsheet className="w-4 h-4 flex-shrink-0" />
-                        <span className="truncate">{sheet.name}</span>
+                        {editingSheetId === sheet.id ? (
+                          <input
+                            type="text"
+                            value={editSheetName}
+                            onChange={(e) => setEditSheetName(e.target.value)}
+                            onBlur={() => {
+                              if (editSheetName.trim()) {
+                                updateSheet(project.id, sheet.id, { name: editSheetName.trim() });
+                              }
+                              setEditingSheetId(null);
+                              setEditSheetName('');
+                            }}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter') {
+                                if (editSheetName.trim()) {
+                                  updateSheet(project.id, sheet.id, { name: editSheetName.trim() });
+                                }
+                                setEditingSheetId(null);
+                                setEditSheetName('');
+                              }
+                              if (e.key === 'Escape') {
+                                setEditingSheetId(null);
+                                setEditSheetName('');
+                              }
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="flex-1 min-w-0 px-1 py-0.5 text-sm rounded"
+                            style={{
+                              background: 'var(--bg-primary)',
+                              color: 'var(--text-primary)'
+                            }}
+                            autoFocus
+                          />
+                        ) : (
+                          <>
+                            <span className="truncate flex-1">{sheet.name}</span>
+                            <div className={cn(
+                              "items-center gap-0.5 flex-shrink-0",
+                              currentSheetId === sheet.id ? "flex" : "hidden group-hover:flex"
+                            )}>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingSheetId(sheet.id);
+                                  setEditSheetName(sheet.name);
+                                }}
+                                className="p-0.5 rounded transition-colors hover:bg-black/10 dark:hover:bg-white/10"
+                                title="이름 변경"
+                              >
+                                <Edit2 className="w-3 h-3" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  if (confirm(`"${sheet.name}" 시트를 삭제하시겠습니까?`)) {
+                                    deleteSheet(project.id, sheet.id);
+                                  }
+                                }}
+                                className="p-0.5 rounded transition-colors hover:bg-black/10 dark:hover:bg-white/10 hover:text-red-500"
+                                title="삭제"
+                              >
+                                <Trash2 className="w-3 h-3" />
+                              </button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     ))}
                     {project.sheets.length === 0 && (
