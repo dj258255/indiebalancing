@@ -239,7 +239,7 @@ export default function FormulaHelper({ onClose }: FormulaHelperProps) {
                           </span>
                         </div>
                         <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                          {func.description}
+                          {t(`formulaHelper.functions.${func.name}`, { defaultValue: func.description })}
                         </p>
                         <code className="text-xs block mt-1 truncate" style={{ color: 'var(--text-tertiary)' }}>
                           {func.syntax}

@@ -6,6 +6,7 @@ import { useProjectStore } from '@/stores/projectStore';
 import { exportForGameEngine, EXPORT_FORMATS, type ExportFormat } from '@/lib/gameEngineExport';
 import { downloadFile } from '@/lib/utils';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { useTranslations } from 'next-intl';
 
 interface GameEngineExportModalProps {
   onClose: () => void;
@@ -14,6 +15,7 @@ interface GameEngineExportModalProps {
 export default function GameEngineExportModal({ onClose }: GameEngineExportModalProps) {
   // ESC 키로 모달 닫기
   useEscapeKey(onClose);
+  const t = useTranslations('gameEngineExport');
 
   const { projects, currentProjectId, currentSheetId } = useProjectStore();
 
@@ -86,8 +88,8 @@ export default function GameEngineExportModal({ onClose }: GameEngineExportModal
               <Code className="w-5 h-5" style={{ color: 'var(--accent)' }} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>게임 엔진 Export</h2>
-              <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>Unity, Unreal, Godot 형식으로 내보내기</p>
+              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{t('title')}</h2>
+              <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('subtitle')}</p>
             </div>
           </div>
           <button
@@ -106,7 +108,7 @@ export default function GameEngineExportModal({ onClose }: GameEngineExportModal
             {/* 시트 정보 */}
             {currentSheet && (
               <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>내보낼 시트</div>
+                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('sheetToExport')}</div>
                 <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{currentSheet.name}</div>
                 <div className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>
                   {currentSheet.rows.length}행 × {currentSheet.columns.length}열
@@ -117,7 +119,7 @@ export default function GameEngineExportModal({ onClose }: GameEngineExportModal
             {/* 클래스명 입력 */}
             <div>
               <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                클래스명 (선택)
+                {t('className')}
               </label>
               <input
                 type="text"
@@ -174,7 +176,7 @@ export default function GameEngineExportModal({ onClose }: GameEngineExportModal
                 {/* 파일 목록 */}
                 <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-primary)' }}>
                   <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                    생성될 파일 ({previewFiles.length}개)
+                    {t('filesGenerated', { count: previewFiles.length })}
                   </div>
                   <button
                     onClick={handleDownloadAll}
@@ -185,7 +187,7 @@ export default function GameEngineExportModal({ onClose }: GameEngineExportModal
                     }}
                   >
                     <Download className="w-4 h-4" />
-                    모두 다운로드
+                    {t('downloadAll')}
                   </button>
                 </div>
 
@@ -215,7 +217,7 @@ export default function GameEngineExportModal({ onClose }: GameEngineExportModal
                               handleCopy(file.filename, file.content);
                             }}
                             className="p-1 rounded transition-colors hover:bg-[var(--bg-hover)]"
-                            title="복사"
+                            title={t('copy')}
                           >
                             {copiedFile === file.filename ? (
                               <Check className="w-4 h-4" style={{ color: 'rgb(34, 197, 94)' }} />
@@ -229,7 +231,7 @@ export default function GameEngineExportModal({ onClose }: GameEngineExportModal
                               handleDownload(file);
                             }}
                             className="p-1 rounded transition-colors hover:bg-[var(--bg-hover)]"
-                            title="다운로드"
+                            title={t('download')}
                           >
                             <Download className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
                           </button>
@@ -259,7 +261,7 @@ export default function GameEngineExportModal({ onClose }: GameEngineExportModal
                 <div className="text-center">
                   <Code className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--text-tertiary)' }} />
                   <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
-                    {currentSheet ? '왼쪽에서 Export 형식을 선택하세요' : '시트를 먼저 선택해주세요'}
+                    {currentSheet ? t('selectFormat') : t('selectSheetFirst')}
                   </p>
                 </div>
               </div>
@@ -270,7 +272,7 @@ export default function GameEngineExportModal({ onClose }: GameEngineExportModal
         {/* 푸터 - 도움말 */}
         <div className="px-6 py-3 border-t text-xs flex items-center gap-2" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
           <ExternalLink className="w-3 h-3" />
-          생성된 파일을 게임 프로젝트의 적절한 위치에 복사하세요
+          {t('footerHelp')}
         </div>
       </div>
     </div>

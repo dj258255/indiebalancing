@@ -49,6 +49,7 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
   const { getCurrentProject, getCurrentSheet, selectedRows, clearSelectedRows, deselectRow } = useProjectStore();
   const currentProject = getCurrentProject();
   const currentSheet = getCurrentSheet();
+  const t = useTranslations('comparisonChart');
 
   const [activeTab, setActiveTab] = useState<'radar' | 'bar' | 'histogram'>('radar');
   const [items, setItems] = useState<ComparisonItem[]>([]);
@@ -211,13 +212,13 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
     return (
       <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
         <div className="card p-8 text-center animate-fadeIn">
-          <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>시트를 선택해주세요</p>
+          <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>{t('selectSheet')}</p>
           <button
             onClick={onClose}
             className="px-4 py-2 rounded-lg transition-colors"
             style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
           >
-            닫기
+            {t('close')}
           </button>
         </div>
       </div>
@@ -254,11 +255,11 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
             )}
             <div>
               <h2 className={isPanel ? 'text-sm font-semibold' : 'text-xl font-semibold'} style={{ color: isPanel ? '#3b82f6' : 'var(--text-primary)' }}>
-                {isPanel ? '비교 분석' : '데이터 비교 및 분석'}
+                {isPanel ? t('title') : t('fullTitle')}
               </h2>
               {!isPanel && (
                 <p className="text-sm mt-1" style={{ color: 'var(--text-tertiary)' }}>
-                  {currentSheet.name} 시트의 데이터를 시각화합니다
+                  {t('visualizeData', { sheetName: currentSheet.name })}
                 </p>
               )}
             </div>
@@ -283,7 +284,7 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
                 }}
               >
                 <HelpCircle className="w-4 h-4" />
-                도움말
+                {t('help')}
                 {showHelp ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
               </button>
             )}
@@ -304,15 +305,15 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
               className="flex-1 px-4 py-3 text-sm overflow-y-auto"
               style={{ background: 'var(--bg-tertiary)' }}
             >
-              <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>비교 분석</div>
-              <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>캐릭터, 무기, 아이템의 <strong>스탯을 시각적으로 비교</strong>합니다.</p>
+              <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>{t('title')}</div>
+              <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>{t('helpDesc')}</p>
               <div className="space-y-1 mb-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                <div>레이더: 종합 스탯 비교</div>
-                <div>막대: 정확한 수치 비교</div>
-                <div>히스토그램: 데이터 분포 확인</div>
+                <div>{t('helpRadar')}</div>
+                <div>{t('helpBar')}</div>
+                <div>{t('helpHistogram')}</div>
               </div>
               <div className="pt-2 border-t text-xs" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
-                시트에서 행 선택 → 모두 추가 → 비교할 열 체크
+                {t('helpUsage')}
               </div>
             </div>
             {/* 리사이저 */}
@@ -345,26 +346,26 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
             borderColor: 'var(--border-primary)'
           }}>
             <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
-              캐릭터, 무기, 아이템의 스탯을 한눈에 비교하여 밸런스 문제를 발견할 수 있습니다.
+              {t('modalHelpDesc')}
             </p>
 
             <div className="grid grid-cols-3 gap-3 mb-3">
               <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                <div className="font-medium text-sm mb-1" style={{ color: 'var(--accent)' }}>레이더 차트</div>
-                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>여러 스탯을 종합 비교할 때</p>
+                <div className="font-medium text-sm mb-1" style={{ color: 'var(--accent)' }}>{t('tabs.radar')}</div>
+                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('radarUseCase')}</p>
               </div>
               <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                <div className="font-medium text-sm mb-1" style={{ color: 'var(--success)' }}>막대 차트</div>
-                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>정확한 수치 비교할 때</p>
+                <div className="font-medium text-sm mb-1" style={{ color: 'var(--success)' }}>{t('tabs.bar')}</div>
+                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('barUseCase')}</p>
               </div>
               <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                <div className="font-medium text-sm mb-1" style={{ color: 'var(--warning)' }}>히스토그램</div>
-                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>데이터 분포 확인할 때</p>
+                <div className="font-medium text-sm mb-1" style={{ color: 'var(--warning)' }}>{t('tabs.histogram')}</div>
+                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('histogramUseCase')}</p>
               </div>
             </div>
 
             <div className="text-xs p-2 rounded-lg" style={{ background: 'var(--bg-primary)', color: 'var(--text-tertiary)' }}>
-              사용법: 시트에서 행 선택 → &quot;모두 추가&quot; 클릭 → 비교할 열 체크 → 차트 확인
+              {t('usageGuide')}
             </div>
           </div>
         )}
@@ -383,9 +384,9 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
                 color: activeTab === tab ? 'var(--accent)' : 'var(--text-tertiary)'
               }}
             >
-              {tab === 'radar' && '레이더 차트'}
-              {tab === 'bar' && '막대 차트'}
-              {tab === 'histogram' && '분포 히스토그램'}
+              {tab === 'radar' && t('tabs.radar')}
+              {tab === 'bar' && t('tabs.bar')}
+              {tab === 'histogram' && t('tabs.histogram')}
             </button>
           ))}
         </div>
@@ -399,7 +400,7 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--accent-text)' }}>
                 <Download className="w-4 h-4" />
-                <span className="font-medium">선택된 데이터 ({selectedRows.length}개)</span>
+                <span className="font-medium">{t('selectedData', { count: selectedRows.length })}</span>
               </div>
               <div className="flex items-center gap-2">
                 <button
@@ -416,7 +417,7 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
                           }
                         });
                         const rowIdx = currentSheet?.rows.findIndex(r => r.id === row.rowId) ?? -1;
-                        const itemName = `${currentSheet?.name || '시트'} - ${rowIdx + 1}행`;
+                        const itemName = `${currentSheet?.name || t('sheet')} - ${t('rowNum', { num: rowIdx + 1 })}`;
                         setItems((prev) => [
                           ...prev,
                           {
@@ -439,14 +440,14 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
                   className="px-3 py-1 rounded text-xs transition-colors"
                   style={{ background: 'var(--accent)', color: 'white' }}
                 >
-                  모두 추가
+                  {t('addAll')}
                 </button>
                 <button
                   onClick={clearSelectedRows}
                   className="text-xs"
                   style={{ color: 'var(--accent-text)' }}
                 >
-                  선택 해제
+                  {t('clearSelection')}
                 </button>
               </div>
             </div>
@@ -455,7 +456,7 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
                 const isAdded = items.some((i) => i.id === row.rowId);
                 // 시트명 + 행 번호로 표시
                 const rowIndex = currentSheet?.rows.findIndex(r => r.id === row.rowId) ?? -1;
-                const displayName = `${currentSheet?.name || '시트'} - ${rowIndex + 1}행`;
+                const displayName = `${currentSheet?.name || t('sheet')} - ${t('rowNum', { num: rowIndex + 1 })}`;
                 return (
                   <div
                     key={row.rowId}
@@ -492,7 +493,7 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
                         className="px-2 py-0.5 rounded text-xs"
                         style={{ background: 'var(--accent)', color: 'white' }}
                       >
-                        추가
+                        {t('add')}
                       </button>
                     )}
                     <button
@@ -514,13 +515,13 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
             <div className="w-64 border-r p-4 overflow-y-auto" style={{ borderColor: 'var(--border-primary)' }}>
               {/* 비교 대상 선택 */}
               <div className="mb-6">
-                <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>비교 대상</h4>
+                <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>{t('compareTarget')}</h4>
                 <select
                   onChange={(e) => addItem(e.target.value)}
                   value=""
                   className="w-full px-3 py-2 rounded-lg text-sm mb-2"
                 >
-                  <option value="">+ 추가...</option>
+                  <option value="">{t('addTarget')}</option>
                   {availableRows
                     .filter((r) => !items.find((i) => i.id === r.id))
                     .map((row) => (
@@ -557,7 +558,7 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
 
               {/* 비교 항목 (컬럼) 선택 */}
               <div>
-                <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>비교 항목</h4>
+                <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>{t('compareItems')}</h4>
                 <div className="space-y-1.5">
                   {numericColumns.map((col) => {
                     const isChecked = selectedColumns.includes(col.name);
@@ -594,13 +595,13 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
           {/* 히스토그램 사이드바 */}
           {activeTab === 'histogram' && (
             <div className="w-64 border-r p-4 overflow-y-auto" style={{ borderColor: 'var(--border-primary)' }}>
-              <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>분석할 열</h4>
+              <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>{t('columnToAnalyze')}</h4>
               <select
                 value={histogramColumn}
                 onChange={(e) => setHistogramColumn(e.target.value)}
                 className="w-full px-3 py-2 rounded-lg text-sm"
               >
-                <option value="">선택...</option>
+                <option value="">{t('select')}</option>
                 {numericColumns.map((col) => (
                   <option key={col.id} value={col.name}>
                     {col.name}
@@ -610,11 +611,11 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
 
               {histogramColumn && histogramData.length > 0 && (
                 <div className="mt-4 p-3 rounded-lg text-sm" style={{ background: 'var(--bg-tertiary)' }}>
-                  <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>통계</div>
+                  <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>{t('statistics')}</div>
                   <div className="space-y-1" style={{ color: 'var(--text-secondary)' }}>
-                    <div>총 개수: {currentSheet.rows.length}</div>
-                    <div>최소: {Math.min(...histogramData.map((d) => d.min)).toFixed(0)}</div>
-                    <div>최대: {Math.max(...histogramData.map((d) => d.max)).toFixed(0)}</div>
+                    <div>{t('totalCount')}: {currentSheet.rows.length}</div>
+                    <div>{t('minimum')}: {Math.min(...histogramData.map((d) => d.min)).toFixed(0)}</div>
+                    <div>{t('maximum')}: {Math.max(...histogramData.map((d) => d.max)).toFixed(0)}</div>
                   </div>
                 </div>
               )}
@@ -628,8 +629,8 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
                 {items.length === 0 || selectedColumns.length === 0 ? (
                   <div className="h-full flex items-center justify-center">
                     <div className="text-center" style={{ color: 'var(--text-tertiary)' }}>
-                      <p>왼쪽에서 비교할 대상과 항목을 선택하세요</p>
-                      <p className="text-sm mt-1">최소 1개 대상, 3개 이상 항목 권장</p>
+                      <p>{t('selectTargetAndItems')}</p>
+                      <p className="text-sm mt-1">{t('recommendMinimum')}</p>
                     </div>
                   </div>
                 ) : (
@@ -663,7 +664,7 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
                 {items.length === 0 || selectedColumns.length === 0 ? (
                   <div className="h-full flex items-center justify-center">
                     <div className="text-center" style={{ color: 'var(--text-tertiary)' }}>
-                      <p>왼쪽에서 비교할 대상과 항목을 선택하세요</p>
+                      <p>{t('selectTargetAndItems')}</p>
                     </div>
                   </div>
                 ) : (
@@ -689,23 +690,23 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
               <>
                 {!histogramColumn ? (
                   <div className="h-full flex items-center justify-center">
-                    <p style={{ color: 'var(--text-tertiary)' }}>왼쪽에서 분석할 열을 선택하세요</p>
+                    <p style={{ color: 'var(--text-tertiary)' }}>{t('selectColumnToAnalyze')}</p>
                   </div>
                 ) : histogramData.length === 0 ? (
                   <div className="h-full flex items-center justify-center">
-                    <p style={{ color: 'var(--text-tertiary)' }}>숫자 데이터가 없습니다</p>
+                    <p style={{ color: 'var(--text-tertiary)' }}>{t('noNumericData')}</p>
                   </div>
                 ) : (
                   <div className="h-[500px]">
-                    <h3 className="text-lg font-medium mb-4" style={{ color: 'var(--text-primary)' }}>{histogramColumn} 분포</h3>
+                    <h3 className="text-lg font-medium mb-4" style={{ color: 'var(--text-primary)' }}>{t('distribution', { column: histogramColumn })}</h3>
                     <ResponsiveContainer width="100%" height="90%">
                       <BarChart data={histogramData}>
                         <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
                         <XAxis dataKey="range" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} angle={-45} textAnchor="end" height={60} />
                         <YAxis tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} label={{ value: '개수', angle: -90, position: 'insideLeft', fill: 'var(--text-secondary)' }} />
                         <Tooltip
-                          formatter={(value: number) => [`${value}개`, '개수']}
-                          labelFormatter={(label) => `구간: ${label}`}
+                          formatter={(value: number) => [`${value}${t('count')}`, t('count')]}
+                          labelFormatter={(label) => `${t('range')}: ${label}`}
                           contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }}
                         />
                         <Bar dataKey="count" fill="var(--accent)" />

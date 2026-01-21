@@ -6,6 +6,7 @@ import { useProjectStore } from '@/stores/projectStore';
 import { importFromGameEngine, detectFormat, IMPORT_FORMATS, type ImportFormat, type ImportResult } from '@/lib/gameEngineImport';
 import { v4 as uuidv4 } from 'uuid';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { useTranslations } from 'next-intl';
 
 interface GameEngineImportModalProps {
   onClose: () => void;
@@ -14,6 +15,7 @@ interface GameEngineImportModalProps {
 export default function GameEngineImportModal({ onClose }: GameEngineImportModalProps) {
   // ESC 키로 모달 닫기
   useEscapeKey(onClose);
+  const t = useTranslations('gameEngineImport');
 
   const { currentProjectId, createSheet, addColumn, addRow, updateCell, getCurrentProject } = useProjectStore();
   const currentProject = getCurrentProject();
@@ -104,7 +106,7 @@ export default function GameEngineImportModal({ onClose }: GameEngineImportModal
       const sheet = project?.sheets.find(s => s.id === sheetId);
 
       if (!sheet) {
-        throw new Error('시트 생성 실패');
+        throw new Error(t('sheetCreationFailed'));
       }
 
       // 컬럼 ID 매핑
@@ -150,7 +152,7 @@ export default function GameEngineImportModal({ onClose }: GameEngineImportModal
       setPreviewResult(prev => prev ? {
         ...prev,
         success: false,
-        error: '가져오기 중 오류가 발생했습니다.',
+        error: t('importError'),
       } : null);
     } finally {
       setIsImporting(false);
@@ -174,9 +176,9 @@ export default function GameEngineImportModal({ onClose }: GameEngineImportModal
               <Upload className="w-5 h-5" style={{ color: 'var(--primary-green)' }} />
             </div>
             <div>
-              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>게임 엔진 Import</h2>
+              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{t('title')}</h2>
               <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
-                Unity, Unreal, Godot 형식에서 가져오기
+                {t('subtitle')}
               </p>
             </div>
           </div>
@@ -218,17 +220,17 @@ export default function GameEngineImportModal({ onClose }: GameEngineImportModal
                     {file.name}
                   </div>
                   <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                    클릭하여 다른 파일 선택
+                    {t('clickToSelectOther')}
                   </div>
                 </div>
               ) : (
                 <div className="space-y-2">
                   <Upload className="w-8 h-8 mx-auto" style={{ color: 'var(--text-tertiary)' }} />
                   <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                    파일을 드래그하거나 클릭
+                    {t('dragOrClick')}
                   </div>
                   <div className="text-xs space-y-1" style={{ color: 'var(--text-tertiary)' }}>
-                    <div>지원 형식:</div>
+                    <div>{t('supportedFormats')}</div>
                     <div className="flex flex-wrap gap-1 justify-center">
                       <span className="px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)' }}>.json</span>
                       <span className="px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)' }}>.csv</span>
@@ -245,13 +247,13 @@ export default function GameEngineImportModal({ onClose }: GameEngineImportModal
             {file && (
               <div>
                 <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                  시트 이름
+                  {t('sheetName')}
                 </label>
                 <input
                   type="text"
                   value={sheetName}
                   onChange={(e) => setSheetName(e.target.value)}
-                  placeholder="새 시트 이름"
+                  placeholder={t('newSheetName')}
                   className="w-full px-3 py-2 rounded-lg text-sm"
                   style={{
                     background: 'var(--bg-tertiary)',
@@ -266,7 +268,7 @@ export default function GameEngineImportModal({ onClose }: GameEngineImportModal
             {file && (
               <>
                 <div className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>
-                  파일 형식
+                  {t('fileFormat')}
                 </div>
                 {Object.entries(formatsByEngine).map(([engine, formats]) => (
                   <div key={engine}>
@@ -317,7 +319,7 @@ export default function GameEngineImportModal({ onClose }: GameEngineImportModal
                     <div className="flex items-center gap-2">
                       <CheckCircle className="w-5 h-5" style={{ color: 'var(--primary-green)' }} />
                       <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                        {previewResult.columns.length}개 컬럼, {previewResult.rows.length}개 행 감지됨
+                        {t('detected', { columns: previewResult.columns.length, rows: previewResult.rows.length })}
                       </span>
                     </div>
                   ) : (
@@ -342,7 +344,7 @@ export default function GameEngineImportModal({ onClose }: GameEngineImportModal
                 {previewResult.success && (
                   <div className="flex-1 overflow-auto p-4">
                     <div className="text-xs font-medium mb-2" style={{ color: 'var(--text-tertiary)' }}>
-                      미리보기 (처음 10행)
+                      {t('preview')}
                     </div>
                     <div className="overflow-x-auto rounded-lg" style={{ border: '1px solid var(--border-primary)' }}>
                       <table className="w-full text-sm">
@@ -382,7 +384,7 @@ export default function GameEngineImportModal({ onClose }: GameEngineImportModal
                     </div>
                     {previewResult.rows.length > 10 && (
                       <div className="text-xs text-center mt-2" style={{ color: 'var(--text-tertiary)' }}>
-                        ... 외 {previewResult.rows.length - 10}개 행
+                        {t('moreRows', { count: previewResult.rows.length - 10 })}
                       </div>
                     )}
                   </div>
@@ -403,17 +405,17 @@ export default function GameEngineImportModal({ onClose }: GameEngineImportModal
                       {isImporting ? (
                         <>
                           <Loader2 className="w-4 h-4 animate-spin" />
-                          가져오는 중...
+                          {t('importing')}
                         </>
                       ) : importSuccess ? (
                         <>
                           <CheckCircle className="w-4 h-4" />
-                          가져오기 완료!
+                          {t('importComplete')}
                         </>
                       ) : (
                         <>
                           <Upload className="w-4 h-4" />
-                          새 시트로 가져오기
+                          {t('importAsNewSheet')}
                         </>
                       )}
                     </button>
@@ -425,7 +427,7 @@ export default function GameEngineImportModal({ onClose }: GameEngineImportModal
                 <div className="text-center">
                   <FileSpreadsheet className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--text-tertiary)' }} />
                   <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
-                    파일을 선택하면 미리보기가 표시됩니다
+                    {t('selectFileForPreview')}
                   </p>
                 </div>
               </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useTranslations } from 'next-intl';
 import {
   ChevronRight,
   ChevronLeft,
@@ -35,171 +36,177 @@ interface TutorialStep {
   isGuidelinesStep?: boolean;
 }
 
-// 권장 수치 가이드라인 데이터
-const GUIDELINES_DATA = [
+// Helper function to get guidelines data with translations
+const getGuidelinesData = (t: (key: string) => string) => [
   {
     id: 'ttk',
     icon: Swords,
-    title: 'TTK (Time To Kill)',
+    title: t('onboarding.guidelines.ttk.title'),
     color: 'red',
     items: [
-      { label: 'FPS/슈터', value: '0.3~1.5초', desc: '빠른 전투, 높은 긴장감' },
-      { label: 'MOBA', value: '3~8초', desc: '팀 협동 여유' },
-      { label: 'MMO/RPG', value: '5~30초', desc: '전략적 스킬 사용' },
+      { label: t('onboarding.guidelines.ttk.items.fps.label'), value: t('onboarding.guidelines.ttk.items.fps.value'), desc: t('onboarding.guidelines.ttk.items.fps.desc') },
+      { label: t('onboarding.guidelines.ttk.items.moba.label'), value: t('onboarding.guidelines.ttk.items.moba.value'), desc: t('onboarding.guidelines.ttk.items.moba.desc') },
+      { label: t('onboarding.guidelines.ttk.items.mmorpg.label'), value: t('onboarding.guidelines.ttk.items.mmorpg.value'), desc: t('onboarding.guidelines.ttk.items.mmorpg.desc') },
     ],
   },
   {
     id: 'damage',
     icon: Target,
-    title: '데미지 공식',
+    title: t('onboarding.guidelines.damage.title'),
     color: 'orange',
     items: [
-      { label: '최소 데미지', value: '공격력의 10~20%', desc: '0 데미지 방지' },
-      { label: '방어력 감소율', value: '50~70% 상한', desc: '탱커도 죽을 수 있게' },
-      { label: 'EHP 비율', value: '탱커 2~3배', desc: '탱커가 딜러보다 버티는 시간' },
+      { label: t('onboarding.guidelines.damage.items.minDamage.label'), value: t('onboarding.guidelines.damage.items.minDamage.value'), desc: t('onboarding.guidelines.damage.items.minDamage.desc') },
+      { label: t('onboarding.guidelines.damage.items.defReduction.label'), value: t('onboarding.guidelines.damage.items.defReduction.value'), desc: t('onboarding.guidelines.damage.items.defReduction.desc') },
+      { label: t('onboarding.guidelines.damage.items.ehpRatio.label'), value: t('onboarding.guidelines.damage.items.ehpRatio.value'), desc: t('onboarding.guidelines.damage.items.ehpRatio.desc') },
     ],
   },
   {
     id: 'growth',
     icon: TrendingUp,
-    title: '성장 곡선',
+    title: t('onboarding.guidelines.growth.title'),
     color: 'green',
     items: [
-      { label: '선형 (Linear)', value: '레벨당 +5~10%', desc: '예측 쉬움, 후반 약함' },
-      { label: '지수 (Exponential)', value: '1.05~1.15 배율', desc: '후반 급성장' },
-      { label: '로그 (Logarithmic)', value: 'ln(레벨) 계수', desc: '초반 빠름, 후반 완만' },
+      { label: t('onboarding.guidelines.growth.items.linear.label'), value: t('onboarding.guidelines.growth.items.linear.value'), desc: t('onboarding.guidelines.growth.items.linear.desc') },
+      { label: t('onboarding.guidelines.growth.items.exponential.label'), value: t('onboarding.guidelines.growth.items.exponential.value'), desc: t('onboarding.guidelines.growth.items.exponential.desc') },
+      { label: t('onboarding.guidelines.growth.items.logarithmic.label'), value: t('onboarding.guidelines.growth.items.logarithmic.value'), desc: t('onboarding.guidelines.growth.items.logarithmic.desc') },
     ],
   },
   {
     id: 'economy',
     icon: Coins,
-    title: '경제 시스템',
+    title: t('onboarding.guidelines.economy.title'),
     color: 'yellow',
     items: [
-      { label: 'Faucet-Sink 비율', value: '획득:소비 = 1:0.7~0.9', desc: '약간의 잉여 허용' },
-      { label: '화폐 교환율', value: '프리미엄 1 = 일반 100', desc: '과금 가치 체감' },
-      { label: '인플레이션율', value: '주당 2~5%', desc: '장기 운영 기준' },
+      { label: t('onboarding.guidelines.economy.items.faucetSink.label'), value: t('onboarding.guidelines.economy.items.faucetSink.value'), desc: t('onboarding.guidelines.economy.items.faucetSink.desc') },
+      { label: t('onboarding.guidelines.economy.items.currencyRate.label'), value: t('onboarding.guidelines.economy.items.currencyRate.value'), desc: t('onboarding.guidelines.economy.items.currencyRate.desc') },
+      { label: t('onboarding.guidelines.economy.items.inflation.label'), value: t('onboarding.guidelines.economy.items.inflation.value'), desc: t('onboarding.guidelines.economy.items.inflation.desc') },
     ],
   },
   {
     id: 'gacha',
     icon: Sparkles,
-    title: '가챠/뽑기',
+    title: t('onboarding.guidelines.gacha.title'),
     color: 'purple',
     items: [
-      { label: '최고 등급 확률', value: '0.5~3%', desc: '희귀성 유지' },
-      { label: '천장 (Pity)', value: '70~100회', desc: '업계 표준' },
-      { label: '기대 비용', value: '최고 1개당 $50~100', desc: '과금 설계 기준' },
+      { label: t('onboarding.guidelines.gacha.items.topRate.label'), value: t('onboarding.guidelines.gacha.items.topRate.value'), desc: t('onboarding.guidelines.gacha.items.topRate.desc') },
+      { label: t('onboarding.guidelines.gacha.items.pity.label'), value: t('onboarding.guidelines.gacha.items.pity.value'), desc: t('onboarding.guidelines.gacha.items.pity.desc') },
+      { label: t('onboarding.guidelines.gacha.items.expectedCost.label'), value: t('onboarding.guidelines.gacha.items.expectedCost.value'), desc: t('onboarding.guidelines.gacha.items.expectedCost.desc') },
     ],
   },
   {
     id: 'flow',
     icon: Layers,
-    title: '몰입 이론 (Flow)',
+    title: t('onboarding.guidelines.flow.title'),
     color: 'blue',
     items: [
-      { label: '난이도 증가율', value: '스테이지당 5~15%', desc: '점진적 도전' },
-      { label: '실패 허용 횟수', value: '2~3회', desc: '좌절 전 재시도' },
-      { label: '보상 간격', value: '3~5분', desc: '작은 성취감 유지' },
+      { label: t('onboarding.guidelines.flow.items.difficultyRate.label'), value: t('onboarding.guidelines.flow.items.difficultyRate.value'), desc: t('onboarding.guidelines.flow.items.difficultyRate.desc') },
+      { label: t('onboarding.guidelines.flow.items.failCount.label'), value: t('onboarding.guidelines.flow.items.failCount.value'), desc: t('onboarding.guidelines.flow.items.failCount.desc') },
+      { label: t('onboarding.guidelines.flow.items.rewardInterval.label'), value: t('onboarding.guidelines.flow.items.rewardInterval.value'), desc: t('onboarding.guidelines.flow.items.rewardInterval.desc') },
     ],
   },
 ];
 
-const TUTORIAL_STEPS: TutorialStep[] = [
+// Helper function to get tutorial steps with translations
+const getTutorialSteps = (t: (key: string) => string): TutorialStep[] => [
   {
     id: 'welcome',
-    title: '게임 밸런스 툴에 오신 걸 환영합니다',
-    description: '이 툴은 게임 기획자가 캐릭터 스탯, 무기 데미지, 레벨 테이블 등을 관리하고 계산하는 도구입니다.',
-    tip: '엑셀처럼 사용하되, 게임에 특화된 수식을 바로 쓸 수 있어요.',
+    title: t('onboarding.steps.welcome.title'),
+    description: t('onboarding.steps.welcome.description'),
+    tip: t('onboarding.steps.welcome.tip'),
   },
   {
     id: 'guidelines',
-    title: '권장 수치 가이드',
-    description: '게임 밸런싱에 자주 사용되는 업계 표준 수치들입니다. 작업할 때 참고하세요.',
-    tip: '이 가이드는 상단 메뉴의 "레퍼런스"에서 언제든 다시 볼 수 있어요.',
+    title: t('onboarding.steps.guidelines.title'),
+    description: t('onboarding.steps.guidelines.description'),
+    tip: t('onboarding.steps.guidelines.tip'),
     isGuidelinesStep: true,
   },
   {
     id: 'create-project',
-    title: '1단계: 프로젝트 만들기',
-    description: '왼쪽 사이드바에서 "새 프로젝트" 버튼을 클릭하세요.',
-    action: '새 프로젝트 → 이름 입력 → Enter',
-    tip: '프로젝트 = 하나의 게임. 여러 게임을 따로 관리할 수 있어요.',
+    title: t('onboarding.steps.createProject.title'),
+    description: t('onboarding.steps.createProject.description'),
+    action: t('onboarding.steps.createProject.action'),
+    tip: t('onboarding.steps.createProject.tip'),
   },
   {
     id: 'create-sheet',
-    title: '2단계: 시트 만들기',
-    description: '프로젝트 안에 데이터 시트를 만듭니다. 상단 탭의 "+" 버튼을 클릭하세요.',
-    action: '+ 버튼 → 템플릿 선택 또는 빈 시트',
-    tip: '템플릿을 쓰면 RPG 캐릭터, FPS 무기 등 기본 구조가 자동 생성됩니다.',
+    title: t('onboarding.steps.createSheet.title'),
+    description: t('onboarding.steps.createSheet.description'),
+    action: t('onboarding.steps.createSheet.action'),
+    tip: t('onboarding.steps.createSheet.tip'),
   },
   {
     id: 'input-data',
-    title: '3단계: 데이터 입력하기',
-    description: '셀을 클릭하면 바로 입력할 수 있습니다. 숫자나 텍스트를 입력하세요.',
-    action: '셀 클릭 → 값 입력 → Enter',
+    title: t('onboarding.steps.inputData.title'),
+    description: t('onboarding.steps.inputData.description'),
+    action: t('onboarding.steps.inputData.action'),
     example: {
-      input: '150',
-      result: '150 (숫자로 저장됨)',
+      input: t('onboarding.steps.inputData.example.input'),
+      result: t('onboarding.steps.inputData.example.result'),
     },
-    tip: 'Enter로 확정, Esc로 취소',
+    tip: t('onboarding.steps.inputData.tip'),
   },
   {
     id: 'formula-basic',
-    title: '4단계: 수식 사용하기 (핵심!)',
-    description: '셀에 = 로 시작하면 수식으로 인식됩니다. 다른 셀 값을 참조하거나 계산할 수 있어요.',
-    action: '셀 클릭 → = 입력 → 수식 작성 → Enter',
+    title: t('onboarding.steps.formulaBasic.title'),
+    description: t('onboarding.steps.formulaBasic.description'),
+    action: t('onboarding.steps.formulaBasic.action'),
     example: {
-      before: 'ATK 열에 100이 있을 때',
-      input: '=ATK * 1.5',
-      result: '150 (ATK의 1.5배)',
+      before: t('onboarding.steps.formulaBasic.example.before'),
+      input: t('onboarding.steps.formulaBasic.example.input'),
+      result: t('onboarding.steps.formulaBasic.example.result'),
     },
-    tip: '열 이름으로 같은 행의 다른 값을 참조합니다.',
+    tip: t('onboarding.steps.formulaBasic.tip'),
   },
   {
     id: 'formula-damage',
-    title: '5단계: 게임 수식 - DAMAGE',
-    description: '게임에서 자주 쓰는 데미지 계산 공식이 내장되어 있습니다.',
+    title: t('onboarding.steps.formulaDamage.title'),
+    description: t('onboarding.steps.formulaDamage.description'),
     example: {
-      before: '공격력 100, 방어력 50일 때',
-      input: '=DAMAGE(100, 50)',
-      result: '66.67 (감소율 공식 적용)',
+      before: t('onboarding.steps.formulaDamage.example.before'),
+      input: t('onboarding.steps.formulaDamage.example.input'),
+      result: t('onboarding.steps.formulaDamage.example.result'),
     },
-    tip: '공식: ATK × (100 ÷ (100 + DEF)). 방어력이 높을수록 데미지 감소.',
+    tip: t('onboarding.steps.formulaDamage.tip'),
   },
   {
     id: 'formula-dps',
-    title: '6단계: 게임 수식 - DPS',
-    description: '초당 데미지(DPS)를 계산합니다. 크리티컬도 포함됩니다.',
+    title: t('onboarding.steps.formulaDps.title'),
+    description: t('onboarding.steps.formulaDps.description'),
     example: {
-      before: '데미지 50, 공속 2, 크리율 20%, 크뎀 150%',
-      input: '=DPS(50, 2, 0.2, 1.5)',
-      result: '110 (크리티컬 반영 DPS)',
+      before: t('onboarding.steps.formulaDps.example.before'),
+      input: t('onboarding.steps.formulaDps.example.input'),
+      result: t('onboarding.steps.formulaDps.example.result'),
     },
-    tip: '공식: 데미지 × 공속 × (1 + 크리율 × (크뎀 - 1))',
+    tip: t('onboarding.steps.formulaDps.tip'),
   },
   {
     id: 'formula-scale',
-    title: '7단계: 게임 수식 - SCALE',
-    description: '레벨에 따른 스탯 성장을 계산합니다. 선형, 지수, 로그 등 다양한 곡선 지원.',
+    title: t('onboarding.steps.formulaScale.title'),
+    description: t('onboarding.steps.formulaScale.description'),
     example: {
-      before: '기본값 100, 레벨 10, 성장률 1.1',
-      input: '=SCALE(100, 10, 1.1, "exponential")',
-      result: '259.37 (지수 성장)',
+      before: t('onboarding.steps.formulaScale.example.before'),
+      input: t('onboarding.steps.formulaScale.example.input'),
+      result: t('onboarding.steps.formulaScale.example.result'),
     },
-    tip: '곡선 종류: "linear", "exponential", "logarithmic", "quadratic"',
+    tip: t('onboarding.steps.formulaScale.tip'),
   },
   {
     id: 'done',
-    title: '준비 완료!',
-    description: '이제 직접 사용해보세요. 수식 도우미(화면 하단)에서 모든 함수 목록을 볼 수 있습니다.',
-    tip: '막히면 수식 도우미의 "테스트" 기능으로 먼저 확인해보세요.',
+    title: t('onboarding.steps.done.title'),
+    description: t('onboarding.steps.done.description'),
+    tip: t('onboarding.steps.done.tip'),
   },
 ];
 
 export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
+  const t = useTranslations();
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+
+  // Get translated data
+  const GUIDELINES_DATA = getGuidelinesData(t);
+  const TUTORIAL_STEPS = getTutorialSteps(t);
 
   const handleNext = () => {
     setCompletedSteps((prev) => new Set([...prev, currentStep]));
@@ -283,7 +290,7 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
             onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-secondary)'}
             onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
           >
-            건너뛰기
+            {t('onboarding.skip')}
           </button>
         </div>
 
@@ -391,7 +398,7 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
                 onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
               >
                 <ChevronLeft className="w-4 h-4" />
-                이전
+                {t('onboarding.previous')}
               </button>
             )}
             <button
@@ -402,10 +409,10 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
               onMouseLeave={(e) => e.currentTarget.style.opacity = '1'}
             >
               {currentStep === TUTORIAL_STEPS.length - 1 ? (
-                '시작하기'
+                t('onboarding.getStarted')
               ) : (
                 <>
-                  다음
+                  {t('onboarding.next')}
                   <ChevronRight className="w-4 h-4" />
                 </>
               )}

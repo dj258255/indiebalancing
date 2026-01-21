@@ -377,7 +377,71 @@
     "catMath": "Math",
     "catStat": "Statistics",
     "catTrig": "Trigonometry",
-    "catLogic": "Condition/Logic"
+    "catLogic": "Condition/Logic",
+    "functions": {
+      "SCALE": "Level Scaling",
+      "DAMAGE": "Damage Calculation (Reduction Formula)",
+      "DPS": "Damage Per Second",
+      "TTK": "Time To Kill",
+      "EHP": "Effective HP",
+      "DROP_RATE": "Drop Rate Adjustment",
+      "GACHA_PITY": "Gacha Pity Rate",
+      "COST": "Upgrade Cost",
+      "CHANCE": "Success Chance (N attempts)",
+      "EXPECTED_ATTEMPTS": "Expected Attempts for Success",
+      "COMPOUND": "Compound Growth",
+      "WAVE_POWER": "Wave Enemy Power",
+      "ELEMENT_MULT": "Element Affinity Multiplier",
+      "COMBO_MULT": "Combo Multiplier",
+      "CLAMP": "Clamp Value Range",
+      "LERP": "Linear Interpolation",
+      "REMAP": "Value Range Mapping",
+      "DIMINISHING": "Diminishing Returns (Softcap)",
+      "STAMINA_REGEN": "Stamina Regeneration",
+      "STAR_RATING": "Star Rating Calculation",
+      "TIER_INDEX": "Tier Index",
+      "REF": "Reference Other Sheet",
+      "POWER": "Power (Exponentiation)",
+      "ABS": "Absolute Value",
+      "SQRT": "Square Root",
+      "LOG": "Logarithm (Base Configurable)",
+      "LOG10": "Common Logarithm (Base 10)",
+      "LOG2": "Binary Logarithm (Base 2)",
+      "EXP": "Exponential (e^x)",
+      "ROUND": "Round (Decimal Places)",
+      "FLOOR": "Floor",
+      "CEIL": "Ceiling",
+      "TRUNC": "Truncate Decimals",
+      "MOD": "Modulo (Remainder)",
+      "SIGN": "Sign (-1, 0, 1)",
+      "SUM": "Sum",
+      "AVERAGE": "Average",
+      "MIN": "Minimum",
+      "MAX": "Maximum",
+      "COUNT": "Count",
+      "MEDIAN": "Median",
+      "STDEV": "Standard Deviation",
+      "VARIANCE": "Variance",
+      "SIN": "Sine (Radians)",
+      "COS": "Cosine (Radians)",
+      "TAN": "Tangent (Radians)",
+      "ASIN": "Arc Sine",
+      "ACOS": "Arc Cosine",
+      "ATAN": "Arc Tangent",
+      "ATAN2": "Arc Tangent 2 (y, x)",
+      "DEGREES": "Radians to Degrees",
+      "RADIANS": "Degrees to Radians",
+      "IF": "Conditional",
+      "AND": "Logical AND",
+      "OR": "Logical OR",
+      "NOT": "Logical NOT",
+      "RAND": "Random (0~1)",
+      "RANDBETWEEN": "Random Integer in Range",
+      "PI": "Pi Constant (π)",
+      "E": "Euler's Number (e)",
+      "시트명.변수명": "Reference Other Sheet Value",
+      "이전행.컬럼명": "Reference Previous Row Value"
+    }
   },
   "export": {
     "codeGeneration": "Code Generation",
@@ -1180,8 +1244,18 @@
   },
   "comparisonChart": {
     "title": "Comparison Analysis",
-    "helpDesc": "Compare multiple units/items visually with radar, bar, and distribution charts.",
+    "fullTitle": "Data Comparison & Analysis",
+    "helpDesc": "Visually compare stats of characters, weapons, and items.",
     "helpSelectTarget": "Select at least 1 target and 3+ stats to compare.",
+    "helpRadar": "Radar: Compare overall stats",
+    "helpBar": "Bar: Compare exact values",
+    "helpHistogram": "Histogram: Check data distribution",
+    "helpUsage": "Select rows from sheet → Add All → Check columns to compare",
+    "modalHelpDesc": "Compare stats of characters, weapons, and items at a glance to find balance issues.",
+    "radarUseCase": "When comparing multiple stats",
+    "barUseCase": "When comparing exact values",
+    "histogramUseCase": "When checking data distribution",
+    "usageGuide": "Usage: Select rows from sheet → Click \"Add All\" → Check columns to compare → View chart",
     "tabs": {
       "radar": "Radar Chart",
       "bar": "Bar Chart",
@@ -1196,6 +1270,236 @@
     "reference": "Reference",
     "range": "Range",
     "selectPrompt": "Select targets and items to compare on the left",
-    "minTargets": "Minimum 1 target, 3+ items recommended"
+    "minTargets": "Minimum 1 target, 3+ items recommended",
+    "selectSheet": "Please select a sheet",
+    "close": "Close",
+    "help": "Help",
+    "visualizeData": "Visualize data from {sheetName} sheet",
+    "selectedData": "Selected Data ({count})",
+    "addAll": "Add All",
+    "clearSelection": "Clear Selection",
+    "add": "Add",
+    "sheet": "Sheet",
+    "rowNum": "Row {num}",
+    "columnToAnalyze": "Column to Analyze",
+    "select": "Select...",
+    "statistics": "Statistics",
+    "totalCount": "Total Count",
+    "minimum": "Min",
+    "maximum": "Max",
+    "selectTargetAndItems": "Select targets and items to compare on the left",
+    "recommendMinimum": "Minimum 1 target, 3+ items recommended",
+    "selectColumnToAnalyze": "Select a column to analyze on the left",
+    "noNumericData": "No numeric data",
+    "distribution": "{column} Distribution",
+    "count": " items"
+  },
+  "gameEngineExport": {
+    "title": "Game Engine Export",
+    "subtitle": "Export to Unity, Unreal, Godot formats",
+    "sheetToExport": "Sheet to Export",
+    "className": "Class Name (optional)",
+    "filesGenerated": "Files to Generate ({count})",
+    "downloadAll": "Download All",
+    "copy": "Copy",
+    "download": "Download",
+    "selectFormat": "Select export format from the left",
+    "selectSheetFirst": "Please select a sheet first",
+    "footerHelp": "Copy generated files to the appropriate location in your game project"
+  },
+  "gameEngineImport": {
+    "title": "Game Engine Import",
+    "subtitle": "Import from Unity, Unreal, Godot formats",
+    "clickToSelectOther": "Click to select another file",
+    "dragOrClick": "Drag file or click to upload",
+    "supportedFormats": "Supported formats:",
+    "sheetName": "Sheet Name",
+    "newSheetName": "New sheet name",
+    "fileFormat": "File Format",
+    "detected": "{columns} columns, {rows} rows detected",
+    "preview": "Preview (first 10 rows)",
+    "moreRows": "... and {count} more rows",
+    "importing": "Importing...",
+    "importComplete": "Import Complete!",
+    "importAsNewSheet": "Import as New Sheet",
+    "selectFileForPreview": "Preview will show when file is selected",
+    "sheetCreationFailed": "Sheet creation failed",
+    "importError": "An error occurred while importing."
+  },
+  "onboarding": {
+    "skip": "Skip",
+    "previous": "Previous",
+    "next": "Next",
+    "getStarted": "Get Started",
+    "guidelines": {
+      "ttk": {
+        "title": "TTK (Time To Kill)",
+        "items": {
+          "fps": { "label": "FPS/Shooter", "value": "0.3~1.5 sec", "desc": "Fast combat, high tension" },
+          "moba": { "label": "MOBA", "value": "3~8 sec", "desc": "Team coordination time" },
+          "mmorpg": { "label": "MMO/RPG", "value": "5~30 sec", "desc": "Strategic skill usage" }
+        }
+      },
+      "damage": {
+        "title": "Damage Formula",
+        "items": {
+          "minDamage": { "label": "Min Damage", "value": "10~20% of ATK", "desc": "Prevent 0 damage" },
+          "defReduction": { "label": "DEF Reduction Cap", "value": "50~70% cap", "desc": "Tanks can still die" },
+          "ehpRatio": { "label": "EHP Ratio", "value": "Tank 2~3x", "desc": "Tank survival vs DPS" }
+        }
+      },
+      "growth": {
+        "title": "Growth Curves",
+        "items": {
+          "linear": { "label": "Linear", "value": "+5~10% per level", "desc": "Predictable, weak late" },
+          "exponential": { "label": "Exponential", "value": "1.05~1.15 ratio", "desc": "Rapid late growth" },
+          "logarithmic": { "label": "Logarithmic", "value": "ln(level) coefficient", "desc": "Fast early, slow late" }
+        }
+      },
+      "economy": {
+        "title": "Economy System",
+        "items": {
+          "faucetSink": { "label": "Faucet-Sink Ratio", "value": "Gain:Spend = 1:0.7~0.9", "desc": "Allow slight surplus" },
+          "currencyRate": { "label": "Currency Exchange", "value": "Premium 1 = Regular 100", "desc": "Payment value perception" },
+          "inflation": { "label": "Inflation Rate", "value": "2~5% per week", "desc": "Long-term operation" }
+        }
+      },
+      "gacha": {
+        "title": "Gacha/Draw System",
+        "items": {
+          "topRate": { "label": "Top Tier Rate", "value": "0.5~3%", "desc": "Maintain rarity" },
+          "pity": { "label": "Pity System", "value": "70~100 pulls", "desc": "Industry standard" },
+          "expectedCost": { "label": "Expected Cost", "value": "$50~100 per top", "desc": "Monetization baseline" }
+        }
+      },
+      "flow": {
+        "title": "Flow Theory",
+        "items": {
+          "difficultyRate": { "label": "Difficulty Increase", "value": "5~15% per stage", "desc": "Gradual challenge" },
+          "failCount": { "label": "Failure Tolerance", "value": "2~3 times", "desc": "Retry before frustration" },
+          "rewardInterval": { "label": "Reward Interval", "value": "3~5 minutes", "desc": "Maintain small victories" }
+        }
+      }
+    },
+    "steps": {
+      "welcome": {
+        "title": "Welcome to Game Balance Tool",
+        "description": "This tool helps game designers manage and calculate character stats, weapon damage, level tables, and more.",
+        "tip": "Use it like Excel, but with game-specific formulas built in."
+      },
+      "guidelines": {
+        "title": "Recommended Values Guide",
+        "description": "Industry-standard values commonly used in game balancing. Reference these during your work.",
+        "tip": "You can always access this guide from the \"References\" menu at the top."
+      },
+      "createProject": {
+        "title": "Step 1: Create Project",
+        "description": "Click the \"New Project\" button in the left sidebar.",
+        "action": "New Project → Enter name → Press Enter",
+        "tip": "Project = One game. You can manage multiple games separately."
+      },
+      "createSheet": {
+        "title": "Step 2: Create Sheet",
+        "description": "Create data sheets within your project. Click the \"+\" button in the top tabs.",
+        "action": "+ Button → Select template or empty sheet",
+        "tip": "Templates auto-generate basic structures for RPG characters, FPS weapons, etc."
+      },
+      "inputData": {
+        "title": "Step 3: Input Data",
+        "description": "Click any cell to start typing. Enter numbers or text.",
+        "action": "Click cell → Enter value → Press Enter",
+        "example": {
+          "input": "150",
+          "result": "150 (stored as number)"
+        },
+        "tip": "Enter to confirm, Esc to cancel"
+      },
+      "formulaBasic": {
+        "title": "Step 4: Using Formulas (Core!)",
+        "description": "Start with = to create a formula. Reference other cells or perform calculations.",
+        "action": "Click cell → Type = → Write formula → Press Enter",
+        "example": {
+          "before": "When ATK column has 100",
+          "input": "=ATK * 1.5",
+          "result": "150 (1.5x of ATK)"
+        },
+        "tip": "Use column names to reference values in the same row."
+      },
+      "formulaDamage": {
+        "title": "Step 5: Game Formula - DAMAGE",
+        "description": "Built-in damage calculation formulas commonly used in games.",
+        "example": {
+          "before": "ATK 100, DEF 50",
+          "input": "=DAMAGE(100, 50)",
+          "result": "66.67 (with reduction formula)"
+        },
+        "tip": "Formula: ATK × (100 ÷ (100 + DEF)). Higher DEF = lower damage."
+      },
+      "formulaDps": {
+        "title": "Step 6: Game Formula - DPS",
+        "description": "Calculate DPS (Damage Per Second) including critical hits.",
+        "example": {
+          "before": "DMG 50, AtkSpd 2, CritRate 20%, CritDmg 150%",
+          "input": "=DPS(50, 2, 0.2, 1.5)",
+          "result": "110 (with crit DPS)"
+        },
+        "tip": "Formula: Damage × AtkSpeed × (1 + CritRate × (CritDmg - 1))"
+      },
+      "formulaScale": {
+        "title": "Step 7: Game Formula - SCALE",
+        "description": "Calculate stat growth by level. Supports linear, exponential, logarithmic, and more.",
+        "example": {
+          "before": "Base 100, Level 10, Growth 1.1",
+          "input": "=SCALE(100, 10, 1.1, \"exponential\")",
+          "result": "259.37 (exponential growth)"
+        },
+        "tip": "Curve types: \"linear\", \"exponential\", \"logarithmic\", \"quadratic\""
+      },
+      "done": {
+        "title": "Ready to Go!",
+        "description": "Now try it yourself. Check the Formula Helper (bottom of screen) for all available functions.",
+        "tip": "Use the \"Test\" feature in Formula Helper to verify formulas first."
+      }
+    }
+  },
+  "templates": {
+    "genres": {
+      "rpg": "RPG",
+      "rpgDesc": "MMORPG, ARPG, JRPG, Turn-based, etc.",
+      "action": "Action",
+      "actionDesc": "Action, Fighting, Hack & Slash",
+      "fps": "FPS/TPS",
+      "fpsDesc": "Shooter games",
+      "strategy": "Strategy",
+      "strategyDesc": "RTS, Turn-based Strategy, Tower Defense",
+      "idle": "Idle",
+      "idleDesc": "Idle, Clicker, Incremental",
+      "roguelike": "Roguelike",
+      "roguelikeDesc": "Roguelike, Roguelite",
+      "moba": "MOBA/AOS",
+      "mobaDesc": "Multiplayer Battle Arena",
+      "card": "Card/Deckbuilding",
+      "cardDesc": "CCG, Deck Builder",
+      "puzzle": "Puzzle",
+      "puzzleDesc": "Puzzle, Match-3",
+      "simulation": "Simulation",
+      "simulationDesc": "Management, Tycoon, Breeding"
+    },
+    "categories": {
+      "config": "Config",
+      "character": "Character",
+      "equipment": "Equipment",
+      "skill": "Skill",
+      "enemy": "Enemy/Monster",
+      "unit": "Unit",
+      "item": "Item",
+      "card": "Card",
+      "stage": "Stage",
+      "progression": "Progression",
+      "economy": "Economy",
+      "gacha": "Gacha",
+      "reward": "Reward",
+      "analysis": "Analysis"
+    }
   }
 }

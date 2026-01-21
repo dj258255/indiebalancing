@@ -9,7 +9,7 @@ import {
   getTemplatesByCategory,
   createSheetFromTemplate,
   type SheetTemplate,
-} from '@/lib/templates';
+} from '@/lib/templates/index';
 import { useProjectStore } from '@/stores/projectStore';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
@@ -183,9 +183,9 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                     color: selectedGenre === genre.id ? 'white' : 'var(--text-secondary)',
                     borderColor: selectedGenre === genre.id ? 'var(--accent)' : 'var(--border-secondary)',
                   }}
-                  title={genre.description}
+                  title={genre.descKey ? t(genre.descKey) : genre.description}
                 >
-                  {genre.name}
+                  {genre.nameKey ? t(genre.nameKey) : genre.name}
                 </button>
               ))}
             </div>
@@ -227,7 +227,10 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                   className="px-2 py-0.5 text-xs rounded-full"
                   style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
                 >
-                  {gameGenres.find((g) => g.id === selectedGenre)?.name}
+                  {(() => {
+                    const genre = gameGenres.find((g) => g.id === selectedGenre);
+                    return genre?.nameKey ? t(genre.nameKey) : genre?.name;
+                  })()}
                 </span>
               )}
               {selectedCategory && (
@@ -235,7 +238,10 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                   className="px-2 py-0.5 text-xs rounded-full"
                   style={{ background: 'var(--primary-purple-light)', color: 'var(--primary-purple)' }}
                 >
-                  {templateCategories.find((c) => c.id === selectedCategory)?.name}
+                  {(() => {
+                    const cat = templateCategories.find((c) => c.id === selectedCategory);
+                    return cat?.nameKey ? t(cat.nameKey) : cat?.name;
+                  })()}
                 </span>
               )}
               {searchQuery && (
@@ -338,7 +344,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                   }}
                 >
                   <span>{cat.icon}</span>
-                  <span className="flex-1 truncate">{cat.name}</span>
+                  <span className="flex-1 truncate">{cat.nameKey ? t(cat.nameKey) : cat.name}</span>
                   <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
                     {count}
                   </span>
@@ -415,18 +421,21 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                       {/* 장르 태그 */}
                       {template.genre && template.genre.length > 0 && (
                         <div className="mt-2 flex flex-wrap gap-1">
-                          {template.genre.slice(0, 3).map((g) => (
-                            <span
-                              key={g}
-                              className="px-1.5 py-0.5 text-xs rounded"
-                              style={{
-                                background: 'var(--accent-light)',
-                                color: 'var(--accent)',
-                              }}
-                            >
-                              {gameGenres.find((genre) => genre.id === g)?.name || g}
-                            </span>
-                          ))}
+                          {template.genre.slice(0, 3).map((g) => {
+                            const genre = gameGenres.find((genre) => genre.id === g);
+                            return (
+                              <span
+                                key={g}
+                                className="px-1.5 py-0.5 text-xs rounded"
+                                style={{
+                                  background: 'var(--accent-light)',
+                                  color: 'var(--accent)',
+                                }}
+                              >
+                                {genre?.nameKey ? t(genre.nameKey) : genre?.name || g}
+                              </span>
+                            );
+                          })}
                           {template.genre.length > 3 && (
                             <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
                               +{template.genre.length - 3}

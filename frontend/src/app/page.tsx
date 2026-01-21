@@ -60,7 +60,6 @@ import WelcomeScreen from './components/WelcomeScreen';
 import MobileHeader from './components/MobileHeader';
 import MobileSidebar from './components/MobileSidebar';
 import SheetHeader from './components/SheetHeader';
-import HistoryPanel from './components/HistoryPanel';
 import BottomToolbar from './components/BottomToolbar';
 import EmptySheetView from './components/EmptySheetView';
 import FloatingPanels from './components/FloatingPanels';
@@ -438,14 +437,9 @@ export default function Home() {
                     canRedo={canRedo()}
                     showHistoryPanel={showHistoryPanel}
                     onToggleHistory={() => setShowHistoryPanel(!showHistoryPanel)}
+                    history={getHistory()}
+                    onHistoryJump={(index) => handleHistoryJump(index, () => setShowHistoryPanel(false))}
                   />
-
-                  {showHistoryPanel && (
-                    <HistoryPanel
-                      history={getHistory()}
-                      onJump={(index) => handleHistoryJump(index, () => setShowHistoryPanel(false))}
-                    />
-                  )}
 
                   <div className="flex-1 min-h-0 overflow-hidden">
                     <SheetTable projectId={currentProject.id} sheet={currentSheet} />

@@ -598,72 +598,65 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
               <div className="flex items-center gap-2">
                 <HelpCircle className="w-5 h-5" style={{ color: 'var(--accent)' }} />
                 <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-                  난이도 곡선 설계 사용법
+                  {t('helpTitle')}
                 </span>
               </div>
 
               {/* 개요 */}
               <div className="space-y-1">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>개요</div>
+                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpOverview')}</div>
                 <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  난이도 곡선 설계는 게임의 스테이지 진행에 따른 플레이어와 적의 파워 밸런스를
-                  시각화하고, 적절한 "벽" 구간과 콘텐츠 해금 시점을 설계하는 도구입니다.
+                  {t('helpOverviewDesc')}
                 </p>
               </div>
 
               {/* 사용 방법 */}
               <div className="space-y-2">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>사용 방법</div>
+                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpUsage')}</div>
                 <div className="space-y-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
                   <div className="flex gap-2">
                     <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
                           style={{ background: 'var(--accent)', color: 'white' }}>1</span>
-                    <span><strong>프리셋 선택:</strong> 캐주얼/밸런스/하드코어 중 게임 성격에 맞는 것을 선택합니다.</span>
+                    <span>{t('helpStep1')}</span>
                   </div>
                   <div className="flex gap-2">
                     <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
                           style={{ background: 'var(--accent)', color: 'white' }}>2</span>
-                    <span><strong>플레이타임 설정:</strong> 목표하는 일일 플레이 시간을 설정합니다.</span>
+                    <span>{t('helpStep2')}</span>
                   </div>
                   <div className="flex gap-2">
                     <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
                           style={{ background: 'var(--accent)', color: 'white' }}>3</span>
-                    <span><strong>벽 스테이지 설정:</strong> 플레이어가 막히게 될 구간을 추가합니다.</span>
+                    <span>{t('helpStep3')}</span>
                   </div>
                   <div className="flex gap-2">
                     <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
                           style={{ background: 'var(--accent)', color: 'white' }}>4</span>
-                    <span><strong>마일스톤 설정:</strong> 각 스테이지에서 해금되는 콘텐츠를 기록합니다.</span>
+                    <span>{t('helpStep4')}</span>
                   </div>
                 </div>
               </div>
 
               {/* 프리셋 설명 */}
               <div className="space-y-2">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>프리셋 특성</div>
+                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpPresets')}</div>
                 <div className="grid grid-cols-3 gap-2 text-xs">
                   <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>캐주얼</div>
+                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('presets.casual')}</div>
                     <div style={{ color: 'var(--text-tertiary)' }}>
-                      플레이어 성장 ↑<br/>
-                      적 성장 ↓<br/>
-                      벽 간격 넓음
+                      {t('helpCasualDesc')}
                     </div>
                   </div>
                   <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>밸런스</div>
+                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('presets.balanced')}</div>
                     <div style={{ color: 'var(--text-tertiary)' }}>
-                      균등한 성장<br/>
-                      적절한 도전감<br/>
-                      10스테이지마다 벽
+                      {t('helpBalancedDesc')}
                     </div>
                   </div>
                   <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>하드코어</div>
+                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('presets.hardcore')}</div>
                     <div style={{ color: 'var(--text-tertiary)' }}>
-                      플레이어 성장 ↓<br/>
-                      적 성장 ↑<br/>
-                      빈번한 벽
+                      {t('helpHardcoreDesc')}
                     </div>
                   </div>
                 </div>
@@ -671,69 +664,69 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
 
               {/* 그래프 읽는 법 */}
               <div className="space-y-1">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>그래프 읽는 법</div>
+                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpGraph')}</div>
                 <div className="flex gap-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 rounded" style={{ background: '#3b82f6' }} />
-                    <span>플레이어 파워</span>
+                    <span>{t('player')}</span>
                   </div>
                   <div className="flex items-center gap-1">
                     <div className="w-3 h-3 rounded" style={{ background: '#ef4444' }} />
-                    <span>적 파워</span>
+                    <span>{t('enemy')}</span>
                   </div>
                 </div>
                 <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                  파랑 바가 빨강 바보다 높으면 쉬운 구간, 빨강이 높으면 어려운 구간(벽)입니다.
+                  {t('helpGraphDesc')}
                 </p>
               </div>
 
               {/* 수식 */}
               <div className="space-y-2">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>사용 수식</div>
+                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpFormulas')}</div>
                 <div className="space-y-2 text-xs">
                   <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>파워 성장 (지수 함수)</div>
+                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('helpPowerGrowth')}</div>
                     <code className="block px-2 py-1 rounded text-[11px]" style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
                       Power(n) = 100 × growth^(n-1)
                     </code>
                     <div className="mt-1" style={{ color: 'var(--text-tertiary)' }}>
-                      n: 스테이지, growth: 성장률 (캐주얼 1.12, 밸런스 1.10, 하드코어 1.08/1.12)
+                      {t('helpPowerGrowthDesc')}
                     </div>
                   </div>
                   <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>벽 스테이지 적 파워</div>
+                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('helpWallPower')}</div>
                     <code className="block px-2 py-1 rounded text-[11px]" style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
                       EnemyPower(wall) = EnemyPower × 1.5
                     </code>
                     <div className="mt-1" style={{ color: 'var(--text-tertiary)' }}>
-                      벽 스테이지에서 적 파워 50% 급상승
+                      {t('helpWallPowerDesc')}
                     </div>
                   </div>
                   <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>마일스톤 파워 보너스</div>
+                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('helpMilestonePower')}</div>
                     <code className="block px-2 py-1 rounded text-[11px]" style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
                       PlayerPower(milestone) = PlayerPower × (1 + bonus/100)
                     </code>
                     <div className="mt-1" style={{ color: 'var(--text-tertiary)' }}>
-                      콘텐츠 해금 시 플레이어 파워 증가 (벽 돌파 지원)
+                      {t('helpMilestonePowerDesc')}
                     </div>
                   </div>
                   <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>난이도 판정</div>
+                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('helpDifficultyCheck')}</div>
                     <code className="block px-2 py-1 rounded text-[11px]" style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
                       Ratio = PlayerPower / EnemyPower
                     </code>
                     <div className="mt-1" style={{ color: 'var(--text-tertiary)' }}>
-                      Ratio {'>'} 1.3: 쉬움 | 0.8~1.3: 보통 | {'<'} 0.8: 벽(어려움)
+                      {t('helpDifficultyCheckDesc')}
                     </div>
                   </div>
                   <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>예상 도달 일수</div>
+                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('helpEstimatedDays')}</div>
                     <code className="block px-2 py-1 rounded text-[11px]" style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
                       Days = (Stage / StagesPerDay) + WallCount
                     </code>
                     <div className="mt-1" style={{ color: 'var(--text-tertiary)' }}>
-                      벽 하나당 +1일 추가 (막히는 시간 가정)
+                      {t('helpEstimatedDaysDesc')}
                     </div>
                   </div>
                 </div>
@@ -741,14 +734,14 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
 
               {/* 디자인 팁 */}
               <div className="space-y-1">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>난이도 설계 팁</div>
+                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpTips')}</div>
                 <ul className="text-xs space-y-0.5" style={{ color: 'var(--text-secondary)' }}>
-                  <li>• 벽은 새 콘텐츠 해금 직전에 배치 → 기대감 유발</li>
-                  <li>• 초반 10스테이지는 벽 없이 시원하게 진행</li>
-                  <li>• 벽에서 막히는 시간은 30분~2시간이 적당</li>
-                  <li>• 과금 유도 시점 = 벽 + 편의 기능 해금</li>
-                  <li>• 일일 플레이타임 목표를 먼저 정하고 역산 설계</li>
-                  <li>• 마일스톤으로 목표 의식 부여 (해금 콘텐츠 예고)</li>
+                  <li>• {t('helpTip1')}</li>
+                  <li>• {t('helpTip2')}</li>
+                  <li>• {t('helpTip3')}</li>
+                  <li>• {t('helpTip4')}</li>
+                  <li>• {t('helpTip5')}</li>
+                  <li>• {t('helpTip6')}</li>
                 </ul>
               </div>
             </div>

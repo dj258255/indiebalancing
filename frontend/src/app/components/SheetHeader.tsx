@@ -3,6 +3,13 @@
 import { StickyNote, Undo2, Redo2, History, ChevronDown } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import type { Sheet } from '@/types';
+import HistoryPanel from './HistoryPanel';
+
+interface HistoryEntry {
+  state: unknown;
+  label: string;
+  timestamp: number;
+}
 
 interface SheetHeaderProps {
   sheet: Sheet;
@@ -13,6 +20,11 @@ interface SheetHeaderProps {
   canRedo: boolean;
   showHistoryPanel: boolean;
   onToggleHistory: () => void;
+  history: {
+    past: HistoryEntry[];
+    future: HistoryEntry[];
+  };
+  onHistoryJump: (index: number) => void;
 }
 
 export default function SheetHeader({
@@ -24,6 +36,8 @@ export default function SheetHeader({
   canRedo,
   showHistoryPanel,
   onToggleHistory,
+  history,
+  onHistoryJump,
 }: SheetHeaderProps) {
   const t = useTranslations();
 
@@ -93,6 +107,13 @@ export default function SheetHeader({
             className={`w-3 h-3 transition-transform ${showHistoryPanel ? 'rotate-180' : ''}`}
           />
         </button>
+
+        {showHistoryPanel && (
+          <HistoryPanel
+            history={history}
+            onJump={onHistoryJump}
+          />
+        )}
       </div>
     </div>
   );
