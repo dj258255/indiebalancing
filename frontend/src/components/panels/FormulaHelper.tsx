@@ -4,30 +4,62 @@ import { useState, useMemo } from 'react';
 import { Calculator, X, Copy, Check, Swords, Coins, Layers, Wrench, Link, Sigma, Triangle, GitBranch, BarChart3 } from 'lucide-react';
 import { availableFunctions, evaluateFormula } from '@/lib/formulaEngine';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
-// 카테고리 정의
-const CATEGORIES = [
-  { id: 'all', name: '전체', icon: Calculator, color: 'var(--accent)' },
-  { id: 'combat', name: '전투/밸런스', icon: Swords, color: '#ef4444' },
-  { id: 'economy', name: '경제/확률', icon: Coins, color: '#f59e0b' },
-  { id: 'stage', name: '스테이지', icon: Layers, color: '#8b5cf6' },
-  { id: 'util', name: '유틸리티', icon: Wrench, color: '#06b6d4' },
-  { id: 'ref', name: '시트 참조', icon: Link, color: '#10b981' },
-  { id: 'math', name: '수학', icon: Sigma, color: '#3b82f6' },
-  { id: 'stat', name: '통계', icon: BarChart3, color: '#ec4899' },
-  { id: 'trig', name: '삼각함수', icon: Triangle, color: '#14b8a6' },
-  { id: 'logic', name: '조건/논리', icon: GitBranch, color: '#a855f7' },
-];
+// 카테고리 정의 - 번역 키 사용
+const CATEGORY_IDS = ['all', 'combat', 'economy', 'stage', 'util', 'ref', 'math', 'stat', 'trig', 'logic'] as const;
+const CATEGORY_ICONS: Record<string, typeof Calculator> = {
+  all: Calculator,
+  combat: Swords,
+  economy: Coins,
+  stage: Layers,
+  util: Wrench,
+  ref: Link,
+  math: Sigma,
+  stat: BarChart3,
+  trig: Triangle,
+  logic: GitBranch,
+};
+const CATEGORY_COLORS: Record<string, string> = {
+  all: 'var(--accent)',
+  combat: '#ef4444',
+  economy: '#f59e0b',
+  stage: '#8b5cf6',
+  util: '#06b6d4',
+  ref: '#10b981',
+  math: '#3b82f6',
+  stat: '#ec4899',
+  trig: '#14b8a6',
+  logic: '#a855f7',
+};
 
 interface FormulaHelperProps {
   onClose?: () => void;
 }
 
 export default function FormulaHelper({ onClose }: FormulaHelperProps) {
+  const t = useTranslations();
   const [testFormula, setTestFormula] = useState('');
   const [testResult, setTestResult] = useState<string | null>(null);
   const [copiedFunction, setCopiedFunction] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
+
+  // 카테고리 번역 키 매핑
+  const getCategoryName = (id: string) => {
+    const keyMap: Record<string, string> = {
+      all: 'formulaHelper.catAll',
+      combat: 'formulaHelper.catCombat',
+      economy: 'formulaHelper.catEconomy',
+      stage: 'formulaHelper.catStage',
+      util: 'formulaHelper.catUtil',
+      ref: 'formulaHelper.catRef',
+      math: 'formulaHelper.catMath',
+      stat: 'formulaHelper.catStat',
+      trig: 'formulaHelper.catTrig',
+      logic: 'formulaHelper.catLogic',
+    };
+    return t(keyMap[id] || id);
+  };
 
   // 카테고리별 필터링
   const filteredFunctions = useMemo(() => {
@@ -51,9 +83,9 @@ export default function FormulaHelper({ onClose }: FormulaHelperProps) {
     }
     const result = evaluateFormula(testFormula);
     if (result.error) {
-      setTestResult(`오류: ${result.error}`);
+      setTestResult(`${t('formulaHelper.error')} ${result.error}`);
     } else {
-      setTestResult(`결과: ${result.value}`);
+      setTestResult(`${t('formulaHelper.result')} ${result.value}`);
     }
   };
 
@@ -74,9 +106,9 @@ export default function FormulaHelper({ onClose }: FormulaHelperProps) {
           <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent)' }}>
             <Calculator className="w-3.5 h-3.5 text-white" />
           </div>
-          <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>수식 도우미</span>
+          <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.title')}</span>
           <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}>
-            {availableFunctions.length}개
+            {t('formulaHelper.functionCount', { count: availableFunctions.length })}
           </span>
         </div>
         {onClose && (
@@ -93,14 +125,14 @@ export default function FormulaHelper({ onClose }: FormulaHelperProps) {
       <div className="p-3 pb-12 space-y-3 overflow-y-auto flex-1">
           {/* 수식 테스트 */}
           <div className="space-y-2">
-            <h4 className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>수식 테스트</h4>
+            <h4 className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.testFormula')}</h4>
             <div className="flex gap-2">
               <input
                 type="text"
                 value={testFormula}
                 onChange={(e) => setTestFormula(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleTest()}
-                placeholder="예: DAMAGE(150, 50)"
+                placeholder={t('formulaHelper.testPlaceholder')}
                 className="flex-1 px-3 py-2 rounded-lg text-sm"
               />
               <button
@@ -108,20 +140,20 @@ export default function FormulaHelper({ onClose }: FormulaHelperProps) {
                 className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
                 style={{ background: 'var(--accent)', color: 'white' }}
               >
-                테스트
+                {t('formulaHelper.test')}
               </button>
             </div>
             {testResult && (
               <div
                 className={cn(
                   'px-3 py-2 rounded-lg text-sm',
-                  testResult.startsWith('오류')
+                  testResult.startsWith(t('formulaHelper.error'))
                     ? ''
                     : ''
                 )}
                 style={{
-                  background: testResult.startsWith('오류') ? 'var(--error-light)' : 'var(--success-light)',
-                  color: testResult.startsWith('오류') ? 'var(--error)' : 'var(--success)',
+                  background: testResult.startsWith(t('formulaHelper.error')) ? 'var(--error-light)' : 'var(--success-light)',
+                  color: testResult.startsWith(t('formulaHelper.error')) ? 'var(--error)' : 'var(--success)',
                 }}
               >
                 {testResult}
@@ -131,35 +163,36 @@ export default function FormulaHelper({ onClose }: FormulaHelperProps) {
 
           {/* 카테고리 탭 */}
           <div className="space-y-2">
-            <h4 className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>카테고리</h4>
+            <h4 className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.category')}</h4>
             <div className="flex flex-wrap gap-2">
-              {CATEGORIES.map((cat) => {
-                const Icon = cat.icon;
-                const isSelected = selectedCategory === cat.id;
+              {CATEGORY_IDS.map((catId) => {
+                const Icon = CATEGORY_ICONS[catId];
+                const color = CATEGORY_COLORS[catId];
+                const isSelected = selectedCategory === catId;
                 return (
                   <button
-                    key={cat.id}
-                    onClick={() => setSelectedCategory(cat.id)}
+                    key={catId}
+                    onClick={() => setSelectedCategory(catId)}
                     className={cn(
                       'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
                       isSelected ? 'ring-2 ring-offset-1' : 'hover:opacity-80'
                     )}
                     style={{
-                      background: isSelected ? cat.color : 'var(--bg-tertiary)',
+                      background: isSelected ? color : 'var(--bg-tertiary)',
                       color: isSelected ? 'white' : 'var(--text-secondary)',
                       // @ts-expect-error CSS custom property
-                      '--tw-ring-color': cat.color,
+                      '--tw-ring-color': color,
                     }}
                   >
                     <Icon className="w-3.5 h-3.5" />
-                    <span>{cat.name}</span>
+                    <span>{getCategoryName(catId)}</span>
                     <span
                       className="px-1.5 py-0.5 rounded-full text-[10px]"
                       style={{
                         background: isSelected ? 'rgba(255,255,255,0.2)' : 'var(--bg-secondary)',
                       }}
                     >
-                      {categoryCounts[cat.id] || 0}
+                      {categoryCounts[catId] || 0}
                     </span>
                   </button>
                 );
@@ -171,15 +204,16 @@ export default function FormulaHelper({ onClose }: FormulaHelperProps) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <h4 className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
-                함수 목록
+                {t('formulaHelper.functionList')}
               </h4>
               <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                {filteredFunctions.length}개 표시
+                {t('formulaHelper.showing', { count: filteredFunctions.length })}
               </span>
             </div>
             <div className="grid gap-2 max-h-[350px] overflow-y-auto pr-1">
               {filteredFunctions.map((func) => {
-                const category = CATEGORIES.find(c => c.id === func.category);
+                const categoryColor = CATEGORY_COLORS[func.category];
+                const categoryName = getCategoryName(func.category);
                 return (
                   <div
                     key={func.name}
@@ -188,20 +222,20 @@ export default function FormulaHelper({ onClose }: FormulaHelperProps) {
                       borderColor: 'var(--border-primary)',
                       background: 'var(--bg-primary)',
                       borderLeftWidth: '3px',
-                      borderLeftColor: category?.color || 'var(--border-primary)',
+                      borderLeftColor: categoryColor || 'var(--border-primary)',
                     }}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
-                          <code className="font-semibold" style={{ color: category?.color || 'var(--accent)' }}>
+                          <code className="font-semibold" style={{ color: categoryColor || 'var(--accent)' }}>
                             {func.name}
                           </code>
                           <span
                             className="text-[10px] px-1.5 py-0.5 rounded"
                             style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}
                           >
-                            {category?.name}
+                            {categoryName}
                           </span>
                         </div>
                         <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
@@ -218,7 +252,7 @@ export default function FormulaHelper({ onClose }: FormulaHelperProps) {
                           color: 'var(--text-tertiary)',
                           background: 'var(--bg-tertiary)',
                         }}
-                        title="예제 복사"
+                        title={t('formulaHelper.copyExample')}
                       >
                         {copiedFunction === func.name ? (
                           <Check className="w-4 h-4" style={{ color: 'var(--success)' }} />
@@ -245,24 +279,40 @@ export default function FormulaHelper({ onClose }: FormulaHelperProps) {
           <div className="rounded-lg p-3 text-sm border" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-primary)' }}>
             <h4 className="font-medium mb-2 flex items-center gap-1.5" style={{ color: 'var(--text-primary)' }}>
               <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px]" style={{ background: 'var(--accent)', color: 'white' }}>?</span>
-              도움말
+              {t('formulaHelper.syntaxGuide')}
             </h4>
-            <ul className="space-y-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+            <ul className="space-y-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
               <li>
-                <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>=</code>로 시작하면 수식으로 인식
+                <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>=</code> {t('formulaHelper.formulaStart')}
               </li>
               <li>
-                기본 연산: <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>+</code>{' '}
+                {t('formulaHelper.basicOps')} <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>+</code>{' '}
                 <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>-</code>{' '}
                 <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>*</code>{' '}
                 <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>/</code>{' '}
                 <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>^</code>
               </li>
-              <li>
-                다른 셀 참조: 열 이름 사용 (예: <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>=ATK * 1.5</code>)
+              <li className="pt-1.5 border-t" style={{ borderColor: 'var(--border-primary)' }}>
+                <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.sameRowRef')}</span> {t('formulaHelper.useColumnName')}
+                <br />
+                <code className="px-1 rounded mt-0.5 inline-block" style={{ background: 'var(--bg-primary)' }}>=ATK * 1.5</code>
               </li>
               <li>
-                다른 시트 참조: <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>REF(&quot;시트명&quot;, &quot;행ID&quot;, &quot;열이름&quot;)</code>
+                <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.prevRowRef')}</span>
+                <br />
+                <code className="px-1 rounded mt-0.5 inline-block" style={{ background: 'var(--bg-primary)' }}>=PREV.CumulativeEXP + CurrentEXP</code>
+              </li>
+              <li className="pt-1.5 border-t" style={{ borderColor: 'var(--border-primary)' }}>
+                <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.settingsRef')}</span>
+                <br />
+                <span style={{ color: 'var(--text-tertiary)' }}>{t('formulaHelper.settingsDesc')}</span>
+                <br />
+                <code className="px-1 rounded mt-0.5 inline-block" style={{ background: 'var(--bg-primary)' }}>=Settings.BASE_HP * HPMultiplier</code>
+              </li>
+              <li>
+                <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.cellRef')}</span>
+                <br />
+                <code className="px-1 rounded mt-0.5 inline-block" style={{ background: 'var(--bg-primary)' }}>REF(&quot;SheetName&quot;, &quot;RowID&quot;, &quot;ColumnName&quot;)</code>
               </li>
             </ul>
           </div>

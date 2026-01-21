@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { X, Calculator as CalcIcon, Crosshair, Zap, Shield, TrendingUp, Download, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { DPS, TTK, EHP, DAMAGE, SCALE } from '@/lib/formulaEngine';
@@ -15,6 +15,8 @@ function getRowDisplayName(rowId: string, currentSheet: { name: string; rows: { 
 
 interface CalculatorProps {
   onClose: () => void;
+  isPanel?: boolean;
+  onDragStart?: (e: React.MouseEvent) => void;
 }
 
 type CalculatorTab = 'dps' | 'ttk' | 'ehp' | 'damage' | 'scale';
@@ -108,9 +110,10 @@ const CURVE_TYPE_HELP: Record<string, { name: string; formula: string; descripti
   },
 };
 
-export default function Calculator({ onClose }: CalculatorProps) {
+export default function Calculator({ onClose, isPanel = false, onDragStart }: CalculatorProps) {
   const [activeTab, setActiveTab] = useState<CalculatorTab>('dps');
   const [showHelp, setShowHelp] = useState(false);
+  const [helpHeight, setHelpHeight] = useState(120);
   const { selectedRows, clearSelectedRows, deselectRow, projects, currentProjectId, currentSheetId } = useProjectStore();
 
   // 현재 시트 가져오기
@@ -227,28 +230,97 @@ export default function Calculator({ onClose }: CalculatorProps) {
     }
   };
 
+  // 공통 wrapper 클래스
+  const wrapperClass = isPanel
+    ? "flex flex-col h-full"
+    : "fixed inset-0 modal-overlay flex items-center justify-center z-50 p-2 sm:p-4";
+
+  const cardClass = isPanel
+    ? "flex flex-col h-full"
+    : "card w-full max-w-2xl max-h-[95vh] sm:max-h-[85vh] flex flex-col animate-fadeIn";
+
+  // 모달/패널 공통
   return (
-    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-2 sm:p-4">
-      <div className="card w-full max-w-2xl max-h-[95vh] sm:max-h-[85vh] flex flex-col animate-fadeIn">
+    <div className={wrapperClass}>
+      <div className={cardClass}>
         {/* 헤더 */}
-        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b" style={{ borderColor: 'var(--border-primary)' }}>
+        <div
+          className={`flex items-center justify-between shrink-0 ${isPanel ? 'px-4 py-3 relative z-20 cursor-grab active:cursor-grabbing' : 'px-4 sm:px-6 py-3 sm:py-4 border-b'}`}
+          style={{ background: isPanel ? '#8b5cf615' : undefined, borderColor: isPanel ? '#8b5cf640' : 'var(--border-primary)', borderBottom: isPanel ? '1px solid #8b5cf640' : undefined }}
+          onMouseDown={(e) => {
+            if (isPanel && !(e.target as HTMLElement).closest('button') && onDragStart) {
+              onDragStart(e);
+            }
+          }}
+        >
           <div className="flex items-center gap-2 sm:gap-3">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-xl flex items-center justify-center" style={{ background: 'var(--accent)' }}>
-              <CalcIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
+            <div className={`rounded-xl flex items-center justify-center ${isPanel ? 'w-8 h-8' : 'w-8 h-8 sm:w-10 sm:h-10'}`} style={{ background: '#8b5cf6' }}>
+              <CalcIcon className={isPanel ? 'w-4 h-4 text-white' : 'w-4 h-4 sm:w-5 sm:h-5 text-white'} />
             </div>
             <div>
-              <h2 className="text-base sm:text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>게임 밸런스 계산기</h2>
-              <p className="text-xs sm:text-sm hidden sm:block" style={{ color: 'var(--text-tertiary)' }}>TTK, DPS, EHP 빠른 계산</p>
+              <h2 className={isPanel ? 'text-base font-semibold' : 'text-base sm:text-lg font-semibold'} style={{ color: isPanel ? '#8b5cf6' : 'var(--text-primary)' }}>
+                {isPanel ? '계산기' : '게임 밸런스 계산기'}
+              </h2>
+              {!isPanel && <p className="text-xs sm:text-sm hidden sm:block" style={{ color: 'var(--text-tertiary)' }}>TTK, DPS, EHP 빠른 계산</p>}
             </div>
+            {isPanel && (
+              <button
+                onClick={() => setShowHelp(!showHelp)}
+                className={`p-1 rounded-lg transition-colors ${showHelp ? 'bg-[#8b5cf6]/20' : 'hover:bg-[var(--bg-hover)]'}`}
+                style={{ border: showHelp ? '1px solid #8b5cf6' : '1px solid var(--border-secondary)' }}
+              >
+                <HelpCircle className="w-4 h-4" style={{ color: showHelp ? '#8b5cf6' : 'var(--text-tertiary)' }} />
+              </button>
+            )}
           </div>
           <button
             onClick={onClose}
-            className="p-2 rounded-lg transition-colors"
+            className={`rounded-lg transition-colors ${isPanel ? 'p-1.5 hover:bg-black/5 dark:hover:bg-white/5' : 'p-2'}`}
             style={{ color: 'var(--text-tertiary)' }}
           >
-            <X className="w-5 h-5" />
+            <X className={isPanel ? 'w-4 h-4' : 'w-5 h-5'} />
           </button>
         </div>
+
+        {/* 패널 모드 헤더 도움말 - 탭 위에 표시 */}
+        {isPanel && showHelp && (
+          <div className="shrink-0 animate-slideDown flex flex-col" style={{ height: `${helpHeight + 6}px`, minHeight: '66px', maxHeight: '306px', borderBottom: '1px solid var(--border-primary)' }}>
+            <div
+              className="flex-1 px-4 py-3 text-sm overflow-y-auto"
+              style={{ background: 'var(--bg-tertiary)' }}
+            >
+              <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>게임 밸런스 계산기</div>
+              <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>TTK, DPS, EHP 등 <strong>게임 밸런싱에 필요한 핵심 수치</strong>를 계산합니다.</p>
+              <div className="space-y-1 mb-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                <div>DPS: 초당 데미지, TTK: 처치 시간</div>
+                <div>EHP: 유효 체력, SCALE: 성장 곡선</div>
+              </div>
+              <div className="pt-2 border-t text-xs" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
+                각 탭에서 <strong>?</strong> 버튼으로 상세 도움말 확인
+              </div>
+            </div>
+            {/* 리사이저 */}
+            <div
+              className="h-1.5 shrink-0 cursor-ns-resize hover:bg-[var(--accent)] transition-colors"
+              style={{ background: 'var(--border-secondary)' }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                const startY = e.clientY;
+                const startH = helpHeight;
+                const onMouseMove = (moveEvent: MouseEvent) => {
+                  const newHeight = Math.max(60, Math.min(300, startH + moveEvent.clientY - startY));
+                  setHelpHeight(newHeight);
+                };
+                const onMouseUp = () => {
+                  document.removeEventListener('mousemove', onMouseMove);
+                  document.removeEventListener('mouseup', onMouseUp);
+                };
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+              }}
+            />
+          </div>
+        )}
 
         {/* 탭 - 반응형 */}
         <div className="flex items-center border-b px-2 sm:px-4 gap-0.5 sm:gap-1 overflow-x-auto" style={{ borderColor: 'var(--border-primary)' }}>
@@ -274,22 +346,23 @@ export default function Calculator({ onClose }: CalculatorProps) {
             );
           })}
           <div className="flex-1" />
-          <button
-            onClick={() => setShowHelp(!showHelp)}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs transition-colors"
-            style={{
-              background: showHelp ? 'var(--accent-light)' : 'var(--bg-tertiary)',
-              color: showHelp ? 'var(--accent-text)' : 'var(--text-secondary)'
-            }}
-          >
-            <HelpCircle className="w-3.5 h-3.5" />
-            도움말
-            {showHelp ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          </button>
+          {!isPanel && (
+            <button
+              onClick={() => setShowHelp(!showHelp)}
+              className="flex items-center justify-center w-8 h-8 rounded-lg text-xs transition-colors shrink-0"
+              style={{
+                background: showHelp ? 'var(--accent-light)' : 'var(--bg-tertiary)',
+                color: showHelp ? 'var(--accent-text)' : 'var(--text-secondary)'
+              }}
+              title="도움말"
+            >
+              <HelpCircle className="w-4 h-4" />
+            </button>
+          )}
         </div>
 
-        {/* 현재 탭 도움말 */}
-        {showHelp && (
+        {/* 현재 탭 도움말 (모달 모드) */}
+        {!isPanel && showHelp && (
           <div className="px-6 py-4 border-b animate-fadeIn" style={{
             background: 'var(--bg-tertiary)',
             borderColor: 'var(--border-primary)'
@@ -622,18 +695,43 @@ function InputField({
   min?: number;
   max?: number;
 }) {
+  const [inputValue, setInputValue] = useState(String(value));
+
+  // 외부 value 변경 시 inputValue 동기화
+  useEffect(() => {
+    setInputValue(String(value));
+  }, [value]);
+
   return (
     <div>
       <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
         {label}
       </label>
       <input
-        type="number"
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        step={step}
-        min={min}
-        max={max}
+        type="text"
+        inputMode="decimal"
+        value={inputValue}
+        onChange={(e) => {
+          const newValue = e.target.value;
+          // 숫자, 소수점, 마이너스만 허용
+          if (newValue === '' || /^-?\d*\.?\d*$/.test(newValue)) {
+            setInputValue(newValue);
+            const num = parseFloat(newValue);
+            if (!isNaN(num)) {
+              onChange(num);
+            }
+          }
+        }}
+        onBlur={() => {
+          // 포커스 벗어나면 숫자로 정규화
+          const num = parseFloat(inputValue);
+          if (isNaN(num) || inputValue === '') {
+            setInputValue(String(min ?? 0));
+            onChange(min ?? 0);
+          } else {
+            setInputValue(String(num));
+          }
+        }}
         className="w-full px-3 py-2 rounded-lg"
       />
     </div>

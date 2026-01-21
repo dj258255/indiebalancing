@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Search, FileSpreadsheet, Check, Filter } from 'lucide-react';
+import { X, Search, FileSpreadsheet, Check, Filter, Link2 } from 'lucide-react';
 import {
   sheetTemplates,
   templateCategories,
@@ -12,6 +12,7 @@ import {
 } from '@/lib/templates';
 import { useProjectStore } from '@/stores/projectStore';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 interface TemplateSelectorProps {
   projectId: string;
@@ -20,6 +21,7 @@ interface TemplateSelectorProps {
 }
 
 export default function TemplateSelector({ projectId, onClose, onSelect }: TemplateSelectorProps) {
+  const t = useTranslations();
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
@@ -86,12 +88,12 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
 
     const newSheet = {
       id: generateId(),
-      name: '새 시트',
+      name: t('templateSelector.newSheet'),
       columns: [
         { id: generateId(), name: 'ID', type: 'general' as const, width: 80 },
-        { id: generateId(), name: '이름', type: 'general' as const, width: 150 },
-        { id: generateId(), name: '값', type: 'general' as const, width: 100 },
-        { id: generateId(), name: '설명', type: 'general' as const, width: 200 },
+        { id: generateId(), name: t('templateSelector.colName'), type: 'general' as const, width: 150 },
+        { id: generateId(), name: t('templateSelector.colValue'), type: 'general' as const, width: 100 },
+        { id: generateId(), name: t('templateSelector.colDesc'), type: 'general' as const, width: 200 },
       ],
       rows: [],
       createdAt: now,
@@ -134,10 +136,10 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
         >
           <div>
             <h2 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
-              새 시트 만들기
+              {t('templateSelector.title')}
             </h2>
             <p className="text-sm mt-1" style={{ color: 'var(--text-tertiary)' }}>
-              장르와 카테고리로 필터링하여 적합한 템플릿을 선택하세요
+              {t('templateSelector.subtitle')}
             </p>
           </div>
           <button
@@ -167,7 +169,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
             <div className="flex items-center gap-2 mb-2">
               <Filter className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
               <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
-                게임 장르
+                {t('templateSelector.gameGenre')}
               </span>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -189,33 +191,36 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
             </div>
           </div>
 
-          {/* 검색 */}
-          <div className="relative">
-            <Search
-              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4"
-              style={{ color: 'var(--text-tertiary)' }}
-            />
-            <input
-              type="text"
-              placeholder="템플릿 검색..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2"
-              style={{
-                background: 'var(--bg-primary)',
-                borderColor: 'var(--border-primary)',
-                color: 'var(--text-primary)',
-                // @ts-expect-error CSS custom property
-                '--tw-ring-color': 'var(--accent)',
-              }}
-            />
-          </div>
+          {/* 검색 + 활성 필터 (한 줄로) */}
+          <div className="flex items-center gap-3">
+            {/* 검색 */}
+            <div className="relative flex-shrink-0" style={{ width: '240px' }}>
+              <div
+                className="absolute left-0 top-0 bottom-0 w-9 flex items-center justify-center pointer-events-none rounded-l-lg"
+                style={{ background: 'var(--bg-tertiary)' }}
+              >
+                <Search className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+              </div>
+              <input
+                type="text"
+                placeholder={t('templateSelector.search')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-11 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2"
+                style={{
+                  background: 'var(--bg-primary)',
+                  borderColor: 'var(--border-primary)',
+                  color: 'var(--text-primary)',
+                  // @ts-expect-error CSS custom property
+                  '--tw-ring-color': 'var(--accent)',
+                }}
+              />
+            </div>
 
-          {/* 활성 필터 표시 */}
-          {(selectedGenre || selectedCategory || searchQuery) && (
-            <div className="flex items-center gap-2">
-              <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                활성 필터:
+            {/* 활성 필터 표시 - 항상 표시 */}
+            <div className="flex items-center gap-2 flex-1 min-h-[32px]">
+              <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-tertiary)' }}>
+                {t('templateSelector.activeFilters')}
               </span>
               {selectedGenre && (
                 <span
@@ -241,17 +246,24 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                   &quot;{searchQuery}&quot;
                 </span>
               )}
-              <button
-                onClick={clearFilters}
-                className="text-xs underline transition-colors"
-                style={{ color: 'var(--text-tertiary)' }}
-                onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
-                onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-tertiary)')}
-              >
-                초기화
-              </button>
+              {!selectedGenre && !selectedCategory && !searchQuery && (
+                <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                  {t('templateSelector.none')}
+                </span>
+              )}
+              {(selectedGenre || selectedCategory || searchQuery) && (
+                <button
+                  onClick={clearFilters}
+                  className="text-xs underline transition-colors ml-1"
+                  style={{ color: 'var(--text-tertiary)' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+                >
+                  {t('templateSelector.reset')}
+                </button>
+              )}
             </div>
-          )}
+          </div>
         </div>
 
         <div className="flex flex-1 overflow-hidden">
@@ -268,14 +280,14 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
               onMouseLeave={(e) => (e.currentTarget.style.opacity = '1')}
             >
               <FileSpreadsheet className="w-4 h-4" />
-              빈 시트
+              {t('templateSelector.emptySheet')}
             </button>
 
             <div
               className="text-xs font-medium uppercase tracking-wide mb-2 px-2"
               style={{ color: 'var(--text-tertiary)' }}
             >
-              카테고리
+              {t('templateSelector.category')}
             </div>
 
             <button
@@ -292,7 +304,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                 if (selectedCategory) e.currentTarget.style.background = 'transparent';
               }}
             >
-              전체
+              {t('templateSelector.all')}
             </button>
 
             {templateCategories.map((cat) => {
@@ -339,13 +351,13 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
           <div className="flex-1 overflow-y-auto p-4" style={{ background: 'var(--bg-primary)' }}>
             {filteredTemplates.length === 0 ? (
               <div className="text-center py-12" style={{ color: 'var(--text-tertiary)' }}>
-                <p className="mb-2">해당 조건의 템플릿이 없습니다.</p>
+                <p className="mb-2">{t('templateSelector.noTemplates')}</p>
                 <button
                   onClick={clearFilters}
                   className="text-sm hover:underline"
                   style={{ color: 'var(--accent)' }}
                 >
-                  필터 초기화
+                  {t('templateSelector.resetFilters')}
                 </button>
               </div>
             ) : (
@@ -446,6 +458,22 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                           </span>
                         )}
                       </div>
+
+                      {/* 의존성 표시 */}
+                      {template.dependencies && template.dependencies.length > 0 && (
+                        <div
+                          className="mt-2 flex items-center gap-1.5 px-2 py-1 rounded text-xs"
+                          style={{
+                            background: 'var(--primary-purple-light)',
+                            color: 'var(--primary-purple)',
+                          }}
+                        >
+                          <Link2 className="w-3 h-3" />
+                          <span>
+                            {t('templateSelector.requires')} {template.dependencies.map(d => d.sheetName).join(', ')}
+                          </span>
+                        </div>
+                      )}
                     </button>
                   );
                 })}
@@ -461,16 +489,33 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
         >
           <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
             {selectedTemplate ? (
-              <span>
-                선택: <strong style={{ color: 'var(--text-primary)' }}>{selectedTemplate.name}</strong>{' '}
-                ({selectedTemplate.columns.length}개 열
-                {selectedTemplate.sampleRows?.length
-                  ? `, ${selectedTemplate.sampleRows.length}개 샘플`
-                  : ''}
-                )
-              </span>
+              <div className="flex flex-col gap-1">
+                <span>
+                  {t('templateSelector.selected')} <strong style={{ color: 'var(--text-primary)' }}>{selectedTemplate.name}</strong>{' '}
+                  ({t('templateSelector.columns', { count: selectedTemplate.columns.length })}
+                  {selectedTemplate.sampleRows?.length
+                    ? `, ${t('templateSelector.samples', { count: selectedTemplate.sampleRows.length })}`
+                    : ''}
+                  )
+                </span>
+                {selectedTemplate.dependencies && selectedTemplate.dependencies.length > 0 && (
+                  <span
+                    className="flex items-center gap-1.5"
+                    style={{ color: 'var(--primary-purple)' }}
+                  >
+                    <Link2 className="w-3 h-3" />
+                    {t('templateSelector.refSheetRequired')} {selectedTemplate.dependencies.map((d, i) => (
+                      <span key={d.templateId}>
+                        <strong>{d.sheetName}</strong>
+                        <span style={{ color: 'var(--text-tertiary)' }}> ({d.description})</span>
+                        {i < selectedTemplate.dependencies!.length - 1 && ', '}
+                      </span>
+                    ))}
+                  </span>
+                )}
+              </div>
             ) : (
-              <span>{filteredTemplates.length}개 템플릿</span>
+              <span>{t('templateSelector.templates', { count: filteredTemplates.length })}</span>
             )}
           </div>
           <div className="flex gap-2">
@@ -481,7 +526,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
               onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-hover)')}
               onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--bg-tertiary)')}
             >
-              취소
+              {t('common.cancel')}
             </button>
             <button
               onClick={handleCreateSheet}
@@ -498,7 +543,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                 if (selectedTemplate) e.currentTarget.style.opacity = '1';
               }}
             >
-              시트 만들기
+              {t('templateSelector.createSheet')}
             </button>
           </div>
         </div>

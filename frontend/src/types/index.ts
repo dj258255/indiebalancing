@@ -8,12 +8,26 @@ export interface Project {
   sheets: Sheet[];
 }
 
+// 스티커 타입
+export interface Sticker {
+  id: string;
+  text: string;
+  color: string;  // 배경색
+  x: number;      // 위치 X (퍼센트)
+  y: number;      // 위치 Y (퍼센트)
+  width: number;  // 너비 (px)
+  height: number; // 높이 (px)
+  fontSize?: number;
+  createdAt: number;
+}
+
 // 시트 타입
 export interface Sheet {
   id: string;
   name: string;
   columns: Column[];
   rows: Row[];
+  stickers?: Sticker[];  // 스티커 목록
   createdAt: number;
   updatedAt: number;
 }
@@ -21,18 +35,33 @@ export interface Sheet {
 // 컬럼 타입 (일반: 자동 감지, 수식: 컬럼 전체 수식)
 export type ColumnType = 'general' | 'formula';
 
+// 데이터 타입 (유효성 검사용)
+export type DataType = 'any' | 'number' | 'integer' | 'text';
+
+// 유효성 검사 설정
+export interface ValidationConfig {
+  dataType?: DataType;      // 데이터 타입 제한
+  min?: number;             // 최솟값
+  max?: number;             // 최댓값
+  required?: boolean;       // 필수 입력
+  allowedValues?: string[]; // 허용된 값 목록 (enum)
+}
+
 export interface Column {
   id: string;
   name: string;
   type: ColumnType;
   width?: number;
-  formula?: string; // type이 'formula'일 때
+  formula?: string;         // type이 'formula'일 때
+  validation?: ValidationConfig;  // 유효성 검사 설정
+  locked?: boolean;         // 잠금 여부
 }
 
 // 행 타입
 export interface Row {
   id: string;
   cells: Record<string, CellValue>;
+  locked?: boolean;  // 행 잠금 여부
 }
 
 // 셀 값 타입

@@ -4,13 +4,15 @@ import { useState } from 'react';
 import { Plus, X, Edit2, Copy, Check, LayoutTemplate } from 'lucide-react';
 import { useProjectStore } from '@/stores/projectStore';
 import type { Project } from '@/types';
-import TemplateSelector from './TemplateSelector';
+import { TemplateSelector } from '@/components/panels';
+import { useTranslations } from 'next-intl';
 
 interface SheetTabsProps {
   project: Project;
 }
 
 export default function SheetTabs({ project }: SheetTabsProps) {
+  const t = useTranslations();
   const {
     currentSheetId,
     setCurrentSheet,
@@ -48,7 +50,7 @@ export default function SheetTabs({ project }: SheetTabsProps) {
   };
 
   const handleDeleteSheet = (sheetId: string, sheetName: string) => {
-    if (confirm(`"${sheetName}" 시트를 삭제하시겠습니까?`)) {
+    if (confirm(t('alert.deleteSheetConfirm', { name: sheetName }))) {
       deleteSheet(project.id, sheetId);
     }
   };
@@ -125,7 +127,7 @@ export default function SheetTabs({ project }: SheetTabsProps) {
                     style={{ color: 'var(--text-tertiary)' }}
                     onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
                     onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
-                    title="이름 변경"
+                    title={t('sheet.rename')}
                   >
                     <Edit2 className="w-3 h-3" />
                   </button>
@@ -138,25 +140,23 @@ export default function SheetTabs({ project }: SheetTabsProps) {
                     style={{ color: 'var(--text-tertiary)' }}
                     onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
                     onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
-                    title="복제"
+                    title={t('common.copy')}
                   >
                     <Copy className="w-3 h-3" />
                   </button>
-                  {project.sheets.length > 1 && (
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDeleteSheet(sheet.id, sheet.name);
-                      }}
-                      className="p-0.5 transition-colors"
-                      style={{ color: 'var(--text-tertiary)' }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = 'var(--error)'}
-                      onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
-                      title="삭제"
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  )}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteSheet(sheet.id, sheet.name);
+                    }}
+                    className="p-0.5 transition-colors"
+                    style={{ color: 'var(--text-tertiary)' }}
+                    onMouseEnter={(e) => e.currentTarget.style.color = 'var(--error)'}
+                    onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
+                    title={t('common.delete')}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
                 </div>
               </>
             )}
@@ -177,7 +177,7 @@ export default function SheetTabs({ project }: SheetTabsProps) {
                 setNewSheetName('');
               }
             }}
-            placeholder="시트 이름"
+            placeholder={t('table.sheetName')}
             className="w-24 px-2 py-1 text-sm border rounded"
             style={{
               background: 'var(--bg-primary)',
@@ -191,7 +191,7 @@ export default function SheetTabs({ project }: SheetTabsProps) {
             className="px-2 py-1 text-sm rounded transition-colors"
             style={{ background: 'var(--primary-blue)', color: 'white' }}
           >
-            추가
+            {t('table.addSheet')}
           </button>
           <button
             onClick={() => {
@@ -201,7 +201,7 @@ export default function SheetTabs({ project }: SheetTabsProps) {
             className="px-2 py-1 text-sm rounded transition-colors"
             style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
           >
-            취소
+            {t('common.cancel')}
           </button>
         </div>
       ) : (
@@ -218,7 +218,7 @@ export default function SheetTabs({ project }: SheetTabsProps) {
               e.currentTarget.style.color = 'var(--text-tertiary)';
               e.currentTarget.style.background = 'transparent';
             }}
-            title="빈 시트 추가"
+            title={t('sheet.newSheet')}
           >
             <Plus className="w-4 h-4" />
           </button>
@@ -232,10 +232,10 @@ export default function SheetTabs({ project }: SheetTabsProps) {
             onMouseLeave={(e) => {
               e.currentTarget.style.background = 'transparent';
             }}
-            title="템플릿에서 추가"
+            title={t('table.addFromTemplate')}
           >
             <LayoutTemplate className="w-4 h-4" />
-            <span className="text-xs">템플릿</span>
+            <span className="text-xs">{t('table.template')}</span>
           </button>
         </div>
       )}

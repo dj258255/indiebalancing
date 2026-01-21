@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   LineChart,
   Line,
@@ -11,7 +11,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { HelpCircle, ChevronDown, ChevronUp, Maximize2, X } from 'lucide-react';
 import { SCALE } from '@/lib/formulaEngine';
 import type { CurveType } from '@/types';
 
@@ -50,6 +50,7 @@ export default function GrowthCurveChart({
     logarithmic: true,
     quadratic: false,
   });
+  const [showChartModal, setShowChartModal] = useState(false);
 
   const [customCurve, setCustomCurve] = useState<CurveType>('linear');
   const [customBase, setCustomBase] = useState(100);
@@ -99,18 +100,20 @@ export default function GrowthCurveChart({
     <div className="card p-4">
       <div className="flex items-center justify-between mb-4">
         <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>성장 곡선 차트</h3>
-        <button
-          onClick={() => setShowHelp(!showHelp)}
-          className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm transition-colors"
-          style={{
-            background: showHelp ? 'var(--accent-light)' : 'var(--bg-tertiary)',
-            color: showHelp ? 'var(--accent-text)' : 'var(--text-secondary)'
-          }}
-        >
-          <HelpCircle className="w-4 h-4" />
-          도움말
-          {showHelp ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowHelp(!showHelp)}
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm transition-colors"
+            style={{
+              background: showHelp ? 'var(--accent-light)' : 'var(--bg-tertiary)',
+              color: showHelp ? 'var(--accent-text)' : 'var(--text-secondary)'
+            }}
+          >
+            <HelpCircle className="w-4 h-4" />
+            도움말
+            {showHelp ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+          </button>
+        </div>
       </div>
 
       {/* 도움말 패널 */}
@@ -169,73 +172,105 @@ export default function GrowthCurveChart({
       )}
 
       {/* 설정 패널 */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+      <div className="grid grid-cols-1 gap-4 mb-6">
         {/* 기본 설정 */}
         <div className="space-y-3">
           <h4 className="font-medium text-sm" style={{ color: 'var(--text-secondary)' }}>기본 설정</h4>
           <div>
             <label className="block text-sm mb-1" style={{ color: 'var(--text-tertiary)' }}>기본값 (Base)</label>
-            <input
-              type="number"
+            <NumberInput
               value={base}
-              onChange={(e) => setBase(Number(e.target.value))}
+              onChange={setBase}
               className="w-full px-3 py-1.5 rounded-lg text-sm"
             />
           </div>
           <div>
             <label className="block text-sm mb-1" style={{ color: 'var(--text-tertiary)' }}>성장률 (Rate)</label>
-            <input
-              type="number"
-              step="0.1"
+            <NumberInput
               value={rate}
-              onChange={(e) => setRate(Number(e.target.value))}
+              onChange={setRate}
               className="w-full px-3 py-1.5 rounded-lg text-sm"
             />
           </div>
           <div>
             <label className="block text-sm mb-1" style={{ color: 'var(--text-tertiary)' }}>최대 레벨</label>
-            <input
-              type="number"
+            <NumberInput
               value={maxLevel}
-              onChange={(e) => setMaxLevel(Math.min(200, Number(e.target.value)))}
+              onChange={setMaxLevel}
+              max={200}
               className="w-full px-3 py-1.5 rounded-lg text-sm"
             />
           </div>
         </div>
 
         {/* 곡선 선택 */}
-        <div className="space-y-3">
+        <div className="space-y-2">
           <h4 className="font-medium text-sm" style={{ color: 'var(--text-secondary)' }}>표시할 곡선</h4>
-          {Object.entries(CURVE_NAMES).map(([key, name]) => (
-            <label key={key} className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-primary)' }}>
-              <input
-                type="checkbox"
-                checked={showCurves[key as keyof typeof showCurves]}
-                onChange={(e) =>
-                  setShowCurves((prev) => ({ ...prev, [key]: e.target.checked }))
-                }
-                className="rounded"
-              />
+          {Object.entries(CURVE_NAMES).map(([key, name]) => {
+            const color = CURVE_COLORS[key as keyof typeof CURVE_COLORS];
+            const isChecked = showCurves[key as keyof typeof showCurves];
+            return (
+              <button
+                key={key}
+                onClick={() => setShowCurves((prev) => ({ ...prev, [key]: !prev[key as keyof typeof showCurves] }))}
+                className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm transition-all"
+                style={{
+                  background: isChecked ? `${color}15` : 'var(--bg-tertiary)',
+                  border: `1px solid ${isChecked ? color : 'transparent'}`,
+                }}
+              >
+                <div className="flex items-center gap-2">
+                  <span
+                    className="w-3 h-3 rounded-full"
+                    style={{ backgroundColor: color }}
+                  />
+                  <span style={{ color: isChecked ? color : 'var(--text-secondary)' }}>{name}</span>
+                </div>
+                <div
+                  className="w-9 h-5 rounded-full relative transition-all"
+                  style={{
+                    background: isChecked ? color : 'var(--border-primary)',
+                  }}
+                >
+                  <div
+                    className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all"
+                    style={{
+                      left: isChecked ? '18px' : '2px',
+                    }}
+                  />
+                </div>
+              </button>
+            );
+          })}
+          <button
+            onClick={() => setShowCustom(!showCustom)}
+            className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm transition-all"
+            style={{
+              background: showCustom ? `${CURVE_COLORS.custom}15` : 'var(--bg-tertiary)',
+              border: `1px solid ${showCustom ? CURVE_COLORS.custom : 'transparent'}`,
+            }}
+          >
+            <div className="flex items-center gap-2">
               <span
                 className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: CURVE_COLORS[key as keyof typeof CURVE_COLORS] }}
+                style={{ backgroundColor: CURVE_COLORS.custom }}
               />
-              {name}
-            </label>
-          ))}
-          <label className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-primary)' }}>
-            <input
-              type="checkbox"
-              checked={showCustom}
-              onChange={(e) => setShowCustom(e.target.checked)}
-              className="rounded"
-            />
-            <span
-              className="w-3 h-3 rounded-full"
-              style={{ backgroundColor: CURVE_COLORS.custom }}
-            />
-            커스텀 곡선
-          </label>
+              <span style={{ color: showCustom ? CURVE_COLORS.custom : 'var(--text-secondary)' }}>커스텀 곡선</span>
+            </div>
+            <div
+              className="w-9 h-5 rounded-full relative transition-all"
+              style={{
+                background: showCustom ? CURVE_COLORS.custom : 'var(--border-primary)',
+              }}
+            >
+              <div
+                className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all"
+                style={{
+                  left: showCustom ? '18px' : '2px',
+                }}
+              />
+            </div>
+          </button>
         </div>
 
         {/* 커스텀 곡선 설정 */}
@@ -258,20 +293,17 @@ export default function GrowthCurveChart({
             </div>
             <div>
               <label className="block text-sm mb-1" style={{ color: 'var(--text-tertiary)' }}>기본값</label>
-              <input
-                type="number"
+              <NumberInput
                 value={customBase}
-                onChange={(e) => setCustomBase(Number(e.target.value))}
+                onChange={setCustomBase}
                 className="w-full px-3 py-1.5 rounded-lg text-sm"
               />
             </div>
             <div>
               <label className="block text-sm mb-1" style={{ color: 'var(--text-tertiary)' }}>성장률</label>
-              <input
-                type="number"
-                step="0.1"
+              <NumberInput
                 value={customRate}
-                onChange={(e) => setCustomRate(Number(e.target.value))}
+                onChange={setCustomRate}
                 className="w-full px-3 py-1.5 rounded-lg text-sm"
               />
             </div>
@@ -280,7 +312,16 @@ export default function GrowthCurveChart({
       </div>
 
       {/* 차트 */}
-      <div className="h-[400px] mb-6">
+      <div className="relative h-[400px] mb-6 group">
+        {/* 차트 확대 버튼 */}
+        <button
+          onClick={() => setShowChartModal(true)}
+          className="absolute top-2 right-2 z-10 p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+          style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}
+          title="그래프 확대"
+        >
+          <Maximize2 className="w-4 h-4" />
+        </button>
         <ResponsiveContainer width="100%" height="100%">
           <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
             <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
@@ -319,19 +360,85 @@ export default function GrowthCurveChart({
         </ResponsiveContainer>
       </div>
 
+      {/* 그래프만 확대 모달 */}
+      {showChartModal && (
+        <div
+          className="fixed inset-0 z-[100] flex items-center justify-center p-6"
+          style={{ background: 'rgba(0,0,0,0.85)' }}
+          onClick={() => setShowChartModal(false)}
+        >
+          <div
+            className="w-full max-w-6xl h-[80vh] rounded-2xl overflow-hidden flex flex-col"
+            style={{ background: 'var(--bg-primary)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* 모달 헤더 */}
+            <div className="flex items-center justify-between px-6 py-4 shrink-0" style={{ borderBottom: '1px solid var(--border-primary)' }}>
+              <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>성장 곡선 그래프</h3>
+              <button
+                onClick={() => setShowChartModal(false)}
+                className="p-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            {/* 모달 차트 - 꽉 채움 */}
+            <div className="flex-1 p-6">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData} margin={{ top: 20, right: 40, left: 30, bottom: 20 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
+                  <XAxis
+                    dataKey="level"
+                    label={{ value: '레벨', position: 'insideBottomRight', offset: -10, fill: 'var(--text-tertiary)', fontSize: 14 }}
+                    tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
+                  />
+                  <YAxis
+                    label={{ value: '값', angle: -90, position: 'insideLeft', fill: 'var(--text-tertiary)', fontSize: 14 }}
+                    tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
+                    tickFormatter={(value) => value.toLocaleString()}
+                  />
+                  <Tooltip
+                    formatter={(value: number) => value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                    labelFormatter={(label) => `레벨 ${label}`}
+                    contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', fontSize: 14 }}
+                  />
+                  <Legend wrapperStyle={{ fontSize: 14 }} />
+                  {showCurves.linear && (
+                    <Line type="monotone" dataKey="linear" name="선형" stroke={CURVE_COLORS.linear} dot={false} strokeWidth={3} />
+                  )}
+                  {showCurves.exponential && (
+                    <Line type="monotone" dataKey="exponential" name="지수" stroke={CURVE_COLORS.exponential} dot={false} strokeWidth={3} />
+                  )}
+                  {showCurves.logarithmic && (
+                    <Line type="monotone" dataKey="logarithmic" name="로그" stroke={CURVE_COLORS.logarithmic} dot={false} strokeWidth={3} />
+                  )}
+                  {showCurves.quadratic && (
+                    <Line type="monotone" dataKey="quadratic" name="2차" stroke={CURVE_COLORS.quadratic} dot={false} strokeWidth={3} />
+                  )}
+                  {showCustom && (
+                    <Line type="monotone" dataKey="custom" name="커스텀" stroke={CURVE_COLORS.custom} dot={false} strokeWidth={3} strokeDasharray="5 5" />
+                  )}
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* 레벨별 값 미리보기 */}
       <div className="border-t pt-4" style={{ borderColor: 'var(--border-primary)' }}>
         <div className="flex items-center gap-4 mb-3">
           <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>레벨별 값 확인:</span>
-          <input
-            type="number"
+          <NumberInput
             value={previewLevel}
-            onChange={(e) => setPreviewLevel(Math.max(1, Math.min(maxLevel, Number(e.target.value))))}
+            onChange={setPreviewLevel}
+            max={maxLevel}
             className="w-20 px-2 py-1 rounded-lg text-sm"
           />
           <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>레벨</span>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
+        <div className="grid grid-cols-2 gap-2 text-sm">
           {showCurves.linear && (
             <div className="rounded-lg p-2" style={{ background: '#3b82f620' }}>
               <div className="font-medium" style={{ color: '#3b82f6' }}>선형</div>
@@ -365,5 +472,60 @@ export default function GrowthCurveChart({
         </div>
       </div>
     </div>
+  );
+}
+
+// 숫자 입력 헬퍼 컴포넌트 (0 prefix 문제 해결)
+function NumberInput({
+  value,
+  onChange,
+  min,
+  max,
+  className,
+}: {
+  value: number;
+  onChange: (v: number) => void;
+  min?: number;
+  max?: number;
+  className?: string;
+}) {
+  const [inputValue, setInputValue] = useState(String(value));
+
+  useEffect(() => {
+    setInputValue(String(value));
+  }, [value]);
+
+  return (
+    <input
+      type="text"
+      inputMode="decimal"
+      value={inputValue}
+      onChange={(e) => {
+        const newValue = e.target.value;
+        if (newValue === '' || /^-?\d*\.?\d*$/.test(newValue)) {
+          setInputValue(newValue);
+          const num = parseFloat(newValue);
+          if (!isNaN(num)) {
+            let finalNum = num;
+            if (max !== undefined) finalNum = Math.min(max, finalNum);
+            if (min !== undefined) finalNum = Math.max(min, finalNum);
+            onChange(finalNum);
+          }
+        }
+      }}
+      onBlur={() => {
+        const num = parseFloat(inputValue);
+        if (isNaN(num) || inputValue === '') {
+          setInputValue(String(min ?? 0));
+          onChange(min ?? 0);
+        } else {
+          let finalNum = num;
+          if (max !== undefined) finalNum = Math.min(max, finalNum);
+          if (min !== undefined) finalNum = Math.max(min, finalNum);
+          setInputValue(String(finalNum));
+        }
+      }}
+      className={className}
+    />
   );
 }

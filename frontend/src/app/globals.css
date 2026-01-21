@@ -34,6 +34,10 @@
   --primary-blue-light: rgba(59, 130, 246, 0.1);
   --primary-purple: #8b5cf6;
   --primary-purple-light: rgba(139, 92, 246, 0.1);
+  --primary-red: #ef4444;
+  --primary-red-light: rgba(239, 68, 68, 0.1);
+  --primary-yellow: #f59e0b;
+  --primary-yellow-light: rgba(245, 158, 11, 0.1);
 
   --success: #10b981;
   --success-light: rgba(16, 185, 129, 0.1);
@@ -70,6 +74,18 @@
   --accent-hover: #0ea5e9;
   --accent-light: rgba(56, 189, 248, 0.15);
   --accent-text: #38bdf8;
+
+  /* 보조 컬러 - 다크 모드 */
+  --primary-green: #34d399;
+  --primary-green-light: rgba(52, 211, 153, 0.15);
+  --primary-blue: #60a5fa;
+  --primary-blue-light: rgba(96, 165, 250, 0.15);
+  --primary-purple: #a78bfa;
+  --primary-purple-light: rgba(167, 139, 250, 0.15);
+  --primary-red: #f87171;
+  --primary-red-light: rgba(248, 113, 113, 0.15);
+  --primary-yellow: #fbbf24;
+  --primary-yellow-light: rgba(251, 191, 36, 0.15);
 
   --success: #34d399;
   --success-light: rgba(52, 211, 153, 0.15);
@@ -305,6 +321,15 @@ input[type="checkbox"]:checked::after {
 
 .animate-slideUp {
   animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideDown {
+  from { opacity: 0; max-height: 0; transform: translateY(-8px); }
+  to { opacity: 1; max-height: 200px; transform: translateY(0); }
+}
+
+.animate-slideDown {
+  animation: slideDown 0.25s ease-out forwards;
 }
 
 /* 호버 효과 */

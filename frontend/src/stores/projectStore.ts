@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import type { Project, Sheet, Column, Row, CellValue, ColumnType } from '@/types';
+import type { Project, Sheet, Column, Row, CellValue, ColumnType, Sticker } from '@/types';
 
 // 선택된 행 데이터 타입
 export interface SelectedRowData {
@@ -43,6 +43,7 @@ interface ProjectState {
 
   // 행 액션
   addRow: (projectId: string, sheetId: string, cells?: Record<string, CellValue>) => string;
+  updateRow: (projectId: string, sheetId: string, rowId: string, updates: Partial<Row>) => void;
   updateCell: (projectId: string, sheetId: string, rowId: string, columnId: string, value: CellValue) => void;
   deleteRow: (projectId: string, sheetId: string, rowId: string) => void;
   addMultipleRows: (projectId: string, sheetId: string, count: number) => void;
@@ -58,6 +59,11 @@ interface ProjectState {
   deselectRow: (rowId: string) => void;
   clearSelectedRows: () => void;
   toggleRowSelection: (data: SelectedRowData) => void;
+
+  // 스티커 액션
+  addSticker: (projectId: string, sheetId: string, sticker: Omit<Sticker, 'id' | 'createdAt'>) => string;
+  updateSticker: (projectId: string, sheetId: string, stickerId: string, updates: Partial<Sticker>) => void;
+  deleteSticker: (projectId: string, sheetId: string, stickerId: string) => void;
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
@@ -161,17 +167,36 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   deleteSheet: (projectId, sheetId) => {
     const now = Date.now();
+    const project = get().projects.find((p) => p.id === projectId);
+
+    // 마지막 시트를 삭제하는 경우 새 빈 시트 생성
+    const isLastSheet = project?.sheets.length === 1;
+    const newSheetId = isLastSheet ? uuidv4() : null;
+    const newSheet: Sheet | null = isLastSheet ? {
+      id: newSheetId!,
+      name: '시트 1',
+      columns: [],
+      rows: [],
+      stickers: [],
+      createdAt: now,
+      updatedAt: now,
+    } : null;
+
     set((state) => ({
       projects: state.projects.map((p) =>
         p.id === projectId
           ? {
               ...p,
-              sheets: p.sheets.filter((s) => s.id !== sheetId),
+              sheets: isLastSheet && newSheet
+                ? [newSheet]
+                : p.sheets.filter((s) => s.id !== sheetId),
               updatedAt: now,
             }
           : p
       ),
-      currentSheetId: state.currentSheetId === sheetId ? null : state.currentSheetId,
+      currentSheetId: state.currentSheetId === sheetId
+        ? (isLastSheet ? newSheetId : null)
+        : state.currentSheetId,
     }));
   },
 
@@ -353,6 +378,31 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     return id;
   },
 
+  updateRow: (projectId, sheetId, rowId, updates) => {
+    const now = Date.now();
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              sheets: p.sheets.map((s) =>
+                s.id === sheetId
+                  ? {
+                      ...s,
+                      rows: s.rows.map((r) =>
+                        r.id === rowId ? { ...r, ...updates } : r
+                      ),
+                      updatedAt: now,
+                    }
+                  : s
+              ),
+              updatedAt: now,
+            }
+          : p
+      ),
+    }));
+  },
+
   updateCell: (projectId, sheetId, rowId, columnId, value) => {
     const now = Date.now();
     set((state) => ({
@@ -482,5 +532,82 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       }
       return { selectedRows: [...state.selectedRows, data] };
     });
+  },
+
+  // 스티커 액션
+  addSticker: (projectId, sheetId, sticker) => {
+    const id = uuidv4();
+    const now = Date.now();
+    const newSticker = { ...sticker, id, createdAt: now };
+
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              sheets: p.sheets.map((s) =>
+                s.id === sheetId
+                  ? {
+                      ...s,
+                      stickers: [...(s.stickers || []), newSticker],
+                      updatedAt: now,
+                    }
+                  : s
+              ),
+              updatedAt: now,
+            }
+          : p
+      ),
+    }));
+
+    return id;
+  },
+
+  updateSticker: (projectId, sheetId, stickerId, updates) => {
+    const now = Date.now();
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              sheets: p.sheets.map((s) =>
+                s.id === sheetId
+                  ? {
+                      ...s,
+                      stickers: (s.stickers || []).map((st) =>
+                        st.id === stickerId ? { ...st, ...updates } : st
+                      ),
+                      updatedAt: now,
+                    }
+                  : s
+              ),
+              updatedAt: now,
+            }
+          : p
+      ),
+    }));
+  },
+
+  deleteSticker: (projectId, sheetId, stickerId) => {
+    const now = Date.now();
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              sheets: p.sheets.map((s) =>
+                s.id === sheetId
+                  ? {
+                      ...s,
+                      stickers: (s.stickers || []).filter((st) => st.id !== stickerId),
+                      updatedAt: now,
+                    }
+                  : s
+              ),
+              updatedAt: now,
+            }
+          : p
+      ),
+    }));
   },
 }));

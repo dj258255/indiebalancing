@@ -12,6 +12,18 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+// number input spinner 숨기는 스타일
+const hideSpinnerStyle = `
+  .hide-spinner::-webkit-outer-spin-button,
+  .hide-spinner::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+  }
+  .hide-spinner[type=number] {
+    -moz-appearance: textfield;
+  }
+`;
+
 interface DifficultyCurveProps {
   onClose?: () => void;
 }
@@ -236,6 +248,7 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
 
   return (
     <div className="card overflow-hidden h-full flex flex-col">
+      <style>{hideSpinnerStyle}</style>
       {/* 헤더 */}
       <div
         className="flex items-center justify-between px-4 py-2 shrink-0"
@@ -438,8 +451,8 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
               <input
                 type="number"
                 placeholder="추가..."
-                className="w-20 px-2 py-1 rounded text-xs"
-                style={{ background: 'var(--bg-tertiary)' }}
+                className="hide-spinner w-20 px-2 py-1 rounded text-xs"
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     const value = Number((e.target as HTMLInputElement).value);
@@ -486,8 +499,8 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
                       type="number"
                       value={data.powerBonus}
                       onChange={(e) => updateMilestonePowerBonus(Number(stage), Number(e.target.value))}
-                      className="w-12 px-1 py-1 rounded text-xs text-center"
-                      style={{ background: 'var(--bg-tertiary)' }}
+                      className="hide-spinner w-14 px-2 py-1 rounded text-xs text-center"
+                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
                       min={0}
                       max={200}
                     />
@@ -506,22 +519,22 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
                 <input
                   type="number"
                   placeholder="스테이지"
-                  className="w-16 px-2 py-1 rounded text-xs"
-                  style={{ background: 'var(--bg-tertiary)' }}
+                  className="hide-spinner w-16 px-2 py-1 rounded text-xs"
+                  style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
                   id="newMilestoneStage"
                 />
                 <input
                   type="text"
                   placeholder="해금 콘텐츠..."
                   className="flex-1 px-2 py-1 rounded text-xs"
-                  style={{ background: 'var(--bg-tertiary)' }}
+                  style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
                   id="newMilestoneText"
                 />
                 <input
                   type="number"
                   placeholder="%"
-                  className="w-12 px-1 py-1 rounded text-xs text-center"
-                  style={{ background: 'var(--bg-tertiary)' }}
+                  className="hide-spinner w-14 px-2 py-1 rounded text-xs text-center"
+                  style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
                   id="newMilestoneBonus"
                   defaultValue={30}
                 />

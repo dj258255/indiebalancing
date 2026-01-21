@@ -261,6 +261,22 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
           <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
             밸런스 검증기
           </span>
+          <div className="group relative">
+            <HelpCircle className="w-3.5 h-3.5 cursor-help" style={{ color: 'var(--text-tertiary)' }} />
+            <div className="absolute left-0 top-5 z-50 hidden group-hover:block w-72 p-3 rounded-lg text-xs shadow-lg" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}>
+              <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>밸런스 검증기 (유닛 테스터)</div>
+              <p className="mb-2">직접 입력한 유닛 스탯이 <strong>역할(탱커/딜러/서포터)에 맞는지</strong> 검증합니다.</p>
+              <div className="space-y-1 mb-2">
+                <div>- DPS/EHP 계산 및 기대치 비교</div>
+                <div>- 역할별 적정 범위 제시</div>
+                <div>- 1:1 전투 시뮬레이션</div>
+              </div>
+              <div className="pt-2 border-t space-y-1" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
+                <div><strong>vs 밸런스 분석:</strong> 분석은 시트 기반 전체 패턴, 검증기는 개별 유닛 확인</div>
+                <div><strong>vs 전투 시뮬:</strong> 시뮬은 실제 전투, 검증기는 스탯 적합성</div>
+              </div>
+            </div>
+          </div>
           <span
             className="text-xs px-2 py-0.5 rounded-full"
             style={{

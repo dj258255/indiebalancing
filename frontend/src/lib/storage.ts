@@ -192,6 +192,79 @@ export function exportSheetToCSV(
   return [headers.join(','), ...rows.map((r) => r.join(','))].join('\n');
 }
 
+// CSV를 시트 데이터로 변환
+export function importSheetFromCSV(csv: string): {
+  columns: { name: string; type: 'general' | 'formula' }[];
+  rows: { cells: Record<string, unknown> }[];
+} {
+  const lines = csv.trim().split('\n').map(line => line.trim()).filter(Boolean);
+
+  if (lines.length === 0) {
+    return { columns: [], rows: [] };
+  }
+
+  // CSV 라인 파싱 (따옴표 처리)
+  const parseCSVLine = (line: string): string[] => {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          current += '"';
+          i++;
+        } else {
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+
+    result.push(current.trim());
+    return result;
+  };
+
+  // 헤더 파싱
+  const headers = parseCSVLine(lines[0]);
+
+  // 컬럼 생성 (임시 ID 사용)
+  const columns = headers.map((name, idx) => ({
+    name: name || `Column${idx + 1}`,
+    type: 'general' as const,
+    _tempId: `col_${idx}`,
+  }));
+
+  // 행 생성
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const values = parseCSVLine(lines[i]);
+    const cells: Record<string, unknown> = {};
+
+    columns.forEach((col, idx) => {
+      const value = values[idx];
+      if (value !== undefined && value !== '') {
+        // 숫자 변환 시도
+        const num = Number(value);
+        cells[col._tempId] = !isNaN(num) && value !== '' ? num : value;
+      }
+    });
+
+    rows.push({ cells });
+  }
+
+  return {
+    columns: columns.map(({ _tempId, ...rest }) => rest),
+    rows,
+  };
+}
+
 // 자동 저장 설정
 let autoSaveInterval: NodeJS.Timeout | null = null;
 

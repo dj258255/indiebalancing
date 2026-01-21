@@ -899,6 +899,18 @@ export function generateMultipleCurveData(
 }
 
 /**
+ * 수식 검증 결과 타입
+ */
+export interface FormulaValidationResult {
+  valid: boolean;
+  error?: string;
+  warnings: string[];
+  referencedColumns: string[];
+  referencedSheets: string[];
+  usedFunctions: string[];
+}
+
+/**
  * 수식 검증 (순환 참조 등)
  */
 export function validateFormula(formula: string): { valid: boolean; error?: string } {
@@ -915,6 +927,167 @@ export function validateFormula(formula: string): { valid: boolean; error?: stri
       error: error instanceof Error ? error.message : '유효하지 않은 수식',
     };
   }
+}
+
+/**
+ * 수식 실시간 검증 (상세 분석)
+ */
+export function validateFormulaDetailed(
+  formula: string,
+  availableColumns: string[] = [],
+  availableSheetNames: string[] = []
+): FormulaValidationResult {
+  const result: FormulaValidationResult = {
+    valid: true,
+    warnings: [],
+    referencedColumns: [],
+    referencedSheets: [],
+    usedFunctions: [],
+  };
+
+  if (!formula || !formula.startsWith('=')) {
+    return result;
+  }
+
+  const expression = formula.slice(1);
+
+  // 1. 기본 문법 검증
+  try {
+    let tempExpr = expression;
+    let varIndex = 0;
+    tempExpr = tempExpr.replace(/[가-힣]+/g, () => `__kor${varIndex++}__`);
+    math.parse(tempExpr);
+  } catch (error) {
+    result.valid = false;
+    result.error = error instanceof Error ? error.message : '수식 문법 오류';
+    return result;
+  }
+
+  // 2. 괄호 균형 검사
+  let parenCount = 0;
+  for (const char of expression) {
+    if (char === '(') parenCount++;
+    if (char === ')') parenCount--;
+    if (parenCount < 0) {
+      result.valid = false;
+      result.error = '닫는 괄호가 너무 많습니다';
+      return result;
+    }
+  }
+  if (parenCount > 0) {
+    result.valid = false;
+    result.error = `여는 괄호가 ${parenCount}개 더 많습니다`;
+    return result;
+  }
+
+  // 3. 사용된 함수 추출
+  const functionPattern = /([A-Z_][A-Z0-9_]*)\s*\(/gi;
+  let funcMatch;
+  while ((funcMatch = functionPattern.exec(expression)) !== null) {
+    const funcName = funcMatch[1].toUpperCase();
+    if (!result.usedFunctions.includes(funcName)) {
+      result.usedFunctions.push(funcName);
+    }
+
+    // 알 수 없는 함수 경고
+    const knownFunctions = availableFunctions.map(f => f.name.toUpperCase());
+    if (!knownFunctions.includes(funcName) &&
+        !['SUM', 'AVERAGE', 'MIN', 'MAX', 'COUNT', 'IF', 'AND', 'OR', 'NOT'].includes(funcName)) {
+      result.warnings.push(`알 수 없는 함수: ${funcName}`);
+    }
+  }
+
+  // 4. 시트 참조 확인 (시트명.컬럼명)
+  const sheetRefPattern = /([가-힣a-zA-Z_][가-힣a-zA-Z0-9_]*)\.([가-힣a-zA-Z_][가-힣a-zA-Z0-9_]*)/g;
+  let sheetMatch;
+  while ((sheetMatch = sheetRefPattern.exec(expression)) !== null) {
+    const sheetName = sheetMatch[1];
+    if (sheetName !== '이전행' && !result.referencedSheets.includes(sheetName)) {
+      result.referencedSheets.push(sheetName);
+
+      // 존재하지 않는 시트 경고
+      if (availableSheetNames.length > 0 && !availableSheetNames.includes(sheetName)) {
+        result.warnings.push(`존재하지 않는 시트: ${sheetName}`);
+      }
+    }
+  }
+
+  // 5. 이전행 참조 경고 (첫 번째 행에서는 0이 됨)
+  if (expression.includes('이전행.')) {
+    result.warnings.push('이전행 참조는 첫 번째 행에서 0으로 처리됩니다');
+  }
+
+  // 6. 컬럼 참조 확인
+  for (const colName of availableColumns) {
+    if (expression.includes(colName)) {
+      if (!result.referencedColumns.includes(colName)) {
+        result.referencedColumns.push(colName);
+      }
+    }
+  }
+
+  // 7. 나눗셈 0 위험 경고
+  if (/\/\s*0(?!\d)/.test(expression)) {
+    result.warnings.push('0으로 나누기가 감지되었습니다');
+  }
+
+  // 8. 무한 값 위험 (LOG(0), SQRT 음수 등)
+  if (/LOG\s*\(\s*0\s*\)/.test(expression) || /LOG10\s*\(\s*0\s*\)/.test(expression)) {
+    result.warnings.push('LOG(0)은 음의 무한대가 됩니다');
+  }
+
+  // 9. 자기 참조 가능성 경고
+  if (availableColumns.some(col => {
+    const regex = new RegExp(`\\b${col.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\\b`);
+    return regex.test(expression);
+  })) {
+    // 이건 실제로 자기 참조인지는 컨텍스트에서 확인해야 함
+  }
+
+  return result;
+}
+
+/**
+ * 수식 자동완성 제안
+ */
+export function getFormulaCompletions(
+  partialFormula: string,
+  cursorPosition: number,
+  availableColumns: string[] = []
+): { type: 'function' | 'column' | 'sheet'; value: string; description: string }[] {
+  const completions: { type: 'function' | 'column' | 'sheet'; value: string; description: string }[] = [];
+
+  // 커서 위치까지의 텍스트에서 마지막 단어 추출
+  const textBeforeCursor = partialFormula.slice(0, cursorPosition);
+  const lastWordMatch = textBeforeCursor.match(/([가-힣a-zA-Z_][가-힣a-zA-Z0-9_]*)$/);
+
+  if (!lastWordMatch) return completions;
+
+  const lastWord = lastWordMatch[1].toLowerCase();
+
+  // 함수 제안
+  for (const func of availableFunctions) {
+    if (func.name.toLowerCase().startsWith(lastWord)) {
+      completions.push({
+        type: 'function',
+        value: func.name,
+        description: func.description,
+      });
+    }
+  }
+
+  // 컬럼 제안
+  for (const col of availableColumns) {
+    if (col.toLowerCase().startsWith(lastWord)) {
+      completions.push({
+        type: 'column',
+        value: col,
+        description: '현재 시트 컬럼',
+      });
+    }
+  }
+
+  return completions.slice(0, 10); // 최대 10개
 }
 
 // 사용 가능한 함수 목록

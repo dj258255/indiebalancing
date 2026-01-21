@@ -1,7 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
+import { useTranslations } from 'next-intl';
 import { useProjectStore } from '@/stores/projectStore';
+import { useHistoryStore } from '@/stores/historyStore';
+import { usePanelManager, useProjectHistory } from '@/hooks';
 import {
   loadProjects,
   saveAllProjects,
@@ -9,55 +12,164 @@ import {
   stopAutoSave,
   startAutoBackup,
   stopAutoBackup,
+  exportToJSON,
+  importFromJSON,
+  exportSheetToCSV,
+  importSheetFromCSV,
 } from '@/lib/storage';
-import Sidebar from '@/components/Sidebar';
-import SheetTabs from '@/components/SheetTabs';
-import SheetTable from '@/components/SheetTable';
-import FormulaHelper from '@/components/FormulaHelper';
-import BalanceValidator from '@/components/BalanceValidator';
-import DifficultyCurve from '@/components/DifficultyCurve';
-import GrowthCurveChart from '@/components/GrowthCurveChart';
-import OnboardingGuide, { useOnboardingStatus } from '@/components/OnboardingGuide';
-import Calculator from '@/components/Calculator';
-import ComparisonChart from '@/components/ComparisonChart';
-import ReferencesModal from '@/components/ReferencesModal';
-import { FileSpreadsheet, Plus, X, ArrowRight, Loader2, FunctionSquare, Shield, TrendingUp, Menu } from 'lucide-react';
+import { downloadFile } from '@/lib/utils';
+
+// Layout components
+import { Sidebar, SheetTabs } from '@/components/layout';
+
+// Sheet components
+import { SheetTable, StickerLayer } from '@/components/sheet';
+
+// Modal components
+import {
+  SettingsModal,
+  ReferencesModal,
+  GameEngineExportModal,
+  GameEngineImportModal,
+  OnboardingGuide,
+  useOnboardingStatus,
+  ExportModal,
+  ImportModal,
+} from '@/components/modals';
+
+// Panel components
+import {
+  Calculator,
+  ComparisonChart,
+  GrowthCurveChart,
+  BalanceAnalysisPanel,
+  BalanceValidator,
+  ImbalanceDetectorPanel,
+  GoalSolverPanel,
+  DifficultyCurve,
+  SimulationPanel,
+  FormulaHelper,
+} from '@/components/panels';
+
+// UI components
+import { DraggablePanel } from '@/components/ui';
+
+// Sub-components
+import LoadingScreen from './components/LoadingScreen';
+import WelcomeScreen from './components/WelcomeScreen';
+import MobileHeader from './components/MobileHeader';
+import MobileSidebar from './components/MobileSidebar';
+import SheetHeader from './components/SheetHeader';
+import HistoryPanel from './components/HistoryPanel';
+import BottomToolbar from './components/BottomToolbar';
+import EmptySheetView from './components/EmptySheetView';
+import FloatingPanels from './components/FloatingPanels';
+import MobilePanels from './components/MobilePanels';
+import BottomPanels from './components/BottomPanels';
+
+// Panel configuration
+const PANEL_CONFIG = {
+  calculator: { x: 270, y: 16, width: 380, height: 480, zIndex: 30, color: '#8b5cf6' },
+  comparison: { x: 300, y: 46, width: 400, height: 500, zIndex: 30, color: '#3b82f6' },
+  chart: { x: 330, y: 76, width: 420, height: 450, zIndex: 30, color: '#22c55e' },
+  preset: { x: 360, y: 106, width: 450, height: 520, zIndex: 30, color: '#f97316' },
+  imbalance: { x: 390, y: 136, width: 400, height: 480, zIndex: 30, color: '#eab308' },
+  goal: { x: 420, y: 166, width: 380, height: 450, zIndex: 30, color: '#14b8a6' },
+  balance: { x: 450, y: 196, width: 420, height: 500, zIndex: 30, color: '#ec4899' },
+};
 
 export default function Home() {
+  const t = useTranslations();
+
+  // Store
   const {
     projects,
+    currentProjectId,
+    currentSheetId,
     loadProjects: setProjects,
     setLastSaved,
-    getCurrentProject,
-    getCurrentSheet,
     createSheet,
+    addSticker,
+    addColumn,
+    addRow,
+    updateCell,
   } = useProjectStore();
 
+  // History
+  const {
+    handleUndo,
+    handleRedo,
+    handleHistoryJump,
+    canUndo,
+    canRedo,
+    getHistory,
+    saveToHistory,
+    isUndoRedoAction,
+    prevProjectsRef,
+  } = useProjectHistory();
+  const { pushState } = useHistoryStore();
+
+  // Panel manager
+  const {
+    panelStates,
+    bringToFront,
+    createDragHandler,
+    createResizeHandler,
+  } = usePanelManager({
+    panels: ['calculator', 'comparison', 'chart', 'preset', 'imbalance', 'goal', 'balance'],
+    initialStates: Object.fromEntries(
+      Object.entries(PANEL_CONFIG).map(([key, config]) => [
+        key,
+        { x: config.x, y: config.y, width: config.width, height: config.height, zIndex: config.zIndex },
+      ])
+    ),
+  });
+
+  // UI State
   const [isLoading, setIsLoading] = useState(true);
-  const [showChart, setShowChart] = useState(false);
+  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
+  const [showHistoryPanel, setShowHistoryPanel] = useState(false);
+
+  // Modal state
+  const [showSettings, setShowSettings] = useState(false);
+  const [showReferences, setShowReferences] = useState(false);
+  const [showGameEngineExport, setShowGameEngineExport] = useState(false);
+  const [showGameEngineImport, setShowGameEngineImport] = useState(false);
+  const [showExportModal, setShowExportModal] = useState(false);
+  const [showImportModal, setShowImportModal] = useState(false);
+  const { showOnboarding, setShowOnboarding } = useOnboardingStatus();
+
+  // Floating panel state
   const [showCalculator, setShowCalculator] = useState(false);
   const [showComparison, setShowComparison] = useState(false);
-  const [showReferences, setShowReferences] = useState(false);
-  // 각 도구 패널 개별 토글 상태
+  const [showChart, setShowChart] = useState(false);
+  const [showPresetComparison, setShowPresetComparison] = useState(false);
+  const [showImbalanceDetector, setShowImbalanceDetector] = useState(false);
+  const [showGoalSolver, setShowGoalSolver] = useState(false);
+  const [showBalanceAnalysis, setShowBalanceAnalysis] = useState(false);
+
+  // Bottom panel state
   const [showFormulaHelper, setShowFormulaHelper] = useState(false);
   const [showBalanceValidator, setShowBalanceValidator] = useState(false);
   const [showDifficultyCurve, setShowDifficultyCurve] = useState(false);
-  const [showMobileSidebar, setShowMobileSidebar] = useState(false);
-  const { showOnboarding, setShowOnboarding } = useOnboardingStatus();
+  const [showSimulation, setShowSimulation] = useState(false);
 
-  const currentProject = getCurrentProject();
-  const currentSheet = getCurrentSheet();
+  // Refs
+  const sheetContainerRef = useRef<HTMLDivElement>(null);
 
-  // 모달이 열려있는지 확인
-  const isModalOpen = showChart || showOnboarding || showCalculator || showComparison || showReferences;
+  // Derived state
+  const currentProject = projects.find((p) => p.id === currentProjectId) || null;
+  const currentSheet = currentProject?.sheets.find((s) => s.id === currentSheetId) || null;
+  const isModalOpen = showOnboarding || showReferences || showGameEngineExport || showGameEngineImport;
 
-  // 초기 데이터 로드
+  // Initial data load
   useEffect(() => {
     const init = async () => {
       try {
         const savedProjects = await loadProjects();
         if (savedProjects.length > 0) {
           setProjects(savedProjects);
+          pushState(savedProjects, t('history.initialLoad'));
         }
       } catch (error) {
         console.error('Failed to load projects:', error);
@@ -65,25 +177,22 @@ export default function Home() {
         setIsLoading(false);
       }
     };
-
     init();
-  }, [setProjects]);
+  }, [setProjects, pushState, t]);
 
-  // 자동 저장 설정
+  // Auto save setup
   useEffect(() => {
     if (!isLoading) {
       startAutoSave(
         () => useProjectStore.getState().projects,
         () => setLastSaved(Date.now()),
-        30000 // 30초마다 저장
+        30000
       );
-
       startAutoBackup(
         () => useProjectStore.getState().projects,
         () => console.log('Backup created'),
-        300000 // 5분마다 백업
+        300000
       );
-
       return () => {
         stopAutoSave();
         stopAutoBackup();
@@ -91,350 +200,355 @@ export default function Home() {
     }
   }, [isLoading, setLastSaved]);
 
-  // 프로젝트 변경 시 저장
+  // Save on project change
   useEffect(() => {
     if (!isLoading && projects.length > 0) {
       const timeout = setTimeout(() => {
         saveAllProjects(projects);
         setLastSaved(Date.now());
       }, 1000);
-
       return () => clearTimeout(timeout);
     }
   }, [projects, isLoading, setLastSaved]);
 
+  // Save to history on project change
+  useEffect(() => {
+    if (!isLoading && projects.length > 0 && !isUndoRedoAction.current) {
+      const timeout = setTimeout(() => {
+        saveToHistory(projects);
+      }, 500);
+      return () => clearTimeout(timeout);
+    }
+  }, [projects, isLoading, saveToHistory, isUndoRedoAction]);
+
+  // History panel outside click
+  useEffect(() => {
+    if (!showHistoryPanel) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('[data-history-panel]')) {
+        setShowHistoryPanel(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [showHistoryPanel]);
+
+  // Export handlers
+  const handleExportJSON = () => {
+    const json = exportToJSON(projects);
+    downloadFile(json, `indiebalancing-${new Date().toISOString().slice(0, 10)}.json`);
+  };
+
+  const handleExportCSV = () => {
+    if (!currentSheet) {
+      alert(t('alert.exportSelectSheet'));
+      return;
+    }
+    const csv = exportSheetToCSV(currentSheet);
+    const projectName = currentProject?.name || 'project';
+    downloadFile(csv, `${projectName}-${currentSheet.name}.csv`, 'text/csv');
+  };
+
+  // Import handlers
+  const handleImportJSON = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const imported = importFromJSON(text);
+        setProjects([...projects, ...imported]);
+        await saveAllProjects([...projects, ...imported]);
+        alert(t('project.importSuccess', { count: imported.length }));
+      } catch {
+        alert(t('project.importFailed'));
+      }
+    };
+    input.click();
+  };
+
+  const handleImportCSV = () => {
+    if (!currentProjectId) {
+      alert(t('alert.importSelectProject'));
+      return;
+    }
+
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.csv';
+    input.onchange = async (e) => {
+      const file = (e.target as HTMLInputElement).files?.[0];
+      if (!file) return;
+
+      try {
+        const text = await file.text();
+        const { columns, rows } = importSheetFromCSV(text);
+
+        if (columns.length === 0) {
+          alert(t('project.csvImportEmpty'));
+          return;
+        }
+
+        // 새 시트 생성
+        const sheetName = file.name.replace(/\.csv$/i, '');
+        const sheetId = createSheet(currentProjectId, sheetName);
+
+        // 컬럼 추가
+        const columnIdMap = new Map<string, string>();
+        columns.forEach((col, idx) => {
+          const colId = addColumn(currentProjectId, sheetId, {
+            name: col.name,
+            type: col.type,
+            width: col.name.length > 10 ? 150 : 100,
+          });
+          columnIdMap.set(`col_${idx}`, colId);
+        });
+
+        // 행 추가
+        for (const rowData of rows) {
+          const rowId = addRow(currentProjectId, sheetId);
+          for (const [tempId, value] of Object.entries(rowData.cells)) {
+            const colId = columnIdMap.get(tempId);
+            if (colId && value !== undefined) {
+              updateCell(currentProjectId, sheetId, rowId, colId, value as string | number | null);
+            }
+          }
+        }
+
+        alert(t('project.csvImportSuccess', { name: sheetName, cols: columns.length, rows: rows.length }));
+      } catch {
+        alert(t('project.importFailed'));
+      }
+    };
+    input.click();
+  };
+
+  // Sidebar callbacks
+  const sidebarCallbacks = {
+    onShowChart: () => setShowChart(!showChart),
+    onShowHelp: () => setShowOnboarding(true),
+    onShowCalculator: () => setShowCalculator(!showCalculator),
+    onShowComparison: () => setShowComparison(!showComparison),
+    onShowReferences: () => setShowReferences(true),
+    onShowPresetComparison: () => setShowPresetComparison(!showPresetComparison),
+    onShowGameEngineExport: () => setShowGameEngineExport(true),
+    onShowGameEngineImport: () => setShowGameEngineImport(true),
+    onShowImbalanceDetector: () => setShowImbalanceDetector(!showImbalanceDetector),
+    onShowGoalSolver: () => setShowGoalSolver(!showGoalSolver),
+    onShowBalanceAnalysis: () => setShowBalanceAnalysis(!showBalanceAnalysis),
+    onShowSettings: () => setShowSettings(true),
+    onShowExportModal: () => setShowExportModal(true),
+    onShowImportModal: () => setShowImportModal(true),
+  };
+
+  // Add memo handler
+  const handleAddMemo = () => {
+    if (currentProjectId && currentSheetId) {
+      addSticker(currentProjectId, currentSheetId, {
+        text: '',
+        color: '#fef08a',
+        x: 10 + Math.random() * 30,
+        y: 10 + Math.random() * 30,
+        width: 150,
+        height: 80,
+      });
+    }
+  };
+
   if (isLoading) {
-    return (
-      <div className="h-screen flex items-center justify-center" style={{ background: 'var(--bg-secondary)' }}>
-        <div className="text-center">
-          <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3" style={{ color: 'var(--accent)' }} />
-          <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>로딩 중...</p>
-        </div>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   return (
     <div className="h-screen flex" style={{ background: 'var(--bg-secondary)' }}>
-      {/* 모바일 헤더 */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-4 py-3 border-b" style={{
-        background: 'var(--bg-primary)',
-        borderColor: 'var(--border-primary)'
-      }}>
-        <button
-          onClick={() => setShowMobileSidebar(true)}
-          className="p-2 rounded-lg transition-colors"
-          style={{ background: 'var(--bg-tertiary)' }}
-        >
-          <Menu className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} />
-        </button>
-        <span className="font-semibold" style={{ color: 'var(--accent)' }}>인디밸런싱</span>
-        <div className="w-9" /> {/* 균형을 위한 빈 공간 */}
-      </div>
+      {/* Mobile Header */}
+      <MobileHeader onMenuClick={() => setShowMobileSidebar(true)} />
 
-      {/* 모바일 사이드바 오버레이 */}
-      {showMobileSidebar && (
-        <div
-          className="md:hidden fixed inset-0 z-50"
-          onClick={() => setShowMobileSidebar(false)}
-        >
-          <div className="absolute inset-0 bg-black/50" />
-          <div
-            className="absolute left-0 top-0 bottom-0 w-72 animate-slideIn"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <Sidebar
-              onShowChart={() => { setShowChart(true); setShowMobileSidebar(false); }}
-              onShowHelp={() => { setShowOnboarding(true); setShowMobileSidebar(false); }}
-              onShowCalculator={() => { setShowCalculator(true); setShowMobileSidebar(false); }}
-              onShowComparison={() => { setShowComparison(true); setShowMobileSidebar(false); }}
-              onShowReferences={() => { setShowReferences(true); setShowMobileSidebar(false); }}
-            />
-          </div>
-        </div>
-      )}
+      {/* Mobile Sidebar */}
+      <MobileSidebar
+        isOpen={showMobileSidebar}
+        onClose={() => setShowMobileSidebar(false)}
+        callbacks={{
+          ...sidebarCallbacks,
+          onShowChart: () => {
+            setShowChart(true);
+            setShowMobileSidebar(false);
+          },
+          onShowHelp: () => {
+            setShowOnboarding(true);
+            setShowMobileSidebar(false);
+          },
+          onShowCalculator: () => {
+            setShowCalculator(true);
+            setShowMobileSidebar(false);
+          },
+          onShowComparison: () => {
+            setShowComparison(true);
+            setShowMobileSidebar(false);
+          },
+          onShowReferences: () => {
+            setShowReferences(true);
+            setShowMobileSidebar(false);
+          },
+          onShowPresetComparison: () => {
+            setShowPresetComparison(true);
+            setShowMobileSidebar(false);
+          },
+          onShowGameEngineExport: () => {
+            setShowGameEngineExport(true);
+            setShowMobileSidebar(false);
+          },
+          onShowGameEngineImport: () => {
+            setShowGameEngineImport(true);
+            setShowMobileSidebar(false);
+          },
+        }}
+      />
 
-      {/* 사이드바 - 데스크톱 */}
+      {/* Desktop Sidebar */}
       <div className="hidden md:block">
-        <Sidebar
-          onShowChart={() => setShowChart(true)}
-          onShowHelp={() => setShowOnboarding(true)}
-          onShowCalculator={() => setShowCalculator(true)}
-          onShowComparison={() => setShowComparison(true)}
-          onShowReferences={() => setShowReferences(true)}
-        />
+        <Sidebar {...sidebarCallbacks} />
       </div>
 
-      {/* 메인 영역 */}
+      {/* Main Area */}
       <div className="flex-1 flex flex-col overflow-hidden pt-14 md:pt-0">
         {currentProject ? (
           <>
-            {/* 시트 탭 */}
             <SheetTabs project={currentProject} />
 
-            {/* 시트 내용 */}
             <div className="flex-1 flex overflow-hidden">
               {currentSheet ? (
-                <div className="flex-1 flex flex-col p-3 sm:p-4 lg:p-6 pb-0 min-h-0 overflow-hidden">
-                  <div className="flex items-center justify-between mb-3 sm:mb-4 lg:mb-5 flex-shrink-0">
-                    <div>
-                      <h2 className="text-base sm:text-lg lg:text-xl font-bold" style={{ color: 'var(--text-primary)' }}>{currentSheet.name}</h2>
-                      <p className="text-xs sm:text-sm mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                        {currentSheet.rows.length}개 행 · {currentSheet.columns.length}개 열
-                      </p>
-                    </div>
-                  </div>
+                <div
+                  ref={sheetContainerRef}
+                  className="flex-1 flex flex-col p-3 sm:p-4 lg:p-6 pb-0 min-h-0 overflow-hidden relative"
+                >
+                  <StickerLayer containerRef={sheetContainerRef} />
+
+                  <SheetHeader
+                    sheet={currentSheet}
+                    onAddMemo={handleAddMemo}
+                    onUndo={handleUndo}
+                    onRedo={handleRedo}
+                    canUndo={canUndo()}
+                    canRedo={canRedo()}
+                    showHistoryPanel={showHistoryPanel}
+                    onToggleHistory={() => setShowHistoryPanel(!showHistoryPanel)}
+                  />
+
+                  {showHistoryPanel && (
+                    <HistoryPanel
+                      history={getHistory()}
+                      onJump={(index) => handleHistoryJump(index, () => setShowHistoryPanel(false))}
+                    />
+                  )}
 
                   <div className="flex-1 min-h-0 overflow-hidden">
-                    <SheetTable
-                      projectId={currentProject.id}
-                      sheet={currentSheet}
-                    />
+                    <SheetTable projectId={currentProject.id} sheet={currentSheet} />
                   </div>
-
                 </div>
               ) : (
-                <div className="flex-1 flex flex-col items-center justify-center">
-                  <div className="w-16 h-16 rounded-xl flex items-center justify-center mb-4" style={{
-                    background: 'var(--accent-light)'
-                  }}>
-                    <FileSpreadsheet className="w-8 h-8" style={{ color: 'var(--accent)' }} />
-                  </div>
-                  <p className="text-lg font-medium mb-2" style={{ color: 'var(--text-primary)' }}>시트가 없습니다</p>
-                  <p className="text-sm mb-6" style={{ color: 'var(--text-tertiary)' }}>새 시트를 만들어 데이터를 관리해보세요</p>
-                  <button
-                    onClick={() => createSheet(currentProject.id, '새 시트')}
-                    className="flex items-center gap-2 px-5 py-2.5 rounded-lg font-medium transition-colors"
-                    style={{
-                      background: 'var(--accent)',
-                      color: 'white'
-                    }}
-                  >
-                    <Plus className="w-4 h-4" />
-                    새 시트 만들기
-                  </button>
-                </div>
+                <EmptySheetView onCreateSheet={() => createSheet(currentProject.id, t('sheet.newSheet'))} />
               )}
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-8">
-            <div className="max-w-lg text-center">
-              <h1 className="text-3xl font-bold mb-2" style={{ color: 'var(--text-primary)' }}>
-                인디밸런싱
-              </h1>
-              <p className="text-lg mb-8" style={{ color: 'var(--text-tertiary)' }}>
-                인디게임 개발자를 위한 밸런스 데이터 관리 툴
-              </p>
-
-              {/* 기능 카드 */}
-              <div className="card p-6 text-left mb-6">
-                <h3 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>주요 기능</h3>
-                <div className="grid grid-cols-2 gap-3">
-                  <FeatureItem
-                    title="게임 특화 수식"
-                    desc="DAMAGE, DPS, TTK, EHP 등"
-                  />
-                  <FeatureItem
-                    title="밸런스 검증기"
-                    desc="역할별 DPS/EHP 자동 검증"
-                  />
-                  <FeatureItem
-                    title="난이도 곡선"
-                    desc="벽 구간, 마일스톤 설계"
-                  />
-                  <FeatureItem
-                    title="시트 간 연동"
-                    desc="REF 함수로 데이터 참조"
-                  />
-                  <FeatureItem
-                    title="성장 곡선"
-                    desc="Linear, Exponential, S-Curve"
-                  />
-                  <FeatureItem
-                    title="자동 저장"
-                    desc="브라우저 저장, JSON 내보내기"
-                  />
-                </div>
-              </div>
-
-              {/* 시작 안내 */}
-              <div className="flex items-center justify-center gap-2 text-sm" style={{ color: 'var(--text-tertiary)' }}>
-                <span>왼쪽 사이드바에서</span>
-                <span className="font-semibold px-2 py-1 rounded" style={{
-                  background: 'var(--accent-light)',
-                  color: 'var(--accent)'
-                }}>새 프로젝트</span>
-                <span>를 만들어 시작하세요</span>
-                <ArrowRight className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-              </div>
-            </div>
-          </div>
+          <WelcomeScreen />
         )}
       </div>
 
-      {/* 성장 곡선 차트 모달 */}
-      {showChart && (
-        <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-2 sm:p-4">
-          <div className="card w-full max-w-4xl max-h-[95vh] sm:max-h-[90vh] overflow-y-auto animate-scaleIn">
-            <div className="sticky top-0 border-b px-4 sm:px-6 py-3 sm:py-4 flex items-center justify-between" style={{
-              background: 'var(--bg-primary)',
-              borderColor: 'var(--border-primary)'
-            }}>
-              <h2 className="text-base sm:text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>성장 곡선 차트</h2>
-              <button
-                onClick={() => setShowChart(false)}
-                className="p-2 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-                style={{ color: 'var(--text-tertiary)' }}
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-4 sm:p-6">
-              <GrowthCurveChart />
-            </div>
-          </div>
-        </div>
+      {/* Modals */}
+      {showOnboarding && <OnboardingGuide onClose={() => setShowOnboarding(false)} />}
+      <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
+      {showReferences && <ReferencesModal onClose={() => setShowReferences(false)} />}
+      {showGameEngineExport && <GameEngineExportModal onClose={() => setShowGameEngineExport(false)} />}
+      {showGameEngineImport && <GameEngineImportModal onClose={() => setShowGameEngineImport(false)} />}
+      {showExportModal && (
+        <ExportModal
+          onClose={() => setShowExportModal(false)}
+          onExportJSON={handleExportJSON}
+          onExportCSV={handleExportCSV}
+          onExportCode={() => setShowGameEngineExport(true)}
+          hasCurrentSheet={!!currentSheet}
+        />
+      )}
+      {showImportModal && (
+        <ImportModal
+          onClose={() => setShowImportModal(false)}
+          onImportJSON={handleImportJSON}
+          onImportCSV={handleImportCSV}
+          onImportCode={() => setShowGameEngineImport(true)}
+          hasCurrentProject={!!currentProjectId}
+        />
       )}
 
-      {/* 온보딩 가이드 */}
-      {showOnboarding && (
-        <OnboardingGuide onClose={() => setShowOnboarding(false)} />
-      )}
+      {/* Floating Panels (Desktop) */}
+      <FloatingPanels
+        panelStates={panelStates}
+        bringToFront={bringToFront}
+        createDragHandler={createDragHandler}
+        createResizeHandler={createResizeHandler}
+        panels={{
+          calculator: { show: showCalculator, setShow: setShowCalculator },
+          comparison: { show: showComparison, setShow: setShowComparison },
+          chart: { show: showChart, setShow: setShowChart },
+          preset: { show: showPresetComparison, setShow: setShowPresetComparison },
+          imbalance: { show: showImbalanceDetector, setShow: setShowImbalanceDetector },
+          goal: { show: showGoalSolver, setShow: setShowGoalSolver },
+          balance: { show: showBalanceAnalysis, setShow: setShowBalanceAnalysis },
+        }}
+        config={PANEL_CONFIG}
+      />
 
-      {/* 계산기 모달 */}
-      {showCalculator && (
-        <Calculator onClose={() => setShowCalculator(false)} />
-      )}
+      {/* Mobile Panels */}
+      <MobilePanels
+        panels={{
+          calculator: { show: showCalculator, setShow: setShowCalculator },
+          comparison: { show: showComparison, setShow: setShowComparison },
+          chart: { show: showChart, setShow: setShowChart },
+          preset: { show: showPresetComparison, setShow: setShowPresetComparison },
+        }}
+      />
 
-      {/* 비교/분석 차트 모달 */}
-      {showComparison && (
-        <ComparisonChart onClose={() => setShowComparison(false)} />
-      )}
-
-      {/* 참고 자료 모달 */}
-      {showReferences && (
-        <ReferencesModal onClose={() => setShowReferences(false)} />
-      )}
-
-      {/* 하단 탭과 패널 - 각각 독립적 */}
+      {/* Bottom Panels and Toolbar */}
       {currentSheet && (
         <>
-          {/* 패널들 - 모바일에서는 전체 너비 모달, 데스크톱에서는 하단 패널 */}
-          {/* 수식 도우미 패널 */}
-          {showFormulaHelper && (
-            <div className="fixed inset-0 md:inset-auto md:bottom-0 z-40 transition-all duration-300 ease-out pointer-events-auto md:left-[calc(224px+(100%-224px)*0.167-min(250px,15vw))] lg:left-[calc(256px+(100%-256px)*0.167-min(250px,15vw))] md:w-[min(500px,30vw)] md:h-[60vh]">
-              <div
-                className="flex flex-col h-full"
-                style={{
-                  background: 'var(--bg-primary)',
-                  borderTop: '1px solid var(--border-primary)',
-                  borderLeft: '1px solid var(--border-primary)',
-                  borderRight: '1px solid var(--border-primary)',
-                  borderRadius: '12px 12px 0 0',
-                  boxShadow: 'var(--shadow-lg)',
-                }}
-              >
-                <FormulaHelper onClose={() => setShowFormulaHelper(false)} />
-              </div>
-            </div>
-          )}
+          <BottomPanels
+            show={{
+              formulaHelper: showFormulaHelper,
+              balanceValidator: showBalanceValidator,
+              difficultyCurve: showDifficultyCurve,
+              simulation: showSimulation,
+            }}
+            setShow={{
+              formulaHelper: setShowFormulaHelper,
+              balanceValidator: setShowBalanceValidator,
+              difficultyCurve: setShowDifficultyCurve,
+              simulation: setShowSimulation,
+            }}
+          />
 
-          {/* 밸런스 검증기 패널 */}
-          {showBalanceValidator && (
-            <div className="fixed inset-0 md:inset-auto md:bottom-0 z-40 transition-all duration-300 ease-out pointer-events-auto md:left-[calc(224px+(100%-224px)*0.5-min(250px,15vw))] lg:left-[calc(256px+(100%-256px)*0.5-min(250px,15vw))] md:w-[min(500px,30vw)] md:h-[60vh]">
-              <div
-                className="flex flex-col h-full"
-                style={{
-                  background: 'var(--bg-primary)',
-                  borderTop: '1px solid var(--border-primary)',
-                  borderLeft: '1px solid var(--border-primary)',
-                  borderRight: '1px solid var(--border-primary)',
-                  borderRadius: '12px 12px 0 0',
-                  boxShadow: 'var(--shadow-lg)',
-                }}
-              >
-                <BalanceValidator onClose={() => setShowBalanceValidator(false)} />
-              </div>
-            </div>
-          )}
-
-          {/* 난이도 곡선 패널 */}
-          {showDifficultyCurve && (
-            <div className="fixed inset-0 md:inset-auto md:bottom-0 z-40 transition-all duration-300 ease-out pointer-events-auto md:left-[calc(224px+(100%-224px)*0.833-min(250px,15vw))] lg:left-[calc(256px+(100%-256px)*0.833-min(250px,15vw))] md:w-[min(500px,30vw)] md:h-[60vh]">
-              <div
-                className="flex flex-col h-full"
-                style={{
-                  background: 'var(--bg-primary)',
-                  borderTop: '1px solid var(--border-primary)',
-                  borderLeft: '1px solid var(--border-primary)',
-                  borderRight: '1px solid var(--border-primary)',
-                  borderRadius: '12px 12px 0 0',
-                  boxShadow: 'var(--shadow-lg)',
-                }}
-              >
-                <DifficultyCurve onClose={() => setShowDifficultyCurve(false)} />
-              </div>
-            </div>
-          )}
-
-          {/* 버튼들 - Liquid Glass 스타일 (반응형) */}
-          <div className="fixed bottom-0 left-0 md:left-56 lg:left-64 right-0 z-50 pointer-events-none">
-            <div className="flex justify-around pointer-events-auto">
-              <button
-                onClick={() => !isModalOpen && setShowFormulaHelper(!showFormulaHelper)}
-                disabled={isModalOpen}
-                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 text-xs sm:text-sm lg:text-base font-semibold transition-all rounded-t-xl ${
-                  showFormulaHelper
-                    ? 'liquid-glass-active text-[var(--primary-blue)]'
-                    : 'bg-[var(--bg-primary)] text-[var(--text-secondary)] border-t border-l border-r border-[var(--border-primary)]'
-                } ${isModalOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <FunctionSquare className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="hidden sm:inline">수식 도우미</span>
-                <span className="sm:hidden">수식</span>
-              </button>
-
-              <button
-                onClick={() => !isModalOpen && setShowBalanceValidator(!showBalanceValidator)}
-                disabled={isModalOpen}
-                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 text-xs sm:text-sm lg:text-base font-semibold transition-all rounded-t-xl ${
-                  showBalanceValidator
-                    ? 'liquid-glass-active text-[var(--primary-green)]'
-                    : 'bg-[var(--bg-primary)] text-[var(--text-secondary)] border-t border-l border-r border-[var(--border-primary)]'
-                } ${isModalOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <Shield className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="hidden sm:inline">밸런스 검증기</span>
-                <span className="sm:hidden">밸런스</span>
-              </button>
-
-              <button
-                onClick={() => !isModalOpen && setShowDifficultyCurve(!showDifficultyCurve)}
-                disabled={isModalOpen}
-                className={`flex items-center gap-1 sm:gap-2 px-3 sm:px-4 lg:px-6 py-2 sm:py-2.5 text-xs sm:text-sm lg:text-base font-semibold transition-all rounded-t-xl ${
-                  showDifficultyCurve
-                    ? 'liquid-glass-active text-[var(--primary-purple)]'
-                    : 'bg-[var(--bg-primary)] text-[var(--text-secondary)] border-t border-l border-r border-[var(--border-primary)]'
-                } ${isModalOpen ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span className="hidden sm:inline">난이도 곡선</span>
-                <span className="sm:hidden">난이도</span>
-              </button>
-            </div>
-          </div>
+          <BottomToolbar
+            show={{
+              formulaHelper: showFormulaHelper,
+              balanceValidator: showBalanceValidator,
+              difficultyCurve: showDifficultyCurve,
+              simulation: showSimulation,
+            }}
+            setShow={{
+              formulaHelper: setShowFormulaHelper,
+              balanceValidator: setShowBalanceValidator,
+              difficultyCurve: setShowDifficultyCurve,
+              simulation: setShowSimulation,
+            }}
+            isModalOpen={isModalOpen}
+          />
         </>
       )}
-    </div>
-  );
-}
-
-function FeatureItem({ title, desc }: { title: string; desc: string }) {
-  return (
-    <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-      <div className="text-sm font-medium mb-0.5" style={{ color: 'var(--text-primary)' }}>{title}</div>
-      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{desc}</div>
     </div>
   );
 }

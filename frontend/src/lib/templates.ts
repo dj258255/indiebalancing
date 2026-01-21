@@ -14,6 +14,12 @@ export interface SheetTemplate {
   context?: string;
   // 추가: 핵심 지표 설명
   keyMetrics?: string[];
+  // 추가: 의존하는 다른 템플릿 (시트 참조용)
+  dependencies?: {
+    templateId: string;
+    sheetName: string; // 참조 시 사용할 시트명
+    description: string; // 왜 필요한지 설명
+  }[];
 }
 
 // 장르 정의
@@ -135,11 +141,18 @@ export const sheetTemplates: SheetTemplate[] = [
     description: '캐릭터별 기본 능력치와 역할에 따른 스탯 배분',
     category: 'character',
     genre: ['rpg'],
-    context: '글로벌 설정의 BASE_HP(1000), BASE_ATK(100), BASE_DEF(50)를 기준으로 역할별 배율 적용',
+    context: '글로벌설정 시트의 BASE_HP, BASE_ATK, BASE_DEF를 참조하여 역할별 배율 적용',
     keyMetrics: [
       '탱커: 기준 대비 HP×1.5, DEF×3.0, ATK×0.8',
       '딜러: 기준 대비 ATK×2.0, HP×0.7, CritRate×5',
       '힐러: 기준값 유지, 힐량은 스킬 배율로 별도 조정',
+    ],
+    dependencies: [
+      {
+        templateId: 'global-config',
+        sheetName: '글로벌설정',
+        description: 'BASE_HP, BASE_ATK, BASE_DEF 값 참조',
+      },
     ],
     columns: [
       { name: 'ID', type: 'general' as ColumnType, width: 80 },
@@ -166,16 +179,16 @@ export const sheetTemplates: SheetTemplate[] = [
           col2: 'SSR',
           col3: '탱커',
           col4: 1.5,
-          col5: 1500,
+          col5: '=글로벌설정.BASE_HP*HP배율',
           col6: 0.8,
-          col7: 80,
+          col7: '=글로벌설정.BASE_ATK*ATK배율',
           col8: 3.0,
-          col9: 150,
+          col9: '=글로벌설정.BASE_DEF*DEF배율',
           col10: 0.05,
           col11: 1.5,
-          col12: 3750,
-          col13: 82,
-          col14: 'HP 1500=BASE×1.5, DEF 150=BASE×3 → EHP=HP×(1+DEF/100)=3750. DPS=ATK×(1+Crit×(CritDMG-1))=82',
+          col12: '=HP*(1+DEF/100)',
+          col13: '=ATK*(1+CritRate*(CritDMG-1))',
+          col14: 'HP=BASE×1.5, DEF=BASE×3 → EHP=HP×(1+DEF/100). DPS=ATK×(1+Crit×(CritDMG-1))',
         },
       },
       {
@@ -185,16 +198,16 @@ export const sheetTemplates: SheetTemplate[] = [
           col2: 'SSR',
           col3: '딜러',
           col4: 0.7,
-          col5: 700,
+          col5: '=글로벌설정.BASE_HP*HP배율',
           col6: 2.0,
-          col7: 200,
+          col7: '=글로벌설정.BASE_ATK*ATK배율',
           col8: 0.8,
-          col9: 40,
+          col9: '=글로벌설정.BASE_DEF*DEF배율',
           col10: 0.25,
           col11: 2.0,
-          col12: 980,
-          col13: 250,
-          col14: 'HP 700, DEF 40 → EHP 980. ATK 200, Crit 25%×2배 → DPS=200×1.25=250. 고위험 고화력',
+          col12: '=HP*(1+DEF/100)',
+          col13: '=ATK*(1+CritRate*(CritDMG-1))',
+          col14: 'HP 낮음, DEF 낮음 → EHP 낮음. ATK 높음, Crit 25%×2배 → 고위험 고화력',
         },
       },
       {
@@ -204,16 +217,16 @@ export const sheetTemplates: SheetTemplate[] = [
           col2: 'SR',
           col3: '힐러',
           col4: 1.0,
-          col5: 1000,
+          col5: '=글로벌설정.BASE_HP*HP배율',
           col6: 0.6,
-          col7: 60,
+          col7: '=글로벌설정.BASE_ATK*ATK배율',
           col8: 1.4,
-          col9: 70,
+          col9: '=글로벌설정.BASE_DEF*DEF배율',
           col10: 0.1,
           col11: 1.5,
-          col12: 1700,
-          col13: 63,
-          col14: 'HP 1000, DEF 70 → EHP 1700. DPS 63. 힐량=ATK×스킬배율로 별도 계산',
+          col12: '=HP*(1+DEF/100)',
+          col13: '=ATK*(1+CritRate*(CritDMG-1))',
+          col14: '중간 생존력. 힐량=ATK×스킬배율로 별도 계산',
         },
       },
       {
@@ -223,16 +236,16 @@ export const sheetTemplates: SheetTemplate[] = [
           col2: 'SR',
           col3: '딜러',
           col4: 0.8,
-          col5: 800,
+          col5: '=글로벌설정.BASE_HP*HP배율',
           col6: 1.5,
-          col7: 150,
+          col7: '=글로벌설정.BASE_ATK*ATK배율',
           col8: 0.9,
-          col9: 45,
+          col9: '=글로벌설정.BASE_DEF*DEF배율',
           col10: 0.15,
           col11: 1.8,
-          col12: 1160,
-          col13: 168,
-          col14: 'HP 800, DEF 45 → EHP 1160. DPS 168. 암살자 67% DPS지만 범위기로 총 딜 보상',
+          col12: '=HP*(1+DEF/100)',
+          col13: '=ATK*(1+CritRate*(CritDMG-1))',
+          col14: '암살자 대비 낮은 DPS지만 범위기로 총 딜 보상',
         },
       },
     ],
@@ -247,11 +260,18 @@ export const sheetTemplates: SheetTemplate[] = [
     description: '레벨업 필요 경험치와 스탯 성장. 글로벌 설정 참조.',
     category: 'progression',
     genre: ['rpg', 'idle'],
-    context: '기본 EXP=일반몹 10마리 처치(10×10=100). 글로벌 설정의 GROWTH_RATE(1.08) 적용',
+    context: '기본 EXP=일반몹 10마리 처치(10×10=100). 글로벌설정의 GROWTH_RATE(1.08) 적용',
     keyMetrics: [
       'EXP 증가율 1.5: 레벨당 50% 더 많은 경험치 필요',
-      '스탯 성장률 1.08: 글로벌 설정 참조. 50렙 시 기준 대비 47배',
+      '스탯 성장률 1.08: 글로벌설정 참조. 50렙 시 기준 대비 47배',
       '목표 플레이타임: 2렙(10분) → 10렙(3시간) → 30렙(3일) → 50렙(2주)',
+    ],
+    dependencies: [
+      {
+        templateId: 'global-config',
+        sheetName: '글로벌설정',
+        description: 'BASE_HP, BASE_ATK, GROWTH_RATE 값 참조',
+      },
     ],
     columns: [
       { name: '레벨', type: 'general' as ColumnType, width: 60 },
@@ -441,6 +461,13 @@ export const sheetTemplates: SheetTemplate[] = [
       '무기 기준값 30 = BASE_ATK(100)의 30%. 6슬롯 C급 풀장비 시 ATK +180(180%)',
       'SS급 1개(150) ≈ C급 5개(150). 획득 난이도로 밸런스',
     ],
+    dependencies: [
+      {
+        templateId: 'global-config',
+        sheetName: '글로벌설정',
+        description: '기준값 산출에 BASE_ATK, BASE_DEF 참조',
+      },
+    ],
     columns: [
       { name: 'ID', type: 'general' as ColumnType, width: 80 },
       { name: '이름', type: 'general' as ColumnType, width: 110 },
@@ -537,6 +564,13 @@ export const sheetTemplates: SheetTemplate[] = [
       '일반: 플레이어의 50% 스탯. EXP 10(2렙까지 10마리=100EXP)',
       '엘리트: 플레이어의 150% 스탯. EXP 50(일반의 5배, TTK 5배)',
       '보스: 플레이어의 500% HP. EXP 500(일반의 50배, 주간 1회 가치)',
+    ],
+    dependencies: [
+      {
+        templateId: 'global-config',
+        sheetName: '글로벌설정',
+        description: 'BASE_HP, BASE_ATK, GROWTH_RATE 값 참조',
+      },
     ],
     columns: [
       { name: 'ID', type: 'general' as ColumnType, width: 80 },
@@ -1014,6 +1048,13 @@ export const sheetTemplates: SheetTemplate[] = [
       '난이도 = HP배율 × 수량',
       '보스 웨이브 = 일반의 5배 난이도',
       '휴식 구간(상점) = 10웨이브마다',
+    ],
+    dependencies: [
+      {
+        templateId: 'rpg-monster',
+        sheetName: '몬스터',
+        description: '적ID 참조 (ENM_001, ENM_BOSS 등)',
+      },
     ],
     columns: [
       { name: '웨이브', type: 'general' as ColumnType, width: 65 },

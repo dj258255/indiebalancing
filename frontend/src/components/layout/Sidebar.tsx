@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState } from 'react';
 import {
   FolderPlus,
   FileSpreadsheet,
@@ -18,15 +18,18 @@ import {
   PieChart,
   BookOpen,
   GripVertical,
-  FileJson,
-  FileText,
-  ChevronUp,
+  GitCompare,
+  AlertTriangle,
+  Target,
+  TrendingUp,
+  Globe,
 } from 'lucide-react';
 import { useProjectStore } from '@/stores/projectStore';
-import { exportToJSON, importFromJSON, exportSheetToCSV, saveAllProjects, deleteProjectFromDB } from '@/lib/storage';
-import { downloadFile, formatRelativeTime } from '@/lib/utils';
+import { deleteProjectFromDB } from '@/lib/storage';
+import { formatRelativeTime } from '@/lib/utils';
 import { cn } from '@/lib/utils';
-import ThemeToggle from '@/components/ThemeToggle';
+import { ThemeToggle } from '@/components/ui';
+import { useTranslations, useLocale } from 'next-intl';
 
 interface SidebarProps {
   onShowChart: () => void;
@@ -34,9 +37,33 @@ interface SidebarProps {
   onShowCalculator: () => void;
   onShowComparison: () => void;
   onShowReferences: () => void;
+  onShowPresetComparison?: () => void;
+  onShowGameEngineExport?: () => void;
+  onShowGameEngineImport?: () => void;
+  onShowImbalanceDetector?: () => void;
+  onShowGoalSolver?: () => void;
+  onShowBalanceAnalysis?: () => void;
+  onShowSettings?: () => void;
+  onShowExportModal?: () => void;
+  onShowImportModal?: () => void;
 }
 
-export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onShowComparison, onShowReferences }: SidebarProps) {
+export default function Sidebar({
+  onShowChart,
+  onShowHelp,
+  onShowCalculator,
+  onShowComparison,
+  onShowReferences,
+  onShowPresetComparison,
+  onShowGameEngineExport,
+  onShowGameEngineImport,
+  onShowImbalanceDetector,
+  onShowGoalSolver,
+  onShowBalanceAnalysis,
+  onShowSettings,
+  onShowExportModal,
+  onShowImportModal,
+}: SidebarProps) {
   const {
     projects,
     currentProjectId,
@@ -49,7 +76,6 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
     updateProject,
     updateSheet,
     deleteSheet,
-    loadProjects,
     selectedRows,
     clearSelectedRows,
     reorderSheets,
@@ -60,26 +86,11 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
   const [editName, setEditName] = useState('');
   const [showNewProject, setShowNewProject] = useState(false);
   const [newProjectName, setNewProjectName] = useState('');
-  const [showExportMenu, setShowExportMenu] = useState(false);
-  const [showImportMenu, setShowImportMenu] = useState(false);
   const [editingSheetId, setEditingSheetId] = useState<string | null>(null);
   const [editSheetName, setEditSheetName] = useState('');
-  const exportMenuRef = useRef<HTMLDivElement>(null);
-  const importMenuRef = useRef<HTMLDivElement>(null);
 
-  // 메뉴 외부 클릭 시 닫기
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (exportMenuRef.current && !exportMenuRef.current.contains(e.target as Node)) {
-        setShowExportMenu(false);
-      }
-      if (importMenuRef.current && !importMenuRef.current.contains(e.target as Node)) {
-        setShowImportMenu(false);
-      }
-    };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  const t = useTranslations();
+  const locale = useLocale();
 
   // 드래그 앤 드롭 상태
   const [draggedSheetIndex, setDraggedSheetIndex] = useState<number | null>(null);
@@ -122,45 +133,6 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
   const currentProject = projects.find(p => p.id === currentProjectId);
   const currentSheet = currentProject?.sheets.find(s => s.id === currentSheetId);
 
-  const handleExportJSON = () => {
-    const json = exportToJSON(projects);
-    downloadFile(json, `indiebalancing-${new Date().toISOString().slice(0, 10)}.json`);
-    setShowExportMenu(false);
-  };
-
-  const handleExportCSV = () => {
-    if (!currentSheet) {
-      alert('내보낼 시트를 먼저 선택해주세요.');
-      return;
-    }
-    const csv = exportSheetToCSV(currentSheet);
-    const projectName = currentProject?.name || 'project';
-    downloadFile(csv, `${projectName}-${currentSheet.name}.csv`, 'text/csv');
-    setShowExportMenu(false);
-  };
-
-  const handleImportJSON = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-
-      try {
-        const text = await file.text();
-        const imported = importFromJSON(text);
-        loadProjects([...projects, ...imported]);
-        await saveAllProjects([...projects, ...imported]);
-        alert(`${imported.length}개의 프로젝트를 가져왔습니다.`);
-      } catch {
-        alert('파일을 가져올 수 없습니다. 올바른 형식인지 확인해주세요.');
-      }
-    };
-    input.click();
-    setShowImportMenu(false);
-  };
-
   return (
     <div className="w-56 lg:w-64 flex flex-col h-full border-r shrink-0" style={{
       background: 'var(--bg-primary)',
@@ -168,7 +140,7 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
     }}>
       {/* 헤더 */}
       <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-primary)' }}>
-        <span className="font-semibold" style={{ color: 'var(--accent)' }}>인디밸런싱</span>
+        <span className="font-semibold" style={{ color: 'var(--accent)' }}>{t('app.name')}</span>
         <ThemeToggle />
       </div>
 
@@ -187,7 +159,7 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
                   setNewProjectName('');
                 }
               }}
-              placeholder="프로젝트 이름"
+              placeholder={t('project.projectName')}
               className="flex-1 min-w-0 px-3 py-2 text-sm rounded-lg"
               autoFocus
             />
@@ -224,7 +196,7 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
             }}
           >
             <FolderPlus className="w-4 h-4" />
-            새 프로젝트
+            {t('sidebar.newProject')}
           </button>
         )}
       </div>
@@ -238,8 +210,8 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
             }}>
               <FileSpreadsheet className="w-6 h-6" style={{ color: 'var(--accent)' }} />
             </div>
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>프로젝트가 없습니다</p>
-            <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>새 프로젝트를 만들어보세요</p>
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('project.noProject')}</p>
+            <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{t('project.createProject')}</p>
           </div>
         ) : (
           <div className="space-y-0.5">
@@ -293,7 +265,7 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
                       >
                         {project.name}
                       </span>
-                      <div className="hidden group-hover:flex items-center gap-0.5">
+                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -307,7 +279,7 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
                         <button
                           onClick={async (e) => {
                             e.stopPropagation();
-                            if (confirm(`"${project.name}" 프로젝트를 삭제하시겠습니까?`)) {
+                            if (confirm(t('project.deleteConfirm', { name: project.name }))) {
                               deleteProject(project.id);
                               await deleteProjectFromDB(project.id);
                             }
@@ -425,19 +397,19 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
                                   setEditSheetName(sheet.name);
                                 }}
                                 className="p-0.5 rounded transition-colors hover:bg-black/10 dark:hover:bg-white/10"
-                                title="이름 변경"
+                                title={t('sheet.rename')}
                               >
                                 <Edit2 className="w-3 h-3" />
                               </button>
                               <button
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  if (confirm(`"${sheet.name}" 시트를 삭제하시겠습니까?`)) {
+                                  if (confirm(t('alert.deleteSheetConfirm', { name: sheet.name }))) {
                                     deleteSheet(project.id, sheet.id);
                                   }
                                 }}
                                 className="p-0.5 rounded transition-colors hover:bg-black/10 dark:hover:bg-white/10 hover:text-red-500"
-                                title="삭제"
+                                title={t('common.delete')}
                               >
                                 <Trash2 className="w-3 h-3" />
                               </button>
@@ -447,7 +419,7 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
                       </div>
                     ))}
                     {project.sheets.length === 0 && (
-                      <div className="text-xs px-2 py-1.5" style={{ color: 'var(--text-tertiary)' }}>시트 없음</div>
+                      <div className="text-xs px-2 py-1.5" style={{ color: 'var(--text-tertiary)' }}>{t('sidebar.noSheet')}</div>
                     )}
                   </div>
                 )}
@@ -465,7 +437,7 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
         }}>
           <div className="flex items-center justify-between">
             <span className="text-sm font-medium" style={{ color: 'var(--accent)' }}>
-              {selectedRows.length}개 선택됨
+              {t('sidebar.selectedRows', { count: selectedRows.length })}
             </span>
             <button
               onClick={clearSelectedRows}
@@ -475,183 +447,127 @@ export default function Sidebar({ onShowChart, onShowHelp, onShowCalculator, onS
                 background: 'var(--bg-primary)'
               }}
             >
-              해제
+              {t('sidebar.deselect')}
             </button>
           </div>
         </div>
       )}
 
-      {/* 도구 */}
-      <div className="border-t p-2" style={{ borderColor: 'var(--border-primary)' }}>
-        <div className="text-[10px] font-medium uppercase tracking-wider px-2 mb-1.5" style={{ color: 'var(--text-tertiary)' }}>
-          도구
+      {/* 도구 - 스크롤 가능 */}
+      <div className="border-t p-2 flex flex-col" style={{ borderColor: 'var(--border-primary)', maxHeight: '280px' }}>
+        <div className="text-[10px] font-medium uppercase tracking-wider px-2 mb-1.5 shrink-0" style={{ color: 'var(--text-tertiary)' }}>
+          {t('sidebar.tools')}
         </div>
-        <div className="space-y-0.5">
-          <ToolButton icon={Calculator} label="계산기" onClick={onShowCalculator} badge={selectedRows.length} />
-          <ToolButton icon={PieChart} label="비교 분석" onClick={onShowComparison} badge={selectedRows.length} />
-          <ToolButton icon={BarChart3} label="성장 곡선" onClick={onShowChart} />
+        <div className="space-y-0.5 overflow-y-auto flex-1 pr-1">
+          <ToolButton icon={Calculator} label={t('sidebar.calculator')} onClick={onShowCalculator} badge={selectedRows.length} color="#8b5cf6" />
+          <ToolButton icon={PieChart} label={t('sidebar.comparison')} onClick={onShowComparison} badge={selectedRows.length} color="#3b82f6" />
+          <ToolButton icon={BarChart3} label={t('sidebar.chart')} onClick={onShowChart} color="#22c55e" />
+          {onShowPresetComparison && (
+            <ToolButton icon={GitCompare} label={t('sidebar.presetComparison')} onClick={onShowPresetComparison} color="#f97316" />
+          )}
+          {onShowImbalanceDetector && (
+            <ToolButton icon={AlertTriangle} label={t('sidebar.imbalanceDetector')} onClick={onShowImbalanceDetector} color="#eab308" />
+          )}
+          {onShowGoalSolver && (
+            <ToolButton icon={Target} label={t('sidebar.goalSolver')} onClick={onShowGoalSolver} color="#14b8a6" />
+          )}
+          {onShowBalanceAnalysis && (
+            <ToolButton icon={TrendingUp} label={t('sidebar.balanceAnalysis')} onClick={onShowBalanceAnalysis} color="#ec4899" />
+          )}
         </div>
       </div>
 
       {/* 데이터 */}
       <div className="border-t p-2" style={{ borderColor: 'var(--border-primary)' }}>
         <div className="flex gap-1.5 lg:gap-2">
-          {/* 내보내기 드롭다운 */}
-          <div className="flex-1 relative min-w-0" ref={exportMenuRef}>
-            <button
-              onClick={() => {
-                setShowExportMenu(!showExportMenu);
-                setShowImportMenu(false);
-              }}
-              className="w-full flex items-center justify-center gap-1 lg:gap-1.5 px-2 lg:px-3 py-2 text-xs lg:text-sm font-medium rounded-lg border transition-colors whitespace-nowrap"
-              style={{
-                borderColor: 'var(--border-primary)',
-                color: 'var(--text-secondary)',
-                background: 'var(--bg-primary)'
-              }}
-            >
-              <Download className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-              <span className="truncate">내보내기</span>
-              <ChevronUp className={`w-3 h-3 shrink-0 transition-transform ${showExportMenu ? '' : 'rotate-180'}`} />
-            </button>
-            {showExportMenu && (
-              <div
-                className="absolute bottom-full left-0 right-0 mb-1 rounded-lg border shadow-lg overflow-hidden animate-fadeIn"
-                style={{
-                  background: 'var(--bg-primary)',
-                  borderColor: 'var(--border-primary)'
-                }}
-              >
-                <button
-                  onClick={handleExportJSON}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm transition-colors text-left"
-                  style={{ color: 'var(--text-secondary)' }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                >
-                  <FileJson className="w-4 h-4" style={{ color: 'var(--primary-blue)' }} />
-                  <div>
-                    <div className="font-medium">JSON 내보내기</div>
-                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>모든 프로젝트 · 수식 포함</div>
-                  </div>
-                </button>
-                <div style={{ borderTop: '1px solid var(--border-primary)' }} />
-                <button
-                  onClick={handleExportCSV}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm transition-colors text-left"
-                  style={{
-                    color: currentSheet ? 'var(--text-secondary)' : 'var(--text-tertiary)',
-                    opacity: currentSheet ? 1 : 0.6
-                  }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                >
-                  <FileText className="w-4 h-4" style={{ color: 'var(--success)' }} />
-                  <div>
-                    <div className="font-medium">CSV 내보내기</div>
-                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                      {currentSheet ? `현재 시트만 · 계산된 값` : '시트를 먼저 선택하세요'}
-                    </div>
-                  </div>
-                </button>
-              </div>
-            )}
-          </div>
+          {/* 내보내기 버튼 */}
+          <button
+            onClick={onShowExportModal}
+            className="flex-1 flex items-center justify-center gap-1 lg:gap-1.5 px-2 lg:px-3 py-2 text-xs lg:text-sm font-medium rounded-lg border transition-colors whitespace-nowrap hover:bg-[var(--bg-hover)]"
+            style={{
+              borderColor: 'var(--border-primary)',
+              color: 'var(--text-secondary)',
+              background: 'var(--bg-primary)'
+            }}
+          >
+            <Download className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
+            <span className="truncate">{t('common.export')}</span>
+          </button>
 
-          {/* 가져오기 드롭다운 */}
-          <div className="flex-1 relative min-w-0" ref={importMenuRef}>
-            <button
-              onClick={() => {
-                setShowImportMenu(!showImportMenu);
-                setShowExportMenu(false);
-              }}
-              className="w-full flex items-center justify-center gap-1 lg:gap-1.5 px-2 lg:px-3 py-2 text-xs lg:text-sm font-medium rounded-lg border transition-colors whitespace-nowrap"
-              style={{
-                borderColor: 'var(--border-primary)',
-                color: 'var(--text-secondary)',
-                background: 'var(--bg-primary)'
-              }}
-            >
-              <Upload className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
-              <span className="truncate">가져오기</span>
-              <ChevronUp className={`w-3 h-3 shrink-0 transition-transform ${showImportMenu ? '' : 'rotate-180'}`} />
-            </button>
-            {showImportMenu && (
-              <div
-                className="absolute bottom-full left-0 right-0 mb-1 rounded-lg border shadow-lg overflow-hidden animate-fadeIn"
-                style={{
-                  background: 'var(--bg-primary)',
-                  borderColor: 'var(--border-primary)'
-                }}
-              >
-                <button
-                  onClick={handleImportJSON}
-                  className="w-full flex items-center gap-2 px-3 py-2.5 text-sm transition-colors text-left"
-                  style={{ color: 'var(--text-secondary)' }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-tertiary)'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                >
-                  <FileJson className="w-4 h-4" style={{ color: 'var(--primary-blue)' }} />
-                  <div>
-                    <div className="font-medium">JSON 가져오기</div>
-                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>프로젝트 추가 · 기존 데이터 유지</div>
-                  </div>
-                </button>
-                <div style={{ borderTop: '1px solid var(--border-primary)' }} />
-                <div
-                  className="flex items-center gap-2 px-3 py-2.5 text-sm"
-                  style={{ color: 'var(--text-tertiary)', opacity: 0.6 }}
-                >
-                  <FileText className="w-4 h-4" />
-                  <div>
-                    <div className="font-medium">CSV 가져오기</div>
-                    <div className="text-xs">추후 지원 예정</div>
-                  </div>
-                </div>
-              </div>
-            )}
-          </div>
+          {/* 가져오기 버튼 */}
+          <button
+            onClick={onShowImportModal}
+            className="flex-1 flex items-center justify-center gap-1 lg:gap-1.5 px-2 lg:px-3 py-2 text-xs lg:text-sm font-medium rounded-lg border transition-colors whitespace-nowrap hover:bg-[var(--bg-hover)]"
+            style={{
+              borderColor: 'var(--border-primary)',
+              color: 'var(--text-secondary)',
+              background: 'var(--bg-primary)'
+            }}
+          >
+            <Upload className="w-3.5 h-3.5 lg:w-4 lg:h-4 shrink-0" />
+            <span className="truncate">{t('common.import')}</span>
+          </button>
         </div>
       </div>
 
-      {/* 하단 - 도움말 */}
+      {/* 하단 - 도움말 및 설정 */}
       <div className="border-t p-2" style={{ borderColor: 'var(--border-primary)' }}>
         <div className="flex items-center gap-2">
           <button
             onClick={onShowHelp}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-colors hover:bg-[var(--bg-hover)]"
             style={{
-              background: 'var(--bg-tertiary)',
-              color: 'var(--text-secondary)'
+              background: 'var(--bg-primary)',
+              color: 'var(--text-secondary)',
+              borderColor: 'var(--border-primary)'
             }}
           >
             <HelpCircle className="w-4 h-4" />
-            가이드
+            {t('sidebar.help')}
           </button>
           <button
             onClick={onShowReferences}
-            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg transition-colors"
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2 text-sm font-medium rounded-lg border transition-colors hover:bg-[var(--bg-hover)]"
             style={{
-              background: 'var(--bg-tertiary)',
-              color: 'var(--text-secondary)'
+              background: 'var(--bg-primary)',
+              color: 'var(--text-secondary)',
+              borderColor: 'var(--border-primary)'
             }}
           >
             <BookOpen className="w-4 h-4" />
-            참고자료
+            {t('sidebar.references')}
           </button>
         </div>
       </div>
 
-      {/* 저장 상태 */}
-      {lastSaved && (
-        <div className="px-4 py-2.5 border-t text-xs flex items-center gap-2" style={{
-          borderColor: 'var(--border-primary)',
-          color: 'var(--text-tertiary)'
-        }}>
-          <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
-          저장됨 · {formatRelativeTime(lastSaved)}
-        </div>
-      )}
+      {/* 저장 상태 및 설정 */}
+      <div className="px-4 py-2.5 border-t text-xs flex items-center justify-between" style={{
+        borderColor: 'var(--border-primary)',
+        color: 'var(--text-tertiary)'
+      }}>
+        {lastSaved ? (
+          <div className="flex items-center gap-2">
+            <div className="w-1.5 h-1.5 rounded-full bg-green-500" />
+            {t('sidebar.savedAt')} · {formatRelativeTime(lastSaved)}
+          </div>
+        ) : (
+          <div />
+        )}
+        {onShowSettings && (
+          <button
+            onClick={onShowSettings}
+            className="flex items-center gap-1 px-2 py-1 rounded border transition-colors hover:bg-[var(--bg-hover)]"
+            style={{
+              color: 'var(--text-secondary)',
+              borderColor: 'var(--border-primary)'
+            }}
+            title={t('sidebar.settings')}
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span className="text-xs font-medium">{locale === 'ko' ? '한국어' : 'EN'}</span>
+          </button>
+        )}
+      </div>
     </div>
   );
 }
@@ -660,13 +576,16 @@ function ToolButton({
   icon: Icon,
   label,
   onClick,
-  badge
+  badge,
+  color
 }: {
   icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
   label: string;
   onClick: () => void;
   badge?: number;
+  color?: string;
 }) {
+  const iconColor = color || 'var(--accent)';
   return (
     <button
       onClick={onClick}
@@ -675,16 +594,16 @@ function ToolButton({
     >
       <div
         className="w-7 h-7 rounded-lg flex items-center justify-center"
-        style={{ background: 'var(--accent-light)' }}
+        style={{ background: color ? `${color}20` : 'var(--accent-light)' }}
       >
-        <Icon className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+        <Icon className="w-4 h-4" style={{ color: iconColor }} />
       </div>
       <span className="flex-1 text-left font-medium">{label}</span>
       {badge !== undefined && badge > 0 && (
         <span
           className="px-1.5 py-0.5 text-xs font-medium rounded"
           style={{
-            background: 'var(--accent)',
+            background: iconColor,
             color: 'white'
           }}
         >

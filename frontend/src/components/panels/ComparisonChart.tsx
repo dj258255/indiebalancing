@@ -22,6 +22,8 @@ import { cn } from '@/lib/utils';
 
 interface ComparisonChartProps {
   onClose: () => void;
+  isPanel?: boolean;
+  onDragStart?: (e: React.MouseEvent) => void;
 }
 
 interface ComparisonItem {
@@ -42,7 +44,7 @@ const COLORS = [
   '#f97316', // orange
 ];
 
-export default function ComparisonChart({ onClose }: ComparisonChartProps) {
+export default function ComparisonChart({ onClose, isPanel = false, onDragStart }: ComparisonChartProps) {
   const { getCurrentProject, getCurrentSheet, selectedRows, clearSelectedRows, deselectRow } = useProjectStore();
   const currentProject = getCurrentProject();
   const currentSheet = getCurrentSheet();
@@ -51,6 +53,7 @@ export default function ComparisonChart({ onClose }: ComparisonChartProps) {
   const [items, setItems] = useState<ComparisonItem[]>([]);
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
   const [showHelp, setShowHelp] = useState(false);
+  const [helpHeight, setHelpHeight] = useState(120);
 
   // 숫자 컬럼만 필터링 (general 타입도 숫자일 수 있음)
   const numericColumns = useMemo(() => {
@@ -80,12 +83,14 @@ export default function ComparisonChart({ onClose }: ComparisonChartProps) {
 
       let name = '';
       if (nameCol && row.cells[nameCol.id]) {
-        name = String(row.cells[nameCol.id]);
+        // 이름이 있으면 시트명 + 행 번호 + 이름
+        name = `${currentSheet.name} - ${index + 1}행 (${row.cells[nameCol.id]})`;
       } else if (idCol && row.cells[idCol.id]) {
-        name = String(row.cells[idCol.id]);
+        // ID만 있으면 시트명 + 행 번호 + ID
+        name = `${currentSheet.name} - ${index + 1}행 (${row.cells[idCol.id]})`;
       } else {
-        // 아무것도 없으면 "행 N" 형식
-        name = `행 ${index + 1}`;
+        // 아무것도 없으면 "시트명 - N행" 형식
+        name = `${currentSheet.name} - ${index + 1}행`;
       }
 
       return { id: row.id, name, cells: row.cells };
@@ -218,42 +223,122 @@ export default function ComparisonChart({ onClose }: ComparisonChartProps) {
     );
   }
 
+  // 공통 wrapper 클래스
+  const wrapperClass = isPanel
+    ? "flex flex-col h-full"
+    : "fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4";
+
+  const cardClass = isPanel
+    ? "flex flex-col h-full"
+    : "card w-full max-w-5xl max-h-[90vh] flex flex-col animate-fadeIn";
+
   return (
-    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-      <div className="card w-full max-w-5xl max-h-[90vh] flex flex-col animate-fadeIn">
+    <div className={wrapperClass}>
+      <div className={cardClass}>
         {/* 헤더 */}
-        <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border-primary)' }}>
-          <div>
-            <h2 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>데이터 비교 및 분석</h2>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-tertiary)' }}>
-              {currentSheet.name} 시트의 데이터를 시각화합니다
-            </p>
+        <div
+          className={`flex items-center justify-between shrink-0 ${isPanel ? 'px-4 py-3 relative z-20 cursor-grab active:cursor-grabbing' : 'px-6 py-4 border-b'}`}
+          style={{ background: isPanel ? '#3b82f615' : undefined, borderColor: isPanel ? '#3b82f640' : 'var(--border-primary)', borderBottom: isPanel ? '1px solid #3b82f640' : undefined }}
+          onMouseDown={(e) => {
+            if (isPanel && !(e.target as HTMLElement).closest('button') && onDragStart) {
+              onDragStart(e);
+            }
+          }}
+        >
+          <div className="flex items-center gap-2">
+            {isPanel && (
+              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#3b82f6' }}>
+                <div className="w-4 h-4 rounded-full bg-white/30" />
+              </div>
+            )}
+            <div>
+              <h2 className={isPanel ? 'text-sm font-semibold' : 'text-xl font-semibold'} style={{ color: isPanel ? '#3b82f6' : 'var(--text-primary)' }}>
+                {isPanel ? '비교 분석' : '데이터 비교 및 분석'}
+              </h2>
+              {!isPanel && (
+                <p className="text-sm mt-1" style={{ color: 'var(--text-tertiary)' }}>
+                  {currentSheet.name} 시트의 데이터를 시각화합니다
+                </p>
+              )}
+            </div>
+            {isPanel && (
+              <button
+                onClick={() => setShowHelp(!showHelp)}
+                className={`p-1 rounded-lg transition-colors ${showHelp ? 'bg-[#3b82f6]/20' : 'hover:bg-[var(--bg-hover)]'}`}
+                style={{ border: showHelp ? '1px solid #3b82f6' : '1px solid var(--border-secondary)' }}
+              >
+                <HelpCircle className="w-4 h-4" style={{ color: showHelp ? '#3b82f6' : 'var(--text-tertiary)' }} />
+              </button>
+            )}
           </div>
           <div className="flex items-center gap-2">
-            <button
-              onClick={() => setShowHelp(!showHelp)}
-              className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm transition-colors"
-              style={{
-                background: showHelp ? 'var(--accent-light)' : 'var(--bg-tertiary)',
-                color: showHelp ? 'var(--accent-text)' : 'var(--text-secondary)'
-              }}
-            >
-              <HelpCircle className="w-4 h-4" />
-              도움말
-              {showHelp ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-            </button>
+            {!isPanel && (
+              <button
+                onClick={() => setShowHelp(!showHelp)}
+                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm transition-colors"
+                style={{
+                  background: showHelp ? 'var(--accent-light)' : 'var(--bg-tertiary)',
+                  color: showHelp ? 'var(--accent-text)' : 'var(--text-secondary)'
+                }}
+              >
+                <HelpCircle className="w-4 h-4" />
+                도움말
+                {showHelp ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+              </button>
+            )}
             <button
               onClick={onClose}
-              className="p-2 rounded-lg transition-colors"
+              className={`rounded-lg transition-colors ${isPanel ? 'p-1.5 hover:bg-black/5 dark:hover:bg-white/5' : 'p-2'}`}
               style={{ color: 'var(--text-tertiary)' }}
             >
-              <X className="w-5 h-5" />
+              <X className={isPanel ? 'w-4 h-4' : 'w-5 h-5'} />
             </button>
           </div>
         </div>
 
-        {/* 도움말 패널 */}
-        {showHelp && (
+        {/* 패널 모드 도움말 - 탭 위에 표시 */}
+        {isPanel && showHelp && (
+          <div className="shrink-0 animate-slideDown flex flex-col" style={{ height: `${helpHeight + 6}px`, minHeight: '66px', maxHeight: '306px', borderBottom: '1px solid var(--border-primary)' }}>
+            <div
+              className="flex-1 px-4 py-3 text-sm overflow-y-auto"
+              style={{ background: 'var(--bg-tertiary)' }}
+            >
+              <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>비교 분석</div>
+              <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>캐릭터, 무기, 아이템의 <strong>스탯을 시각적으로 비교</strong>합니다.</p>
+              <div className="space-y-1 mb-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                <div>레이더: 종합 스탯 비교</div>
+                <div>막대: 정확한 수치 비교</div>
+                <div>히스토그램: 데이터 분포 확인</div>
+              </div>
+              <div className="pt-2 border-t text-xs" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
+                시트에서 행 선택 → 모두 추가 → 비교할 열 체크
+              </div>
+            </div>
+            {/* 리사이저 */}
+            <div
+              className="h-1.5 shrink-0 cursor-ns-resize hover:bg-[var(--accent)] transition-colors"
+              style={{ background: 'var(--border-secondary)' }}
+              onMouseDown={(e) => {
+                e.preventDefault();
+                const startY = e.clientY;
+                const startH = helpHeight;
+                const onMouseMove = (moveEvent: MouseEvent) => {
+                  const newHeight = Math.max(60, Math.min(300, startH + moveEvent.clientY - startY));
+                  setHelpHeight(newHeight);
+                };
+                const onMouseUp = () => {
+                  document.removeEventListener('mousemove', onMouseMove);
+                  document.removeEventListener('mouseup', onMouseUp);
+                };
+                document.addEventListener('mousemove', onMouseMove);
+                document.addEventListener('mouseup', onMouseUp);
+              }}
+            />
+          </div>
+        )}
+
+        {/* 모달 모드 도움말 */}
+        {!isPanel && showHelp && (
           <div className="px-6 py-4 border-b animate-fadeIn" style={{
             background: 'var(--bg-tertiary)',
             borderColor: 'var(--border-primary)'
