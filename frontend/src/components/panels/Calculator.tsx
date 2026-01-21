@@ -2,15 +2,16 @@
 
 import { useState, useMemo, useEffect } from 'react';
 import { X, Calculator as CalcIcon, Crosshair, Zap, Shield, TrendingUp, Download, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { DPS, TTK, EHP, DAMAGE, SCALE } from '@/lib/formulaEngine';
 import { useProjectStore } from '@/stores/projectStore';
 
 // 행 표시명 생성 헬퍼
-function getRowDisplayName(rowId: string, currentSheet: { name: string; rows: { id: string }[] } | undefined): string {
-  if (!currentSheet) return '행';
+function getRowDisplayName(rowId: string, currentSheet: { name: string; rows: { id: string }[] } | undefined, t: any): string {
+  if (!currentSheet) return t('sheet.rows');
   const rowIndex = currentSheet.rows.findIndex(r => r.id === rowId);
-  return `${currentSheet.name} - ${rowIndex + 1}행`;
+  return `${currentSheet.name} - ${rowIndex + 1}${t('sheet.rows')}`;
 }
 
 interface CalculatorProps {
@@ -21,96 +22,97 @@ interface CalculatorProps {
 
 type CalculatorTab = 'dps' | 'ttk' | 'ehp' | 'damage' | 'scale';
 
-// 각 탭별 도움말 정보
-const TAB_HELP = {
+// 각 탭별 도움말 정보 - 이 함수는 컴포넌트 내부로 이동할 것
+const getTabHelp = (t: any) => ({
   dps: {
-    title: 'DPS (Damage Per Second)',
-    description: '1초 동안 적에게 줄 수 있는 총 데미지입니다.',
+    title: t('dps.title'),
+    description: t('dps.desc'),
     terms: [
-      { name: '데미지', desc: '한 번 공격 시 피해량' },
-      { name: '공격 속도', desc: '초당 공격 횟수' },
-      { name: '크리티컬 확률', desc: '치명타 확률 (0~1)' },
-      { name: '크리티컬 배율', desc: '치명타 데미지 배수' },
+      { name: t('dps.damage'), desc: t('dps.damageDesc') },
+      { name: t('dps.attackSpeed'), desc: t('dps.attackSpeedDesc') },
+      { name: t('dps.critRate'), desc: t('dps.critRateDesc') },
+      { name: t('dps.critDamage'), desc: t('dps.critDamageDesc') },
     ],
-    example: '검 A: 100×1.0=100 DPS, 검 B: 50×2.5=125 DPS',
-    useCase: '무기 비교, 빌드 최적화',
+    example: t('dps.example'),
+    useCase: t('dps.useCase'),
   },
   ttk: {
-    title: 'TTK (Time To Kill)',
-    description: '적을 처치하는 데 걸리는 시간입니다.',
+    title: t('ttk.title'),
+    description: t('ttk.desc'),
     terms: [
-      { name: '적 HP', desc: '적의 체력' },
-      { name: '데미지', desc: '1회 공격 피해량' },
-      { name: '공격 속도', desc: '초당 공격 횟수' },
+      { name: t('ttk.targetHp'), desc: t('ttk.targetHpDesc') },
+      { name: t('ttk.damage'), desc: t('ttk.damageDesc') },
+      { name: t('ttk.attackSpeed'), desc: t('ttk.attackSpeedDesc') },
     ],
-    example: 'HP 1000, 데미지 100, 공속 2.0 → TTK: 4.5초',
-    useCase: 'FPS 무기 밸런싱, PvP 조정',
+    example: t('ttk.example'),
+    useCase: t('ttk.useCase'),
   },
   ehp: {
-    title: 'EHP (Effective HP)',
-    description: '방어력을 고려한 실질 체력입니다.',
+    title: t('ehp.title'),
+    description: t('ehp.desc'),
     terms: [
-      { name: 'HP', desc: '기본 체력' },
-      { name: '방어력', desc: '피해 감소 스탯' },
-      { name: '피해 감소율', desc: '% 피해 감소 (0~1)' },
+      { name: t('ehp.hp'), desc: t('ehp.hpDesc') },
+      { name: t('ehp.def'), desc: t('ehp.defDesc') },
+      { name: t('ehp.reduction'), desc: t('ehp.reductionDesc') },
     ],
-    example: 'HP 1000, 방어력 100 → EHP: 2000',
-    useCase: '탱커 생존력 비교',
+    example: t('ehp.example'),
+    useCase: t('ehp.useCase'),
   },
   damage: {
-    title: 'DAMAGE (최종 데미지)',
-    description: '방어력에 의해 감소된 데미지를 계산합니다.',
+    title: t('damageCalc.title'),
+    description: t('damageCalc.desc'),
     terms: [
-      { name: '공격력', desc: '기본 데미지' },
-      { name: '방어력', desc: '방어 스탯' },
-      { name: '스킬 배율', desc: '데미지 배율' },
+      { name: t('damageCalc.atk'), desc: t('damageCalc.atkDesc') },
+      { name: t('damageCalc.def'), desc: t('damageCalc.defDesc') },
+      { name: t('damageCalc.multiplier'), desc: t('damageCalc.multiplierDesc') },
     ],
-    example: '공격력 100 vs 방어력 100 → 데미지: 50',
-    useCase: '전투 데미지 예측',
+    example: t('damageCalc.example'),
+    useCase: t('damageCalc.useCase'),
   },
   scale: {
-    title: 'SCALE (성장 계산)',
-    description: '레벨업 시 스탯 증가를 계산합니다.',
+    title: t('scale.title'),
+    description: t('scale.desc'),
     terms: [
-      { name: '기본값', desc: '레벨 1 스탯' },
-      { name: '레벨', desc: '목표 레벨' },
-      { name: '성장률', desc: '레벨당 증가율' },
-      { name: '곡선 타입', desc: '선형/지수/로그/2차' },
+      { name: t('scale.base'), desc: t('scale.baseDesc') },
+      { name: t('scale.level'), desc: t('scale.levelDesc') },
+      { name: t('scale.rate'), desc: t('scale.rateDesc') },
+      { name: t('scale.curveType'), desc: t('scale.curveTypeDesc') },
     ],
-    example: '기본값 100, 레벨 50, 성장률 1.1 → 11,739',
-    useCase: '레벨 테이블 설계',
+    example: t('scale.example'),
+    useCase: t('scale.useCase'),
   },
-};
+});
 
-// 곡선 타입별 상세 설명
-const CURVE_TYPE_HELP: Record<string, { name: string; formula: string; description: string; useCase: string }> = {
+// 곡선 타입별 상세 설명 - 이 함수는 컴포넌트 내부로 이동할 것
+const getCurveTypeHelp = (t: any): Record<string, { name: string; formula: string; description: string; useCase: string }> => ({
   linear: {
-    name: '선형 (Linear)',
-    formula: 'base + (level - 1) × rate',
-    description: '레벨마다 일정하게 증가합니다. 예측 가능하고 직관적입니다.',
-    useCase: '캐주얼 게임, 초보자 친화적 밸런스. 레벨 1→50에서 스탯이 동일하게 증가.',
+    name: t('curveHelp.linear.name'),
+    formula: t('curveHelp.linear.formula'),
+    description: t('curveHelp.linear.desc'),
+    useCase: t('curveHelp.linear.useCase'),
   },
   exponential: {
-    name: '지수 (Exponential)',
-    formula: 'base × (rate ^ (level - 1))',
-    description: '레벨이 높아질수록 급격하게 증가합니다. 후반 하드코어 느낌.',
-    useCase: '경험치 테이블, 강화 비용, MMO 후반 콘텐츠. 고레벨 유저와 저레벨 유저 간 큰 격차.',
+    name: t('curveHelp.exponential.name'),
+    formula: t('curveHelp.exponential.formula'),
+    description: t('curveHelp.exponential.desc'),
+    useCase: t('curveHelp.exponential.useCase'),
   },
   logarithmic: {
-    name: '로그 (Logarithmic)',
-    formula: 'base + rate × log(level)',
-    description: '초반에 빠르게 성장하고 후반으로 갈수록 둔화됩니다.',
-    useCase: '레벨 격차 줄이기, 캐치업 시스템. 고레벨 간 스탯 차이를 작게 유지.',
+    name: t('curveHelp.logarithmic.name'),
+    formula: t('curveHelp.logarithmic.formula'),
+    description: t('curveHelp.logarithmic.desc'),
+    useCase: t('curveHelp.logarithmic.useCase'),
   },
   quadratic: {
-    name: '2차 (Quadratic)',
-    formula: 'base + rate × level²',
-    description: '초반은 느리고 점점 가속되어 증가합니다.',
-    useCase: '스킬 데미지 스케일링, 중후반 파워 스파이크. RPG 스킬 계수.',
+    name: t('curveHelp.quadratic.name'),
+    formula: t('curveHelp.quadratic.formula'),
+    description: t('curveHelp.quadratic.desc'),
+    useCase: t('curveHelp.quadratic.useCase'),
   },
-};
+});
 
 export default function Calculator({ onClose, isPanel = false, onDragStart }: CalculatorProps) {
+  const t = useTranslations('calculator');
   const [activeTab, setActiveTab] = useState<CalculatorTab>('dps');
   const [showHelp, setShowHelp] = useState(false);
   const [helpHeight, setHelpHeight] = useState(120);
@@ -119,6 +121,10 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
   // 현재 시트 가져오기
   const currentProject = projects.find(p => p.id === currentProjectId);
   const currentSheet = currentProject?.sheets.find(s => s.id === currentSheetId);
+
+  // 탭 도움말 및 곡선 타입 도움말
+  const TAB_HELP = useMemo(() => getTabHelp(t), [t]);
+  const CURVE_TYPE_HELP = useMemo(() => getCurveTypeHelp(t), [t]);
 
   // DPS 계산기 상태
   const [dpsInputs, setDpsInputs] = useState({
@@ -259,9 +265,9 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
             </div>
             <div>
               <h2 className={isPanel ? 'text-base font-semibold' : 'text-base sm:text-lg font-semibold'} style={{ color: isPanel ? '#8b5cf6' : 'var(--text-primary)' }}>
-                {isPanel ? '계산기' : '게임 밸런스 계산기'}
+                {isPanel ? t('title') : t('fullTitle')}
               </h2>
-              {!isPanel && <p className="text-xs sm:text-sm hidden sm:block" style={{ color: 'var(--text-tertiary)' }}>TTK, DPS, EHP 빠른 계산</p>}
+              {!isPanel && <p className="text-xs sm:text-sm hidden sm:block" style={{ color: 'var(--text-tertiary)' }}>{t('subtitle')}</p>}
             </div>
             {isPanel && (
               <button
@@ -289,14 +295,14 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
               className="flex-1 px-4 py-3 text-sm overflow-y-auto"
               style={{ background: 'var(--bg-tertiary)' }}
             >
-              <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>게임 밸런스 계산기</div>
-              <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>TTK, DPS, EHP 등 <strong>게임 밸런싱에 필요한 핵심 수치</strong>를 계산합니다.</p>
+              <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>{t('helpTitle')}</div>
+              <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>{t('helpDesc')}</p>
               <div className="space-y-1 mb-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                <div>DPS: 초당 데미지, TTK: 처치 시간</div>
-                <div>EHP: 유효 체력, SCALE: 성장 곡선</div>
+                <div>{t('helpDps')}</div>
+                <div>{t('helpEhp')}</div>
               </div>
               <div className="pt-2 border-t text-xs" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
-                각 탭에서 <strong>?</strong> 버튼으로 상세 도움말 확인
+                {t('helpTip')}
               </div>
             </div>
             {/* 리사이저 */}
@@ -399,14 +405,14 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
             <div className="flex items-center justify-between mb-2">
               <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--accent-text)' }}>
                 <Download className="w-4 h-4" />
-                <span className="font-medium">선택된 데이터 ({selectedRows.length}개)</span>
+                <span className="font-medium">{t('selectedData')} ({selectedRows.length}개)</span>
               </div>
               <button
                 onClick={clearSelectedRows}
                 className="text-xs px-2 py-1 rounded transition-colors"
                 style={{ color: 'var(--accent-text)' }}
               >
-                전체 해제
+                {t('deselectAll')}
               </button>
             </div>
             <div className="flex flex-wrap gap-2">
@@ -419,13 +425,13 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
                     borderColor: 'var(--border-primary)'
                   }}
                 >
-                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{getRowDisplayName(row.rowId, currentSheet)}</span>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{getRowDisplayName(row.rowId, currentSheet, t)}</span>
                   <button
                     onClick={() => loadFromSelectedRow(row)}
                     className="px-2 py-0.5 rounded text-xs transition-colors"
                     style={{ background: 'var(--accent)', color: 'white' }}
                   >
-                    불러오기
+                    {t('load')}
                   </button>
                   <button
                     onClick={() => deselectRow(row.rowId)}
@@ -446,18 +452,18 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <InputField
-                  label="데미지 (1회 공격)"
+                  label={t('damage1hit')}
                   value={dpsInputs.damage}
                   onChange={(v) => setDpsInputs({ ...dpsInputs, damage: v })}
                 />
                 <InputField
-                  label="공격 속도 (초당)"
+                  label={t('attackSpeed')}
                   value={dpsInputs.attackSpeed}
                   onChange={(v) => setDpsInputs({ ...dpsInputs, attackSpeed: v })}
                   step={0.1}
                 />
                 <InputField
-                  label="크리티컬 확률 (0~1)"
+                  label={t('critRate')}
                   value={dpsInputs.critRate}
                   onChange={(v) => setDpsInputs({ ...dpsInputs, critRate: v })}
                   step={0.01}
@@ -465,7 +471,7 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
                   max={1}
                 />
                 <InputField
-                  label="크리티컬 배율"
+                  label={t('critMultiplier')}
                   value={dpsInputs.critDamage}
                   onChange={(v) => setDpsInputs({ ...dpsInputs, critDamage: v })}
                   step={0.1}
@@ -473,10 +479,10 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
               </div>
 
               <ResultCard
-                label="DPS 결과"
+                label={t('dpsResult')}
                 value={dpsResult.toFixed(2)}
                 color="var(--accent)"
-                extra={`기본 DPS: ${(dpsInputs.damage * dpsInputs.attackSpeed).toFixed(2)} | 크리티컬 보정: +${((dpsResult / (dpsInputs.damage * dpsInputs.attackSpeed) - 1) * 100).toFixed(1)}%`}
+                extra={`${t('baseDps')}: ${(dpsInputs.damage * dpsInputs.attackSpeed).toFixed(2)} | ${t('critBonus')}: +${((dpsResult / (dpsInputs.damage * dpsInputs.attackSpeed) - 1) * 100).toFixed(1)}%`}
               />
             </div>
           )}
@@ -486,17 +492,17 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
             <div className="space-y-6">
               <div className="grid grid-cols-3 gap-4">
                 <InputField
-                  label="적 HP"
+                  label={t('targetHp')}
                   value={ttkInputs.targetHP}
                   onChange={(v) => setTtkInputs({ ...ttkInputs, targetHP: v })}
                 />
                 <InputField
-                  label="데미지 (1회)"
+                  label={t('damage1')}
                   value={ttkInputs.damage}
                   onChange={(v) => setTtkInputs({ ...ttkInputs, damage: v })}
                 />
                 <InputField
-                  label="공격 속도"
+                  label={t('attackSpeed')}
                   value={ttkInputs.attackSpeed}
                   onChange={(v) => setTtkInputs({ ...ttkInputs, attackSpeed: v })}
                   step={0.1}
@@ -505,12 +511,12 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
 
               <div className="grid grid-cols-2 gap-4">
                 <ResultCard
-                  label="TTK (처치 시간)"
+                  label={t('ttkResult')}
                   value={ttkResult.ttk === Infinity ? '∞' : `${ttkResult.ttk.toFixed(2)}초`}
                   color="var(--error)"
                 />
                 <ResultCard
-                  label="필요 타격 횟수"
+                  label={t('hitsRequired')}
                   value={`${ttkResult.hitsNeeded}회`}
                   color="var(--warning)"
                 />
@@ -523,17 +529,17 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
             <div className="space-y-6">
               <div className="grid grid-cols-3 gap-4">
                 <InputField
-                  label="HP"
+                  label={t('hp')}
                   value={ehpInputs.hp}
                   onChange={(v) => setEhpInputs({ ...ehpInputs, hp: v })}
                 />
                 <InputField
-                  label="방어력 (DEF)"
+                  label={t('def')}
                   value={ehpInputs.def}
                   onChange={(v) => setEhpInputs({ ...ehpInputs, def: v })}
                 />
                 <InputField
-                  label="피해 감소율 (0~0.99)"
+                  label={t('damageReduction')}
                   value={ehpInputs.damageReduction}
                   onChange={(v) => setEhpInputs({ ...ehpInputs, damageReduction: v })}
                   step={0.01}
@@ -543,10 +549,10 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
               </div>
 
               <ResultCard
-                label="유효 체력 (EHP)"
+                label={t('ehpResult')}
                 value={ehpResult.toFixed(0)}
                 color="var(--accent)"
-                extra={`원본 HP 대비 ${((ehpResult / ehpInputs.hp) * 100).toFixed(1)}% (×${(ehpResult / ehpInputs.hp).toFixed(2)})`}
+                extra={`${t('vsOriginal')} ${((ehpResult / ehpInputs.hp) * 100).toFixed(1)}% (×${(ehpResult / ehpInputs.hp).toFixed(2)})`}
               />
             </div>
           )}
@@ -556,17 +562,17 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
             <div className="space-y-6">
               <div className="grid grid-cols-3 gap-4">
                 <InputField
-                  label="공격력 (ATK)"
+                  label={t('atk')}
                   value={damageInputs.atk}
                   onChange={(v) => setDamageInputs({ ...damageInputs, atk: v })}
                 />
                 <InputField
-                  label="방어력 (DEF)"
+                  label={t('def')}
                   value={damageInputs.def}
                   onChange={(v) => setDamageInputs({ ...damageInputs, def: v })}
                 />
                 <InputField
-                  label="스킬 배율"
+                  label={t('skillMultiplier')}
                   value={damageInputs.multiplier}
                   onChange={(v) => setDamageInputs({ ...damageInputs, multiplier: v })}
                   step={0.1}
@@ -575,12 +581,12 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
 
               <div className="grid grid-cols-2 gap-4">
                 <ResultCard
-                  label="최종 데미지"
+                  label={t('finalDamage')}
                   value={damageResult.toFixed(1)}
                   color="var(--warning)"
                 />
                 <ResultCard
-                  label="데미지 감소율"
+                  label={t('damageReductionRate')}
                   value={`${((1 - 100 / (100 + damageInputs.def)) * 100).toFixed(1)}%`}
                   color="var(--text-secondary)"
                 />
@@ -593,34 +599,34 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
             <div className="space-y-6">
               <div className="grid grid-cols-2 gap-4">
                 <InputField
-                  label="기본값 (Base)"
+                  label={t('baseValue')}
                   value={scaleInputs.base}
                   onChange={(v) => setScaleInputs({ ...scaleInputs, base: v })}
                 />
                 <InputField
-                  label="레벨"
+                  label={t('level')}
                   value={scaleInputs.level}
                   onChange={(v) => setScaleInputs({ ...scaleInputs, level: v })}
                 />
                 <InputField
-                  label="성장률 (Rate)"
+                  label={t('growthRate')}
                   value={scaleInputs.rate}
                   onChange={(v) => setScaleInputs({ ...scaleInputs, rate: v })}
                   step={0.01}
                 />
                 <div>
                   <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-                    곡선 타입
+                    {t('curveType')}
                   </label>
                   <select
                     value={scaleInputs.curveType}
                     onChange={(e) => setScaleInputs({ ...scaleInputs, curveType: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg"
                   >
-                    <option value="linear">Linear (선형)</option>
-                    <option value="exponential">Exponential (지수)</option>
-                    <option value="logarithmic">Logarithmic (로그)</option>
-                    <option value="quadratic">Quadratic (2차)</option>
+                    <option value="linear">{t('curveLinear')}</option>
+                    <option value="exponential">{t('curveExponential')}</option>
+                    <option value="logarithmic">{t('curveLogarithmic')}</option>
+                    <option value="quadratic">{t('curveQuadratic')}</option>
                   </select>
                 </div>
               </div>
@@ -646,7 +652,7 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
               )}
 
               <ResultCard
-                label={`레벨 ${scaleInputs.level} 스탯`}
+                label={t('levelStat', { level: scaleInputs.level })}
                 value={scaleResult.toFixed(1)}
                 color="var(--success)"
               />
@@ -656,7 +662,7 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
                 <table className="w-full text-sm">
                   <thead style={{ background: 'var(--bg-tertiary)' }}>
                     <tr>
-                      <th className="px-3 py-2 text-left" style={{ color: 'var(--text-secondary)' }}>레벨</th>
+                      <th className="px-3 py-2 text-left" style={{ color: 'var(--text-secondary)' }}>{t('level')}</th>
                       {scaleData.slice(0, 8).map((d) => (
                         <th key={d.level} className="px-3 py-2 text-right" style={{ color: 'var(--text-secondary)' }}>{d.level}</th>
                       ))}
@@ -664,7 +670,7 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
                   </thead>
                   <tbody>
                     <tr>
-                      <td className="px-3 py-2 font-medium" style={{ color: 'var(--text-primary)' }}>값</td>
+                      <td className="px-3 py-2 font-medium" style={{ color: 'var(--text-primary)' }}>{t('value')}</td>
                       {scaleData.slice(0, 8).map((d) => (
                         <td key={d.level} className="px-3 py-2 text-right" style={{ color: 'var(--text-secondary)' }}>{d.value.toFixed(0)}</td>
                       ))}

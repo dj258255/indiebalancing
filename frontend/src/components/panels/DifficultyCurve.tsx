@@ -11,6 +11,7 @@ import {
   Wand2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 // number input spinner 숨기는 스타일
 const hideSpinnerStyle = `
@@ -79,6 +80,7 @@ interface MilestoneData {
 }
 
 export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
+  const t = useTranslations('difficultyCurve');
   const [preset, setPreset] = useState<keyof typeof CURVE_PRESETS>('balanced');
   const [playtime, setPlaytime] = useState<keyof typeof PLAYTIME_TARGETS>('1hr');
   const [maxStage, setMaxStage] = useState(100);
@@ -262,13 +264,13 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
             <TrendingUp className="w-3.5 h-3.5 text-white" />
           </div>
           <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
-            난이도 곡선 설계
+            {t('title')}
           </span>
           <span
             className="text-xs px-2 py-0.5 rounded-full"
             style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
           >
-            {wallStages.length}개 벽
+            {t('wallCount', { count: wallStages.length })}
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -296,10 +298,10 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
           {/* 프리셋 선택 */}
           <div className="space-y-2">
             <label className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-              난이도 프리셋
+              {t('presetLabel')}
             </label>
             <div className="grid grid-cols-3 gap-2">
-              {Object.entries(CURVE_PRESETS).map(([key, value]) => (
+              {Object.entries(CURVE_PRESETS).map(([key]) => (
                 <button
                   key={key}
                   onClick={() => setPreset(key as keyof typeof CURVE_PRESETS)}
@@ -313,9 +315,9 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
                   }}
                 >
                   <div className="font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {value.name}
+                    {t(`presets.${key}`)}
                   </div>
-                  <div style={{ color: 'var(--text-tertiary)' }}>{value.description}</div>
+                  <div style={{ color: 'var(--text-tertiary)' }}>{t(`presets.${key}Desc`)}</div>
                 </button>
               ))}
             </div>
@@ -325,16 +327,15 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                일일 플레이타임 목표
+                {t('playtimeLabel')}
               </label>
               <button
                 onClick={generateRecommendedWalls}
                 className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-colors hover:opacity-80"
                 style={{ background: 'var(--accent)', color: 'white' }}
-                title="플레이타임에 맞는 벽 자동 배치"
               >
                 <Wand2 className="w-3 h-3" />
-                자동 배치
+                {t('autoPlace')}
               </button>
             </div>
             <div className="flex gap-2">
@@ -351,8 +352,8 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
                     color: playtime === key ? 'white' : 'var(--text-secondary)',
                   }}
                 >
-                  <div>{value.name}</div>
-                  <div className="text-[10px] opacity-70">벽 간격 {value.wallInterval}</div>
+                  <div>{t(`playtime.${key}`)}</div>
+                  <div className="text-[10px] opacity-70">{t('playtime.wallInterval', { interval: value.wallInterval })}</div>
                 </button>
               ))}
             </div>
@@ -361,7 +362,7 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
           {/* 최대 스테이지 */}
           <div className="space-y-2">
             <label className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-              최대 스테이지: {maxStage}
+              {t('maxStage')}: {maxStage}
             </label>
             <input
               type="range"
@@ -377,7 +378,7 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
           {/* 난이도 곡선 시각화 */}
           <div className="space-y-2">
             <label className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-              난이도 곡선
+              {t('curveLabel')}
             </label>
             <div
               className="relative h-40 rounded-lg overflow-hidden"
@@ -416,11 +417,11 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
               <div className="absolute top-2 right-2 flex gap-3 text-xs">
                 <div className="flex items-center gap-1">
                   <div className="w-3 h-3 rounded" style={{ background: '#3b82f6' }} />
-                  <span style={{ color: 'var(--text-secondary)' }}>플레이어</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{t('player')}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <div className="w-3 h-3 rounded" style={{ background: '#ef4444' }} />
-                  <span style={{ color: 'var(--text-secondary)' }}>적</span>
+                  <span style={{ color: 'var(--text-secondary)' }}>{t('enemy')}</span>
                 </div>
               </div>
             </div>
@@ -429,7 +430,7 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
           {/* 벽 스테이지 설정 */}
           <div className="space-y-2">
             <label className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-              벽 스테이지 (막히는 구간)
+              {t('wallStages')}
             </label>
             <div className="flex flex-wrap gap-2">
               {wallStages.map((stage) => (
@@ -439,7 +440,7 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
                   style={{ background: 'var(--error-light)', color: 'var(--error)' }}
                 >
                   <AlertTriangle className="w-3 h-3" />
-                  <span>스테이지 {stage}</span>
+                  <span>{t('stage')} {stage}</span>
                   <button
                     onClick={() => removeWallStage(stage)}
                     className="ml-1 hover:opacity-70"
@@ -450,7 +451,7 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
               ))}
               <input
                 type="number"
-                placeholder="추가..."
+                placeholder={`${t('add')}...`}
                 className="hide-spinner w-20 px-2 py-1 rounded text-xs"
                 style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
                 onKeyDown={(e) => {
@@ -470,10 +471,10 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
           <div className="space-y-2">
             <div className="flex items-center justify-between">
               <label className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                콘텐츠 마일스톤
+                {t('milestones')}
               </label>
               <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
-                파워 보너스: 해금 시 플레이어 파워 증가율
+                {t('powerBonusNote')}
               </span>
             </div>
             <div className="space-y-2">
@@ -491,7 +492,7 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
                     onChange={(e) => updateMilestone(Number(stage), e.target.value)}
                     className="flex-1 px-2 py-1 rounded text-xs"
                     style={{ background: 'var(--bg-tertiary)' }}
-                    placeholder="콘텐츠 이름"
+                    placeholder={t('contentName')}
                   />
                   <div className="flex items-center gap-1 shrink-0">
                     <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>+</span>
@@ -518,14 +519,14 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
               <div className="flex items-center gap-2">
                 <input
                   type="number"
-                  placeholder="스테이지"
+                  placeholder={t('stage')}
                   className="hide-spinner w-16 px-2 py-1 rounded text-xs"
                   style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
                   id="newMilestoneStage"
                 />
                 <input
                   type="text"
-                  placeholder="해금 콘텐츠..."
+                  placeholder={`${t('unlockContent')}`}
                   className="flex-1 px-2 py-1 rounded text-xs"
                   style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
                   id="newMilestoneText"
@@ -554,7 +555,7 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
                   className="px-2 py-1 rounded text-xs"
                   style={{ background: 'var(--accent)', color: 'white' }}
                 >
-                  추가
+                  {t('add')}
                 </button>
               </div>
             </div>
@@ -568,13 +569,13 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
             <div className="flex items-center gap-2 mb-2">
               <Clock className="w-4 h-4" />
               <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
-                예상 진행 시간 ({targetPlaytime.name} 기준)
+                {t('estimatedTime')} ({t(`playtime.${playtime}`)} {t('basis')})
               </span>
             </div>
             <div className="grid grid-cols-2 gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
               {wallStages.map((stage) => (
                 <div key={stage}>
-                  스테이지 {stage}: 약 {estimatedDays[stage] || 0}일
+                  {t('stage')} {stage}: {t('approxDays', { days: estimatedDays[stage] || 0 })}
                   {milestones[stage] && (
                     <span className="ml-1" style={{ color: 'var(--success)' }}>
                       ({milestones[stage].name} +{milestones[stage].powerBonus}%)
@@ -583,7 +584,7 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
                 </div>
               ))}
               <div>
-                최종 스테이지: 약 {estimatedDays[maxStage] || 0}일
+                {t('finalStage')}: {t('approxDays', { days: estimatedDays[maxStage] || 0 })}
               </div>
             </div>
           </div>
@@ -763,7 +764,7 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
                   <HelpCircle className="w-3.5 h-3.5" />
-                  <span>도움말 보기 (사용법, 프리셋, 설계 팁)</span>
+                  <span>{t('showHelp')}</span>
                 </div>
                 <ChevronDown className="w-3.5 h-3.5" style={{ color: 'var(--text-tertiary)' }} />
               </div>

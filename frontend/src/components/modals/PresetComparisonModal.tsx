@@ -6,6 +6,7 @@ import { useProjectStore } from '@/stores/projectStore';
 import { compareSheets, createSnapshot, getChangeColor, formatDiff, type ComparisonResult } from '@/lib/presetComparison';
 import type { Sheet } from '@/types';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { useTranslations } from 'next-intl';
 
 interface PresetComparisonModalProps {
   onClose: () => void;
@@ -17,6 +18,7 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
   // ESC 키로 모달 닫기
   useEscapeKey(onClose);
 
+  const t = useTranslations('presetComparison');
   const { projects, currentProjectId } = useProjectStore();
 
   const currentProject = projects.find(p => p.id === currentProjectId);
@@ -144,8 +146,8 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
               <GitCompare className={`${isPanel ? 'w-4 h-4' : 'w-5 h-5'} ${isPanel ? 'text-white' : ''}`} style={{ color: isPanel ? 'white' : 'var(--accent)' }} />
             </div>
             <div>
-              <h2 className={isPanel ? 'text-sm font-semibold' : 'text-lg font-semibold'} style={{ color: isPanel ? '#f97316' : 'var(--text-primary)' }}>프리셋 비교</h2>
-              {!isPanel && <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>두 시트 또는 스냅샷의 차이를 분석합니다</p>}
+              <h2 className={isPanel ? 'text-sm font-semibold' : 'text-lg font-semibold'} style={{ color: isPanel ? '#f97316' : 'var(--text-primary)' }}>{t('title')}</h2>
+              {!isPanel && <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('subtitle')}</p>}
             </div>
             {isPanel && (
               <button
@@ -174,15 +176,15 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
               style={{ background: '#f9731608' }}
             >
               <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
-                두 시트 또는 스냅샷의 <strong style={{ color: '#f97316' }}>차이를 비교</strong>합니다.
+                {t('helpDesc')}
               </p>
               <div className="space-y-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                <div>- <strong>스냅샷:</strong> 현재 상태 저장</div>
-                <div>- <strong>비교:</strong> 변경된 값, 추가/삭제 확인</div>
-                <div>- <strong>내보내기:</strong> JSON으로 결과 저장</div>
+                <div>{t('helpSnapshot')}</div>
+                <div>{t('helpCompare')}</div>
+                <div>{t('helpExport')}</div>
               </div>
               <div className="mt-2 pt-2 border-t text-xs" style={{ borderColor: '#f9731630', color: 'var(--text-tertiary)' }}>
-                <strong>활용:</strong> 밸런스 패치 전후 비교, A/B 테스트
+                {t('helpUseCase')}
               </div>
             </div>
             {/* 리사이저 */}
@@ -214,7 +216,7 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-end">
             <div className="flex-1 min-w-0">
               <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
-                이전 (Before)
+                {t('before')}
               </label>
               <div className="flex gap-2">
                 <select
@@ -227,10 +229,10 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
                     color: 'var(--text-primary)'
                   }}
                 >
-                  <option value="">선택...</option>
+                  <option value="">{t('select')}</option>
                   {sources.map(s => (
                     <option key={s.id} value={s.id}>
-                      [{s.type === 'snapshot' ? '스냅샷' : '시트'}] {s.name}
+                      [{s.type === 'snapshot' ? t('snapshot') : t('sheet')}] {s.name}
                     </option>
                   ))}
                 </select>
@@ -255,7 +257,7 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
 
             <div className="flex-1 min-w-0">
               <label className="block text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
-                이후 (After)
+                {t('after')}
               </label>
               <div className="flex gap-2">
                 <select
@@ -268,10 +270,10 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
                     color: 'var(--text-primary)'
                   }}
                 >
-                  <option value="">선택...</option>
+                  <option value="">{t('select')}</option>
                   {sources.map(s => (
                     <option key={s.id} value={s.id}>
-                      [{s.type === 'snapshot' ? '스냅샷' : '시트'}] {s.name}
+                      [{s.type === 'snapshot' ? t('snapshot') : t('sheet')}] {s.name}
                     </option>
                   ))}
                 </select>
@@ -304,7 +306,7 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
             }}
           >
             <GitCompare className="w-4 h-4" />
-            비교 실행
+            {t('runComparison')}
           </button>
 
           {/* 결과 표시 */}
@@ -313,35 +315,35 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
               {/* 요약 - 반응형 그리드 */}
               <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
                 <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border-primary)' }}>
-                  <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>변경 요약</div>
+                  <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('changeSummary')}</div>
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4">
                   <div className="p-3 sm:p-4 text-center border-r border-b sm:border-b-0" style={{ borderColor: 'var(--border-primary)' }}>
                     <div className="text-xl sm:text-2xl font-bold mb-1" style={{ color: 'var(--text-primary)' }}>
                       {result.summary.totalRows}
                     </div>
-                    <div className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>전체 행</div>
+                    <div className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>{t('totalRows')}</div>
                   </div>
                   <div className="p-3 sm:p-4 text-center border-b sm:border-b-0 sm:border-r" style={{ background: 'rgba(251, 191, 36, 0.05)', borderColor: 'var(--border-primary)' }}>
                     <div className="text-xl sm:text-2xl font-bold mb-1 flex items-center justify-center gap-1.5" style={{ color: '#d97706' }}>
                       <Edit3 className="w-4 h-4" />
                       {result.summary.changedRows}
                     </div>
-                    <div className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>수정됨</div>
+                    <div className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>{t('modified')}</div>
                   </div>
                   <div className="p-3 sm:p-4 text-center border-r" style={{ background: 'rgba(34, 197, 94, 0.05)', borderColor: 'var(--border-primary)' }}>
                     <div className="text-xl sm:text-2xl font-bold mb-1 flex items-center justify-center gap-1.5" style={{ color: '#16a34a' }}>
                       <Plus className="w-4 h-4" />
                       {result.summary.addedRows}
                     </div>
-                    <div className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>추가됨</div>
+                    <div className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>{t('added')}</div>
                   </div>
                   <div className="p-3 sm:p-4 text-center" style={{ background: 'rgba(239, 68, 68, 0.05)' }}>
                     <div className="text-xl sm:text-2xl font-bold mb-1 flex items-center justify-center gap-1.5" style={{ color: '#dc2626' }}>
                       <Minus className="w-4 h-4" />
                       {result.summary.removedRows}
                     </div>
-                    <div className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>삭제됨</div>
+                    <div className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>{t('removed')}</div>
                   </div>
                 </div>
               </div>
@@ -349,7 +351,7 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
               {/* 컬럼별 통계 변화 - 더 세련된 바 차트 스타일 */}
               <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
                 <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border-primary)' }}>
-                  <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>컬럼별 평균 변화</div>
+                  <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('columnAvgChange')}</div>
                 </div>
                 <div className="p-4 space-y-3">
                   {result.columnStats
@@ -385,7 +387,7 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
                     })}
                   {result.columnStats.filter(cs => cs.oldStats.count > 0 || cs.newStats.count > 0).length === 0 && (
                     <div className="text-center py-4 text-sm" style={{ color: 'var(--text-tertiary)' }}>
-                      숫자 컬럼이 없습니다
+                      {t('noNumericColumns')}
                     </div>
                   )}
                 </div>
@@ -394,7 +396,7 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
               {/* 행별 변경 사항 - 더 깔끔한 아코디언 스타일 */}
               <div className="rounded-xl overflow-hidden" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
                 <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border-primary)' }}>
-                  <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>상세 변경 사항</div>
+                  <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('detailedChanges')}</div>
                   <label className="flex items-center gap-2 text-xs cursor-pointer select-none hover:opacity-80 transition-opacity" style={{ color: 'var(--text-secondary)' }}>
                     <div
                       className="w-4 h-4 rounded border-2 flex items-center justify-center transition-all"
@@ -410,7 +412,7 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
                         </svg>
                       )}
                     </div>
-                    <span onClick={() => setShowUnchanged(!showUnchanged)}>변경되지 않은 행 표시</span>
+                    <span onClick={() => setShowUnchanged(!showUnchanged)}>{t('showUnchanged')}</span>
                   </label>
                 </div>
 
@@ -419,9 +421,9 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
                     .filter(r => showUnchanged || r.type !== 'unchanged')
                     .map(row => {
                       const typeConfig = {
-                        added: { icon: Plus, color: '#16a34a', bg: 'rgba(34, 197, 94, 0.06)', label: '추가' },
-                        removed: { icon: Minus, color: '#dc2626', bg: 'rgba(239, 68, 68, 0.06)', label: '삭제' },
-                        modified: { icon: Edit3, color: '#d97706', bg: 'rgba(251, 191, 36, 0.06)', label: '수정' },
+                        added: { icon: Plus, color: '#16a34a', bg: 'rgba(34, 197, 94, 0.06)', label: t('added') },
+                        removed: { icon: Minus, color: '#dc2626', bg: 'rgba(239, 68, 68, 0.06)', label: t('removed') },
+                        modified: { icon: Edit3, color: '#d97706', bg: 'rgba(251, 191, 36, 0.06)', label: t('modified') },
                         unchanged: { icon: null, color: 'var(--text-tertiary)', bg: 'transparent', label: '' },
                       };
                       const config = typeConfig[row.type];
@@ -442,7 +444,7 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
                             </span>
                             {row.type === 'modified' && (
                               <span className="px-2 py-0.5 rounded-full text-xs font-medium" style={{ background: `${config.color}15`, color: config.color }}>
-                                {row.cellChanges.filter(c => c.diff !== null || String(c.oldValue) !== String(c.newValue)).length}개 변경
+                                {t('cellsChanged', { count: row.cellChanges.filter(c => c.diff !== null || String(c.oldValue) !== String(c.newValue)).length })}
                               </span>
                             )}
                             {row.type !== 'unchanged' && (
@@ -501,7 +503,7 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
                         <Edit3 className="w-5 h-5" style={{ color: 'var(--text-tertiary)' }} />
                       </div>
                       <div className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>
-                        변경 사항이 없습니다
+                        {t('noChanges')}
                       </div>
                     </div>
                   )}
@@ -515,8 +517,8 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
             <div className="text-center py-12">
               <GitCompare className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--text-tertiary)' }} />
               <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
-                프로젝트에 시트가 없습니다.<br />
-                시트를 만들고 비교해보세요.
+                {t('noSheets')}<br />
+                {t('noSheetsDesc')}
               </p>
             </div>
           )}
@@ -534,7 +536,7 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
               }}
             >
               <Download className="w-4 h-4" />
-              결과 내보내기
+              {t('exportResults')}
             </button>
           </div>
         )}

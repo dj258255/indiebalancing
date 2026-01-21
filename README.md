@@ -102,6 +102,7 @@ MIT License - see [LICENSE](LICENSE) for details.
 
 ## Links
 
+- [Documentation (English)](docs/DESIGN_EN.md)
 - [Documentation (한국어)](docs/DESIGN_KO.md)
 - [Issues](https://github.com/username/powerbalance/issues)
 
@@ -159,7 +160,8 @@ npm run dev
 
 - [Game Balance Concepts](https://gamebalanceconcepts.wordpress.com/) - Ian Schreiber
 - [Game Balancing](https://gamebalancing.wordpress.com/) - 실무 적용 사례
-- [상세 기획 문서](docs/DESIGN_KO.md)
+- [상세 기획 문서 (한국어)](docs/DESIGN_KO.md)
+- [Documentation (English)](docs/DESIGN_EN.md)
 
 ## 라이선스
 

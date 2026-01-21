@@ -17,6 +17,7 @@ import {
   ChevronUp,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 interface BalanceValidatorProps {
   onClose?: () => void;
@@ -175,6 +176,7 @@ function simulate1v1(unitA: UnitData, unitB: UnitData): { winner: string; rounds
 }
 
 export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
+  const t = useTranslations('balanceValidator');
   const [units, setUnits] = useState<UnitData[]>([
     {
       name: '전사',
@@ -259,21 +261,21 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
             <Target className="w-3.5 h-3.5 text-white" />
           </div>
           <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
-            밸런스 검증기
+            {t('title')}
           </span>
           <div className="group relative">
             <HelpCircle className="w-3.5 h-3.5 cursor-help" style={{ color: 'var(--text-tertiary)' }} />
             <div className="absolute left-0 top-5 z-50 hidden group-hover:block w-72 p-3 rounded-lg text-xs shadow-lg" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}>
-              <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>밸런스 검증기 (유닛 테스터)</div>
-              <p className="mb-2">직접 입력한 유닛 스탯이 <strong>역할(탱커/딜러/서포터)에 맞는지</strong> 검증합니다.</p>
+              <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>{t('tooltipTitle')}</div>
+              <p className="mb-2">{t('tooltipDesc')}</p>
               <div className="space-y-1 mb-2">
-                <div>- DPS/EHP 계산 및 기대치 비교</div>
-                <div>- 역할별 적정 범위 제시</div>
-                <div>- 1:1 전투 시뮬레이션</div>
+                <div>- {t('tooltipFeature1')}</div>
+                <div>- {t('tooltipFeature2')}</div>
+                <div>- {t('tooltipFeature3')}</div>
               </div>
               <div className="pt-2 border-t space-y-1" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
-                <div><strong>vs 밸런스 분석:</strong> 분석은 시트 기반 전체 패턴, 검증기는 개별 유닛 확인</div>
-                <div><strong>vs 전투 시뮬:</strong> 시뮬은 실제 전투, 검증기는 스탯 적합성</div>
+                <div>{t('tooltipVsAnalysis')}</div>
+                <div>{t('tooltipVsSim')}</div>
               </div>
             </div>
           </div>
@@ -284,7 +286,7 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
               color: overallBalance.isBalanced ? 'var(--success)' : 'var(--warning)',
             }}
           >
-            {overallBalance.isBalanced ? '양호' : '조정 필요'}
+            {overallBalance.isBalanced ? t('statusGood') : t('statusAdjust')}
           </span>
         </div>
         <div className="flex items-center gap-1">
@@ -315,15 +317,15 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
             style={{ background: 'var(--bg-tertiary)' }}
           >
             <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
-              기준값 (100%)
+              {t('baseValue')}
             </div>
             <div className="grid grid-cols-3 gap-2" style={{ color: 'var(--text-secondary)' }}>
               <div>HP: {BASE_STATS.hp}</div>
               <div>ATK: {BASE_STATS.atk}</div>
               <div>DEF: {BASE_STATS.def}</div>
-              <div>기준 DPS: {BASE_DPS.toFixed(0)}</div>
-              <div>기준 EHP: {BASE_EHP.toFixed(0)}</div>
-              <div>공속: {BASE_STATS.attackSpeed}</div>
+              <div>{t('baseDps')}: {BASE_DPS.toFixed(0)}</div>
+              <div>{t('baseEhp')}: {BASE_EHP.toFixed(0)}</div>
+              <div>{t('atkSpeed')}: {BASE_STATS.attackSpeed}</div>
             </div>
           </div>
 
@@ -340,7 +342,7 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
                   <div className="flex items-center gap-1 mb-1">
                     <Icon className="w-3.5 h-3.5" style={{ color: role.color }} />
                     <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
-                      {role.name}
+                      {t(`roles.${key}`)}
                     </span>
                   </div>
                   <div style={{ color: 'var(--text-tertiary)' }}>
@@ -355,14 +357,14 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <h4 className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
-                유닛 검증
+                {t('unitValidation')}
               </h4>
               <button
                 onClick={addUnit}
                 className="text-xs px-2 py-1 rounded"
                 style={{ background: 'var(--accent)', color: 'white' }}
               >
-                + 유닛 추가
+                {t('addUnit')}
               </button>
             </div>
 
@@ -395,8 +397,8 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
                       className="px-2 py-1 rounded text-xs"
                       style={{ background: 'var(--bg-tertiary)' }}
                     >
-                      {Object.entries(ROLE_EXPECTATIONS).map(([key, r]) => (
-                        <option key={key} value={key}>{r.name}</option>
+                      {Object.entries(ROLE_EXPECTATIONS).map(([key]) => (
+                        <option key={key} value={key}>{t(`roles.${key}`)}</option>
                       ))}
                     </select>
                     <RoleIcon className="w-4 h-4" style={{ color: role.color }} />
@@ -406,7 +408,7 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
                         className="text-xs px-2 py-1 rounded"
                         style={{ color: 'var(--error)' }}
                       >
-                        삭제
+                        {t('delete')}
                       </button>
                     )}
                   </div>
@@ -414,12 +416,12 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
                   {/* 스탯 입력 */}
                   <div className="grid grid-cols-3 gap-2 mb-3">
                     {[
-                      { key: 'hp', label: 'HP' },
-                      { key: 'atk', label: 'ATK' },
-                      { key: 'def', label: 'DEF' },
-                      { key: 'attackSpeed', label: '공속' },
-                      { key: 'critRate', label: '크리율' },
-                      { key: 'critDamage', label: '크리뎀' },
+                      { key: 'hp', label: t('stats.hp') },
+                      { key: 'atk', label: t('stats.atk') },
+                      { key: 'def', label: t('stats.def') },
+                      { key: 'attackSpeed', label: t('stats.atkSpeed') },
+                      { key: 'critRate', label: t('stats.critRate') },
+                      { key: 'critDamage', label: t('stats.critDmg') },
                     ].map(({ key, label }) => (
                       <div key={key}>
                         <label className="text-[10px] block mb-0.5" style={{ color: 'var(--text-tertiary)' }}>
@@ -450,7 +452,7 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
                         <span className="font-medium">DPS: {validation.dps.toFixed(0)}</span>
                       </div>
                       <div style={{ color: 'var(--text-tertiary)' }}>
-                        {validation.dpsPercent.toFixed(0)}% (기대: {role.dpsRange[0]}-{role.dpsRange[1]}%)
+                        {validation.dpsPercent.toFixed(0)}% ({t('expected')}: {role.dpsRange[0]}-{role.dpsRange[1]}%)
                       </div>
                     </div>
                     <div
@@ -464,7 +466,7 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
                         <span className="font-medium">EHP: {validation.ehp.toFixed(0)}</span>
                       </div>
                       <div style={{ color: 'var(--text-tertiary)' }}>
-                        {validation.ehpPercent.toFixed(0)}% (기대: {role.ehpRange[0]}-{role.ehpRange[1]}%)
+                        {validation.ehpPercent.toFixed(0)}% ({t('expected')}: {role.ehpRange[0]}-{role.ehpRange[1]}%)
                       </div>
                     </div>
                   </div>
@@ -476,7 +478,7 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
                       style={{ color: 'var(--success)' }}
                     >
                       <CheckCircle className="w-3.5 h-3.5" />
-                      <span>역할에 맞는 밸런스</span>
+                      <span>{t('roleBalanced')}</span>
                     </div>
                   ) : (
                     <div className="space-y-1">
@@ -504,7 +506,7 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
               style={{ borderColor: 'var(--border-primary)' }}
             >
               <h4 className="font-medium text-sm mb-3" style={{ color: 'var(--text-primary)' }}>
-                1:1 시뮬레이션
+                {t('simulation1v1')}
               </h4>
               <div className="flex items-center gap-2 mb-3">
                 <select
@@ -543,10 +545,10 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
                   style={{ background: 'var(--bg-tertiary)' }}
                 >
                   <div className="font-medium" style={{ color: 'var(--text-primary)' }}>
-                    승자: {simResult.winner}
+                    {t('winner')}: {simResult.winner}
                   </div>
                   <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    {simResult.rounds}초 후 승리, 잔여 HP: {simResult.hpRemaining.toFixed(0)}
+                    {simResult.rounds}{t('afterSeconds')}: {simResult.hpRemaining.toFixed(0)}
                   </div>
                 </div>
               )}
@@ -563,13 +565,13 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
             <div className="flex items-center gap-2 mb-1">
               <TrendingUp className="w-4 h-4" />
               <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
-                전체 밸런스
+                {t('overallBalance')}
               </span>
             </div>
             <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-              평균 가치: {overallBalance.average.toFixed(1)}% |
-              표준편차: {overallBalance.stdDev.toFixed(1)}%
-              {overallBalance.isBalanced ? ' (양호)' : ' (조정 필요)'}
+              {t('avgValue')}: {overallBalance.average.toFixed(1)}% |
+              {t('stdDev')}: {overallBalance.stdDev.toFixed(1)}%
+              {overallBalance.isBalanced ? ` (${t('good')})` : ` (${t('needsAdjust')})`}
             </div>
           </div>
 
@@ -582,88 +584,87 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
               <div className="flex items-center gap-2">
                 <HelpCircle className="w-5 h-5" style={{ color: 'var(--accent)' }} />
                 <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-                  밸런스 검증기 사용법
+                  {t('helpTitle')}
                 </span>
               </div>
 
               {/* 개요 */}
               <div className="space-y-1">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>개요</div>
+                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpOverview')}</div>
                 <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  밸런스 검증기는 게임 캐릭터/유닛의 DPS(초당 데미지)와 EHP(유효 체력)를 분석하여
-                  역할에 맞는 밸런스를 갖추고 있는지 검증합니다.
+                  {t('helpOverviewDesc')}
                 </p>
               </div>
 
               {/* 사용 방법 */}
               <div className="space-y-2">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>사용 방법</div>
+                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpUsage')}</div>
                 <div className="space-y-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
                   <div className="flex gap-2">
                     <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
                           style={{ background: 'var(--accent)', color: 'white' }}>1</span>
-                    <span><strong>유닛 추가:</strong> "유닛 추가" 버튼으로 비교할 캐릭터를 추가합니다.</span>
+                    <span>{t('helpStep1')}</span>
                   </div>
                   <div className="flex gap-2">
                     <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
                           style={{ background: 'var(--accent)', color: 'white' }}>2</span>
-                    <span><strong>역할 설정:</strong> 탱커/딜러/서포터/밸런스 중 해당 역할을 선택합니다.</span>
+                    <span>{t('helpStep2')}</span>
                   </div>
                   <div className="flex gap-2">
                     <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
                           style={{ background: 'var(--accent)', color: 'white' }}>3</span>
-                    <span><strong>스탯 입력:</strong> HP, ATK, DEF, 공속, 크리율, 크리뎀을 입력합니다.</span>
+                    <span>{t('helpStep3')}</span>
                   </div>
                   <div className="flex gap-2">
                     <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
                           style={{ background: 'var(--accent)', color: 'white' }}>4</span>
-                    <span><strong>결과 확인:</strong> DPS/EHP가 역할 기대치 범위에 있는지 확인합니다.</span>
+                    <span>{t('helpStep4')}</span>
                   </div>
                 </div>
               </div>
 
               {/* 역할별 기대치 설명 */}
               <div className="space-y-2">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>역할별 특성</div>
+                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpRoles')}</div>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
                     <div className="flex items-center gap-1 mb-1">
                       <Shield className="w-3 h-3" style={{ color: '#3b82f6' }} />
-                      <span className="font-medium" style={{ color: 'var(--text-primary)' }}>탱커</span>
+                      <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{t('roles.tank')}</span>
                     </div>
                     <div style={{ color: 'var(--text-tertiary)' }}>
                       EHP 180-250%, DPS 50-90%<br/>
-                      높은 생존력으로 적의 공격을 흡수
+                      {t('helpTankDesc')}
                     </div>
                   </div>
                   <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
                     <div className="flex items-center gap-1 mb-1">
                       <Swords className="w-3 h-3" style={{ color: '#ef4444' }} />
-                      <span className="font-medium" style={{ color: 'var(--text-primary)' }}>딜러</span>
+                      <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{t('roles.dps')}</span>
                     </div>
                     <div style={{ color: 'var(--text-tertiary)' }}>
                       DPS 130-200%, EHP 60-90%<br/>
-                      높은 화력으로 적을 빠르게 제거
+                      {t('helpDpsDesc')}
                     </div>
                   </div>
                   <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
                     <div className="flex items-center gap-1 mb-1">
                       <Heart className="w-3 h-3" style={{ color: '#10b981' }} />
-                      <span className="font-medium" style={{ color: 'var(--text-primary)' }}>서포터</span>
+                      <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{t('roles.support')}</span>
                     </div>
                     <div style={{ color: 'var(--text-tertiary)' }}>
                       DPS 40-70%, EHP 90-130%<br/>
-                      유틸리티 스킬로 팀 보조
+                      {t('helpSupportDesc')}
                     </div>
                   </div>
                   <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
                     <div className="flex items-center gap-1 mb-1">
                       <Target className="w-3 h-3" style={{ color: '#f59e0b' }} />
-                      <span className="font-medium" style={{ color: 'var(--text-primary)' }}>밸런스</span>
+                      <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{t('roles.balanced')}</span>
                     </div>
                     <div style={{ color: 'var(--text-tertiary)' }}>
                       DPS 90-110%, EHP 90-110%<br/>
-                      균형잡힌 올라운더 타입
+                      {t('helpBalancedDesc')}
                     </div>
                   </div>
                 </div>
@@ -671,21 +672,20 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
 
               {/* 1:1 시뮬레이션 설명 */}
               <div className="space-y-1">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>1:1 시뮬레이션</div>
+                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpSimulation')}</div>
                 <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  두 유닛을 선택하고 ▶ 버튼을 누르면 1:1 전투를 시뮬레이션합니다.
-                  승자, 전투 시간, 잔여 HP를 확인하여 상성 관계를 파악할 수 있습니다.
+                  {t('helpSimulationDesc')}
                 </p>
               </div>
 
               {/* 팁 */}
               <div className="space-y-1">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>밸런싱 팁</div>
+                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpTips')}</div>
                 <ul className="text-xs space-y-0.5" style={{ color: 'var(--text-secondary)' }}>
-                  <li>• 같은 역할의 유닛은 DPS/EHP가 유사해야 합니다</li>
-                  <li>• 탱커 vs 딜러는 승률 50% 근처가 이상적입니다</li>
-                  <li>• 총 가치 = (DPS% + EHP%) / 2가 비슷하면 밸런스 양호</li>
-                  <li>• 표준편차 15% 이하면 전체적으로 균형잡힌 밸런스입니다</li>
+                  <li>• {t('helpTip1')}</li>
+                  <li>• {t('helpTip2')}</li>
+                  <li>• {t('helpTip3')}</li>
+                  <li>• {t('helpTip4')}</li>
                 </ul>
               </div>
             </div>
@@ -701,7 +701,7 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
                   <HelpCircle className="w-3.5 h-3.5" />
-                  <span>도움말 보기 (사용법, 역할별 특성, 팁)</span>
+                  <span>{t('showHelp')}</span>
                 </div>
                 <ChevronDown className="w-3.5 h-3.5" style={{ color: 'var(--text-tertiary)' }} />
               </div>

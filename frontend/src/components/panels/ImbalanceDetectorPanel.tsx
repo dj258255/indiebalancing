@@ -20,6 +20,7 @@ import {
 import { useProjectStore } from '@/stores/projectStore';
 import { detectImbalances, getSeverityColor, type ImbalanceIssue, type Severity, type DetectionConfig } from '@/lib/imbalanceDetector';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { useTranslations } from 'next-intl';
 
 interface ImbalanceDetectorPanelProps {
   onClose: () => void;
@@ -38,6 +39,7 @@ const TYPE_ICONS: Record<string, typeof AlertTriangle> = {
 export default function ImbalanceDetectorPanel({ onClose, onDragStart }: ImbalanceDetectorPanelProps) {
   // ESC 키로 패널 닫기
   useEscapeKey(onClose);
+  const t = useTranslations('imbalanceDetector');
 
   const { projects, currentProjectId, currentSheetId } = useProjectStore();
 
@@ -122,7 +124,7 @@ export default function ImbalanceDetectorPanel({ onClose, onDragStart }: Imbalan
           <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#eab308' }}>
             <AlertTriangle className="w-4 h-4 text-white" />
           </div>
-          <h3 className="font-semibold" style={{ color: '#eab308' }}>불균형 감지</h3>
+          <h3 className="font-semibold" style={{ color: '#eab308' }}>{t('title')}</h3>
           <button
             onClick={() => setShowHelp(!showHelp)}
             className={`p-1 rounded-lg transition-colors ${showHelp ? 'bg-[#eab308]/20' : 'hover:bg-[var(--bg-hover)]'}`}
@@ -156,16 +158,16 @@ export default function ImbalanceDetectorPanel({ onClose, onDragStart }: Imbalan
             className="flex-1 px-4 py-3 text-sm overflow-y-auto"
             style={{ background: 'var(--bg-tertiary)' }}
           >
-            <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>불균형 감지 (자동 경고)</div>
-            <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>시트 데이터를 스캔해서 문제가 될 수 있는 패턴을 <strong>자동으로 찾아</strong> 경고해줍니다.</p>
+            <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>{t('helpTitle')}</div>
+            <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>{t('helpDesc')}</p>
             <div className="space-y-1 mb-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-              <div>- 이상치: 다른 값과 동떨어진 값</div>
-              <div>- 파워크립: 후반 급상승</div>
-              <div>- 절벽: 연속 값의 급격한 변화</div>
-              <div>- 분산: 같은 그룹 내 큰 편차</div>
+              <div>{t('helpOutlier')}</div>
+              <div>{t('helpPowerCreep')}</div>
+              <div>{t('helpCliff')}</div>
+              <div>{t('helpVariance')}</div>
             </div>
             <div className="pt-2 border-t text-xs" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
-              <strong>vs 밸런스 분석:</strong> 분석은 심층 패턴 분석, 감지는 즉각적 문제 발견
+              {t('helpVsAnalysis')}
             </div>
           </div>
           {/* 리사이저 */}
@@ -197,11 +199,11 @@ export default function ImbalanceDetectorPanel({ onClose, onDragStart }: Imbalan
         {showSettings && (
           <div className="p-3 rounded-lg space-y-3" style={{ background: 'var(--bg-tertiary)' }}>
             <div className="flex items-center gap-2">
-              <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>감지 설정</div>
+              <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t('settings')}</div>
               <div className="group relative">
                 <HelpCircle className="w-3.5 h-3.5 cursor-help" style={{ color: 'var(--text-tertiary)' }} />
                 <div className="absolute left-0 top-5 z-50 hidden group-hover:block w-64 p-2 rounded-lg text-xs shadow-lg" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}>
-                  값이 낮을수록 민감하게 감지합니다. 너무 낮으면 오탐이 많고, 너무 높으면 문제를 놓칠 수 있습니다.
+                  {t('settingsTooltip')}
                 </div>
               </div>
             </div>
@@ -211,17 +213,17 @@ export default function ImbalanceDetectorPanel({ onClose, onDragStart }: Imbalan
               <div>
                 <div className="flex items-center gap-1 mb-1">
                   <label className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    이상치 임계값 (Z-score)
+                    {t('outlierThreshold')}
                   </label>
                   <div className="group relative">
                     <HelpCircle className="w-3 h-3 cursor-help" style={{ color: 'var(--text-tertiary)' }} />
                     <div className="absolute left-0 top-4 z-50 hidden group-hover:block w-56 p-2 rounded-lg text-xs shadow-lg" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}>
-                      <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>이상치 감지</div>
-                      평균에서 벗어난 정도를 측정합니다.
+                      <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('outlierTooltipTitle')}</div>
+                      {t('outlierTooltipDesc')}
                       <div className="mt-1.5 space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                        <div>2.0: 민감 (상위 2.3% 감지)</div>
-                        <div>2.5: 보통 (상위 0.6% 감지) - 권장</div>
-                        <div>3.0: 둔감 (상위 0.1% 감지)</div>
+                        <div>{t('outlierSensitive')}</div>
+                        <div>{t('outlierNormal')}</div>
+                        <div>{t('outlierInsensitive')}</div>
                       </div>
                     </div>
                   </div>
@@ -246,17 +248,17 @@ export default function ImbalanceDetectorPanel({ onClose, onDragStart }: Imbalan
               <div>
                 <div className="flex items-center gap-1 mb-1">
                   <label className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    파워크립 임계값 (배율)
+                    {t('powerCreepThreshold')}
                   </label>
                   <div className="group relative">
                     <HelpCircle className="w-3 h-3 cursor-help" style={{ color: 'var(--text-tertiary)' }} />
                     <div className="absolute right-0 top-4 z-50 hidden group-hover:block w-56 p-2 rounded-lg text-xs shadow-lg" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}>
-                      <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>파워크립 감지</div>
-                      후반 유닛이 초반 대비 몇 배 강한지 확인합니다.
+                      <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('powerCreepTooltipTitle')}</div>
+                      {t('powerCreepTooltipDesc')}
                       <div className="mt-1.5 space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                        <div>2.0: 엄격 (2배 이상 경고)</div>
-                        <div>3.0: 보통 (3배 이상 경고) - 권장</div>
-                        <div>5.0: 관대 (5배 이상만 경고)</div>
+                        <div>{t('powerCreepStrict')}</div>
+                        <div>{t('powerCreepNormal')}</div>
+                        <div>{t('powerCreepLenient')}</div>
                       </div>
                     </div>
                   </div>
@@ -281,17 +283,17 @@ export default function ImbalanceDetectorPanel({ onClose, onDragStart }: Imbalan
               <div>
                 <div className="flex items-center gap-1 mb-1">
                   <label className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    분산 임계값 (CV)
+                    {t('varianceThreshold')}
                   </label>
                   <div className="group relative">
                     <HelpCircle className="w-3 h-3 cursor-help" style={{ color: 'var(--text-tertiary)' }} />
                     <div className="absolute left-0 top-4 z-50 hidden group-hover:block w-56 p-2 rounded-lg text-xs shadow-lg" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}>
-                      <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>분산 감지</div>
-                      같은 레벨/등급 유닛들의 스탯 편차를 측정합니다. (CV = 표준편차/평균)
+                      <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('varianceTooltipTitle')}</div>
+                      {t('varianceTooltipDesc')}
                       <div className="mt-1.5 space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                        <div>0.2: 엄격 (20% 편차 경고)</div>
-                        <div>0.3: 보통 (30% 편차 경고) - 권장</div>
-                        <div>0.5: 관대 (50% 편차만 경고)</div>
+                        <div>{t('varianceStrict')}</div>
+                        <div>{t('varianceNormal')}</div>
+                        <div>{t('varianceLenient')}</div>
                       </div>
                     </div>
                   </div>
@@ -316,17 +318,17 @@ export default function ImbalanceDetectorPanel({ onClose, onDragStart }: Imbalan
               <div>
                 <div className="flex items-center gap-1 mb-1">
                   <label className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    절벽 임계값 (배율)
+                    {t('cliffThreshold')}
                   </label>
                   <div className="group relative">
                     <HelpCircle className="w-3 h-3 cursor-help" style={{ color: 'var(--text-tertiary)' }} />
                     <div className="absolute right-0 top-4 z-50 hidden group-hover:block w-56 p-2 rounded-lg text-xs shadow-lg" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}>
-                      <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>난이도 절벽 감지</div>
-                      연속 레벨 간 급격한 스탯 변화를 감지합니다.
+                      <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('cliffTooltipTitle')}</div>
+                      {t('cliffTooltipDesc')}
                       <div className="mt-1.5 space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                        <div>1.5: 엄격 (50% 증가 경고)</div>
-                        <div>2.0: 보통 (100% 증가 경고) - 권장</div>
-                        <div>3.0: 관대 (200% 증가만 경고)</div>
+                        <div>{t('cliffStrict')}</div>
+                        <div>{t('cliffNormal')}</div>
+                        <div>{t('cliffLenient')}</div>
                       </div>
                     </div>
                   </div>
@@ -352,9 +354,9 @@ export default function ImbalanceDetectorPanel({ onClose, onDragStart }: Imbalan
             <div className="p-2 rounded-lg text-xs" style={{ background: 'var(--accent-light)', color: 'var(--text-secondary)' }}>
               <div className="flex items-center gap-1.5 mb-1">
                 <Info className="w-3 h-3" style={{ color: 'var(--accent)' }} />
-                <span className="font-medium" style={{ color: 'var(--accent)' }}>추천 설정</span>
+                <span className="font-medium" style={{ color: 'var(--accent)' }}>{t('recommendedSettings')}</span>
               </div>
-              <div>처음 사용 시 기본값 권장. 오탐이 많으면 값을 높이고, 문제를 못 찾으면 값을 낮추세요.</div>
+              <div>{t('recommendedSettingsDesc')}</div>
             </div>
           </div>
         )}
@@ -372,12 +374,12 @@ export default function ImbalanceDetectorPanel({ onClose, onDragStart }: Imbalan
           {isAnalyzing ? (
             <>
               <RefreshCw className="w-4 h-4 animate-spin" />
-              분석 중...
+              {t('analyzing')}
             </>
           ) : (
             <>
               <AlertTriangle className="w-4 h-4" />
-              불균형 분석 실행
+              {t('runAnalysis')}
             </>
           )}
         </button>
@@ -393,14 +395,14 @@ export default function ImbalanceDetectorPanel({ onClose, onDragStart }: Imbalan
                     <CheckCircle className="w-5 h-5" style={{ color: 'rgb(34, 197, 94)' }} />
                   </div>
                   <div>
-                    <div className="font-medium" style={{ color: 'var(--text-primary)' }}>문제 없음</div>
-                    <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>감지된 불균형 패턴이 없습니다</div>
+                    <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{t('noIssues')}</div>
+                    <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('noIssuesDesc')}</div>
                   </div>
                 </div>
               ) : (
                 <div className="space-y-3">
                   <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {issues.length}개의 문제 감지됨
+                    {t('issuesFound', { count: issues.length })}
                   </div>
 
                   <div className="flex gap-2">
@@ -414,7 +416,7 @@ export default function ImbalanceDetectorPanel({ onClose, onDragStart }: Imbalan
                         color: filterSeverity === 'all' ? undefined : 'var(--text-secondary)'
                       }}
                     >
-                      전체 ({issues.length})
+                      {t('all')} ({issues.length})
                     </button>
                     {severityCounts.critical > 0 && (
                       <button
@@ -427,7 +429,7 @@ export default function ImbalanceDetectorPanel({ onClose, onDragStart }: Imbalan
                           color: filterSeverity === 'critical' ? undefined : 'var(--primary-red)'
                         }}
                       >
-                        심각 ({severityCounts.critical})
+                        {t('critical')} ({severityCounts.critical})
                       </button>
                     )}
                     {severityCounts.warning > 0 && (
@@ -441,7 +443,7 @@ export default function ImbalanceDetectorPanel({ onClose, onDragStart }: Imbalan
                           color: filterSeverity === 'warning' ? undefined : 'var(--primary-yellow)'
                         }}
                       >
-                        주의 ({severityCounts.warning})
+                        {t('warning')} ({severityCounts.warning})
                       </button>
                     )}
                     {severityCounts.info > 0 && (
@@ -455,7 +457,7 @@ export default function ImbalanceDetectorPanel({ onClose, onDragStart }: Imbalan
                           color: filterSeverity === 'info' ? undefined : 'var(--primary-blue)'
                         }}
                       >
-                        정보 ({severityCounts.info})
+                        {t('info')} ({severityCounts.info})
                       </button>
                     )}
                   </div>
@@ -497,7 +499,7 @@ export default function ImbalanceDetectorPanel({ onClose, onDragStart }: Imbalan
                             {issue.title}
                           </div>
                           <div className="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>
-                            {issue.affectedRows.length}개 행 관련
+                            {t('rowsAffected', { count: issue.affectedRows.length })}
                           </div>
                         </div>
                         {isExpanded ? (
@@ -517,7 +519,7 @@ export default function ImbalanceDetectorPanel({ onClose, onDragStart }: Imbalan
                             <div className="p-2 rounded-lg text-xs" style={{ background: 'var(--bg-tertiary)' }}>
                               <div className="flex items-center gap-1 mb-1">
                                 <Info className="w-3 h-3" style={{ color: 'var(--accent)' }} />
-                                <span className="font-medium" style={{ color: 'var(--accent)' }}>제안</span>
+                                <span className="font-medium" style={{ color: 'var(--accent)' }}>{t('suggestion')}</span>
                               </div>
                               <div style={{ color: 'var(--text-secondary)' }}>{issue.suggestion}</div>
                             </div>
@@ -552,7 +554,7 @@ export default function ImbalanceDetectorPanel({ onClose, onDragStart }: Imbalan
           <div className="text-center py-8">
             <AlertTriangle className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--text-tertiary)' }} />
             <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
-              시트를 선택해주세요
+              {t('selectSheet')}
             </p>
           </div>
         )}

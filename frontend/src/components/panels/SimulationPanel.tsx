@@ -6,6 +6,7 @@ import { useProjectStore } from '@/stores/projectStore';
 import type { UnitStats, SimulationResult, BattleConfig, DefenseFormulaType, ArmorPenetrationConfig } from '@/lib/simulation/types';
 import { runMonteCarloSimulationAsync } from '@/lib/simulation/monteCarloSimulator';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import { useTranslations } from 'next-intl';
 
 interface SimulationPanelProps {
   onClose: () => void;
@@ -72,6 +73,7 @@ function ConfidenceBar({ winRate, confidence, color }: {
 }
 
 export default function SimulationPanel({ onClose }: SimulationPanelProps) {
+  const t = useTranslations('simulation');
   // ESC 키로 패널 닫기
   useEscapeKey(onClose);
 
@@ -211,7 +213,7 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
       <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border-primary)' }}>
         <div className="flex items-center gap-2">
           <Swords className="w-5 h-5" style={{ color: 'var(--accent)' }} />
-          <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>전투 시뮬레이션</h3>
+          <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('title')}</h3>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -237,7 +239,7 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
         <div className="grid grid-cols-2 gap-3">
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-              유닛 1 (공격자)
+              {t('unit1')}
             </label>
             <select
               value={unit1Id}
@@ -249,7 +251,7 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
                 color: 'var(--text-primary)'
               }}
             >
-              <option value="">선택...</option>
+              <option value="">{t('select')}</option>
               {units.map(u => (
                 <option key={u.id} value={u.id}>{u.name}</option>
               ))}
@@ -257,7 +259,7 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
           </div>
           <div>
             <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-              유닛 2 (방어자)
+              {t('unit2')}
             </label>
             <select
               value={unit2Id}
@@ -269,7 +271,7 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
                 color: 'var(--text-primary)'
               }}
             >
-              <option value="">선택...</option>
+              <option value="">{t('select')}</option>
               {units.map(u => (
                 <option key={u.id} value={u.id}>{u.name}</option>
               ))}
@@ -308,11 +310,11 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
         {/* 설정 패널 */}
         {showSettings && (
           <div className="p-3 rounded-lg space-y-3" style={{ background: 'var(--bg-tertiary)' }}>
-            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>시뮬레이션 설정</div>
+            <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t('settings')}</div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>반복 횟수</label>
+                <label className="block text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>{t('runs')}</label>
                 <select
                   value={runs}
                   onChange={(e) => setRuns(Number(e.target.value))}
@@ -323,16 +325,16 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
                     color: 'var(--text-primary)'
                   }}
                 >
-                  <option value={1000}>1,000회</option>
-                  <option value={5000}>5,000회</option>
-                  <option value={10000}>10,000회</option>
-                  <option value={50000}>50,000회</option>
-                  <option value={100000}>100,000회</option>
+                  <option value={1000}>{t('iterations.1000')}</option>
+                  <option value={5000}>{t('iterations.5000')}</option>
+                  <option value={10000}>{t('iterations.10000')}</option>
+                  <option value={50000}>{t('iterations.50000')}</option>
+                  <option value={100000}>{t('iterations.100000')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>데미지 공식</label>
+                <label className="block text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>{t('damageFormula')}</label>
                 <select
                   value={damageFormula}
                   onChange={(e) => setDamageFormula(e.target.value as BattleConfig['damageFormula'])}
@@ -343,16 +345,16 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
                     color: 'var(--text-primary)'
                   }}
                 >
-                  <option value="simple">단순 (ATK - DEF)</option>
-                  <option value="mmorpg">MMORPG (ATK × 100/(100+DEF))</option>
-                  <option value="percentage">퍼센트 (ATK × (1-DEF/200))</option>
-                  <option value="random">랜덤 (ATK × 0.9~1.1 - DEF)</option>
-                  <option value="multiplicative">곱셈식 (방어 공식 적용)</option>
+                  <option value="simple">{t('formulas.simple')}</option>
+                  <option value="mmorpg">{t('formulas.mmorpg')}</option>
+                  <option value="percentage">{t('formulas.percentage')}</option>
+                  <option value="random">{t('formulas.random')}</option>
+                  <option value="multiplicative">{t('formulas.multiplicative')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>방어 공식</label>
+                <label className="block text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>{t('defenseFormula')}</label>
                 <select
                   value={defenseFormula}
                   onChange={(e) => setDefenseFormula(e.target.value as DefenseFormulaType)}
@@ -363,15 +365,15 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
                     color: 'var(--text-primary)'
                   }}
                 >
-                  <option value="subtractive">빼기식 (ATK - DEF)</option>
-                  <option value="divisive">나누기식 (DEF/(DEF+100)) - LoL/WoW</option>
-                  <option value="multiplicative">곱셈식 (1 - DEF%)</option>
-                  <option value="logarithmic">로그식 (수확체감)</option>
+                  <option value="subtractive">{t('defFormulas.subtractive')}</option>
+                  <option value="divisive">{t('defFormulas.divisive')}</option>
+                  <option value="multiplicative">{t('defFormulas.multiplicative')}</option>
+                  <option value="logarithmic">{t('defFormulas.logarithmic')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>최대 전투 시간 (초)</label>
+                <label className="block text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>{t('maxBattleTime')}</label>
                 <input
                   type="number"
                   value={maxDuration}
@@ -397,7 +399,7 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
                   style={{ accentColor: 'var(--accent)' }}
                 />
                 <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  방어관통 사용 (Unit1 → Unit2)
+                  {t('useArmorPen')}
                 </span>
               </label>
 
@@ -405,7 +407,7 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
                 <div className="grid grid-cols-2 gap-3 mt-2">
                   <div>
                     <label className="block text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>
-                      고정 관통 (Lethality)
+                      {t('flatPen')}
                     </label>
                     <input
                       type="number"
@@ -422,7 +424,7 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
                   </div>
                   <div>
                     <label className="block text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>
-                      퍼센트 관통 (0~1)
+                      {t('percentPen')}
                     </label>
                     <input
                       type="number"
@@ -458,12 +460,12 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
           {isRunning ? (
             <>
               <RefreshCw className="w-4 h-4 animate-spin" />
-              시뮬레이션 중... {progress.toFixed(0)}%
+              {t('running')} {progress.toFixed(0)}%
             </>
           ) : (
             <>
               <Play className="w-4 h-4" />
-              시뮬레이션 실행 ({runs.toLocaleString()}회)
+              {t('runSimulation')} ({runs.toLocaleString()})
             </>
           )}
         </button>
@@ -486,7 +488,7 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
           <div className="space-y-4">
             {/* 승률 */}
             <div className="p-4 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-              <div className="text-sm font-medium mb-3" style={{ color: 'var(--text-primary)' }}>승률 (95% 신뢰구간)</div>
+              <div className="text-sm font-medium mb-3" style={{ color: 'var(--text-primary)' }}>{t('winRate')}</div>
 
               <div className="space-y-2">
                 <div>
@@ -519,7 +521,7 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
 
                 {result.draws > 0 && (
                   <div className="text-xs text-center mt-2" style={{ color: 'var(--text-tertiary)' }}>
-                    무승부: {result.draws}회 ({((result.draws / result.totalRuns) * 100).toFixed(1)}%)
+                    {t('draw')}: {result.draws} ({((result.draws / result.totalRuns) * 100).toFixed(1)}%)
                   </div>
                 )}
               </div>
@@ -529,41 +531,41 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
             <div className="p-4 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
               <div className="flex items-center gap-2 mb-3">
                 <Clock className="w-4 h-4" style={{ color: 'var(--primary-yellow)' }} />
-                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>TTK (Time to Kill)</span>
+                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t('ttk')}</span>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-xs mb-1" style={{ color: 'var(--primary-blue)' }}>
-                    {unit1?.name}가 상대 처치
+                    {t('killTarget', { name: unit1?.name || '' })}
                   </div>
                   {result.ttkStats?.unit1 && result.ttkStats.unit1.avg > 0 ? (
                     <div className="space-y-1">
                       <div className="text-lg font-bold" style={{ color: 'var(--primary-blue)' }}>
-                        {result.ttkStats.unit1.avg.toFixed(1)}초
+                        {result.ttkStats.unit1.avg.toFixed(1)}s
                       </div>
                       <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
                         {result.ttkStats.unit1.min.toFixed(1)}s ~ {result.ttkStats.unit1.max.toFixed(1)}s
                       </div>
                     </div>
                   ) : (
-                    <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>승리 없음</div>
+                    <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('noWin')}</div>
                   )}
                 </div>
                 <div>
                   <div className="text-xs mb-1" style={{ color: 'var(--primary-red)' }}>
-                    {unit2?.name}가 상대 처치
+                    {t('killTarget', { name: unit2?.name || '' })}
                   </div>
                   {result.ttkStats?.unit2 && result.ttkStats.unit2.avg > 0 ? (
                     <div className="space-y-1">
                       <div className="text-lg font-bold" style={{ color: 'var(--primary-red)' }}>
-                        {result.ttkStats.unit2.avg.toFixed(1)}초
+                        {result.ttkStats.unit2.avg.toFixed(1)}s
                       </div>
                       <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
                         {result.ttkStats.unit2.min.toFixed(1)}s ~ {result.ttkStats.unit2.max.toFixed(1)}s
                       </div>
                     </div>
                   ) : (
-                    <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>승리 없음</div>
+                    <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('noWin')}</div>
                   )}
                 </div>
               </div>
@@ -573,17 +575,17 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
             <div className="p-4 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
               <div className="flex items-center gap-2 mb-3">
                 <Zap className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>DPS 비교</span>
+                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t('dpsComparison')}</span>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="text-xs mb-1" style={{ color: 'var(--primary-blue)' }}>{unit1?.name}</div>
                   <div className="text-lg font-bold" style={{ color: 'var(--primary-blue)' }}>
-                    {result.unit1AvgDps.toFixed(1)} <span className="text-xs font-normal">실측</span>
+                    {result.unit1AvgDps.toFixed(1)} <span className="text-xs font-normal">{t('measured')}</span>
                   </div>
                   {result.theoreticalDps && (
                     <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                      이론: {result.theoreticalDps.unit1.toFixed(1)}
+                      {t('theoretical')}: {result.theoreticalDps.unit1.toFixed(1)}
                       {result.unit1AvgDps < result.theoreticalDps.unit1 * 0.9 && (
                         <span className="ml-1 text-yellow-500">(-{((1 - result.unit1AvgDps / result.theoreticalDps.unit1) * 100).toFixed(0)}%)</span>
                       )}
@@ -593,11 +595,11 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
                 <div>
                   <div className="text-xs mb-1" style={{ color: 'var(--primary-red)' }}>{unit2?.name}</div>
                   <div className="text-lg font-bold" style={{ color: 'var(--primary-red)' }}>
-                    {result.unit2AvgDps.toFixed(1)} <span className="text-xs font-normal">실측</span>
+                    {result.unit2AvgDps.toFixed(1)} <span className="text-xs font-normal">{t('measured')}</span>
                   </div>
                   {result.theoreticalDps && (
                     <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                      이론: {result.theoreticalDps.unit2.toFixed(1)}
+                      {t('theoretical')}: {result.theoreticalDps.unit2.toFixed(1)}
                       {result.unit2AvgDps < result.theoreticalDps.unit2 * 0.9 && (
                         <span className="ml-1 text-yellow-500">(-{((1 - result.unit2AvgDps / result.theoreticalDps.unit2) * 100).toFixed(0)}%)</span>
                       )}
@@ -633,21 +635,21 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
             {/* 통계 요약 */}
             <div className="grid grid-cols-3 gap-2">
               <div className="p-3 rounded-lg text-center" style={{ background: 'var(--bg-tertiary)' }}>
-                <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>평균 전투 시간</div>
+                <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('avgBattleTime')}</div>
                 <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
-                  {result.avgDuration.toFixed(1)}초
+                  {result.avgDuration.toFixed(1)}s
                 </div>
               </div>
               <div className="p-3 rounded-lg text-center" style={{ background: 'var(--bg-tertiary)' }}>
-                <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>총 시뮬레이션</div>
+                <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('totalSimulations')}</div>
                 <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
-                  {result.totalRuns.toLocaleString()}회
+                  {result.totalRuns.toLocaleString()}
                 </div>
               </div>
               <div className="p-3 rounded-lg text-center" style={{ background: 'var(--bg-tertiary)' }}>
-                <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>시간 범위</div>
+                <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('timeRange')}</div>
                 <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
-                  {result.minDuration.toFixed(1)}~{result.maxDuration.toFixed(1)}초
+                  {result.minDuration.toFixed(1)}~{result.maxDuration.toFixed(1)}s
                 </div>
               </div>
             </div>
@@ -656,24 +658,24 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
             <div className="p-4 rounded-lg space-y-4" style={{ background: 'var(--bg-tertiary)' }}>
               <div className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>분포 분석</span>
+                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t('distribution')}</span>
               </div>
 
               <Histogram
                 data={result.durationDistribution}
-                label="전투 시간 분포"
+                label={t('battleTimeDist')}
                 color="var(--accent)"
               />
 
               <Histogram
                 data={result.damageDistribution.unit1}
-                label={`${unit1?.name} 총 피해량 분포`}
+                label={t('totalDamageDist', { name: unit1?.name || '' })}
                 color="var(--primary-blue)"
               />
 
               <Histogram
                 data={result.damageDistribution.unit2}
-                label={`${unit2?.name} 총 피해량 분포`}
+                label={t('totalDamageDist', { name: unit2?.name || '' })}
                 color="var(--primary-red)"
               />
             </div>
@@ -684,7 +686,7 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
               className="w-full flex items-center justify-between p-3 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
               style={{ background: 'var(--bg-tertiary)' }}
             >
-              <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>상세 통계</span>
+              <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t('detailedStats')}</span>
               {showDetailedStats ? (
                 <ChevronUp className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
               ) : (
@@ -698,24 +700,24 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
                   <div>
                     <div className="font-medium mb-2" style={{ color: 'var(--primary-blue)' }}>{unit1?.name}</div>
                     <div className="space-y-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                      <div>승리: {result.unit1Wins}회</div>
-                      <div>평균 피해량: {result.unit1AvgDamage.toFixed(0)}</div>
-                      <div>평균 생존 HP: {result.unit1AvgSurvivalHp.toFixed(0)}</div>
+                      <div>{t('wins')}: {result.unit1Wins}</div>
+                      <div>{t('avgDamage')}: {result.unit1AvgDamage.toFixed(0)}</div>
+                      <div>{t('avgSurvivalHp')}: {result.unit1AvgSurvivalHp.toFixed(0)}</div>
                     </div>
                   </div>
                   <div>
                     <div className="font-medium mb-2" style={{ color: 'var(--primary-red)' }}>{unit2?.name}</div>
                     <div className="space-y-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                      <div>승리: {result.unit2Wins}회</div>
-                      <div>평균 피해량: {result.unit2AvgDamage.toFixed(0)}</div>
-                      <div>평균 생존 HP: {result.unit2AvgSurvivalHp.toFixed(0)}</div>
+                      <div>{t('wins')}: {result.unit2Wins}</div>
+                      <div>{t('avgDamage')}: {result.unit2AvgDamage.toFixed(0)}</div>
+                      <div>{t('avgSurvivalHp')}: {result.unit2AvgSurvivalHp.toFixed(0)}</div>
                     </div>
                   </div>
                 </div>
 
                 <div className="pt-3 border-t" style={{ borderColor: 'var(--border-primary)' }}>
                   <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                    전투 시간 범위: {result.minDuration.toFixed(1)}초 ~ {result.maxDuration.toFixed(1)}초
+                    {t('battleTimeRange')}: {result.minDuration.toFixed(1)}s ~ {result.maxDuration.toFixed(1)}s
                   </div>
                 </div>
               </div>
@@ -727,7 +729,7 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <Clock className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                    <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>샘플 전투 로그</span>
+                    <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t('sampleBattleLog')}</span>
                   </div>
                   <select
                     value={selectedBattleIndex}
@@ -740,7 +742,7 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
                     }}
                   >
                     {result.sampleBattles.map((_, i) => (
-                      <option key={i} value={i}>전투 #{i + 1}</option>
+                      <option key={i} value={i}>{t('battle')} #{i + 1}</option>
                     ))}
                   </select>
                 </div>
@@ -784,14 +786,14 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
                         </>
                       )}
                       {entry.action === 'death' && (
-                        <span className="text-red-500">사망</span>
+                        <span className="text-red-500">{t('death')}</span>
                       )}
                     </div>
                   ))}
                 </div>
 
                 <div className="text-xs pt-2 border-t" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
-                  승자: <span className="font-medium" style={{
+                  {t('winner')}: <span className="font-medium" style={{
                     color: result.sampleBattles[selectedBattleIndex]?.winner === 'unit1'
                       ? 'var(--primary-blue)'
                       : result.sampleBattles[selectedBattleIndex]?.winner === 'unit2'
@@ -802,9 +804,9 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
                       ? unit1?.name
                       : result.sampleBattles[selectedBattleIndex]?.winner === 'unit2'
                         ? unit2?.name
-                        : '무승부'}
+                        : t('draw')}
                   </span>
-                  {' '}| 전투 시간: {result.sampleBattles[selectedBattleIndex]?.duration.toFixed(1)}초
+                  {' '}| {t('battleTime')}: {result.sampleBattles[selectedBattleIndex]?.duration.toFixed(1)}s
                 </div>
               </div>
             )}
@@ -815,11 +817,10 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
         {units.length === 0 && (
           <div className="text-center py-8">
             <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
-              시트에 유닛 데이터가 없습니다.
+              {t('noUnitData')}
             </div>
             <div className="text-xs mt-2" style={{ color: 'var(--text-tertiary)' }}>
-              이름, HP, ATK, DEF, Speed 컬럼이 있는<br />
-              시트에서 시뮬레이션을 실행해보세요.
+              {t('noUnitDataDesc')}
             </div>
           </div>
         )}

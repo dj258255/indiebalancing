@@ -19,6 +19,7 @@ import {
 import { X, Trash2, Download, Check, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 import { useProjectStore } from '@/stores/projectStore';
 import { cn } from '@/lib/utils';
+import { useTranslations } from 'next-intl';
 
 interface ComparisonChartProps {
   onClose: () => void;
