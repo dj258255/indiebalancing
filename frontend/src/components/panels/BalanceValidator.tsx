@@ -21,6 +21,7 @@ import { useTranslations } from 'next-intl';
 
 interface BalanceValidatorProps {
   onClose?: () => void;
+  onDragStart?: (e: React.MouseEvent) => void;
 }
 
 // 역할별 기대 범위
@@ -175,7 +176,7 @@ function simulate1v1(unitA: UnitData, unitB: UnitData): { winner: string; rounds
   }
 }
 
-export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
+export default function BalanceValidator({ onClose, onDragStart }: BalanceValidatorProps) {
   const t = useTranslations('balanceValidator');
   const [units, setUnits] = useState<UnitData[]>([
     {
@@ -250,8 +251,13 @@ export default function BalanceValidator({ onClose }: BalanceValidatorProps) {
     <div className="card overflow-hidden h-full flex flex-col">
       {/* 헤더 */}
       <div
-        className="flex items-center justify-between px-4 py-2 shrink-0"
+        className="flex items-center justify-between px-4 py-2 shrink-0 cursor-grab active:cursor-grabbing"
         style={{ background: 'var(--bg-tertiary)' }}
+        onMouseDown={(e) => {
+          if (!(e.target as HTMLElement).closest('button') && onDragStart) {
+            onDragStart(e);
+          }
+        }}
       >
         <div className="flex items-center gap-2">
           <div

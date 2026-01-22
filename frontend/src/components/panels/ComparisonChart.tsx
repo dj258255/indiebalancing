@@ -208,22 +208,20 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
     return bins;
   }, [currentSheet, histogramColumn]);
 
-  if (!currentProject || !currentSheet) {
-    return (
-      <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
-        <div className="card p-8 text-center animate-fadeIn">
-          <p className="mb-4" style={{ color: 'var(--text-secondary)' }}>{t('selectSheet')}</p>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 rounded-lg transition-colors"
-            style={{ background: 'var(--bg-tertiary)', color: 'var(--text-primary)' }}
-          >
-            {t('close')}
-          </button>
+  // 시트가 없을 때 표시할 빈 상태 컴포넌트
+  const EmptyState = () => (
+    <div className="flex-1 flex items-center justify-center">
+      <div className="text-center p-8">
+        <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: 'var(--bg-tertiary)' }}>
+          <div className="w-8 h-8 rounded-full" style={{ background: '#3b82f6', opacity: 0.5 }} />
         </div>
+        <p className="text-lg font-medium mb-2" style={{ color: 'var(--text-primary)' }}>{t('noSheetSelected')}</p>
+        <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('selectSheetToCompare')}</p>
       </div>
-    );
-  }
+    </div>
+  );
+
+  const hasSheet = currentProject && currentSheet;
 
   // 공통 wrapper 클래스
   const wrapperClass = isPanel
@@ -257,7 +255,7 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
               <h2 className={isPanel ? 'text-sm font-semibold' : 'text-xl font-semibold'} style={{ color: isPanel ? '#3b82f6' : 'var(--text-primary)' }}>
                 {isPanel ? t('title') : t('fullTitle')}
               </h2>
-              {!isPanel && (
+              {!isPanel && hasSheet && (
                 <p className="text-sm mt-1" style={{ color: 'var(--text-tertiary)' }}>
                   {t('visualizeData', { sheetName: currentSheet.name })}
                 </p>
@@ -370,29 +368,31 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
           </div>
         )}
 
-        {/* 탭 */}
-        <div className="flex border-b px-4" style={{ borderColor: 'var(--border-primary)' }}>
-          {['radar', 'bar', 'histogram'].map((tab) => (
-            <button
-              key={tab}
-              onClick={() => setActiveTab(tab as typeof activeTab)}
-              className={cn(
-                'px-4 py-3 border-b-2 transition-colors text-sm font-medium',
-                activeTab === tab ? 'border-current' : 'border-transparent'
-              )}
-              style={{
-                color: activeTab === tab ? 'var(--accent)' : 'var(--text-tertiary)'
-              }}
-            >
-              {tab === 'radar' && t('tabs.radar')}
-              {tab === 'bar' && t('tabs.bar')}
-              {tab === 'histogram' && t('tabs.histogram')}
-            </button>
-          ))}
-        </div>
+        {/* 탭 - 시트가 있을 때만 표시 */}
+        {hasSheet && (
+          <div className="flex border-b px-4" style={{ borderColor: 'var(--border-primary)' }}>
+            {['radar', 'bar', 'histogram'].map((tab) => (
+              <button
+                key={tab}
+                onClick={() => setActiveTab(tab as typeof activeTab)}
+                className={cn(
+                  'px-4 py-3 border-b-2 transition-colors text-sm font-medium',
+                  activeTab === tab ? 'border-current' : 'border-transparent'
+                )}
+                style={{
+                  color: activeTab === tab ? 'var(--accent)' : 'var(--text-tertiary)'
+                }}
+              >
+                {tab === 'radar' && t('tabs.radar')}
+                {tab === 'bar' && t('tabs.bar')}
+                {tab === 'histogram' && t('tabs.histogram')}
+              </button>
+            ))}
+          </div>
+        )}
 
         {/* 시트에서 선택된 데이터 불러오기 */}
-        {selectedRows.length > 0 && (activeTab === 'radar' || activeTab === 'bar') && (
+        {hasSheet && selectedRows.length > 0 && (activeTab === 'radar' || activeTab === 'bar') && (
           <div className="px-6 py-3 border-b" style={{
             background: 'var(--accent-light)',
             borderColor: 'var(--border-primary)'
@@ -509,6 +509,10 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
           </div>
         )}
 
+        {/* 시트가 없으면 빈 상태 표시 */}
+        {!hasSheet ? (
+          <EmptyState />
+        ) : (
         <div className="flex-1 overflow-hidden flex">
           {/* 사이드바 - 레이더/바 차트용 */}
           {(activeTab === 'radar' || activeTab === 'bar') && (
@@ -718,6 +722,7 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
             )}
           </div>
         </div>
+        )}
       </div>
     </div>
   );

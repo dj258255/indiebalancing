@@ -32,7 +32,9 @@
     "importJsonDesc": "프로젝트 추가 · 기존 데이터 유지",
     "importCsv": "CSV 가져오기",
     "importCsvDesc": "새 시트로 추가",
-    "selectProjectFirst": "프로젝트를 먼저 선택하세요"
+    "selectProjectFirst": "프로젝트를 먼저 선택하세요",
+    "panelTools": "패널 도구",
+    "dropHere": "하단에서 드래그해서 추가"
   },
   "sheet": {
     "newSheet": "새 시트",
@@ -235,7 +237,10 @@
     "formulaHelper": "수식 도우미",
     "balanceValidator": "밸런스 검증기",
     "difficultyCurve": "난이도 곡선",
-    "simulation": "전투 시뮬레이션"
+    "simulation": "전투 시뮬레이션",
+    "dropHere": "사이드바에서 드래그해서 추가",
+    "rightClickToReturn": "우클릭으로 사이드바로 돌리기",
+    "dropToMove": "여기에 놓으면 이동됩니다"
   },
   "welcome": {
     "title": "인디밸런싱",
@@ -359,6 +364,7 @@
     "functionList": "함수 목록",
     "showing": "{count}개 표시",
     "copyExample": "예제 복사",
+    "formulaLabel": "공식:",
     "syntaxGuide": "수식 문법 가이드",
     "formulaStart": "로 시작하면 수식으로 인식",
     "basicOps": "기본 연산:",
@@ -439,8 +445,8 @@
       "RANDBETWEEN": "범위 내 랜덤 정수",
       "PI": "원주율 (π)",
       "E": "자연상수 (e)",
-      "시트명.변수명": "다른 시트 값 참조",
-      "이전행.컬럼명": "이전 행의 값 참조"
+      "SheetRef": "다른 시트 값 참조",
+      "PrevRow": "이전 행의 값 참조 (이전행 또는 PREV)"
     }
   },
   "export": {
@@ -1050,19 +1056,23 @@
     "dpsResult": "DPS 결과",
     "baseDps": "기본 DPS",
     "critBonus": "크리티컬 보정",
+    "dpsFormulaHint": "critRate: 0~1 (30%=0.3), critDamage: 배율 (2=200% 데미지)",
     "targetHp": "적 HP",
     "damage1": "데미지 (1회)",
     "ttkResult": "TTK (처치 시간)",
     "hitsRequired": "필요 타격 횟수",
+    "ttkFormulaHint": "ceil: 올림 함수. 마지막 타격 후에는 대기 시간이 없으므로 -1",
     "hp": "HP",
     "def": "방어력 (DEF)",
     "damageReduction": "피해 감소율 (0~0.99)",
     "ehpResult": "유효 체력 (EHP)",
+    "ehpFormulaHint": "방어력 100 = 50% 피해 감소. damageReduction은 추가 %감소 (0.3 = 30%)",
     "vsOriginal": "원본 HP 대비",
     "atk": "공격력 (ATK)",
     "skillMultiplier": "스킬 배율",
     "finalDamage": "최종 데미지",
     "damageReductionRate": "데미지 감소율",
+    "damageFormulaHint": "방어력이 높을수록 100/(100+def) 값이 작아져 데미지 감소",
     "baseValue": "기본값 (Base)",
     "level": "레벨",
     "growthRate": "성장률 (Rate)",
@@ -1272,6 +1282,8 @@
     "selectPrompt": "왼쪽에서 비교할 대상과 항목을 선택하세요",
     "minTargets": "최소 1개 대상, 3개 이상 항목 권장",
     "selectSheet": "시트를 선택해주세요",
+    "noSheetSelected": "시트가 선택되지 않았습니다",
+    "selectSheetToCompare": "왼쪽 시트 목록에서 시트를 선택하면 데이터를 비교할 수 있습니다",
     "close": "닫기",
     "help": "도움말",
     "visualizeData": "{sheetName} 시트의 데이터를 시각화합니다",

@@ -10,6 +10,7 @@ import { useTranslations } from 'next-intl';
 
 interface SimulationPanelProps {
   onClose: () => void;
+  onDragStart?: (e: React.MouseEvent) => void;
 }
 
 // 히스토그램 컴포넌트
@@ -72,7 +73,7 @@ function ConfidenceBar({ winRate, confidence, color }: {
   );
 }
 
-export default function SimulationPanel({ onClose }: SimulationPanelProps) {
+export default function SimulationPanel({ onClose, onDragStart }: SimulationPanelProps) {
   const t = useTranslations('simulation');
   // ESC 키로 패널 닫기
   useEscapeKey(onClose);
@@ -210,7 +211,15 @@ export default function SimulationPanel({ onClose }: SimulationPanelProps) {
   return (
     <div className="flex flex-col h-full">
       {/* 헤더 */}
-      <div className="flex items-center justify-between px-4 py-3 border-b" style={{ borderColor: 'var(--border-primary)' }}>
+      <div
+        className="flex items-center justify-between px-4 py-3 border-b cursor-grab active:cursor-grabbing"
+        style={{ borderColor: 'var(--border-primary)' }}
+        onMouseDown={(e) => {
+          if (!(e.target as HTMLElement).closest('button') && onDragStart) {
+            onDragStart(e);
+          }
+        }}
+      >
         <div className="flex items-center gap-2">
           <Swords className="w-5 h-5" style={{ color: 'var(--accent)' }} />
           <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('title')}</h3>

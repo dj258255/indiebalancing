@@ -35,9 +35,10 @@ const CATEGORY_COLORS: Record<string, string> = {
 
 interface FormulaHelperProps {
   onClose?: () => void;
+  onDragStart?: (e: React.MouseEvent) => void;
 }
 
-export default function FormulaHelper({ onClose }: FormulaHelperProps) {
+export default function FormulaHelper({ onClose, onDragStart }: FormulaHelperProps) {
   const t = useTranslations();
   const [testFormula, setTestFormula] = useState('');
   const [testResult, setTestResult] = useState<string | null>(null);
@@ -59,6 +60,18 @@ export default function FormulaHelper({ onClose }: FormulaHelperProps) {
       logic: 'formulaHelper.catLogic',
     };
     return t(keyMap[id] || id);
+  };
+
+  // 함수 설명 번역 (특수 문자 포함된 함수명 처리)
+  const getFunctionDescription = (funcName: string, fallback: string) => {
+    // 점(.)이 포함된 함수명은 번역 키로 사용 불가, 원본 설명 사용
+    if (funcName.includes('.')) {
+      return fallback;
+    }
+    const key = `formulaHelper.functions.${funcName}`;
+    const translated = t(key);
+    // 번역이 없으면 (키가 그대로 반환되면) 원본 설명 사용
+    return translated === key ? fallback : translated;
   };
 
   // 카테고리별 필터링
@@ -99,8 +112,13 @@ export default function FormulaHelper({ onClose }: FormulaHelperProps) {
     <div className="card overflow-hidden h-full flex flex-col">
       {/* 헤더 */}
       <div
-        className="flex items-center justify-between px-4 py-2 shrink-0"
+        className="flex items-center justify-between px-4 py-2 shrink-0 cursor-grab active:cursor-grabbing"
         style={{ background: 'var(--bg-tertiary)' }}
+        onMouseDown={(e) => {
+          if (!(e.target as HTMLElement).closest('button') && onDragStart) {
+            onDragStart(e);
+          }
+        }}
       >
         <div className="flex items-center gap-2">
           <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent)' }}>
@@ -239,7 +257,7 @@ export default function FormulaHelper({ onClose }: FormulaHelperProps) {
                           </span>
                         </div>
                         <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                          {t(`formulaHelper.functions.${func.name}`, { defaultValue: func.description })}
+                          {getFunctionDescription(func.name, func.description)}
                         </p>
                         <code className="text-xs block mt-1 truncate" style={{ color: 'var(--text-tertiary)' }}>
                           {func.syntax}
@@ -269,6 +287,34 @@ export default function FormulaHelper({ onClose }: FormulaHelperProps) {
                         {func.example}
                       </code>
                     </div>
+                    {(func.formula || func.paramHint) && (
+                      <div
+                        className="mt-2 px-2 py-1.5 rounded text-xs border-l-2 space-y-1 overflow-hidden"
+                        style={{
+                          background: 'var(--bg-secondary)',
+                          borderLeftColor: categoryColor || 'var(--accent)',
+                        }}
+                      >
+                        {func.formula && (
+                          <div className="overflow-x-auto">
+                            <div className="flex items-start gap-1.5 min-w-0">
+                              <span className="shrink-0" style={{ color: 'var(--text-tertiary)' }}>{t('formulaHelper.formulaLabel')}</span>
+                              <code
+                                className="font-mono whitespace-nowrap"
+                                style={{ color: 'var(--text-primary)' }}
+                              >
+                                {func.formula}
+                              </code>
+                            </div>
+                          </div>
+                        )}
+                        {func.paramHint && (
+                          <div className="break-words" style={{ color: 'var(--text-tertiary)' }}>
+                            {func.paramHint}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}

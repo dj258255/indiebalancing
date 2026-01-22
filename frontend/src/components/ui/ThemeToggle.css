@@ -1,0 +1,263 @@
+/* 토글 스위치 컨테이너 */
+.theme-toggle-switch {
+  position: relative;
+  cursor: pointer;
+  width: 64px;
+  height: 28px;
+  flex-shrink: 0;
+}
+
+.theme-toggle-switch:hover .toggle-thumb {
+  transform: scale(1.08);
+}
+
+/* 토글 트랙 */
+.toggle-track {
+  width: 100%;
+  height: 100%;
+  border-radius: 40px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.5s ease;
+  box-shadow:
+    inset 0 2px 8px rgba(0, 0, 0, 0.2),
+    0 2px 10px rgba(0, 0, 0, 0.15);
+}
+
+/* 라이트 모드 트랙 */
+.theme-toggle-switch.light .toggle-track {
+  background: linear-gradient(180deg, #87CEEB 0%, #B0E0E6 50%, #E0F4FF 100%);
+}
+
+/* 다크 모드 트랙 */
+.theme-toggle-switch.dark .toggle-track {
+  background: linear-gradient(180deg, #1a1a2e 0%, #2d2d44 50%, #3d3d5c 100%);
+}
+
+/* 구름 */
+.toggle-clouds {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.theme-toggle-switch.light .toggle-clouds {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.theme-toggle-switch.dark .toggle-clouds {
+  opacity: 0;
+  transform: translateX(-20px);
+}
+
+.cloud {
+  position: absolute;
+  background: white;
+  border-radius: 50px;
+  box-shadow: 0 1px 5px rgba(255, 255, 255, 0.5);
+}
+
+.cloud::before,
+.cloud::after {
+  content: '';
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+}
+
+.cloud-1 {
+  width: 14px;
+  height: 6px;
+  bottom: 4px;
+  right: 6px;
+}
+
+.cloud-1::before {
+  width: 6px;
+  height: 6px;
+  top: -3px;
+  left: 2px;
+}
+
+.cloud-1::after {
+  width: 5px;
+  height: 5px;
+  top: -2px;
+  right: 2px;
+}
+
+.cloud-2 {
+  width: 10px;
+  height: 4px;
+  bottom: 10px;
+  right: 16px;
+}
+
+.cloud-2::before {
+  width: 5px;
+  height: 5px;
+  top: -3px;
+  left: 2px;
+}
+
+.cloud-2::after {
+  width: 4px;
+  height: 4px;
+  top: -2px;
+  right: 2px;
+}
+
+.cloud-3 {
+  width: 8px;
+  height: 3px;
+  top: 6px;
+  right: 10px;
+}
+
+.cloud-3::before {
+  width: 4px;
+  height: 4px;
+  top: -2px;
+  left: 2px;
+}
+
+.cloud-3::after {
+  width: 3px;
+  height: 3px;
+  top: -1px;
+  right: 2px;
+}
+
+/* 별 */
+.toggle-stars {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.theme-toggle-switch.light .toggle-stars {
+  opacity: 0;
+  transform: translateX(20px);
+}
+
+.theme-toggle-switch.dark .toggle-stars {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.star {
+  position: absolute;
+  background: white;
+  border-radius: 50%;
+  animation: twinkle 2s ease-in-out infinite;
+}
+
+.star-1 { width: 2px; height: 2px; top: 5px; left: 8px; animation-delay: 0s; }
+.star-2 { width: 1.5px; height: 1.5px; top: 12px; left: 16px; animation-delay: 0.3s; }
+.star-3 { width: 2px; height: 2px; top: 8px; left: 24px; animation-delay: 0.6s; }
+.star-4 { width: 1.5px; height: 1.5px; top: 18px; left: 10px; animation-delay: 0.9s; }
+.star-5 { width: 1.5px; height: 1.5px; top: 16px; left: 22px; animation-delay: 1.2s; }
+
+@keyframes twinkle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+/* 토글 썸 (해/달) */
+.toggle-thumb {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  top: 3px;
+  border-radius: 50%;
+  transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.theme-toggle-switch.light .toggle-thumb {
+  left: 3px;
+  background: linear-gradient(135deg, #FFD93D 0%, #F4A524 100%);
+  box-shadow:
+    0 0 10px rgba(255, 200, 50, 0.6),
+    0 0 20px rgba(255, 180, 0, 0.3),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.1);
+}
+
+.theme-toggle-switch.dark .toggle-thumb {
+  left: 39px;
+  background: linear-gradient(135deg, #f5f5f5 0%, #e0e0e0 100%);
+  box-shadow:
+    0 0 8px rgba(255, 255, 255, 0.3),
+    inset 0 -2px 5px rgba(0, 0, 0, 0.1);
+}
+
+/* 해 */
+.sun {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.theme-toggle-switch.light .sun {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+.theme-toggle-switch.dark .sun {
+  opacity: 0;
+  transform: scale(0.5) rotate(90deg);
+}
+
+/* 달 */
+.moon {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+
+.theme-toggle-switch.light .moon {
+  opacity: 0;
+  transform: scale(0.5) rotate(-90deg);
+}
+
+.theme-toggle-switch.dark .moon {
+  opacity: 1;
+  transform: scale(1) rotate(0deg);
+}
+
+/* 달 크레이터 */
+.moon-crater {
+  position: absolute;
+  background: rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+}
+
+.crater-1 {
+  width: 5px;
+  height: 5px;
+  top: 4px;
+  left: 5px;
+}
+
+.crater-2 {
+  width: 3px;
+  height: 3px;
+  top: 11px;
+  left: 10px;
+}
+
+.crater-3 {
+  width: 2.5px;
+  height: 2.5px;
+  top: 8px;
+  left: 14px;
+}

@@ -16,6 +16,7 @@ interface ProjectState {
   projects: Project[];
   currentProjectId: string | null;
   currentSheetId: string | null;
+  openSheetTabs: string[];  // 열린 시트 탭 목록
   isLoading: boolean;
   lastSaved: number | null;
   selectedRows: SelectedRowData[];  // 선택된 행들
@@ -34,6 +35,9 @@ interface ProjectState {
   setCurrentSheet: (id: string | null) => void;
   duplicateSheet: (projectId: string, sheetId: string) => string;
   reorderSheets: (projectId: string, fromIndex: number, toIndex: number) => void;
+  openSheetTab: (sheetId: string) => void;
+  closeSheetTab: (sheetId: string) => void;
+  reorderOpenTabs: (fromIndex: number, toIndex: number) => void;
 
   // 컬럼 액션
   addColumn: (projectId: string, sheetId: string, column: Omit<Column, 'id'>) => string;
@@ -71,6 +75,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   projects: [],
   currentProjectId: null,
   currentSheetId: null,
+  openSheetTabs: [],
   isLoading: false,
   lastSaved: null,
   selectedRows: [],
@@ -143,6 +148,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           : p
       ),
       currentSheetId: id,
+      openSheetTabs: [...state.openSheetTabs, id],
     }));
 
     return id;
@@ -182,26 +188,73 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       updatedAt: now,
     } : null;
 
-    set((state) => ({
-      projects: state.projects.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              sheets: isLastSheet && newSheet
-                ? [newSheet]
-                : p.sheets.filter((s) => s.id !== sheetId),
-              updatedAt: now,
-            }
-          : p
-      ),
-      currentSheetId: state.currentSheetId === sheetId
-        ? (isLastSheet ? newSheetId : null)
-        : state.currentSheetId,
-    }));
+    set((state) => {
+      const newOpenTabs = state.openSheetTabs.filter((id) => id !== sheetId);
+      return {
+        projects: state.projects.map((p) =>
+          p.id === projectId
+            ? {
+                ...p,
+                sheets: isLastSheet && newSheet
+                  ? [newSheet]
+                  : p.sheets.filter((s) => s.id !== sheetId),
+                updatedAt: now,
+              }
+            : p
+        ),
+        openSheetTabs: isLastSheet && newSheetId
+          ? [...newOpenTabs, newSheetId]
+          : newOpenTabs,
+        currentSheetId: state.currentSheetId === sheetId
+          ? (isLastSheet ? newSheetId : (newOpenTabs.length > 0 ? newOpenTabs[newOpenTabs.length - 1] : null))
+          : state.currentSheetId,
+      };
+    });
   },
 
   setCurrentSheet: (id) => {
-    set({ currentSheetId: id });
+    if (id) {
+      // 시트를 선택하면 자동으로 탭 열기
+      set((state) => ({
+        currentSheetId: id,
+        openSheetTabs: state.openSheetTabs.includes(id)
+          ? state.openSheetTabs
+          : [...state.openSheetTabs, id],
+      }));
+    } else {
+      set({ currentSheetId: id });
+    }
+  },
+
+  openSheetTab: (sheetId) => {
+    set((state) => ({
+      openSheetTabs: state.openSheetTabs.includes(sheetId)
+        ? state.openSheetTabs
+        : [...state.openSheetTabs, sheetId],
+      currentSheetId: sheetId,
+    }));
+  },
+
+  closeSheetTab: (sheetId) => {
+    set((state) => {
+      const newTabs = state.openSheetTabs.filter((id) => id !== sheetId);
+      const needNewSelection = state.currentSheetId === sheetId;
+      return {
+        openSheetTabs: newTabs,
+        currentSheetId: needNewSelection
+          ? (newTabs.length > 0 ? newTabs[newTabs.length - 1] : null)
+          : state.currentSheetId,
+      };
+    });
+  },
+
+  reorderOpenTabs: (fromIndex, toIndex) => {
+    set((state) => {
+      const tabs = [...state.openSheetTabs];
+      const [removed] = tabs.splice(fromIndex, 1);
+      tabs.splice(toIndex, 0, removed);
+      return { openSheetTabs: tabs };
+    });
   },
 
   duplicateSheet: (projectId, sheetId) => {
@@ -229,6 +282,8 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           ? { ...p, sheets: [...p.sheets, newSheet], updatedAt: now }
           : p
       ),
+      openSheetTabs: [...state.openSheetTabs, newId],
+      currentSheetId: newId,
     }));
 
     return newId;

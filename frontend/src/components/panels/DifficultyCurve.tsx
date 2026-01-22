@@ -27,6 +27,7 @@ const hideSpinnerStyle = `
 
 interface DifficultyCurveProps {
   onClose?: () => void;
+  onDragStart?: (e: React.MouseEvent) => void;
 }
 
 // 난이도 구간 정의
@@ -79,7 +80,7 @@ interface MilestoneData {
   powerBonus: number; // 플레이어 파워 증가율 (예: 30 = +30%)
 }
 
-export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
+export default function DifficultyCurve({ onClose, onDragStart }: DifficultyCurveProps) {
   const t = useTranslations('difficultyCurve');
   const [preset, setPreset] = useState<keyof typeof CURVE_PRESETS>('balanced');
   const [playtime, setPlaytime] = useState<keyof typeof PLAYTIME_TARGETS>('1hr');
@@ -253,8 +254,13 @@ export default function DifficultyCurve({ onClose }: DifficultyCurveProps) {
       <style>{hideSpinnerStyle}</style>
       {/* 헤더 */}
       <div
-        className="flex items-center justify-between px-4 py-2 shrink-0"
+        className="flex items-center justify-between px-4 py-2 shrink-0 cursor-grab active:cursor-grabbing"
         style={{ background: 'var(--bg-tertiary)' }}
+        onMouseDown={(e) => {
+          if (!(e.target as HTMLElement).closest('button') && onDragStart) {
+            onDragStart(e);
+          }
+        }}
       >
         <div className="flex items-center gap-2">
           <div

@@ -484,6 +484,12 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
                 color="var(--accent)"
                 extra={`${t('baseDps')}: ${(dpsInputs.damage * dpsInputs.attackSpeed).toFixed(2)} | ${t('critBonus')}: +${((dpsResult / (dpsInputs.damage * dpsInputs.attackSpeed) - 1) * 100).toFixed(1)}%`}
               />
+
+              {/* 공식 */}
+              <FormulaBox
+                formula="damage × (1 + critRate × (critDamage - 1)) × attackSpeed"
+                hint={t('dpsFormulaHint')}
+              />
             </div>
           )}
 
@@ -521,6 +527,12 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
                   color="var(--warning)"
                 />
               </div>
+
+              {/* 공식 */}
+              <FormulaBox
+                formula="(ceil(targetHP / damage) - 1) / attackSpeed"
+                hint={t('ttkFormulaHint')}
+              />
             </div>
           )}
 
@@ -553,6 +565,12 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
                 value={ehpResult.toFixed(0)}
                 color="var(--accent)"
                 extra={`${t('vsOriginal')} ${((ehpResult / ehpInputs.hp) * 100).toFixed(1)}% (×${(ehpResult / ehpInputs.hp).toFixed(2)})`}
+              />
+
+              {/* 공식 */}
+              <FormulaBox
+                formula="hp × (1 + def/100) × (1 / (1 - damageReduction))"
+                hint={t('ehpFormulaHint')}
               />
             </div>
           )}
@@ -591,6 +609,12 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
                   color="var(--text-secondary)"
                 />
               </div>
+
+              {/* 공식 */}
+              <FormulaBox
+                formula="atk × (100 / (100 + def)) × multiplier"
+                hint={t('damageFormulaHint')}
+              />
             </div>
           )}
 
@@ -761,6 +785,34 @@ function ResultCard({
       <div className="text-3xl font-bold" style={{ color }}>{value}</div>
       {extra && (
         <div className="text-xs mt-2" style={{ color: 'var(--text-tertiary)' }}>{extra}</div>
+      )}
+    </div>
+  );
+}
+
+function FormulaBox({
+  formula,
+  hint,
+}: {
+  formula: string;
+  hint?: string;
+}) {
+  return (
+    <div
+      className="rounded-lg p-3 border-l-3"
+      style={{
+        background: 'var(--bg-secondary)',
+        borderLeft: '3px solid var(--accent)',
+      }}
+    >
+      <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>공식</div>
+      <code className="text-sm font-mono" style={{ color: 'var(--text-primary)' }}>
+        {formula}
+      </code>
+      {hint && (
+        <div className="text-xs mt-2" style={{ color: 'var(--text-tertiary)' }}>
+          {hint}
+        </div>
       )}
     </div>
   );

@@ -627,7 +627,8 @@ function processSheetReferences(
     const [fullMatch, sheetName, refName] = match;
 
     // 이전행 참조는 별도로 처리
-    if (sheetName === '이전행') continue;
+    // 이전행/PREV 참조는 별도로 처리
+    if (sheetName === '이전행' || sheetName === 'PREV') continue;
 
     const sheet = sheets.find(s => s.name === sheetName);
     if (!sheet) {
@@ -680,8 +681,8 @@ function processSheetReferences(
 }
 
 /**
- * 이전행 참조 (이전행.컬럼명) 처리
- * 예: 이전행.누적EXP, 이전행.레벨
+ * 이전행 참조 (이전행.컬럼명 또는 PREV.컬럼명) 처리
+ * 예: 이전행.누적EXP, 이전행.레벨, PREV.CumulativeEXP, PREV.Level
  */
 function processPreviousRowReferences(
   expression: string,
@@ -693,8 +694,8 @@ function processPreviousRowReferences(
   let convertedExpr = expression;
   let prevIndex = 0;
 
-  // 이전행.컬럼명 패턴 찾기
-  const prevRowPattern = /이전행\.([가-힣a-zA-Z_][가-힣a-zA-Z0-9_()%]*)/g;
+  // 이전행.컬럼명 또는 PREV.컬럼명 패턴 찾기 (한글/영어 둘 다 지원)
+  const prevRowPattern = /(?:이전행|PREV)\.([가-힣a-zA-Z_][가-힣a-zA-Z0-9_()%]*)/g;
 
   let match;
   const replacements: { original: string; varName: string; value: CellValue }[] = [];
@@ -1002,7 +1003,7 @@ export function validateFormulaDetailed(
   let sheetMatch;
   while ((sheetMatch = sheetRefPattern.exec(expression)) !== null) {
     const sheetName = sheetMatch[1];
-    if (sheetName !== '이전행' && !result.referencedSheets.includes(sheetName)) {
+    if (sheetName !== '이전행' && sheetName !== 'PREV' && !result.referencedSheets.includes(sheetName)) {
       result.referencedSheets.push(sheetName);
 
       // 존재하지 않는 시트 경고
@@ -1012,9 +1013,9 @@ export function validateFormulaDetailed(
     }
   }
 
-  // 5. 이전행 참조 경고 (첫 번째 행에서는 0이 됨)
-  if (expression.includes('이전행.')) {
-    result.warnings.push('이전행 참조는 첫 번째 행에서 0으로 처리됩니다');
+  // 5. 이전행/PREV 참조 경고 (첫 번째 행에서는 0이 됨)
+  if (expression.includes('이전행.') || expression.includes('PREV.')) {
+    result.warnings.push('이전행/PREV 참조는 첫 번째 행에서 0으로 처리됩니다');
   }
 
   // 6. 컬럼 참조 확인
@@ -1099,6 +1100,7 @@ export const availableFunctions = [
     syntax: 'SCALE(base, level, rate, curveType)',
     example: 'SCALE(100, 10, 1.5, "exponential")',
     category: 'combat',
+    formula: 'linear: base + level × rate | exponential: base × rate^level | logarithmic: base + rate × ln(level) | quadratic: base + rate × level²',
   },
   {
     name: 'DAMAGE',
@@ -1106,6 +1108,7 @@ export const availableFunctions = [
     syntax: 'DAMAGE(atk, def, multiplier?)',
     example: 'DAMAGE(150, 50)',
     category: 'combat',
+    formula: 'atk × (100 / (100 + def)) × multiplier',
   },
   {
     name: 'DPS',
@@ -1113,6 +1116,8 @@ export const availableFunctions = [
     syntax: 'DPS(damage, attackSpeed, critRate?, critDamage?)',
     example: 'DPS(100, 2, 0.3, 2)',
     category: 'combat',
+    formula: 'damage × (1 + critRate × (critDamage - 1)) × attackSpeed',
+    paramHint: 'critRate: 0~1 (30%=0.3), critDamage: 배율 (2=200%)',
   },
   {
     name: 'TTK',
@@ -1120,6 +1125,7 @@ export const availableFunctions = [
     syntax: 'TTK(targetHP, damage, attackSpeed)',
     example: 'TTK(1000, 100, 2)',
     category: 'combat',
+    formula: '(ceil(targetHP / damage) - 1) / attackSpeed',
   },
   {
     name: 'EHP',
@@ -1127,6 +1133,7 @@ export const availableFunctions = [
     syntax: 'EHP(hp, def, damageReduction?)',
     example: 'EHP(1000, 50)',
     category: 'combat',
+    formula: 'hp × (1 + def/100) × (1 / (1 - damageReduction))',
   },
 
   // 확률/경제
@@ -1252,7 +1259,7 @@ export const availableFunctions = [
     name: 'REF',
     description: '다른 시트 참조',
     syntax: 'REF(sheetName, rowId, columnName)',
-    example: 'REF("몬스터", "고블린", "HP")',
+    example: 'REF("Monsters", "Goblin", "HP")',
     category: 'ref',
   },
 
@@ -1536,17 +1543,17 @@ export const availableFunctions = [
 
   // 특수 참조 문법
   {
-    name: '시트명.변수명',
+    name: 'SheetRef',
     description: '다른 시트 값 참조',
-    syntax: '시트명.변수명',
-    example: '글로벌설정.BASE_HP',
+    syntax: 'SheetName.VarName',
+    example: 'Settings.BASE_HP',
     category: 'ref',
   },
   {
-    name: '이전행.컬럼명',
+    name: 'PrevRow',
     description: '이전 행의 값 참조',
-    syntax: '이전행.컬럼명',
-    example: '이전행.누적EXP',
+    syntax: 'PREV.ColumnName (또는 이전행.컬럼명)',
+    example: 'PREV.CumulativeEXP',
     category: 'ref',
   },
 ];

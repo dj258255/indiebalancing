@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, BarChart3, HelpCircle } from 'lucide-react';
+import { X, BarChart3, HelpCircle, FunctionSquare, Shield, TrendingUp, Swords } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   Calculator,
@@ -10,9 +10,14 @@ import {
   BalanceAnalysisPanel,
   ImbalanceDetectorPanel,
   GoalSolverPanel,
+  FormulaHelper,
+  BalanceValidator,
+  DifficultyCurve,
+  SimulationPanel,
 } from '@/components/panels';
 import { PresetComparisonModal } from '@/components/modals';
 import type { DraggableState } from '@/hooks';
+import { useToolLayoutStore } from '@/stores/toolLayoutStore';
 
 interface PanelConfig {
   x: number;
@@ -41,6 +46,11 @@ interface FloatingPanelsProps {
     imbalance: PanelState;
     goal: PanelState;
     balance: PanelState;
+    // 하단에서 이동해온 패널 도구들
+    formulaHelper: PanelState;
+    balanceValidator: PanelState;
+    difficultyCurve: PanelState;
+    simulation: PanelState;
   };
   config: Record<string, PanelConfig>;
 }
@@ -56,6 +66,11 @@ export default function FloatingPanels({
   const t = useTranslations();
   const [showChartHelp, setShowChartHelp] = useState(false);
   const [chartHelpHeight, setChartHelpHeight] = useState(100);
+
+  const { toolLocations } = useToolLayoutStore();
+
+  // 사이드바에 있는 도구만 플로팅 패널로 표시
+  const isInSidebar = (toolId: string) => toolLocations[toolId as keyof typeof toolLocations] === 'sidebar';
 
   const getPanelStyle = (panelId: string) => {
     const state = panelStates[panelId];
@@ -283,6 +298,55 @@ export default function FloatingPanels({
             onDragStart={createDragHandler('balance')}
           />
           <ResizeHandles panelId="balance" />
+        </div>
+      )}
+
+      {/* 하단에서 사이드바로 이동한 패널 도구들 - 플로팅 패널로 표시 */}
+      {/* Formula Helper Panel (사이드바에 있을 때만) */}
+      {panels.formulaHelper.show && isInSidebar('formulaHelper') && (
+        <div
+          className="fixed hidden md:flex flex-col rounded-xl overflow-hidden"
+          style={getPanelStyle('formulaHelper')}
+          onMouseDown={() => bringToFront('formulaHelper')}
+        >
+          <FormulaHelper onClose={() => panels.formulaHelper.setShow(false)} />
+          <ResizeHandles panelId="formulaHelper" />
+        </div>
+      )}
+
+      {/* Balance Validator Panel (사이드바에 있을 때만) */}
+      {panels.balanceValidator.show && isInSidebar('balanceValidator') && (
+        <div
+          className="fixed hidden md:flex flex-col rounded-xl overflow-hidden"
+          style={getPanelStyle('balanceValidator')}
+          onMouseDown={() => bringToFront('balanceValidator')}
+        >
+          <BalanceValidator onClose={() => panels.balanceValidator.setShow(false)} />
+          <ResizeHandles panelId="balanceValidator" />
+        </div>
+      )}
+
+      {/* Difficulty Curve Panel (사이드바에 있을 때만) */}
+      {panels.difficultyCurve.show && isInSidebar('difficultyCurve') && (
+        <div
+          className="fixed hidden md:flex flex-col rounded-xl overflow-hidden"
+          style={getPanelStyle('difficultyCurve')}
+          onMouseDown={() => bringToFront('difficultyCurve')}
+        >
+          <DifficultyCurve onClose={() => panels.difficultyCurve.setShow(false)} />
+          <ResizeHandles panelId="difficultyCurve" />
+        </div>
+      )}
+
+      {/* Simulation Panel (사이드바에 있을 때만) */}
+      {panels.simulation.show && isInSidebar('simulation') && (
+        <div
+          className="fixed hidden md:flex flex-col rounded-xl overflow-hidden"
+          style={getPanelStyle('simulation')}
+          onMouseDown={() => bringToFront('simulation')}
+        >
+          <SimulationPanel onClose={() => panels.simulation.setShow(false)} />
+          <ResizeHandles panelId="simulation" />
         </div>
       )}
     </>

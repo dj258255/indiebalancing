@@ -153,6 +153,21 @@ export function usePanelManager(options: UsePanelManagerOptions) {
     return states;
   });
 
+  // panels 배열이 변경되면 새 패널 추가
+  useEffect(() => {
+    setPanelStates(prev => {
+      const newStates = { ...prev };
+      let hasChanges = false;
+      panels.forEach((panel, index) => {
+        if (!newStates[panel]) {
+          newStates[panel] = initialStates[panel] || defaultState(index);
+          hasChanges = true;
+        }
+      });
+      return hasChanges ? newStates : prev;
+    });
+  }, [panels, initialStates]);
+
   const [maxZ, setMaxZ] = useState(30 + panels.length);
 
   const bringToFront = useCallback((panelId: string) => {

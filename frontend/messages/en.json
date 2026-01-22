@@ -32,7 +32,9 @@
     "importJsonDesc": "Add projects, keep existing data",
     "importCsv": "Import CSV",
     "importCsvDesc": "Add as new sheet",
-    "selectProjectFirst": "Select a project first"
+    "selectProjectFirst": "Select a project first",
+    "panelTools": "Panel Tools",
+    "dropHere": "Drag from bottom to add"
   },
   "sheet": {
     "newSheet": "New Sheet",
@@ -235,7 +237,10 @@
     "formulaHelper": "Formula Helper",
     "balanceValidator": "Balance Validator",
     "difficultyCurve": "Difficulty Curve",
-    "simulation": "Combat Simulation"
+    "simulation": "Combat Simulation",
+    "dropHere": "Drag from sidebar to add",
+    "rightClickToReturn": "Right-click to return to sidebar",
+    "dropToMove": "Drop here to move"
   },
   "welcome": {
     "title": "IndieBalancing",
@@ -359,6 +364,7 @@
     "functionList": "Function List",
     "showing": "{count} showing",
     "copyExample": "Copy Example",
+    "formulaLabel": "Formula:",
     "syntaxGuide": "Formula Syntax Guide",
     "formulaStart": "starts with = to be recognized as formula",
     "basicOps": "Basic operators:",
@@ -439,8 +445,8 @@
       "RANDBETWEEN": "Random Integer in Range",
       "PI": "Pi Constant (π)",
       "E": "Euler's Number (e)",
-      "시트명.변수명": "Reference Other Sheet Value",
-      "이전행.컬럼명": "Reference Previous Row Value"
+      "SheetRef": "Reference Other Sheet Value",
+      "PrevRow": "Reference Previous Row Value"
     }
   },
   "export": {
@@ -1050,19 +1056,23 @@
     "dpsResult": "DPS Result",
     "baseDps": "Base DPS",
     "critBonus": "Critical bonus",
+    "dpsFormulaHint": "critRate: 0~1 (30%=0.3), critDamage: multiplier (2=200% damage)",
     "targetHp": "Target HP",
     "damage1": "Damage (per hit)",
     "ttkResult": "TTK (Time to Kill)",
     "hitsRequired": "Hits Required",
+    "ttkFormulaHint": "ceil: round up. -1 because no wait time after final hit",
     "hp": "HP",
     "def": "Defense (DEF)",
     "damageReduction": "Damage Reduction (0~0.99)",
     "ehpResult": "Effective HP (EHP)",
+    "ehpFormulaHint": "def 100 = 50% damage reduction. damageReduction is additional % (0.3 = 30%)",
     "vsOriginal": "vs Original HP",
     "atk": "Attack (ATK)",
     "skillMultiplier": "Skill Multiplier",
     "finalDamage": "Final Damage",
     "damageReductionRate": "Damage Reduction Rate",
+    "damageFormulaHint": "Higher def = smaller 100/(100+def) = less damage taken",
     "baseValue": "Base Value",
     "level": "Level",
     "growthRate": "Growth Rate",
@@ -1272,6 +1282,8 @@
     "selectPrompt": "Select targets and items to compare on the left",
     "minTargets": "Minimum 1 target, 3+ items recommended",
     "selectSheet": "Please select a sheet",
+    "noSheetSelected": "No sheet selected",
+    "selectSheetToCompare": "Select a sheet from the sheet list to compare data",
     "close": "Close",
     "help": "Help",
     "visualizeData": "Visualize data from {sheetName} sheet",

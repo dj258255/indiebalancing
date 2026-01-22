@@ -62,9 +62,9 @@ import MobileSidebar from './components/MobileSidebar';
 import SheetHeader from './components/SheetHeader';
 import BottomToolbar from './components/BottomToolbar';
 import EmptySheetView from './components/EmptySheetView';
-import FloatingPanels from './components/FloatingPanels';
 import MobilePanels from './components/MobilePanels';
-import BottomPanels from './components/BottomPanels';
+import ToolPanels from './components/ToolPanels';
+import SidebarResizer from './components/SidebarResizer';
 
 // Panel configuration
 const PANEL_CONFIG = {
@@ -75,6 +75,11 @@ const PANEL_CONFIG = {
   imbalance: { x: 390, y: 136, width: 400, height: 480, zIndex: 30, color: '#eab308' },
   goal: { x: 420, y: 166, width: 380, height: 450, zIndex: 30, color: '#14b8a6' },
   balance: { x: 450, y: 196, width: 420, height: 500, zIndex: 30, color: '#ec4899' },
+  // 하단 패널 도구들 (사이드바로 이동했을 때 플로팅 패널로 표시)
+  formulaHelper: { x: 280, y: 56, width: 400, height: 500, zIndex: 30, color: '#3b82f6' },
+  balanceValidator: { x: 310, y: 86, width: 420, height: 520, zIndex: 30, color: '#22c55e' },
+  difficultyCurve: { x: 340, y: 116, width: 450, height: 480, zIndex: 30, color: '#8b5cf6' },
+  simulation: { x: 370, y: 146, width: 480, height: 550, zIndex: 30, color: '#ef4444' },
 };
 
 export default function Home() {
@@ -115,7 +120,7 @@ export default function Home() {
     createDragHandler,
     createResizeHandler,
   } = usePanelManager({
-    panels: ['calculator', 'comparison', 'chart', 'preset', 'imbalance', 'goal', 'balance'],
+    panels: ['calculator', 'comparison', 'chart', 'preset', 'imbalance', 'goal', 'balance', 'formulaHelper', 'balanceValidator', 'difficultyCurve', 'simulation'],
     initialStates: Object.fromEntries(
       Object.entries(PANEL_CONFIG).map(([key, config]) => [
         key,
@@ -343,6 +348,11 @@ export default function Home() {
     onShowSettings: () => setShowSettings(true),
     onShowExportModal: () => setShowExportModal(true),
     onShowImportModal: () => setShowImportModal(true),
+    // 패널 도구 토글 (하단에서 사이드바로 이동한 경우)
+    onToggleFormulaHelper: () => setShowFormulaHelper(!showFormulaHelper),
+    onToggleBalanceValidator: () => setShowBalanceValidator(!showBalanceValidator),
+    onToggleDifficultyCurve: () => setShowDifficultyCurve(!showDifficultyCurve),
+    onToggleSimulation: () => setShowSimulation(!showSimulation),
   };
 
   // Add memo handler
@@ -414,6 +424,9 @@ export default function Home() {
         <Sidebar {...sidebarCallbacks} />
       </div>
 
+      {/* Sidebar Resizer */}
+      <SidebarResizer />
+
       {/* Main Area */}
       <div className="flex-1 flex flex-col overflow-hidden pt-14 md:pt-0">
         {currentProject ? (
@@ -480,8 +493,8 @@ export default function Home() {
         />
       )}
 
-      {/* Floating Panels (Desktop) */}
-      <FloatingPanels
+      {/* Tool Panels (Desktop) - 위치에 따라 자동으로 적절한 레이아웃 적용 */}
+      <ToolPanels
         panelStates={panelStates}
         bringToFront={bringToFront}
         createDragHandler={createDragHandler}
@@ -494,8 +507,11 @@ export default function Home() {
           imbalance: { show: showImbalanceDetector, setShow: setShowImbalanceDetector },
           goal: { show: showGoalSolver, setShow: setShowGoalSolver },
           balance: { show: showBalanceAnalysis, setShow: setShowBalanceAnalysis },
+          formulaHelper: { show: showFormulaHelper, setShow: setShowFormulaHelper },
+          balanceValidator: { show: showBalanceValidator, setShow: setShowBalanceValidator },
+          difficultyCurve: { show: showDifficultyCurve, setShow: setShowDifficultyCurve },
+          simulation: { show: showSimulation, setShow: setShowSimulation },
         }}
-        config={PANEL_CONFIG}
       />
 
       {/* Mobile Panels */}
@@ -508,41 +524,29 @@ export default function Home() {
         }}
       />
 
-      {/* Bottom Panels and Toolbar */}
-      {currentSheet && (
-        <>
-          <BottomPanels
-            show={{
-              formulaHelper: showFormulaHelper,
-              balanceValidator: showBalanceValidator,
-              difficultyCurve: showDifficultyCurve,
-              simulation: showSimulation,
-            }}
-            setShow={{
-              formulaHelper: setShowFormulaHelper,
-              balanceValidator: setShowBalanceValidator,
-              difficultyCurve: setShowDifficultyCurve,
-              simulation: setShowSimulation,
-            }}
-          />
-
-          <BottomToolbar
-            show={{
-              formulaHelper: showFormulaHelper,
-              balanceValidator: showBalanceValidator,
-              difficultyCurve: showDifficultyCurve,
-              simulation: showSimulation,
-            }}
-            setShow={{
-              formulaHelper: setShowFormulaHelper,
-              balanceValidator: setShowBalanceValidator,
-              difficultyCurve: setShowDifficultyCurve,
-              simulation: setShowSimulation,
-            }}
-            isModalOpen={isModalOpen}
-          />
-        </>
-      )}
+      {/* Bottom Toolbar (항상 표시) */}
+      <BottomToolbar
+        show={{
+          formulaHelper: showFormulaHelper,
+          balanceValidator: showBalanceValidator,
+          difficultyCurve: showDifficultyCurve,
+          simulation: showSimulation,
+        }}
+        setShow={{
+          formulaHelper: setShowFormulaHelper,
+          balanceValidator: setShowBalanceValidator,
+          difficultyCurve: setShowDifficultyCurve,
+          simulation: setShowSimulation,
+        }}
+        onShowCalculator={() => setShowCalculator(!showCalculator)}
+        onShowComparison={() => setShowComparison(!showComparison)}
+        onShowChart={() => setShowChart(!showChart)}
+        onShowPresetComparison={() => setShowPresetComparison(!showPresetComparison)}
+        onShowImbalanceDetector={() => setShowImbalanceDetector(!showImbalanceDetector)}
+        onShowGoalSolver={() => setShowGoalSolver(!showGoalSolver)}
+        onShowBalanceAnalysis={() => setShowBalanceAnalysis(!showBalanceAnalysis)}
+        isModalOpen={isModalOpen}
+      />
     </div>
   );
 }
