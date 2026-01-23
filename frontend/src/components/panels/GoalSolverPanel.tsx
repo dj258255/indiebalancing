@@ -333,7 +333,7 @@ export default function GoalSolverPanel({ onClose, onDragStart }: GoalSolverPane
 
                           {/* 설명 */}
                           <div className="px-4 py-3 space-y-3" style={{ background: 'var(--bg-tertiary)' }}>
-                            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                            <p className="text-sm whitespace-pre-line" style={{ color: 'var(--text-secondary)' }}>
                               {result.explanation}
                             </p>
                             <div className="px-3 py-2 rounded-lg font-mono text-xs" style={{ background: 'var(--bg-primary)', color: 'var(--text-tertiary)' }}>
@@ -348,7 +348,7 @@ export default function GoalSolverPanel({ onClose, onDragStart }: GoalSolverPane
                           </div>
                           <div>
                             <div className="text-sm font-semibold" style={{ color: '#dc2626' }}>{t('calculationFailed')}</div>
-                            <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                            <div className="text-sm whitespace-pre-line" style={{ color: 'var(--text-secondary)' }}>
                               {result.explanation}
                             </div>
                           </div>

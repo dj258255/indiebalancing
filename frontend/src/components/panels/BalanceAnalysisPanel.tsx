@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { X, TrendingUp, GitBranch, Target, AlertTriangle, BarChart2, HelpCircle, Maximize2 } from 'lucide-react';
+import { X, TrendingUp, GitBranch, Target, AlertTriangle, BarChart2, HelpCircle, Maximize2, ChevronDown } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 
 // 커스텀 스크롤바 스타일
@@ -60,6 +61,7 @@ export default function BalanceAnalysisPanel({ onClose, onDragStart }: BalanceAn
   const [showMatrixModal, setShowMatrixModal] = useState(false);
   const [showHelp, setShowHelp] = useState(false);
   const [helpHeight, setHelpHeight] = useState(180);
+  const [showTabDropdown, setShowTabDropdown] = useState(false);
 
   const currentProject = projects.find(p => p.id === currentProjectId);
   const currentSheet = currentProject?.sheets.find(s => s.id === currentSheetId);
@@ -340,75 +342,75 @@ export default function BalanceAnalysisPanel({ onClose, onDragStart }: BalanceAn
 
       {/* 도움말 패널 */}
       {showHelp && (
-        <div className="shrink-0 animate-slideDown flex flex-col" style={{ height: `${helpHeight + 6}px`, minHeight: '66px', maxHeight: '406px', borderBottom: '1px solid var(--border-primary)' }}>
+        <div className="shrink-0 animate-slideDown flex flex-col" style={{ height: `${helpHeight + 6}px`, minHeight: '66px', maxHeight: '506px', borderBottom: '1px solid var(--border-primary)' }}>
           <div
-            className="flex-1 px-4 py-3 text-sm overflow-y-auto"
+            className="flex-1 px-4 py-3 overflow-y-auto"
             style={{ background: 'var(--bg-tertiary)' }}
           >
-            <div className="font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>밸런스 분석 도구</div>
-            <p className="mb-3 text-xs" style={{ color: 'var(--text-secondary)' }}>시트 데이터를 기반으로 심층적인 패턴 분석을 수행합니다.</p>
+            <div className="font-semibold mb-3 text-sm" style={{ color: 'var(--text-primary)' }}>밸런스 분석 도구</div>
+            <p className="mb-3 text-sm" style={{ color: 'var(--text-secondary)' }}>시트 데이터를 기반으로 심층적인 패턴 분석을 수행합니다.</p>
 
-            <div className="space-y-3 text-xs">
+            <div className="space-y-3">
               {/* 상성 분석 */}
-              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <GitBranch className="w-3.5 h-3.5" style={{ color: '#ec4899' }} />
-                  <span className="font-semibold" style={{ color: '#ec4899' }}>상성 분석</span>
+                  <GitBranch className="w-4 h-4" style={{ color: '#6366f1' }} />
+                  <span className="font-semibold text-sm" style={{ color: '#6366f1' }}>상성 분석</span>
                 </div>
-                <p style={{ color: 'var(--text-secondary)' }}>유닛 간 1:1 전투 시뮬레이션으로 승률 매트릭스 생성</p>
-                <div className="mt-1.5 text-[10px] space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>유닛 간 1:1 전투 시뮬레이션으로 승률 매트릭스 생성</p>
+                <div className="mt-2 text-xs space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
                   <div>- 필요 컬럼: name, hp, atk, def, speed</div>
                   <div>- 결과: 승률표, OP/약캐 감지, 가위바위보 순환 탐지</div>
                 </div>
               </div>
 
               {/* 파워 커브 */}
-              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <TrendingUp className="w-3.5 h-3.5" style={{ color: '#10b981' }} />
-                  <span className="font-semibold" style={{ color: '#10b981' }}>파워 커브</span>
+                  <TrendingUp className="w-4 h-4" style={{ color: '#22c55e' }} />
+                  <span className="font-semibold text-sm" style={{ color: '#22c55e' }}>파워 커브</span>
                 </div>
-                <p style={{ color: 'var(--text-secondary)' }}>레벨별 파워가 어떤 패턴으로 성장하는지 분석</p>
-                <div className="mt-1.5 text-[10px] space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>레벨별 파워가 어떤 패턴으로 성장하는지 분석</p>
+                <div className="mt-2 text-xs space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
                   <div>- 필요 컬럼: level + 스탯들</div>
                   <div>- 결과: 선형/지수/로그 타입, 이상치 감지</div>
                 </div>
               </div>
 
               {/* 상관관계 */}
-              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <BarChart2 className="w-3.5 h-3.5" style={{ color: '#6366f1' }} />
-                  <span className="font-semibold" style={{ color: '#6366f1' }}>상관관계</span>
+                  <BarChart2 className="w-4 h-4" style={{ color: '#3b82f6' }} />
+                  <span className="font-semibold text-sm" style={{ color: '#3b82f6' }}>상관관계</span>
                 </div>
-                <p style={{ color: 'var(--text-secondary)' }}>스탯 간 상관계수 분석 (HP-DEF 등)</p>
-                <div className="mt-1.5 text-[10px] space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>스탯 간 상관계수 분석 (HP-DEF 등)</p>
+                <div className="mt-2 text-xs space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
                   <div>- 필요: 3개 이상 유닛</div>
                   <div>- 결과: 강한 상관(-1~1), 밸런스 의도 확인</div>
                 </div>
               </div>
 
               {/* 데드존 */}
-              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <AlertTriangle className="w-3.5 h-3.5" style={{ color: '#f59e0b' }} />
-                  <span className="font-semibold" style={{ color: '#f59e0b' }}>데드존</span>
+                  <AlertTriangle className="w-4 h-4" style={{ color: '#f59e0b' }} />
+                  <span className="font-semibold text-sm" style={{ color: '#f59e0b' }}>데드존</span>
                 </div>
-                <p style={{ color: 'var(--text-secondary)' }}>사용되지 않는 스탯 구간 자동 탐지</p>
-                <div className="mt-1.5 text-[10px] space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>사용되지 않는 스탯 구간 자동 탐지</p>
+                <div className="mt-2 text-xs space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
                   <div>- 자동 분석 (버튼 없음)</div>
                   <div>- 결과: 비어있는 구간, 밀집/분산 경고</div>
                 </div>
               </div>
 
               {/* 커브 생성 */}
-              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <Target className="w-3.5 h-3.5" style={{ color: '#8b5cf6' }} />
-                  <span className="font-semibold" style={{ color: '#8b5cf6' }}>커브 생성</span>
+                  <Target className="w-4 h-4" style={{ color: '#8b5cf6' }} />
+                  <span className="font-semibold text-sm" style={{ color: '#8b5cf6' }}>커브 생성</span>
                 </div>
-                <p style={{ color: 'var(--text-secondary)' }}>레벨별 스탯 성장표를 자동 생성</p>
-                <div className="mt-1.5 text-[10px] space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>레벨별 스탯 성장표를 자동 생성</p>
+                <div className="mt-2 text-xs space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
                   <div>- 입력: 기본스탯, 최대레벨, 성장률, 타입</div>
                   <div>- 결과: 복사해서 시트에 붙여넣기 가능</div>
                 </div>
@@ -438,25 +440,81 @@ export default function BalanceAnalysisPanel({ onClose, onDragStart }: BalanceAn
         </div>
       )}
 
-      {/* 탭 */}
-      <div className="flex border-b overflow-x-auto custom-tab-scroll" style={{ borderColor: 'var(--border-primary)' }}>
-        {tabs.map(tab => (
+      {/* 분석 유형 선택 드롭다운 */}
+      <div className="flex items-center gap-2 px-3 py-2 border-b" style={{ borderColor: 'var(--border-primary)' }}>
+        <div className="relative flex-1">
           <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id)}
-            title={tab.tooltip}
-            className={`flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap transition-colors ${
-              activeTab === tab.id ? 'border-b-2' : ''
-            }`}
+            onClick={() => setShowTabDropdown(!showTabDropdown)}
+            className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-all hover:opacity-90"
             style={{
-              color: activeTab === tab.id ? tab.color : 'var(--text-secondary)',
-              borderColor: activeTab === tab.id ? tab.color : 'transparent',
+              background: `${tabs.find(t => t.id === activeTab)?.color}15`,
+              color: tabs.find(t => t.id === activeTab)?.color,
+              border: `1px solid ${tabs.find(t => t.id === activeTab)?.color}40`
             }}
           >
-            {tab.icon}
-            {tab.label}
+            {(() => {
+              const currentTab = tabs.find(t => t.id === activeTab);
+              return (
+                <>
+                  <span style={{ color: currentTab?.color }}>{currentTab?.icon}</span>
+                  <span className="text-sm font-medium flex-1" style={{ color: currentTab?.color }}>{currentTab?.label}</span>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{currentTab?.tooltip}</span>
+                  <ChevronDown className={cn("w-4 h-4 transition-transform duration-200 ml-1", showTabDropdown && "rotate-180")} style={{ color: 'var(--text-tertiary)' }} />
+                </>
+              );
+            })()}
           </button>
-        ))}
+          {showTabDropdown && (
+            <>
+              <div className="fixed inset-0 z-40" onClick={() => setShowTabDropdown(false)} />
+              <div
+                className="absolute left-0 right-0 top-full mt-1 rounded-lg shadow-lg z-50 overflow-hidden"
+                style={{
+                  background: 'var(--bg-primary)',
+                  border: '1px solid var(--border-primary)',
+                }}
+              >
+                <div className="p-1">
+                  {tabs.map((tab) => {
+                    const isActive = activeTab === tab.id;
+                    return (
+                      <button
+                        key={tab.id}
+                        onClick={() => {
+                          setActiveTab(tab.id);
+                          setShowTabDropdown(false);
+                        }}
+                        className="w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors"
+                        style={{
+                          background: isActive ? `${tab.color}15` : 'transparent',
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!isActive) e.currentTarget.style.background = 'var(--bg-hover)';
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!isActive) e.currentTarget.style.background = 'transparent';
+                        }}
+                      >
+                        <div
+                          className="w-6 h-6 rounded-md flex items-center justify-center shrink-0"
+                          style={{ background: `${tab.color}20` }}
+                        >
+                          <span style={{ color: tab.color }}>{tab.icon}</span>
+                        </div>
+                        <span className="text-sm font-medium" style={{ color: isActive ? tab.color : 'var(--text-primary)' }}>
+                          {tab.label}
+                        </span>
+                        <span className="text-xs flex-1 text-right" style={{ color: 'var(--text-tertiary)' }}>
+                          {tab.tooltip}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
       </div>
 
       {/* 내용 */}

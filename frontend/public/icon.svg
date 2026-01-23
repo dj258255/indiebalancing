@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Light mode favicon - 하늘색 배경에 흰색 바 -->
+  <rect x="0" y="0" width="512" height="512" rx="120" fill="#0EA5E9"/>
+
+  <!-- Bar shadows for 3D effect -->
+  <rect x="127" y="148" width="60" height="220" rx="30" fill="#0284C7"/>
+  <rect x="226" y="148" width="60" height="220" rx="30" fill="#0284C7"/>
+  <rect x="325" y="148" width="60" height="220" rx="30" fill="#0284C7"/>
+
+  <!-- Main bars -->
+  <rect x="117" y="135" width="60" height="220" rx="30" fill="#ffffff"/>
+  <rect x="226" y="135" width="60" height="220" rx="30" fill="#ffffff"/>
+  <rect x="335" y="135" width="60" height="220" rx="30" fill="#ffffff"/>
+</svg>

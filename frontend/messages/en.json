@@ -49,7 +49,8 @@
     "deleteColumn": "Delete Column",
     "rename": "Rename",
     "rowCount": "{count} rows",
-    "colCount": "{count} columns"
+    "colCount": "{count} columns",
+    "selectCellFor": "Select a cell for {field}"
   },
   "project": {
     "noProject": "No projects",

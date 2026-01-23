@@ -9,6 +9,7 @@ import {
 } from '@tanstack/react-table';
 import { Plus, Trash2, Edit3, Wand2, CheckCircle2, Lock, Unlock, AlertTriangle, Check, X } from 'lucide-react';
 import { useProjectStore, type SelectedRowData } from '@/stores/projectStore';
+import { useHistoryStore } from '@/stores/historyStore';
 import { evaluateFormula } from '@/lib/formulaEngine';
 import { cn } from '@/lib/utils';
 import type { Sheet, Row, Column, CellValue, CellStyle } from '@/types';
@@ -56,7 +57,8 @@ interface SheetTableProps {
 
 export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTableProps) {
   const t = useTranslations();
-  const { updateCell, updateCellsStyle, addRow, insertRow, deleteRow, addColumn, insertColumn, deleteColumn, updateColumn, updateRow, toggleRowSelection, selectedRows } = useProjectStore();
+  const { updateCell, updateCellsStyle, addRow, insertRow, deleteRow, addColumn, insertColumn, deleteColumn, updateColumn, updateRow, toggleRowSelection, selectedRows, cellSelectionMode, completeCellSelection, cancelCellSelection, projects, loadProjects } = useProjectStore();
+  const { pushState, undo: historyUndo, redo: historyRedo, canUndo, canRedo } = useHistoryStore();
   const [editingCell, setEditingCell] = useState<{ rowId: string; columnId: string } | null>(null);
   const [editValue, setEditValue] = useState<string>('');
   const [showAddColumn, setShowAddColumn] = useState(false);
@@ -192,7 +194,6 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     document.addEventListener('mouseup', handleMouseUp);
   }, [columnWidths, projectId, sheet.id, updateColumn]);
 
-  const projects = useProjectStore((state) => state.projects);
   const currentProject = projects.find((p) => p.id === projectId);
 
   // 행이 선택되었는지 확인
@@ -416,6 +417,21 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
   // 셀 선택 (클릭 시) - 다중 선택 지원
   const selectCell = useCallback(
     (rowId: string, columnId: string, e?: React.MouseEvent) => {
+      // 계산기 셀 선택 모드 처리
+      if (cellSelectionMode.active) {
+        const rowIndex = sheet.rows.findIndex((r) => r.id === rowId);
+        if (rowIndex >= 0) {
+          // 계산된 값 사용 (수식이 적용된 경우 포함)
+          const computedValue = computedRows[rowIndex]?.[columnId];
+          const rawValue = computedValue ?? sheet.rows[rowIndex]?.cells[columnId];
+          const numValue = typeof rawValue === 'number' ? rawValue : parseFloat(String(rawValue));
+          if (!isNaN(numValue)) {
+            completeCellSelection(numValue);
+          }
+        }
+        return;
+      }
+
       const newCell = { rowId, columnId };
 
       // Shift+클릭: 범위 선택
@@ -467,7 +483,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
       const rawValue = row?.cells[columnId];
       setFormulaBarValue(rawValue?.toString() || '');
     },
-    [sheet.rows, sheet.columns]
+    [sheet.rows, sheet.columns, cellSelectionMode.active, completeCellSelection, computedRows]
   );
 
   // 셀 편집 시작 (더블클릭 또는 수식바 포커스)
@@ -522,13 +538,14 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
       }
     }
 
+    pushState(projects, '셀 편집');
     updateCell(projectId, sheet.id, editingCell.rowId, editingCell.columnId, value);
     setEditingCell(null);
     setEditValue('');
     setShowAutocomplete(false);
     // 포뮬라 바 값도 업데이트
     setFormulaBarValue(finalValue);
-  }, [editingCell, editValue, projectId, sheet.id, updateCell, sheet.columns]);
+  }, [editingCell, editValue, projectId, sheet.id, updateCell, sheet.columns, pushState, projects]);
 
   // 수식바에서 편집 완료
   const finishFormulaBarEditing = useCallback(() => {
@@ -544,9 +561,10 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
       }
     }
 
+    pushState(projects, '셀 편집');
     updateCell(projectId, sheet.id, selectedCell.rowId, selectedCell.columnId, value);
     setIsFormulaBarFocused(false);
-  }, [selectedCell, formulaBarValue, projectId, sheet.id, updateCell]);
+  }, [selectedCell, formulaBarValue, projectId, sheet.id, updateCell, pushState, projects]);
 
   // 선택된 셀들에 일괄 값 적용
   const applyBulkEdit = useCallback(() => {
@@ -626,7 +644,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     }
 
     const text = grid.map(row => row.join('\t')).join('\n');
-    navigator.clipboard.writeText(text).catch(() => {
+    navigator.clipboard?.writeText(text).catch(() => {
       // 클립보드 접근 실패 시 무시
     });
   }, [selectedCells, sheet.rows, sheet.columns]);
@@ -638,7 +656,9 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     // 시스템 클립보드에서 텍스트 읽기
     let clipboardText = '';
     try {
-      clipboardText = await navigator.clipboard.readText();
+      if (navigator.clipboard) {
+        clipboardText = await navigator.clipboard.readText();
+      }
     } catch {
       // 클립보드 접근 실패
     }
@@ -1682,6 +1702,12 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
             <div
               data-cell-id={cellKey(row.original.id, col.id)}
               onMouseDown={(e) => {
+                // 셀 선택 모드일 때는 즉시 selectCell 호출
+                if (cellSelectionMode.active) {
+                  selectCell(row.original.id, col.id, e);
+                  return;
+                }
+
                 // 더블클릭 중이면 무시 (더블클릭은 onDoubleClick에서 처리)
                 if (e.detail >= 2) return;
 
@@ -1712,6 +1738,13 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                 }
               }}
               onClick={(e) => {
+                console.log('[SheetTable onClick] Cell clicked, cellSelectionMode.active:', cellSelectionMode.active);
+                // 셀 선택 모드일 때는 일반 클릭으로 셀 선택
+                if (cellSelectionMode.active) {
+                  console.log('[SheetTable onClick] Calling selectCell');
+                  selectCell(row.original.id, col.id, e);
+                  return;
+                }
                 // 더블클릭의 첫 번째 클릭도 여기 옴
                 if (e.detail === 1 && (e.ctrlKey || e.metaKey || e.shiftKey)) {
                   // Ctrl/Cmd/Shift 클릭만 selectCell 로직 사용
@@ -1997,13 +2030,35 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
   }, [selectedCell, sheet.columns, sheet.rows]);
 
   // 줌 레벨 가져오기
-  const { zoomLevel, setCurrentCellStyle } = useSheetUIStore();
+  const { zoomLevel, setCurrentCellStyle, pushHistory, undoStack, redoStack } = useSheetUIStore();
+
+  // 히스토리에 현재 상태 저장
+  const saveToHistory = useCallback((label: string = '셀 편집') => {
+    pushState(projects, label);
+  }, [pushState, projects]);
+
+  // Undo 핸들러
+  const handleUndo = useCallback(() => {
+    const previousState = historyUndo();
+    if (previousState) {
+      loadProjects(previousState);
+    }
+  }, [historyUndo, loadProjects]);
+
+  // Redo 핸들러
+  const handleRedo = useCallback(() => {
+    const nextState = historyRedo();
+    if (nextState) {
+      loadProjects(nextState);
+    }
+  }, [historyRedo, loadProjects]);
 
   // 셀 스타일 변경 핸들러 (선택된 셀들에 스타일 적용)
   const handleStyleChange = useCallback((style: Partial<CellStyle>) => {
     if (selectedCells.length === 0) return;
+    saveToHistory('스타일 변경');
     updateCellsStyle(projectId, sheet.id, selectedCells, style);
-  }, [selectedCells, updateCellsStyle, projectId, sheet.id]);
+  }, [selectedCells, updateCellsStyle, projectId, sheet.id, saveToHistory]);
 
   // 선택된 셀이 변경될 때 현재 스타일 업데이트
   useEffect(() => {
@@ -2055,11 +2110,42 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
         aria-hidden="true"
       />
 
+      {/* 셀 선택 모드 알림 바 */}
+      {cellSelectionMode.active && (
+        <div
+          className="flex items-center gap-3 px-4 py-2 mb-2 rounded-lg animate-fadeIn"
+          style={{
+            background: 'var(--accent-light)',
+            border: '1px solid var(--accent)',
+          }}
+        >
+          <button
+            onClick={cancelCellSelection}
+            className="p-1 rounded transition-colors hover:bg-red-200"
+            style={{
+              color: '#dc2626',
+              backgroundColor: '#fee2e2',
+              border: '1px solid #fca5a5',
+            }}
+          >
+            <X className="w-3.5 h-3.5" />
+          </button>
+          <div className="flex items-center gap-2">
+            <div className="w-2 h-2 rounded-full animate-pulse" style={{ background: 'var(--accent)' }} />
+            <span className="text-sm font-medium" style={{ color: 'var(--accent)' }}>
+              {t('sheet.selectCellFor', { field: cellSelectionMode.fieldLabel })}
+            </span>
+          </div>
+        </div>
+      )}
+
       {/* 서식 툴바 (x-spreadsheet 패턴) */}
       <SheetToolbar
         disabled={!selectedCell}
         onStyleChange={handleStyleChange}
         onAddMemo={onAddMemo}
+        onUndo={handleUndo}
+        onRedo={handleRedo}
       />
 
       {/* 수식 입력줄 (Formula Bar) - 반응형 */}

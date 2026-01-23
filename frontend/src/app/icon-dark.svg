@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <!-- Dark mode favicon - 어두운 배경에 그라데이션 바 -->
+  <rect x="0" y="0" width="512" height="512" rx="120" fill="#0f172a"/>
+
+  <!-- Bar shadows for depth -->
+  <rect x="127" y="148" width="60" height="220" rx="30" fill="#075985"/>
+  <rect x="226" y="148" width="60" height="220" rx="30" fill="#075985"/>
+  <rect x="325" y="148" width="60" height="220" rx="30" fill="#075985"/>
+
+  <!-- Main bars with gradient colors -->
+  <rect x="117" y="135" width="60" height="220" rx="30" fill="#0EA5E9"/>
+  <rect x="226" y="135" width="60" height="220" rx="30" fill="#38BDF8"/>
+  <rect x="335" y="135" width="60" height="220" rx="30" fill="#7DD3FC"/>
+</svg>

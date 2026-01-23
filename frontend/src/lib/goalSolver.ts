@@ -111,7 +111,7 @@ function solveDefenseForReduction(
     success: true,
     value: Math.ceil(requiredDef),
     formula: `DEF = ${constant} × ${targetReduction.toFixed(2)} / ${(1 - targetReduction).toFixed(2)}`,
-    explanation: `${(targetReduction * 100).toFixed(0)}% 피해감소(받는 피해가 ${(100 - targetReduction * 100).toFixed(0)}%가 됨)를 위해 방어력 ${Math.ceil(requiredDef)}이 필요합니다. 공식: 피해감소율 = 방어력 / (방어력 + ${constant})`,
+    explanation: `${(targetReduction * 100).toFixed(0)}% 피해감소(받는 피해가 ${(100 - targetReduction * 100).toFixed(0)}%가 됨)를 위해 방어력 ${Math.ceil(requiredDef)}이 필요합니다.\n공식: 피해감소율 = 방어력 / (방어력 + ${constant})`,
     warnings: targetReduction > 0.75 ? ['75% 이상의 피해감소율은 게임 밸런스에 주의가 필요합니다.'] : undefined,
   };
 }
@@ -167,7 +167,7 @@ function solveCostForROI(
     success: true,
     value: Math.round(appropriateCost),
     formula: `Cost = ${expectedOutput} / (1 + ${targetROI})`,
-    explanation: `ROI(Return on Investment, 투자 수익률)는 투자 대비 수익의 비율입니다. 예상 산출물 ${expectedOutput}에서 ${(targetROI * 100).toFixed(0)}% ROI를 달성하려면 비용을 ${Math.round(appropriateCost)}로 설정하세요. 이 경우 순이익은 ${Math.round(profit)}입니다.`,
+    explanation: `ROI(Return on Investment, 투자 수익률)는 투자 대비 수익의 비율입니다.\n예상 산출물 ${expectedOutput}에서 ${(targetROI * 100).toFixed(0)}% ROI를 달성하려면 비용을 ${Math.round(appropriateCost)}로 설정하세요.\n이 경우 순이익은 ${Math.round(profit)}입니다.`,
     warnings: targetROI < 0 ? ['ROI가 음수면 손실이 발생합니다.'] : undefined,
   };
 }

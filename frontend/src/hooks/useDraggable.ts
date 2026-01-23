@@ -236,6 +236,14 @@ export function usePanelManager(options: UsePanelManagerOptions) {
     [panelStates, updatePanel]
   );
 
+  // 패널별 최소/최대 크기 설정
+  const panelSizeLimits: Record<string, { minW: number; maxW: number; minH: number }> = {
+    comparison: { minW: 600, maxW: 1200, minH: 450 },
+    chart: { minW: 400, maxW: 900, minH: 350 },
+    preset: { minW: 500, maxW: 1000, minH: 400 },
+    default: { minW: 300, maxW: 800, minH: 250 },
+  };
+
   const createResizeHandler = useCallback(
     (panelId: string, direction: 'e' | 's' | 'se') => (e: React.MouseEvent) => {
       e.preventDefault();
@@ -247,17 +255,19 @@ export function usePanelManager(options: UsePanelManagerOptions) {
       const startW = state.width;
       const startH = state.height;
 
+      const limits = panelSizeLimits[panelId] || panelSizeLimits.default;
+
       const onMouseMove = (moveEvent: MouseEvent) => {
         const updates: Partial<DraggableState> = {};
 
         if (direction === 'e' || direction === 'se') {
-          updates.width = Math.min(800, Math.max(300, startW + moveEvent.clientX - startX));
+          updates.width = Math.min(limits.maxW, Math.max(limits.minW, startW + moveEvent.clientX - startX));
         }
 
         if (direction === 's' || direction === 'se') {
           updates.height = Math.min(
             window.innerHeight - 50,
-            Math.max(250, startH + moveEvent.clientY - startY)
+            Math.max(limits.minH, startH + moveEvent.clientY - startY)
           );
         }
 

@@ -264,11 +264,11 @@ function detectVarianceIssues(
           type: 'variance',
           severity: cv > threshold * 2 ? 'warning' : 'info',
           title: `분산 문제: ${sheetLabel}${column.name}`,
-          description: `"${groupName}" 그룹 내에서 값의 편차가 큽니다 (${stats.min.toFixed(1)} ~ ${stats.max.toFixed(1)}, CV=${(cv * 100).toFixed(1)}%).`,
+          description: `${typeColumn.name}="${groupName}" 그룹 내에서 값의 편차가 큽니다 (${stats.min.toFixed(1)} ~ ${stats.max.toFixed(1)}, CV=${(cv * 100).toFixed(1)}%).`,
           affectedRows: rows.map(r => r.rowId),
           affectedColumns: [column.id],
-          suggestion: `같은 그룹 내 값을 비슷한 범위로 맞추거나, 그룹을 세분화하는 것을 고려하세요.`,
-          data: { min: stats.min, max: stats.max, cv },
+          suggestion: `같은 ${typeColumn.name} 내 값을 비슷한 범위로 맞추거나, 그룹을 세분화하는 것을 고려하세요.`,
+          data: { min: stats.min, max: stats.max, cv, groupColumn: typeColumn.name },
         });
       }
     }

@@ -135,37 +135,42 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
     }
   };
 
+  // 중복 제거된 선택된 컬럼
+  const uniqueSelectedColumns = useMemo(() => {
+    return [...new Set(selectedColumns)];
+  }, [selectedColumns]);
+
   // 레이더 차트 데이터
   const radarData = useMemo(() => {
-    if (items.length === 0 || selectedColumns.length === 0) return [];
+    if (items.length === 0 || uniqueSelectedColumns.length === 0) return [];
 
     const maxValues: Record<string, number> = {};
-    selectedColumns.forEach((col) => {
+    uniqueSelectedColumns.forEach((col) => {
       maxValues[col] = Math.max(...items.map((i) => i.values[col] || 0), 1);
     });
 
-    return selectedColumns.map((col) => {
-      const point: Record<string, number | string> = { stat: col };
+    return uniqueSelectedColumns.map((col, index) => {
+      const point: Record<string, number | string> = { stat: col, _uniqueKey: `radar-${index}` };
       items.forEach((item) => {
         point[item.name] = ((item.values[col] || 0) / maxValues[col]) * 100;
         point[`${item.name}_raw`] = item.values[col] || 0;
       });
       return point;
     });
-  }, [items, selectedColumns]);
+  }, [items, uniqueSelectedColumns]);
 
   // 바 차트 데이터
   const barData = useMemo(() => {
-    if (items.length === 0 || selectedColumns.length === 0) return [];
+    if (items.length === 0 || uniqueSelectedColumns.length === 0) return [];
 
-    return selectedColumns.map((col) => {
-      const point: Record<string, number | string> = { stat: col };
+    return uniqueSelectedColumns.map((col, index) => {
+      const point: Record<string, number | string> = { stat: col, _uniqueKey: `bar-${index}` };
       items.forEach((item) => {
         point[item.name] = item.values[col] || 0;
       });
       return point;
     });
-  }, [items, selectedColumns]);
+  }, [items, uniqueSelectedColumns]);
 
   // 히스토그램 데이터
   const [histogramColumn, setHistogramColumn] = useState<string>('');
@@ -298,7 +303,7 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
 
         {/* 패널 모드 도움말 - 탭 위에 표시 */}
         {isPanel && showHelp && (
-          <div className="shrink-0 animate-slideDown flex flex-col" style={{ height: `${helpHeight + 6}px`, minHeight: '66px', maxHeight: '306px', borderBottom: '1px solid var(--border-primary)' }}>
+          <div className="shrink-0 animate-slideDown flex flex-col" style={{ height: `${helpHeight}px`, minHeight: '60px', maxHeight: '300px', borderBottom: '1px solid var(--border-primary)' }}>
             <div
               className="flex-1 px-4 py-3 text-sm overflow-y-auto"
               style={{ background: 'var(--bg-tertiary)' }}
@@ -316,7 +321,7 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
             </div>
             {/* 리사이저 */}
             <div
-              className="h-1.5 shrink-0 cursor-ns-resize hover:bg-[var(--accent)] transition-colors"
+              className="h-1 shrink-0 cursor-ns-resize hover:bg-[var(--accent)] transition-colors"
               style={{ background: 'var(--border-secondary)' }}
               onMouseDown={(e) => {
                 e.preventDefault();
@@ -513,10 +518,10 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
         {!hasSheet ? (
           <EmptyState />
         ) : (
-        <div className="flex-1 overflow-hidden flex">
+        <div className="flex-1 min-h-0 overflow-hidden flex">
           {/* 사이드바 - 레이더/바 차트용 */}
           {(activeTab === 'radar' || activeTab === 'bar') && (
-            <div className="w-64 border-r p-4 overflow-y-auto" style={{ borderColor: 'var(--border-primary)' }}>
+            <div className="w-64 shrink-0 border-r p-4 overflow-y-auto" style={{ borderColor: 'var(--border-primary)' }}>
               {/* 비교 대상 선택 */}
               <div className="mb-6">
                 <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>{t('compareTarget')}</h4>
@@ -624,12 +629,23 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
               </select>
 
               {histogramColumn && histogramData.length > 0 && (
-                <div className="mt-4 p-3 rounded-lg text-sm" style={{ background: 'var(--bg-tertiary)' }}>
-                  <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>{t('statistics')}</div>
-                  <div className="space-y-1" style={{ color: 'var(--text-secondary)' }}>
-                    <div>{t('totalCount')}: {currentSheet.rows.length}</div>
-                    <div>{t('minimum')}: {Math.min(...histogramData.map((d) => d.min)).toFixed(0)}</div>
-                    <div>{t('maximum')}: {Math.max(...histogramData.map((d) => d.max)).toFixed(0)}</div>
+                <div className="mt-4 rounded-xl overflow-hidden" style={{ border: '1px solid var(--border-primary)' }}>
+                  <div className="px-3 py-2 text-xs font-medium" style={{ background: 'var(--accent)', color: 'white' }}>
+                    {t('statistics')}
+                  </div>
+                  <div className="p-3 space-y-2" style={{ background: 'var(--bg-tertiary)' }}>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('totalCount')}</span>
+                      <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{currentSheet.rows.length}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('minimum')}</span>
+                      <span className="text-sm font-semibold" style={{ color: 'var(--success)' }}>{Math.min(...histogramData.map((d) => d.min)).toFixed(0)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('maximum')}</span>
+                      <span className="text-sm font-semibold" style={{ color: 'var(--error)' }}>{Math.max(...histogramData.map((d) => d.max)).toFixed(0)}</span>
+                    </div>
                   </div>
                 </div>
               )}
@@ -637,65 +653,85 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
           )}
 
           {/* 차트 영역 */}
-          <div className="flex-1 p-6 overflow-y-auto">
+          <div className="flex-1 overflow-hidden p-4 flex flex-col" style={{ minWidth: 0, minHeight: 0 }}>
             {activeTab === 'radar' && (
               <>
-                {items.length === 0 || selectedColumns.length === 0 ? (
-                  <div className="h-full flex items-center justify-center">
+                {items.length === 0 || uniqueSelectedColumns.length === 0 ? (
+                  <div className="flex-1 flex items-center justify-center">
                     <div className="text-center" style={{ color: 'var(--text-tertiary)' }}>
                       <p>{t('selectTargetAndItems')}</p>
                       <p className="text-sm mt-1">{t('recommendMinimum')}</p>
                     </div>
                   </div>
                 ) : (
-                  <div className="h-[500px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <RadarChart data={radarData}>
-                        <PolarGrid stroke="var(--border-primary)" />
-                        <PolarAngleAxis dataKey="stat" tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} />
-                        <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10, fill: 'var(--text-tertiary)' }} />
-                        {items.map((item) => (
-                          <Radar
-                            key={item.id}
-                            name={item.name}
-                            dataKey={item.name}
-                            stroke={item.color}
-                            fill={item.color}
-                            fillOpacity={0.2}
-                          />
-                        ))}
-                        <Legend />
-                        <Tooltip formatter={(value: number) => [`${value.toFixed(0)}%`]} />
-                      </RadarChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <>
+                    <div className="flex-1" style={{ minHeight: 0 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <RadarChart data={radarData}>
+                          <PolarGrid stroke="var(--border-primary)" />
+                          <PolarAngleAxis dataKey="stat" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
+                          <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                          {items.map((item) => (
+                            <Radar
+                              key={item.id}
+                              name={item.name}
+                              dataKey={item.name}
+                              stroke={item.color}
+                              fill={item.color}
+                              fillOpacity={0.2}
+                            />
+                          ))}
+                          <Tooltip formatter={(value: number) => [`${value.toFixed(0)}%`]} />
+                        </RadarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    {/* 별도 Legend 영역 */}
+                    <div className="shrink-0 h-10 flex flex-wrap justify-center items-start gap-x-3 gap-y-1 text-xs overflow-y-auto" style={{ color: 'var(--text-secondary)' }}>
+                      {items.map((item) => (
+                        <div key={item.id} className="flex items-center gap-1">
+                          <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: item.color }} />
+                          <span className="truncate max-w-[80px]" title={item.name}>{item.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
               </>
             )}
 
             {activeTab === 'bar' && (
               <>
-                {items.length === 0 || selectedColumns.length === 0 ? (
-                  <div className="h-full flex items-center justify-center">
+                {items.length === 0 || uniqueSelectedColumns.length === 0 ? (
+                  <div className="flex-1 flex items-center justify-center">
                     <div className="text-center" style={{ color: 'var(--text-tertiary)' }}>
                       <p>{t('selectTargetAndItems')}</p>
                     </div>
                   </div>
                 ) : (
-                  <div className="h-[500px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={barData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
-                        <XAxis dataKey="stat" tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} />
-                        <YAxis tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} />
-                        <Tooltip contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }} />
-                        <Legend />
-                        {items.map((item) => (
-                          <Bar key={item.id} dataKey={item.name} fill={item.color} />
-                        ))}
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <>
+                    <div className="flex-1" style={{ minHeight: 0 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={barData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
+                          <XAxis dataKey="stat" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
+                          <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
+                          <Tooltip contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }} />
+                          {items.map((item) => (
+                            <Bar key={item.id} dataKey={item.name} fill={item.color} />
+                          ))}
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                    {/* 별도 Legend 영역 */}
+                    <div className="shrink-0 h-10 flex flex-wrap justify-center items-start gap-x-3 gap-y-1 text-xs overflow-y-auto" style={{ color: 'var(--text-secondary)' }}>
+                      {items.map((item) => (
+                        <div key={item.id} className="flex items-center gap-1">
+                          <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: item.color }} />
+                          <span className="truncate max-w-[80px]" title={item.name}>{item.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </>
                 )}
               </>
             )}
@@ -703,30 +739,32 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
             {activeTab === 'histogram' && (
               <>
                 {!histogramColumn ? (
-                  <div className="h-full flex items-center justify-center">
+                  <div className="flex-1 flex items-center justify-center">
                     <p style={{ color: 'var(--text-tertiary)' }}>{t('selectColumnToAnalyze')}</p>
                   </div>
                 ) : histogramData.length === 0 ? (
-                  <div className="h-full flex items-center justify-center">
+                  <div className="flex-1 flex items-center justify-center">
                     <p style={{ color: 'var(--text-tertiary)' }}>{t('noNumericData')}</p>
                   </div>
                 ) : (
-                  <div className="h-[500px]">
-                    <h3 className="text-lg font-medium mb-4" style={{ color: 'var(--text-primary)' }}>{t('distribution', { column: histogramColumn })}</h3>
-                    <ResponsiveContainer width="100%" height="90%">
-                      <BarChart data={histogramData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
-                        <XAxis dataKey="range" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} angle={-45} textAnchor="end" height={60} />
-                        <YAxis tick={{ fontSize: 12, fill: 'var(--text-secondary)' }} label={{ value: '개수', angle: -90, position: 'insideLeft', fill: 'var(--text-secondary)' }} />
-                        <Tooltip
-                          formatter={(value: number) => [`${value}${t('count')}`, t('count')]}
-                          labelFormatter={(label) => `${t('range')}: ${label}`}
-                          contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }}
-                        />
-                        <Bar dataKey="count" fill="var(--accent)" />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+                  <>
+                    <h3 className="text-sm font-medium mb-2 shrink-0" style={{ color: 'var(--text-primary)' }}>{t('distribution', { column: histogramColumn })}</h3>
+                    <div className="flex-1" style={{ minHeight: 0 }}>
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={histogramData}>
+                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
+                          <XAxis dataKey="range" tick={{ fontSize: 10, fill: 'var(--text-secondary)' }} angle={-45} textAnchor="end" height={50} />
+                          <YAxis tick={{ fontSize: 10, fill: 'var(--text-secondary)' }} />
+                          <Tooltip
+                            formatter={(value: number) => [`${value}${t('count')}`, t('count')]}
+                            labelFormatter={(label) => `${t('range')}: ${label}`}
+                            contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }}
+                          />
+                          <Bar dataKey="count" fill="var(--accent)" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </>
                 )}
               </>
             )}

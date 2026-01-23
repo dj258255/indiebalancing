@@ -2,6 +2,17 @@
 @tailwind components;
 @tailwind utilities;
 
+/* 가로 스크롤 - 스크롤바 숨김 (드래그/휠로 이동) */
+.scrollbar-x-hidden {
+  overflow-x: auto;
+  overflow-y: visible;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-x-hidden::-webkit-scrollbar {
+  display: none;
+}
+
 /* 라이트 모드 - 기본 */
 :root {
   --bg-primary: #ffffff;

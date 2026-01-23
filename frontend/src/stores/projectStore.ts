@@ -21,6 +21,13 @@ export interface SelectedRowData {
   values: Record<string, number | string>;
 }
 
+// 셀 선택 모드 타입
+export interface CellSelectionMode {
+  active: boolean;
+  fieldLabel: string;  // 어떤 필드를 위한 선택인지 표시
+  callback: ((value: number) => void) | null;
+}
+
 interface ProjectState {
   // 상태
   projects: Project[];
@@ -30,6 +37,7 @@ interface ProjectState {
   isLoading: boolean;
   lastSaved: number | null;
   selectedRows: SelectedRowData[];  // 선택된 행들
+  cellSelectionMode: CellSelectionMode;  // 셀 선택 모드
 
   // 프로젝트 액션
   createProject: (name: string, description?: string) => string;
@@ -83,6 +91,11 @@ interface ProjectState {
   addSticker: (projectId: string, sheetId: string, sticker: Omit<Sticker, 'id' | 'createdAt'>) => string;
   updateSticker: (projectId: string, sheetId: string, stickerId: string, updates: Partial<Sticker>) => void;
   deleteSticker: (projectId: string, sheetId: string, stickerId: string) => void;
+
+  // 셀 선택 모드 액션
+  startCellSelection: (fieldLabel: string, callback: (value: number) => void) => void;
+  completeCellSelection: (value: number) => void;
+  cancelCellSelection: () => void;
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
@@ -94,6 +107,7 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   isLoading: false,
   lastSaved: null,
   selectedRows: [],
+  cellSelectionMode: { active: false, fieldLabel: '', callback: null },
 
   // 프로젝트 액션
   createProject: (name, description) => {
@@ -287,9 +301,26 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
       updatedAt: now,
     };
 
-    // 새로운 ID 할당
-    newSheet.columns = newSheet.columns.map((col: Column) => ({ ...col, id: uuidv4() }));
-    newSheet.rows = newSheet.rows.map((row: Row) => ({ ...row, id: uuidv4() }));
+    // 컬럼 ID 매핑 생성 (기존 ID -> 새 ID)
+    const columnIdMap: Record<string, string> = {};
+    newSheet.columns = newSheet.columns.map((col: Column) => {
+      const newColId = uuidv4();
+      columnIdMap[col.id] = newColId;
+      return { ...col, id: newColId };
+    });
+
+    // 행에 새 ID 할당하고 셀 데이터의 키도 업데이트
+    newSheet.rows = newSheet.rows.map((row: Row) => {
+      const newCells: Record<string, CellValue> = {};
+      // 기존 셀 데이터를 새 컬럼 ID로 매핑
+      Object.entries(row.cells).forEach(([oldColId, value]) => {
+        const newColId = columnIdMap[oldColId];
+        if (newColId) {
+          newCells[newColId] = value;
+        }
+      });
+      return { ...row, id: uuidv4(), cells: newCells };
+    });
 
     set((state) => ({
       projects: state.projects.map((p) =>
@@ -828,5 +859,28 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           : p
       ),
     }));
+  },
+
+  // 셀 선택 모드 액션
+  startCellSelection: (fieldLabel, callback) => {
+    set({
+      cellSelectionMode: { active: true, fieldLabel, callback }
+    });
+  },
+
+  completeCellSelection: (value) => {
+    const { cellSelectionMode } = get();
+    if (cellSelectionMode.callback) {
+      cellSelectionMode.callback(value);
+    }
+    set({
+      cellSelectionMode: { active: false, fieldLabel: '', callback: null }
+    });
+  },
+
+  cancelCellSelection: () => {
+    set({
+      cellSelectionMode: { active: false, fieldLabel: '', callback: null }
+    });
   },
 }));

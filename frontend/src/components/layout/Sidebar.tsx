@@ -26,6 +26,7 @@ import {
   FunctionSquare,
   Shield,
   Swords,
+  Copy,
 } from 'lucide-react';
 import { useProjectStore } from '@/stores/projectStore';
 import { useToolLayoutStore, AllToolId } from '@/stores/toolLayoutStore';
@@ -34,6 +35,8 @@ import { formatRelativeTime } from '@/lib/utils';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/ui';
 import { useTranslations, useLocale } from 'next-intl';
+import Image from 'next/image';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface SidebarProps {
   onShowChart: () => void;
@@ -92,6 +95,7 @@ export default function Sidebar({
     selectedRows,
     clearSelectedRows,
     reorderSheets,
+    duplicateSheet,
   } = useProjectStore();
 
   const { toolLocations, getSidebarTools, reorderSidebarTools, sidebarWidth } = useToolLayoutStore();
@@ -116,11 +120,22 @@ export default function Sidebar({
 
   const t = useTranslations();
   const locale = useLocale();
+  const { theme } = useTheme();
 
   // 시트 드래그 앤 드롭 상태
   const [draggedSheetIndex, setDraggedSheetIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [dragProjectId, setDragProjectId] = useState<string | null>(null);
+
+  // 시트 컨텍스트 메뉴 상태
+  const [sheetContextMenu, setSheetContextMenu] = useState<{
+    x: number;
+    y: number;
+    projectId: string;
+    sheetId: string;
+    sheetName: string;
+  } | null>(null);
+  const sheetContextMenuRef = useRef<HTMLDivElement>(null);
 
   // 도구 섹션 높이 상태 (리사이즈 가능)
   const [toolsSectionHeight, setToolsSectionHeight] = useState(200);
@@ -135,6 +150,20 @@ export default function Sidebar({
     toolsResizeStartY.current = e.clientY;
     toolsResizeStartHeight.current = toolsSectionHeight;
   }, [toolsSectionHeight]);
+
+  // 시트 컨텍스트 메뉴 외부 클릭 시 닫기
+  useEffect(() => {
+    if (!sheetContextMenu) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (sheetContextMenuRef.current && !sheetContextMenuRef.current.contains(e.target as Node)) {
+        setSheetContextMenu(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [sheetContextMenu]);
 
   useEffect(() => {
     if (!isResizingToolsSection) return;
@@ -208,7 +237,10 @@ export default function Sidebar({
       }}>
       {/* 헤더 */}
       <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-primary)' }}>
-        <span className="font-semibold" style={{ color: 'var(--accent)' }}>{t('app.name')}</span>
+        <div className="flex items-center gap-2">
+          <Image src={theme === 'dark' ? '/icon-dark.svg' : '/icon.svg'} alt="Logo" width={24} height={24} className="rounded" />
+          <span className="font-semibold" style={{ color: 'var(--accent)' }}>{t('app.name')}</span>
+        </div>
         <ThemeToggle />
       </div>
 
@@ -403,6 +435,17 @@ export default function Sidebar({
                             setCurrentSheet(sheet.id);
                           }
                         }}
+                        onContextMenu={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          setSheetContextMenu({
+                            x: e.clientX,
+                            y: e.clientY,
+                            projectId: project.id,
+                            sheetId: sheet.id,
+                            sheetName: sheet.name,
+                          });
+                        }}
                         className={cn(
                           "flex items-center gap-1 px-2 py-1.5 rounded-lg cursor-pointer text-sm transition-colors group",
                           dragOverIndex === index && dragProjectId === project.id && "ring-2 ring-blue-400"
@@ -452,37 +495,7 @@ export default function Sidebar({
                             autoFocus
                           />
                         ) : (
-                          <>
-                            <span className="truncate flex-1">{sheet.name}</span>
-                            <div className={cn(
-                              "items-center gap-0.5 flex-shrink-0",
-                              currentSheetId === sheet.id ? "flex" : "hidden group-hover:flex"
-                            )}>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  setEditingSheetId(sheet.id);
-                                  setEditSheetName(sheet.name);
-                                }}
-                                className="p-0.5 rounded transition-colors hover:bg-black/10 dark:hover:bg-white/10"
-                                title={t('sheet.rename')}
-                              >
-                                <Edit2 className="w-3 h-3" />
-                              </button>
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  if (confirm(t('alert.deleteSheetConfirm', { name: sheet.name }))) {
-                                    deleteSheet(project.id, sheet.id);
-                                  }
-                                }}
-                                className="p-0.5 rounded transition-colors hover:bg-black/10 dark:hover:bg-white/10 hover:text-red-500"
-                                title={t('common.delete')}
-                              >
-                                <Trash2 className="w-3 h-3" />
-                              </button>
-                            </div>
-                          </>
+                          <span className="truncate flex-1">{sheet.name}</span>
                         )}
                       </div>
                     ))}
@@ -691,6 +704,64 @@ export default function Sidebar({
         )}
       </div>
     </div>
+
+      {/* 시트 컨텍스트 메뉴 */}
+      {sheetContextMenu && (
+        <div
+          ref={sheetContextMenuRef}
+          className="fixed z-50 min-w-[140px] py-1 rounded-lg shadow-lg border"
+          style={{
+            left: sheetContextMenu.x,
+            top: sheetContextMenu.y,
+            background: 'var(--bg-primary)',
+            borderColor: 'var(--border-primary)',
+          }}
+        >
+          <button
+            onClick={() => {
+              setEditingSheetId(sheetContextMenu.sheetId);
+              setEditSheetName(sheetContextMenu.sheetName);
+              setSheetContextMenu(null);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
+            style={{ color: 'var(--text-primary)' }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <Edit2 className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+            {t('sheet.rename')}
+          </button>
+          <button
+            onClick={() => {
+              duplicateSheet(sheetContextMenu.projectId, sheetContextMenu.sheetId);
+              setSheetContextMenu(null);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
+            style={{ color: 'var(--text-primary)' }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <Copy className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+            {t('sheet.duplicate')}
+          </button>
+          <div className="my-1 border-t" style={{ borderColor: 'var(--border-primary)' }} />
+          <button
+            onClick={() => {
+              if (confirm(t('alert.deleteSheetConfirm', { name: sheetContextMenu.sheetName }))) {
+                deleteSheet(sheetContextMenu.projectId, sheetContextMenu.sheetId);
+              }
+              setSheetContextMenu(null);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
+            style={{ color: 'var(--danger)' }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <Trash2 className="w-4 h-4" />
+            {t('common.delete')}
+          </button>
+        </div>
+      )}
     </>
   );
 }

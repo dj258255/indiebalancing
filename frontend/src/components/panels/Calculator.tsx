@@ -1,11 +1,12 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { X, Calculator as CalcIcon, Crosshair, Zap, Shield, TrendingUp, Download, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Calculator as CalcIcon, Crosshair, Zap, Shield, TrendingUp, Download, HelpCircle, ChevronDown, ChevronUp, Grid3X3 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { DPS, TTK, EHP, DAMAGE, SCALE } from '@/lib/formulaEngine';
 import { useProjectStore } from '@/stores/projectStore';
+import { Tooltip } from '@/components/ui/Tooltip';
 
 // 행 표시명 생성 헬퍼
 function getRowDisplayName(rowId: string, currentSheet: { name: string; rows: { id: string }[] } | undefined, t: any): string {
@@ -120,7 +121,7 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
   const t = useTranslations('calculator');
   const [activeTab, setActiveTab] = useState<CalculatorTab>('dps');
   const [showHelp, setShowHelp] = useState(false);
-  const [helpHeight, setHelpHeight] = useState(120);
+  const [showTabDropdown, setShowTabDropdown] = useState(false);
   const { selectedRows, clearSelectedRows, deselectRow, projects, currentProjectId, currentSheetId } = useProjectStore();
 
   // 현재 시트 가져오기
@@ -293,80 +294,117 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
           </button>
         </div>
 
-        {/* 패널 모드 헤더 도움말 - 탭 위에 표시 */}
+        {/* 패널 모드 헤더 도움말 - 공식 중심 */}
         {isPanel && showHelp && (
-          <div className="shrink-0 animate-slideDown flex flex-col" style={{ height: `${helpHeight + 6}px`, minHeight: '66px', maxHeight: '306px', borderBottom: '1px solid var(--border-primary)' }}>
+          <div className="shrink-0 animate-slideDown flex flex-col" style={{ borderBottom: '1px solid var(--border-primary)' }}>
             <div
-              className="flex-1 px-4 py-3 text-sm overflow-y-auto"
+              className="px-4 py-3"
               style={{ background: 'var(--bg-tertiary)' }}
             >
-              <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>{t('helpTitle')}</div>
-              <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>{t('helpDesc')}</p>
-              <div className="space-y-1 mb-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                <div>{t('helpDps')}</div>
-                <div>{t('helpEhp')}</div>
+              <div className="font-medium mb-2 text-sm" style={{ color: 'var(--text-primary)' }}>{t('helpTitle')}</div>
+              <div className="space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-semibold shrink-0" style={{ color: 'var(--accent)' }}>DPS</span>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Damage Per Second (초당 피해량)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-semibold shrink-0" style={{ color: 'var(--accent)' }}>TTK</span>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Time To Kill (처치까지 걸리는 시간)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-semibold shrink-0" style={{ color: 'var(--accent)' }}>EHP</span>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Effective HP (유효 체력, 방어력 포함)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-semibold shrink-0" style={{ color: 'var(--accent)' }}>DAMAGE</span>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>실제 피해량 (방어력 적용 후)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-semibold shrink-0" style={{ color: 'var(--accent)' }}>SCALE</span>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>레벨별 스탯 성장 계산</span>
+                </div>
               </div>
-              <div className="pt-2 border-t text-xs" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
+              <div className="pt-2 mt-2 border-t text-xs" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
                 {t('helpTip')}
               </div>
             </div>
-            {/* 리사이저 */}
-            <div
-              className="h-1.5 shrink-0 cursor-ns-resize hover:bg-[var(--accent)] transition-colors"
-              style={{ background: 'var(--border-secondary)' }}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                const startY = e.clientY;
-                const startH = helpHeight;
-                const onMouseMove = (moveEvent: MouseEvent) => {
-                  const newHeight = Math.max(60, Math.min(300, startH + moveEvent.clientY - startY));
-                  setHelpHeight(newHeight);
-                };
-                const onMouseUp = () => {
-                  document.removeEventListener('mousemove', onMouseMove);
-                  document.removeEventListener('mouseup', onMouseUp);
-                };
-                document.addEventListener('mousemove', onMouseMove);
-                document.addEventListener('mouseup', onMouseUp);
-              }}
-            />
           </div>
         )}
 
-        {/* 탭 - 반응형 */}
-        <div className="flex items-center border-b px-2 sm:px-4 gap-0.5 sm:gap-1 overflow-x-auto" style={{ borderColor: 'var(--border-primary)' }}>
-          {tabs.map((tab) => {
-            const Icon = tab.icon;
-            return (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                title={tab.tooltip}
-                className={cn(
-                  'flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-3 border-b-2 transition-all whitespace-nowrap',
-                  activeTab === tab.id
-                    ? 'border-current'
-                    : 'border-transparent'
-                )}
-                style={{
-                  color: activeTab === tab.id ? 'var(--accent)' : 'var(--text-tertiary)',
-                }}
-              >
-                <Icon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="text-xs sm:text-sm font-medium">{tab.name}</span>
-              </button>
-            );
-          })}
-          <div className="flex-1" />
+        {/* 수식 선택 드롭다운 */}
+        <div className="flex items-center gap-2 px-3 py-2 border-b" style={{ borderColor: 'var(--border-primary)' }}>
+          <div className="relative flex-1">
+            <button
+              onClick={() => setShowTabDropdown(!showTabDropdown)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg transition-all hover:bg-[var(--bg-hover)]"
+              style={{
+                background: 'var(--bg-tertiary)',
+                color: 'var(--text-primary)',
+                border: '1px solid var(--border-primary)'
+              }}
+            >
+              {(() => {
+                const currentTab = tabs.find(t => t.id === activeTab);
+                const Icon = currentTab?.icon || Zap;
+                return (
+                  <>
+                    <Icon className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                    <span className="text-sm font-medium flex-1">{currentTab?.name}</span>
+                    <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{currentTab?.tooltip}</span>
+                    <ChevronDown className={cn("w-4 h-4 transition-transform duration-200 ml-1", showTabDropdown && "rotate-180")} style={{ color: 'var(--text-tertiary)' }} />
+                  </>
+                );
+              })()}
+            </button>
+            {showTabDropdown && (
+              <>
+                <div className="fixed inset-0 z-40" onClick={() => setShowTabDropdown(false)} />
+                <div
+                  className="absolute left-0 right-0 top-full mt-1 rounded-lg shadow-lg z-50 overflow-hidden"
+                  style={{
+                    background: 'var(--bg-primary)',
+                    border: '1px solid var(--border-primary)',
+                  }}
+                >
+                  <div className="p-1">
+                    {tabs.map((tab) => {
+                      const Icon = tab.icon;
+                      const isActive = activeTab === tab.id;
+                      return (
+                        <button
+                          key={tab.id}
+                          onClick={() => {
+                            setActiveTab(tab.id);
+                            setShowTabDropdown(false);
+                          }}
+                          className={cn(
+                            "w-full flex items-center gap-3 px-3 py-2 rounded-md text-left transition-colors",
+                            isActive ? "bg-[var(--accent-light)]" : "hover:bg-[var(--bg-hover)]"
+                          )}
+                        >
+                          <Icon className="w-4 h-4 shrink-0" style={{ color: isActive ? 'var(--accent)' : 'var(--text-tertiary)' }} />
+                          <span className="text-sm font-medium" style={{ color: isActive ? 'var(--accent)' : 'var(--text-primary)' }}>
+                            {tab.name}
+                          </span>
+                          <span className="text-xs flex-1 text-right" style={{ color: 'var(--text-tertiary)' }}>
+                            {tab.tooltip}
+                          </span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              </>
+            )}
+          </div>
           {!isPanel && (
             <button
               onClick={() => setShowHelp(!showHelp)}
-              className="flex items-center justify-center w-8 h-8 rounded-lg text-xs transition-colors shrink-0"
+              className="flex items-center justify-center w-9 h-9 rounded-lg transition-all shrink-0"
               style={{
-                background: showHelp ? 'var(--accent-light)' : 'var(--bg-tertiary)',
-                color: showHelp ? 'var(--accent-text)' : 'var(--text-secondary)'
+                background: showHelp ? 'var(--accent)' : 'var(--bg-tertiary)',
+                color: showHelp ? 'white' : 'var(--text-secondary)'
               }}
-              title="도움말"
             >
               <HelpCircle className="w-4 h-4" />
             </button>
@@ -765,44 +803,69 @@ function InputField({
   max?: number;
 }) {
   const [inputValue, setInputValue] = useState(String(value));
+  const [isHovered, setIsHovered] = useState(false);
+  const { startCellSelection, cellSelectionMode } = useProjectStore();
 
   // 외부 value 변경 시 inputValue 동기화
   useEffect(() => {
     setInputValue(String(value));
   }, [value]);
 
+  const handleCellSelect = () => {
+    startCellSelection(label, (cellValue) => {
+      setInputValue(String(cellValue));
+      onChange(cellValue);
+    });
+  };
+
   return (
-    <div>
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
         {label}
       </label>
-      <input
-        type="text"
-        inputMode="decimal"
-        value={inputValue}
-        onChange={(e) => {
-          const newValue = e.target.value;
-          // 숫자, 소수점, 마이너스만 허용
-          if (newValue === '' || /^-?\d*\.?\d*$/.test(newValue)) {
-            setInputValue(newValue);
-            const num = parseFloat(newValue);
-            if (!isNaN(num)) {
-              onChange(num);
+      <div className="relative">
+        <input
+          type="text"
+          inputMode="decimal"
+          value={inputValue}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            // 숫자, 소수점, 마이너스만 허용
+            if (newValue === '' || /^-?\d*\.?\d*$/.test(newValue)) {
+              setInputValue(newValue);
+              const num = parseFloat(newValue);
+              if (!isNaN(num)) {
+                onChange(num);
+              }
             }
-          }
-        }}
-        onBlur={() => {
-          // 포커스 벗어나면 숫자로 정규화
-          const num = parseFloat(inputValue);
-          if (isNaN(num) || inputValue === '') {
-            setInputValue(String(min ?? 0));
-            onChange(min ?? 0);
-          } else {
-            setInputValue(String(num));
-          }
-        }}
-        className="w-full px-3 py-2 rounded-lg"
-      />
+          }}
+          onBlur={() => {
+            // 포커스 벗어나면 숫자로 정규화
+            const num = parseFloat(inputValue);
+            if (isNaN(num) || inputValue === '') {
+              setInputValue(String(min ?? 0));
+              onChange(min ?? 0);
+            } else {
+              setInputValue(String(num));
+            }
+          }}
+          className="w-full px-3 py-2 pr-9 rounded-lg"
+        />
+        {/* 셀 선택 버튼 - 호버 시 표시 */}
+        {isHovered && !cellSelectionMode.active && (
+          <Tooltip content="셀에서 값 가져오기" position="top">
+            <button
+              onClick={handleCellSelect}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded transition-colors hover:bg-[var(--bg-hover)]"
+            >
+              <Grid3X3 className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+            </button>
+          </Tooltip>
+        )}
+      </div>
     </div>
   );
 }

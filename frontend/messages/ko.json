@@ -48,8 +48,10 @@
     "deleteRow": "행 삭제",
     "deleteColumn": "열 삭제",
     "rename": "이름 변경",
+    "duplicate": "복제",
     "rowCount": "{count}개 행",
-    "colCount": "{count}개 열"
+    "colCount": "{count}개 열",
+    "selectCellFor": "{field}에 사용할 셀을 선택하세요"
   },
   "project": {
     "noProject": "프로젝트가 없습니다",
@@ -1246,10 +1248,11 @@
   "presetComparison": {
     "title": "프리셋 비교",
     "subtitle": "두 시트 또는 스냅샷의 차이를 분석합니다",
-    "helpDesc": "두 시트 또는 스냅샷의 차이를 비교합니다.",
+    "helpDesc": "두 시트 또는 스냅샷의 차이를 비교합니다. 컬럼 이름과 행 이름(name/이름 컬럼)을 기준으로 매칭하므로, 복제된 시트나 다른 시트 간에도 정확한 비교가 가능합니다.",
     "helpSnapshot": "- 스냅샷: 현재 상태 저장",
     "helpCompare": "- 비교: 변경된 값, 추가/삭제 확인",
     "helpExport": "- 내보내기: JSON으로 결과 저장",
+    "helpMatching": "- 매칭: 컬럼명/행명 기반 (ID 무관)",
     "helpUseCase": "활용: 밸런스 패치 전후 비교, A/B 테스트",
     "before": "이전 (Before)",
     "after": "이후 (After)",
@@ -1275,8 +1278,11 @@
   },
   "growthCurve": {
     "title": "성장 곡선 차트",
+    "description": "시트 데이터를 기반으로 레벨별 스탯 성장 추이를 시각화합니다.",
     "graphTitle": "성장 곡선 그래프",
-    "help": "도움말",
+    "help": "시트에 level, hp, atk 등의 컬럼이 필요합니다",
+    "help2": "여러 스탯을 동시에 비교할 수 있습니다",
+    "help3": "성장 패턴(선형/지수/로그)을 확인할 수 있습니다",
     "helpDesc": "레벨업할 때 스탯이 얼마나 증가할지 결정하는 곡선입니다. 성장 느낌이 완전히 달라집니다.",
     "linearHelp": {
       "name": "선형 (Linear)",

@@ -1,6 +1,12 @@
-# PowerBalance
+<p align="center">
+  <img src="frontend/public/icon.svg" alt="PowerBalance Logo" width="120" height="120">
+</p>
 
-**Game Balancing Tool for Indie Developers**
+<h1 align="center">PowerBalance</h1>
+
+<p align="center">
+  <strong>Game Balancing Tool for Indie Developers</strong>
+</p>
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 

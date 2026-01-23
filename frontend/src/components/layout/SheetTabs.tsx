@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Plus, X, Edit2, Copy, Check, LayoutTemplate, GripVertical } from 'lucide-react';
 import { useProjectStore } from '@/stores/projectStore';
 import type { Project } from '@/types';
@@ -44,6 +44,10 @@ export default function SheetTabs({ project }: SheetTabsProps) {
   // 탭 드래그 상태
   const [draggedTabId, setDraggedTabId] = useState<string | null>(null);
   const [dragOverTabId, setDragOverTabId] = useState<string | null>(null);
+
+  // 컨텍스트 메뉴 상태
+  const [contextMenu, setContextMenu] = useState<{ x: number; y: number; sheetId: string; sheetName: string } | null>(null);
+  const contextMenuRef = useRef<HTMLDivElement>(null);
 
   // localStorage에서 탭 너비 불러오기
   useEffect(() => {
@@ -168,6 +172,27 @@ export default function SheetTabs({ project }: SheetTabsProps) {
     setDragOverTabId(null);
   };
 
+  // 컨텍스트 메뉴 핸들러
+  const handleContextMenu = (e: React.MouseEvent, sheetId: string, sheetName: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setContextMenu({ x: e.clientX, y: e.clientY, sheetId, sheetName });
+  };
+
+  // 컨텍스트 메뉴 외부 클릭 시 닫기
+  useEffect(() => {
+    if (!contextMenu) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (contextMenuRef.current && !contextMenuRef.current.contains(e.target as Node)) {
+        setContextMenu(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [contextMenu]);
+
   return (
     <>
       {/* 리사이즈 중 오버레이 */}
@@ -206,6 +231,7 @@ export default function SheetTabs({ project }: SheetTabsProps) {
                 opacity: draggedTabId === sheet.id ? 0.5 : 1,
               }}
               onClick={() => setCurrentSheet(sheet.id)}
+              onContextMenu={(e) => handleContextMenu(e, sheet.id, sheet.name)}
               onMouseEnter={(e) => {
                 if (!isActive && !draggedTabId) e.currentTarget.style.background = 'var(--bg-hover)';
               }}
@@ -260,47 +286,27 @@ export default function SheetTabs({ project }: SheetTabsProps) {
                   >
                     {sheet.name}
                   </span>
-                  <div className="hidden group-hover:flex items-center gap-0.5 flex-shrink-0">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleStartEdit(sheet.id, sheet.name);
-                      }}
-                      className="p-0.5 transition-colors"
-                      style={{ color: 'var(--text-tertiary)' }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
-                      onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
-                      title={t('sheet.rename')}
-                    >
-                      <Edit2 className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        duplicateSheet(project.id, sheet.id);
-                      }}
-                      className="p-0.5 transition-colors"
-                      style={{ color: 'var(--text-tertiary)' }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
-                      onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
-                      title={t('common.copy')}
-                    >
-                      <Copy className="w-3 h-3" />
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        closeSheetTab(sheet.id);
-                      }}
-                      className="p-0.5 transition-colors"
-                      style={{ color: 'var(--text-tertiary)' }}
-                      onMouseEnter={(e) => e.currentTarget.style.color = 'var(--text-primary)'}
-                      onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
-                      title={t('common.close')}
-                    >
-                      <X className="w-3 h-3" />
-                    </button>
-                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      closeSheetTab(sheet.id);
+                    }}
+                    className="p-0.5 rounded transition-colors opacity-0 group-hover:opacity-100 flex-shrink-0"
+                    style={{ color: 'var(--text-tertiary)' }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.color = 'var(--text-primary)';
+                      e.currentTarget.style.background = 'var(--bg-tertiary)';
+                      e.currentTarget.style.border = '1px solid var(--border-secondary)';
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.color = 'var(--text-tertiary)';
+                      e.currentTarget.style.background = 'transparent';
+                      e.currentTarget.style.border = '1px solid transparent';
+                    }}
+                    title={t('common.close')}
+                  >
+                    <X className="w-3 h-3" />
+                  </button>
                 </>
               )}
 
@@ -399,6 +405,47 @@ export default function SheetTabs({ project }: SheetTabsProps) {
           />
         )}
       </div>
+
+      {/* 탭 컨텍스트 메뉴 */}
+      {contextMenu && (
+        <div
+          ref={contextMenuRef}
+          className="fixed z-50 min-w-[140px] py-1 rounded-lg shadow-lg border"
+          style={{
+            left: contextMenu.x,
+            top: contextMenu.y,
+            background: 'var(--bg-primary)',
+            borderColor: 'var(--border-primary)',
+          }}
+        >
+          <button
+            onClick={() => {
+              handleStartEdit(contextMenu.sheetId, contextMenu.sheetName);
+              setContextMenu(null);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
+            style={{ color: 'var(--text-primary)' }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <Edit2 className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+            {t('sheet.rename')}
+          </button>
+          <button
+            onClick={() => {
+              duplicateSheet(project.id, contextMenu.sheetId);
+              setContextMenu(null);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
+            style={{ color: 'var(--text-primary)' }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <Copy className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+            {t('sheet.duplicate')}
+          </button>
+        </div>
+      )}
     </>
   );
 }

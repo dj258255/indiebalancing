@@ -11,7 +11,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from 'recharts';
-import { HelpCircle, ChevronDown, ChevronUp, Maximize2, X } from 'lucide-react';
+import { Maximize2, X } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { SCALE } from '@/lib/formulaEngine';
 import type { CurveType } from '@/types';
@@ -93,83 +93,8 @@ export default function GrowthCurveChart({
     };
   }, [base, rate, previewLevel, customBase, customRate, customCurve, showCustom]);
 
-  const [showHelp, setShowHelp] = useState(false);
-
   return (
-    <div className="card p-4">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{t('title')}</h3>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowHelp(!showHelp)}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm transition-colors"
-            style={{
-              background: showHelp ? 'var(--accent-light)' : 'var(--bg-tertiary)',
-              color: showHelp ? 'var(--accent-text)' : 'var(--text-secondary)'
-            }}
-          >
-            <HelpCircle className="w-4 h-4" />
-            {t('help')}
-            {showHelp ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-          </button>
-        </div>
-      </div>
-
-      {/* 도움말 패널 */}
-      {showHelp && (
-        <div className="mb-6 p-4 rounded-xl animate-fadeIn" style={{ background: 'var(--bg-tertiary)' }}>
-          <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
-            {t('helpDesc')}
-          </p>
-
-          <div className="space-y-2 mb-4">
-            <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #3b82f6' }}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-medium text-sm" style={{ color: '#3b82f6' }}>{t('linearHelp.name')}</span>
-                <code className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>{t('linearHelp.formula')}</code>
-              </div>
-              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('linearHelp.desc')}</p>
-            </div>
-
-            <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #ef4444' }}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-medium text-sm" style={{ color: '#ef4444' }}>{t('exponentialHelp.name')}</span>
-                <code className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>{t('exponentialHelp.formula')}</code>
-              </div>
-              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('exponentialHelp.desc')}</p>
-            </div>
-
-            <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #22c55e' }}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-medium text-sm" style={{ color: '#22c55e' }}>{t('logarithmicHelp.name')}</span>
-                <code className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>{t('logarithmicHelp.formula')}</code>
-              </div>
-              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('logarithmicHelp.desc')}</p>
-            </div>
-
-            <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #f59e0b' }}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-medium text-sm" style={{ color: '#f59e0b' }}>{t('quadraticHelp.name')}</span>
-                <code className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>{t('quadraticHelp.formula')}</code>
-              </div>
-              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('quadraticHelp.desc')}</p>
-            </div>
-
-            <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid var(--accent)' }}>
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-medium text-sm" style={{ color: 'var(--accent)' }}>{t('sCurveHelp.name')}</span>
-                <code className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>{t('sCurveHelp.formula')}</code>
-              </div>
-              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('sCurveHelp.desc')}</p>
-            </div>
-          </div>
-
-          <div className="text-xs p-2 rounded-lg" style={{ background: 'var(--bg-primary)', color: 'var(--text-tertiary)' }}>
-            {t('helpTip')}
-          </div>
-        </div>
-      )}
-
+    <div className="space-y-4">
       {/* 설정 패널 */}
       <div className="grid grid-cols-1 gap-4 mb-6">
         {/* 기본 설정 */}
@@ -437,35 +362,35 @@ export default function GrowthCurveChart({
           />
           <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('levelUnit')}</span>
         </div>
-        <div className="grid grid-cols-2 gap-2 text-sm">
+        <div className="space-y-1.5">
           {showCurves.linear && (
-            <div className="rounded-lg p-2" style={{ background: '#3b82f620' }}>
-              <div className="font-medium" style={{ color: '#3b82f6' }}>{t('linear')}</div>
-              <div className="text-lg" style={{ color: 'var(--text-primary)' }}>{previewValues.linear.toLocaleString()}</div>
+            <div className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+              <span className="text-sm font-medium" style={{ color: '#3b82f6' }}>{t('linear')}</span>
+              <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>{previewValues.linear.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
             </div>
           )}
           {showCurves.exponential && (
-            <div className="rounded-lg p-2" style={{ background: '#ef444420' }}>
-              <div className="font-medium" style={{ color: '#ef4444' }}>{t('exponential')}</div>
-              <div className="text-lg" style={{ color: 'var(--text-primary)' }}>{previewValues.exponential.toLocaleString()}</div>
+            <div className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+              <span className="text-sm font-medium" style={{ color: '#ef4444' }}>{t('exponential')}</span>
+              <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>{previewValues.exponential.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
             </div>
           )}
           {showCurves.logarithmic && (
-            <div className="rounded-lg p-2" style={{ background: '#22c55e20' }}>
-              <div className="font-medium" style={{ color: '#22c55e' }}>{t('logarithmic')}</div>
-              <div className="text-lg" style={{ color: 'var(--text-primary)' }}>{previewValues.logarithmic.toLocaleString()}</div>
+            <div className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+              <span className="text-sm font-medium" style={{ color: '#22c55e' }}>{t('logarithmic')}</span>
+              <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>{previewValues.logarithmic.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
             </div>
           )}
           {showCurves.quadratic && (
-            <div className="rounded-lg p-2" style={{ background: '#f59e0b20' }}>
-              <div className="font-medium" style={{ color: '#f59e0b' }}>{t('quadratic')}</div>
-              <div className="text-lg" style={{ color: 'var(--text-primary)' }}>{previewValues.quadratic.toLocaleString()}</div>
+            <div className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+              <span className="text-sm font-medium" style={{ color: '#f59e0b' }}>{t('quadratic')}</span>
+              <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>{previewValues.quadratic.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
             </div>
           )}
           {showCustom && previewValues.custom !== null && (
-            <div className="rounded-lg p-2" style={{ background: '#8b5cf620' }}>
-              <div className="font-medium" style={{ color: '#8b5cf6' }}>{t('customCurve')}</div>
-              <div className="text-lg" style={{ color: 'var(--text-primary)' }}>{previewValues.custom.toLocaleString()}</div>
+            <div className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+              <span className="text-sm font-medium" style={{ color: '#8b5cf6' }}>{t('customCurve')}</span>
+              <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>{previewValues.custom.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
             </div>
           )}
         </div>

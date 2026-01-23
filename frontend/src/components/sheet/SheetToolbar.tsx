@@ -23,6 +23,7 @@ import {
   StickyNote,
 } from 'lucide-react';
 import { useSheetUIStore } from '@/stores/sheetUIStore';
+import { useHistoryStore } from '@/stores/historyStore';
 import type { CellStyle } from '@/types';
 
 // 폰트 사이즈 옵션 (x-spreadsheet 패턴)
@@ -123,13 +124,11 @@ export default function SheetToolbar({
     setZoom,
     zoomIn,
     zoomOut,
-    canUndo,
-    canRedo,
     currentCellStyle,
     updateCurrentCellStyle,
-    undoStack,
-    redoStack,
   } = useSheetUIStore();
+  const { canUndo, canRedo, getHistory } = useHistoryStore();
+  const { past, future } = getHistory();
 
   // 히스토리 드롭다운 상태
   const [showHistory, setShowHistory] = useState(false);
@@ -260,7 +259,7 @@ export default function SheetToolbar({
         <Tooltip label={t('toolbar.history')}>
           <button
             onClick={() => setShowHistory(!showHistory)}
-            disabled={disabled || (undoStack.length === 0 && redoStack.length === 0)}
+            disabled={disabled || (past.length === 0 && future.length === 0)}
             className={`${buttonClass} ${hoverClass} flex items-center gap-0.5`}
             style={{ color: 'var(--text-secondary)' }}
           >
@@ -269,7 +268,7 @@ export default function SheetToolbar({
           </button>
         </Tooltip>
 
-        {showHistory && (undoStack.length > 0 || redoStack.length > 0) && (
+        {showHistory && (past.length > 0 || future.length > 0) && (
           <div
             className="absolute top-full left-0 mt-1 min-w-[200px] max-h-[300px] overflow-y-auto rounded-lg shadow-lg border z-50"
             style={{
@@ -278,15 +277,15 @@ export default function SheetToolbar({
             }}
           >
             {/* Undo 히스토리 */}
-            {undoStack.length > 0 && (
+            {past.length > 0 && (
               <div className="p-2 border-b" style={{ borderColor: 'var(--border-primary)' }}>
                 <div
                   className="text-xs font-medium mb-1 px-2"
                   style={{ color: 'var(--text-tertiary)' }}
                 >
-                  {t('toolbar.undoHistory')} ({undoStack.length})
+                  {t('toolbar.undoHistory')} ({past.length})
                 </div>
-                {[...undoStack].reverse().slice(0, 10).map((item, index) => (
+                {[...past].reverse().slice(0, 10).map((item, index) => (
                   <div
                     key={`undo-${index}`}
                     className="px-2 py-1.5 text-xs rounded hover:bg-[var(--bg-hover)] cursor-default flex items-center gap-2"
@@ -294,7 +293,7 @@ export default function SheetToolbar({
                   >
                     <Undo2 className="w-3 h-3 flex-shrink-0" style={{ color: 'var(--text-tertiary)' }} />
                     <span className="truncate">
-                      {t(`toolbar.historyType.${item.type}`)} - {new Date(item.timestamp).toLocaleTimeString()}
+                      {item.label} - {new Date(item.timestamp).toLocaleTimeString()}
                     </span>
                   </div>
                 ))}
@@ -302,15 +301,15 @@ export default function SheetToolbar({
             )}
 
             {/* Redo 히스토리 */}
-            {redoStack.length > 0 && (
+            {future.length > 0 && (
               <div className="p-2">
                 <div
                   className="text-xs font-medium mb-1 px-2"
                   style={{ color: 'var(--text-tertiary)' }}
                 >
-                  {t('toolbar.redoHistory')} ({redoStack.length})
+                  {t('toolbar.redoHistory')} ({future.length})
                 </div>
-                {[...redoStack].reverse().slice(0, 10).map((item, index) => (
+                {[...future].slice(0, 10).map((item, index) => (
                   <div
                     key={`redo-${index}`}
                     className="px-2 py-1.5 text-xs rounded hover:bg-[var(--bg-hover)] cursor-default flex items-center gap-2"
@@ -318,7 +317,7 @@ export default function SheetToolbar({
                   >
                     <Redo2 className="w-3 h-3 flex-shrink-0" style={{ color: 'var(--text-tertiary)' }} />
                     <span className="truncate">
-                      {t(`toolbar.historyType.${item.type}`)} - {new Date(item.timestamp).toLocaleTimeString()}
+                      {item.label} - {new Date(item.timestamp).toLocaleTimeString()}
                     </span>
                   </div>
                 ))}
@@ -326,7 +325,7 @@ export default function SheetToolbar({
             )}
 
             {/* 히스토리 없음 */}
-            {undoStack.length === 0 && redoStack.length === 0 && (
+            {past.length === 0 && future.length === 0 && (
               <div className="p-4 text-xs text-center" style={{ color: 'var(--text-tertiary)' }}>
                 {t('toolbar.noHistory')}
               </div>

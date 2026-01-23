@@ -32,7 +32,7 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
   const [showUnchanged, setShowUnchanged] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
   const [showHelp, setShowHelp] = useState(false);
-  const [helpHeight, setHelpHeight] = useState(100);
+  const [helpHeight, setHelpHeight] = useState(280);
 
   // 비교 가능한 소스 목록 (시트 + 스냅샷)
   const sources = useMemo(() => [
@@ -56,16 +56,8 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
 
     if (!oldSource || !newSource) return;
 
-    // 이름 컬럼 찾기: '이름', 'name' 또는 두 번째 컬럼
-    const columns = oldSource.data.columns;
-    const nameColumnId = columns.find(c =>
-      c.name.toLowerCase() === 'name' ||
-      c.name === '이름' ||
-      c.name.toLowerCase().includes('name') ||
-      c.name.includes('이름')
-    )?.id || (columns.length >= 2 ? columns[1].id : columns[0]?.id);
-
-    const comparisonResult = compareSheets(oldSource.data, newSource.data, { nameColumnId });
+    // 이름 기반 매칭으로 비교 실행 (컬럼 이름, 행 이름 자동 탐지)
+    const comparisonResult = compareSheets(oldSource.data, newSource.data);
     setResult(comparisonResult);
   };
 
@@ -170,20 +162,25 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
 
         {/* 도움말 패널 */}
         {isPanel && showHelp && (
-          <div className="shrink-0 animate-slideDown flex flex-col" style={{ height: `${helpHeight + 6}px`, minHeight: '66px', maxHeight: '256px', borderBottom: '1px solid #f9731630' }}>
+          <div className="shrink-0 animate-slideDown flex flex-col" style={{ borderBottom: '1px solid #f9731630' }}>
             <div
-              className="flex-1 px-4 py-3 overflow-y-auto"
-              style={{ background: '#f9731608' }}
+              className="px-4 py-3 overflow-y-auto"
+              style={{ background: '#f9731608', height: `${helpHeight}px`, minHeight: '100px', maxHeight: '600px' }}
             >
-              <p className="text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>
-                {t('helpDesc')}
-              </p>
-              <div className="space-y-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+              <div className="space-y-1.5 text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                {t('helpDesc').split('. ').map((sentence, i, arr) => (
+                  <div key={i}>
+                    {sentence}{i < arr.length - 1 ? '.' : ''}
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 pt-2 border-t space-y-1.5 text-sm" style={{ borderColor: '#f9731630', color: 'var(--text-tertiary)' }}>
                 <div>{t('helpSnapshot')}</div>
                 <div>{t('helpCompare')}</div>
                 <div>{t('helpExport')}</div>
+                <div>{t('helpMatching')}</div>
               </div>
-              <div className="mt-2 pt-2 border-t text-xs" style={{ borderColor: '#f9731630', color: 'var(--text-tertiary)' }}>
+              <div className="mt-2 pt-2 border-t text-sm" style={{ borderColor: '#f9731630', color: 'var(--text-tertiary)' }}>
                 {t('helpUseCase')}
               </div>
             </div>
@@ -196,7 +193,7 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
                 const startY = e.clientY;
                 const startH = helpHeight;
                 const onMouseMove = (moveEvent: MouseEvent) => {
-                  const newHeight = Math.max(60, Math.min(250, startH + moveEvent.clientY - startY));
+                  const newHeight = Math.max(100, Math.min(600, startH + moveEvent.clientY - startY));
                   setHelpHeight(newHeight);
                 };
                 const onMouseUp = () => {

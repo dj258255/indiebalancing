@@ -18,6 +18,7 @@ import {
 import { PresetComparisonModal } from '@/components/modals';
 import type { DraggableState } from '@/hooks';
 import { useToolLayoutStore } from '@/stores/toolLayoutStore';
+import { useProjectStore } from '@/stores/projectStore';
 
 interface PanelConfig {
   x: number;
@@ -68,6 +69,7 @@ export default function FloatingPanels({
   const [chartHelpHeight, setChartHelpHeight] = useState(100);
 
   const { toolLocations } = useToolLayoutStore();
+  const { cellSelectionMode } = useProjectStore();
 
   // 사이드바에 있는 도구만 플로팅 패널로 표시
   const isInSidebar = (toolId: string) => toolLocations[toolId as keyof typeof toolLocations] === 'sidebar';
@@ -111,7 +113,11 @@ export default function FloatingPanels({
       {panels.calculator.show && (
         <div
           className="fixed hidden md:flex flex-col rounded-xl overflow-hidden"
-          style={getPanelStyle('calculator')}
+          style={{
+            ...getPanelStyle('calculator'),
+            // 셀 선택 모드일 때는 클릭이 통과하도록
+            pointerEvents: cellSelectionMode.active ? 'none' : 'auto',
+          }}
           onMouseDown={() => bringToFront('calculator')}
         >
           <Calculator
@@ -191,7 +197,7 @@ export default function FloatingPanels({
               style={{
                 height: `${chartHelpHeight + 6}px`,
                 minHeight: '66px',
-                maxHeight: '256px',
+                maxHeight: '400px',
                 borderBottom: '1px solid var(--border-primary)',
               }}
             >
@@ -199,16 +205,54 @@ export default function FloatingPanels({
                 className="flex-1 px-4 py-3 text-sm overflow-y-auto"
                 style={{ background: 'var(--bg-tertiary)' }}
               >
-                <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
-                  {t('growthCurve.title')}
-                </div>
-                <p className="mb-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  {t('growthCurve.description')}
+                <p className="mb-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  {t('growthCurve.helpDesc')}
                 </p>
-                <div className="space-y-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  <div>- {t('growthCurve.help')}</div>
-                  <div>- {t('growthCurve.help2')}</div>
-                  <div>- {t('growthCurve.help3')}</div>
+
+                <div className="space-y-2 mb-3">
+                  <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #3b82f6' }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-sm" style={{ color: '#3b82f6' }}>{t('growthCurve.linearHelp.name')}</span>
+                      <code className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>{t('growthCurve.linearHelp.formula')}</code>
+                    </div>
+                    <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('growthCurve.linearHelp.desc')}</p>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #ef4444' }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-sm" style={{ color: '#ef4444' }}>{t('growthCurve.exponentialHelp.name')}</span>
+                      <code className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>{t('growthCurve.exponentialHelp.formula')}</code>
+                    </div>
+                    <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('growthCurve.exponentialHelp.desc')}</p>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #22c55e' }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-sm" style={{ color: '#22c55e' }}>{t('growthCurve.logarithmicHelp.name')}</span>
+                      <code className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>{t('growthCurve.logarithmicHelp.formula')}</code>
+                    </div>
+                    <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('growthCurve.logarithmicHelp.desc')}</p>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #f59e0b' }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-sm" style={{ color: '#f59e0b' }}>{t('growthCurve.quadraticHelp.name')}</span>
+                      <code className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>{t('growthCurve.quadraticHelp.formula')}</code>
+                    </div>
+                    <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('growthCurve.quadraticHelp.desc')}</p>
+                  </div>
+
+                  <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #8b5cf6' }}>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium text-sm" style={{ color: '#8b5cf6' }}>{t('growthCurve.sCurveHelp.name')}</span>
+                      <code className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>{t('growthCurve.sCurveHelp.formula')}</code>
+                    </div>
+                    <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('growthCurve.sCurveHelp.desc')}</p>
+                  </div>
+                </div>
+
+                <div className="text-xs p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
+                  {t('growthCurve.helpTip')}
                 </div>
               </div>
               <div
@@ -219,7 +263,7 @@ export default function FloatingPanels({
                   const startY = e.clientY;
                   const startH = chartHelpHeight;
                   const onMouseMove = (moveEvent: MouseEvent) => {
-                    const newHeight = Math.max(60, Math.min(250, startH + moveEvent.clientY - startY));
+                    const newHeight = Math.max(60, Math.min(350, startH + moveEvent.clientY - startY));
                     setChartHelpHeight(newHeight);
                   };
                   const onMouseUp = () => {
