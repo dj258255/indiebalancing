@@ -89,6 +89,7 @@ export default function BottomToolbar({
   const [isOverToolsSection, setIsOverToolsSection] = useState(false);
   const [toolsSectionRect, setToolsSectionRect] = useState<DOMRect | null>(null);
   const [isDraggingFromSidebar, setIsDraggingFromSidebar] = useState(false);
+  const [isGlobalDragging, setIsGlobalDragging] = useState(false);
 
   const dragStartX = useRef(0);
   const dragStartY = useRef(0);
@@ -208,6 +209,28 @@ export default function BottomToolbar({
 
   // 유효한 도구 ID 목록
   const validToolIds = Object.keys(TOOL_CONFIG);
+
+  // 전역 드래그 이벤트 감지 (document 레벨)
+  useEffect(() => {
+    const handleGlobalDragStart = (e: DragEvent) => {
+      if (e.dataTransfer?.types.includes('application/x-tool-id')) {
+        setIsGlobalDragging(true);
+      }
+    };
+
+    const handleGlobalDragEnd = () => {
+      setIsGlobalDragging(false);
+      setIsDraggingFromSidebar(false);
+    };
+
+    document.addEventListener('dragstart', handleGlobalDragStart);
+    document.addEventListener('dragend', handleGlobalDragEnd);
+
+    return () => {
+      document.removeEventListener('dragstart', handleGlobalDragStart);
+      document.removeEventListener('dragend', handleGlobalDragEnd);
+    };
+  }, []);
 
   const handleDragOver = (e: React.DragEvent) => {
     // 드래그 중인 데이터가 도구인지 확인 (커스텀 MIME 타입으로 구분)
@@ -357,14 +380,15 @@ export default function BottomToolbar({
         </div>
       )}
 
-      {/* 하단 드롭 영역 (사이드바에서 드래그할 때) - 항상 드래그 이벤트 감지 */}
+      {/* 하단 드롭 영역 (사이드바에서 드래그할 때만 활성화) */}
       <div
         ref={containerRef}
         className="fixed bottom-0 left-0 right-0 z-20 h-24"
+        onDragEnter={handleDragOver}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
-        style={{ pointerEvents: 'auto' }}
+        style={{ pointerEvents: isGlobalDragging ? 'auto' : 'none' }}
       />
 
       {/* 하단 버튼들 - 위치가 지정되지 않은 것은 가운데 정렬, 지정된 것은 절대 위치 */}

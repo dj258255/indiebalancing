@@ -49,6 +49,11 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+
+  /* 행/열 하이라이트 */
+  --row-col-highlight: rgba(59, 130, 246, 0.3);
+  --row-col-highlight-text: #1e40af;
+  --row-col-highlight-border: #3b82f6;
 }
 
 /* 다크 모드 */
@@ -97,6 +102,11 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+
+  /* 행/열 하이라이트 */
+  --row-col-highlight: rgba(96, 165, 250, 0.35);
+  --row-col-highlight-text: #93c5fd;
+  --row-col-highlight-border: #60a5fa;
 }
 
 * {

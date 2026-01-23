@@ -443,19 +443,10 @@ export default function Home() {
 
                   <SheetHeader
                     sheet={currentSheet}
-                    onAddMemo={handleAddMemo}
-                    onUndo={handleUndo}
-                    onRedo={handleRedo}
-                    canUndo={canUndo()}
-                    canRedo={canRedo()}
-                    showHistoryPanel={showHistoryPanel}
-                    onToggleHistory={() => setShowHistoryPanel(!showHistoryPanel)}
-                    history={getHistory()}
-                    onHistoryJump={(index) => handleHistoryJump(index, () => setShowHistoryPanel(false))}
                   />
 
                   <div className="flex-1 min-h-0 overflow-hidden">
-                    <SheetTable projectId={currentProject.id} sheet={currentSheet} />
+                    <SheetTable projectId={currentProject.id} sheet={currentSheet} onAddMemo={handleAddMemo} />
                   </div>
                 </div>
               ) : (

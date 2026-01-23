@@ -61,11 +61,32 @@ export interface Column {
 export interface Row {
   id: string;
   cells: Record<string, CellValue>;
+  cellStyles?: Record<string, CellStyle>;  // 셀별 스타일 (columnId -> CellStyle)
   locked?: boolean;  // 행 잠금 여부
 }
 
 // 셀 값 타입
 export type CellValue = string | number | null;
+
+// 셀 포맷팅 (Fortune-Sheet/Luckysheet 패턴)
+export interface CellStyle {
+  bold?: boolean;           // bl: bold
+  italic?: boolean;         // it: italic
+  underline?: boolean;      // un: underline
+  strikethrough?: boolean;  // cl: strikethrough
+  fontSize?: number;        // fs: font size (10-36)
+  fontColor?: string;       // fc: font color (hex)
+  bgColor?: string;         // bg: background color (hex)
+  hAlign?: 'left' | 'center' | 'right';  // ht: horizontal align
+  vAlign?: 'top' | 'middle' | 'bottom';  // vt: vertical align
+  textRotation?: number;    // tr: 0, 45, 90, -45, -90, vertical
+}
+
+// 셀 데이터 (값 + 스타일)
+export interface CellData {
+  value: CellValue;
+  style?: CellStyle;
+}
 
 // 수식 평가 결과
 export interface FormulaResult {
