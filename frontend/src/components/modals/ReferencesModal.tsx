@@ -335,7 +335,7 @@ export default function ReferencesModal({ onClose }: ReferencesModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-4" style={{ background: 'rgba(0, 0, 0, 0.5)' }}>
+    <div className="fixed inset-0 flex items-center justify-center z-[9999] p-4" style={{ background: 'rgba(0, 0, 0, 0.5)' }}>
       <div className="rounded-xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl" style={{ background: 'var(--bg-primary)' }}>
         {/* 헤더 */}
         <div className="flex items-center justify-between px-6 py-4 border-b rounded-t-xl" style={{ background: 'linear-gradient(to right, var(--primary-purple), var(--primary-blue))', borderColor: 'transparent' }}>

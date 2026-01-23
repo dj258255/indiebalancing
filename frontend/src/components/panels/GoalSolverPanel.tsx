@@ -333,14 +333,9 @@ export default function GoalSolverPanel({ onClose, onDragStart }: GoalSolverPane
 
                           {/* 설명 */}
                           <div className="px-4 py-3 space-y-3" style={{ background: 'var(--bg-tertiary)' }}>
-                            <div className="flex items-start gap-2">
-                              <div className="w-5 h-5 rounded flex items-center justify-center shrink-0 mt-0.5" style={{ background: 'var(--bg-primary)' }}>
-                                <span className="text-xs">📝</span>
-                              </div>
-                              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                                {result.explanation}
-                              </p>
-                            </div>
+                            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                              {result.explanation}
+                            </p>
                             <div className="px-3 py-2 rounded-lg font-mono text-xs" style={{ background: 'var(--bg-primary)', color: 'var(--text-tertiary)' }}>
                               {result.formula}
                             </div>

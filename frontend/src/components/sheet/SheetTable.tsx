@@ -17,6 +17,8 @@ import FormulaAutocomplete from './FormulaAutocomplete';
 import FormulaHint from './FormulaHint';
 import ColumnModal from './ColumnModal';
 import CellContextMenu from './CellContextMenu';
+import ColumnContextMenu from './ColumnContextMenu';
+import RowContextMenu from './RowContextMenu';
 import SheetToolbar from './SheetToolbar';
 import { useSheetUIStore, DEFAULT_CELL_STYLE } from '@/stores/sheetUIStore';
 import { useTranslations } from 'next-intl';
@@ -72,6 +74,10 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
   const [bulkEditValue, setBulkEditValue] = useState('');
   const inputRef = useRef<HTMLInputElement>(null);
   const formulaBarRef = useRef<HTMLInputElement>(null);
+  // IME 입력을 위한 숨겨진 input (셀 선택 시 포커스)
+  const hiddenInputRef = useRef<HTMLInputElement>(null);
+  // IME 조합 상태 추적 (한글 등)
+  const isComposingRef = useRef(false);
   const lastSelectedCellRef = useRef<{ rowId: string; columnId: string } | null>(null);
   const isDraggingRef = useRef(false);
   const dragStartCellRef = useRef<{ rowId: string; columnId: string } | null>(null);
@@ -112,6 +118,28 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     columnId: string;
     isRowNumberCell: boolean;
     isHeaderCell: boolean;
+  } | null>(null);
+
+  // 컬럼 헤더 컨텍스트 메뉴 상태
+  const [columnContextMenu, setColumnContextMenu] = useState<{
+    x: number;
+    y: number;
+    column: Column;
+  } | null>(null);
+
+  // 행 헤더 컨텍스트 메뉴 상태
+  const [rowContextMenu, setRowContextMenu] = useState<{
+    x: number;
+    y: number;
+    row: Row;
+    rowIndex: number;
+  } | null>(null);
+
+  // 메모 모달 상태
+  const [memoModal, setMemoModal] = useState<{
+    rowId: string;
+    columnId: string;
+    memo: string;
   } | null>(null);
 
   // 컬럼 너비 초기화
@@ -243,43 +271,54 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     handleRowSelect(row);
   }, [isRowSelected, handleRowSelect, sheet.rows]);
 
-  // 체크박스 드래그 중 (행 위를 지나갈 때)
-  const handleCheckboxDragEnter = useCallback((row: Row) => {
-    if (!isCheckboxDragging || !checkboxDragModeRef.current) return;
+  // 체크박스 드래그 중 (행 위를 지나갈 때) - rafThrottle로 성능 최적화
+  const handleCheckboxDragEnterThrottled = useMemo(
+    () => rafThrottle((rowId: string) => {
+      if (!checkboxDragModeRef.current) return;
 
-    const currentRowIndex = sheet.rows.findIndex(r => r.id === row.id);
-    if (currentRowIndex === -1) return;
+      const currentRowIndex = sheet.rows.findIndex(r => r.id === rowId);
+      if (currentRowIndex === -1) return;
 
-    const lastIndex = lastDragRowIndexRef.current;
+      const lastIndex = lastDragRowIndexRef.current;
 
-    // 빠른 드래그로 건너뛴 행들 모두 처리
-    if (lastIndex !== null && lastIndex !== currentRowIndex) {
-      const start = Math.min(lastIndex, currentRowIndex);
-      const end = Math.max(lastIndex, currentRowIndex);
+      // 빠른 드래그로 건너뛴 행들 모두 처리
+      if (lastIndex !== null && lastIndex !== currentRowIndex) {
+        const start = Math.min(lastIndex, currentRowIndex);
+        const end = Math.max(lastIndex, currentRowIndex);
 
-      for (let i = start; i <= end; i++) {
-        const targetRow = sheet.rows[i];
-        const targetSelected = isRowSelected(targetRow.id);
+        for (let i = start; i <= end; i++) {
+          const targetRow = sheet.rows[i];
+          const targetSelected = isRowSelected(targetRow.id);
 
-        // 모드에 따라 선택/해제
-        if (checkboxDragModeRef.current === 'select' && !targetSelected) {
+          // 모드에 따라 선택/해제
+          if (checkboxDragModeRef.current === 'select' && !targetSelected) {
+            handleRowSelect(targetRow);
+          } else if (checkboxDragModeRef.current === 'deselect' && targetSelected) {
+            handleRowSelect(targetRow);
+          }
+        }
+      } else {
+        // 단일 행 처리 (첫 진입 또는 같은 행)
+        const targetRow = sheet.rows.find(r => r.id === rowId);
+        if (!targetRow) return;
+        const currentlySelected = isRowSelected(rowId);
+        if (checkboxDragModeRef.current === 'select' && !currentlySelected) {
           handleRowSelect(targetRow);
-        } else if (checkboxDragModeRef.current === 'deselect' && targetSelected) {
+        } else if (checkboxDragModeRef.current === 'deselect' && currentlySelected) {
           handleRowSelect(targetRow);
         }
       }
-    } else {
-      // 단일 행 처리 (첫 진입 또는 같은 행)
-      const currentlySelected = isRowSelected(row.id);
-      if (checkboxDragModeRef.current === 'select' && !currentlySelected) {
-        handleRowSelect(row);
-      } else if (checkboxDragModeRef.current === 'deselect' && currentlySelected) {
-        handleRowSelect(row);
-      }
-    }
 
-    lastDragRowIndexRef.current = currentRowIndex;
-  }, [isCheckboxDragging, isRowSelected, handleRowSelect, sheet.rows]);
+      lastDragRowIndexRef.current = currentRowIndex;
+    }),
+    [sheet.rows, isRowSelected, handleRowSelect]
+  );
+
+  // handleCheckboxDragEnter wrapper (isCheckboxDragging 체크 포함)
+  const handleCheckboxDragEnter = useCallback((row: Row) => {
+    if (!isCheckboxDragging) return;
+    handleCheckboxDragEnterThrottled(row.id);
+  }, [isCheckboxDragging, handleCheckboxDragEnterThrottled]);
 
   // 체크박스 드래그 종료 (글로벌 마우스업)
   useEffect(() => {
@@ -1175,9 +1214,14 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     return () => window.removeEventListener('mouseup', handleMouseUp);
   }, [isMoveDragging, handleMoveDragEnd]);
 
-  // 전역 키보드 이벤트 (복사, 붙여넣기, 삭제)
+  // 전역 키보드 이벤트 (복사, 붙여넣기, 삭제, F2)
   useEffect(() => {
     const handleGlobalKeyDown = (e: KeyboardEvent) => {
+      // hiddenInput에서 발생한 경우는 별도 처리
+      if (e.target === hiddenInputRef.current) {
+        return;
+      }
+
       // input이나 textarea에서는 무시
       if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
         return;
@@ -1207,7 +1251,12 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
           clearSelectedCells();
         }
       }
-      // 일반 문자 입력 시 바로 편집 모드로 진입
+      // F2: 편집 모드 진입
+      else if (e.key === 'F2' && selectedCell) {
+        e.preventDefault();
+        startEditing(selectedCell.rowId, selectedCell.columnId);
+      }
+      // 일반 문자 입력 시 hiddenInput으로 포커스 이동
       else if (
         selectedCell &&
         e.key.length === 1 &&
@@ -1220,22 +1269,55 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
         const column = sheet.columns.find((c) => c.id === selectedCell.columnId);
         if (column?.locked || row?.locked) return;
 
-        e.preventDefault();
-        // 편집 모드 진입 + 입력한 문자로 시작
-        setEditingCell({ rowId: selectedCell.rowId, columnId: selectedCell.columnId });
-        setEditValue(e.key);
-        setFormulaBarValue(e.key);
-      }
-      // F2: 편집 모드 진입
-      else if (e.key === 'F2' && selectedCell) {
-        e.preventDefault();
-        startEditing(selectedCell.rowId, selectedCell.columnId);
+        // hiddenInput으로 포커스 이동하여 IME 입력 받기
+        if (hiddenInputRef.current) {
+          hiddenInputRef.current.value = '';
+          hiddenInputRef.current.focus();
+          // IME가 아닌 경우 (영문) 직접 값 설정
+          if (!e.isComposing && e.keyCode !== 229) {
+            hiddenInputRef.current.value = e.key;
+          }
+        }
       }
     };
 
     window.addEventListener('keydown', handleGlobalKeyDown);
-    return () => window.removeEventListener('keydown', handleGlobalKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleGlobalKeyDown);
+    };
   }, [editingCell, selectedCells, selectedCell, copySelectedCells, pasteToSelectedCells, clearSelectedCells, sheet.rows, sheet.columns, startEditing]);
+
+  // 숨겨진 input 핸들러 (IME 입력 처리)
+  const handleHiddenInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    // IME 조합 중이 아닐 때만 처리 (영문 등)
+    if (!isComposingRef.current && selectedCell && !editingCell) {
+      const value = e.target.value;
+      if (value) {
+        setEditingCell({ rowId: selectedCell.rowId, columnId: selectedCell.columnId });
+        setEditValue(value);
+        setFormulaBarValue(value);
+        e.target.value = '';
+      }
+    }
+  }, [selectedCell, editingCell]);
+
+  const handleHiddenInputCompositionStart = useCallback(() => {
+    isComposingRef.current = true;
+  }, []);
+
+  const handleHiddenInputCompositionEnd = useCallback((e: React.CompositionEvent<HTMLInputElement>) => {
+    isComposingRef.current = false;
+    // 조합 완료 시 편집 모드 진입
+    if (selectedCell && !editingCell) {
+      const value = e.currentTarget.value;
+      if (value) {
+        setEditingCell({ rowId: selectedCell.rowId, columnId: selectedCell.columnId });
+        setEditValue(value);
+        setFormulaBarValue(value);
+        e.currentTarget.value = '';
+      }
+    }
+  }, [selectedCell, editingCell]);
 
   // 키보드 이벤트 처리
   const handleKeyDown = useCallback(
@@ -1324,12 +1406,23 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
           const isHighlightedRow = selectedCell?.rowId === row.original.id;
           return (
             <div
-              className="flex items-center text-sm group/row h-full select-none cursor-pointer"
-              onMouseDown={(e) => handleRowNumberDragStart(row.original, e)}
+              className="flex items-center text-sm h-full select-none"
+              onContextMenu={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                setRowContextMenu({ x: e.clientX, y: e.clientY, row: row.original, rowIndex: row.index });
+              }}
               onMouseEnter={() => handleCheckboxDragEnter(row.original)}
             >
-              {/* 왼쪽 영역: 체크박스 (가운데 정렬) */}
-              <div className="flex-1 flex items-center justify-center">
+              {/* 왼쪽 영역: 체크박스 (드래그 선택용) */}
+              <div
+                className="flex-1 flex items-center justify-center cursor-pointer h-full"
+                onMouseDown={(e) => {
+                  if (e.button !== 2) {
+                    handleRowNumberDragStart(row.original, e);
+                  }
+                }}
+              >
                 <div
                   className="w-5 h-5 rounded border flex items-center justify-center transition-colors"
                   style={{
@@ -1354,28 +1447,39 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                     : 'var(--border-primary)'
                 }}
               />
-              {/* 오른쪽 영역: 숫자/잠금 (호버 시 전환) */}
-              <div className="flex-1 flex items-center justify-center relative">
-                {/* 숫자 - 호버 시 숨김 (잠금 상태면 항상 숨김) */}
+              {/* 오른쪽 영역: 숫자 (클릭 시 행 전체 선택, 드래그 중이면 체크박스 드래그 계속) */}
+              <div
+                className="flex-1 flex items-center justify-center gap-1 cursor-pointer h-full hover:bg-[var(--bg-hover)] transition-colors"
+                onMouseEnter={() => {
+                  // 체크박스 드래그 중이면 드래그 처리
+                  if (isCheckboxDragging) {
+                    handleCheckboxDragEnter(row.original);
+                  }
+                }}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  // 드래그 중이 아닐 때만 행 전체 선택
+                  if (isCheckboxDragging) return;
+                  // 해당 행의 모든 셀 선택
+                  const allCellsInRow = sheet.columns.map(col => ({
+                    rowId: row.original.id,
+                    columnId: col.id
+                  }));
+                  setSelectedCells(allCellsInRow);
+                  if (allCellsInRow.length > 0) {
+                    setSelectedCell(allCellsInRow[0]);
+                  }
+                }}
+              >
+                {rowLocked && (
+                  <Lock className="w-3 h-3" style={{ color: 'var(--warning)' }} />
+                )}
                 <span
-                  className={`text-center transition-opacity ${rowLocked ? 'opacity-0' : 'group-hover/row:opacity-0'}`}
+                  className="text-center"
                   style={{ color: isHighlightedRow ? 'var(--row-col-highlight-text)' : 'var(--text-tertiary)' }}
                 >
                   {row.index + 1}
                 </span>
-                {/* 잠금 버튼 - 호버 시 표시 (잠금 상태면 항상 표시) */}
-                <button
-                  onMouseDown={(e) => e.stopPropagation()}
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    updateRow(projectId, sheet.id, row.original.id, { locked: !rowLocked });
-                  }}
-                  className={`absolute inset-0 flex items-center justify-center transition-opacity ${rowLocked ? 'opacity-100' : 'opacity-0 group-hover/row:opacity-100'}`}
-                  style={{ color: rowLocked ? 'var(--warning)' : 'var(--text-tertiary)' }}
-                  title={rowLocked ? t('table.unlockRow') : t('table.lockRow')}
-                >
-                  {rowLocked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-                </button>
               </div>
             </div>
           );
@@ -1390,62 +1494,35 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
         id: col.id,
         accessorFn: (row) => getCellValue(row, col),
         header: () => (
-          <div className="group/col flex items-center justify-center relative h-full overflow-hidden">
-            {/* 컬럼 이름 + 타입 + 잠금 - 호버 시 숨김 */}
-            <div className="flex items-center gap-1 min-w-0 transition-opacity group-hover/col:opacity-0">
-              {col.locked && (
-                <Lock className="w-3 h-3 shrink-0" style={{ color: 'var(--warning)' }} />
-              )}
-              <span className="font-medium truncate">{col.name}</span>
-              {col.type === 'formula' && (
-                <span className="text-xs shrink-0" style={{ color: 'var(--text-tertiary)' }}>ƒ</span>
-              )}
-              {col.validation && (
-                <span title={t('table.validationSet')} className="shrink-0"><CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--primary-green)' }} /></span>
-              )}
-            </div>
-            {/* 호버 시 버튼 표시 - 같은 위치에 오버레이 */}
-            <div className="absolute inset-0 flex items-center justify-center gap-0.5 opacity-0 group-hover/col:opacity-100 transition-opacity overflow-hidden">
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  updateColumn(projectId, sheet.id, col.id, { locked: !col.locked });
-                }}
-                className="p-0.5 rounded transition-colors hover:bg-black/10 dark:hover:bg-white/10 shrink-0"
-                style={{ color: col.locked ? 'var(--warning)' : 'var(--text-tertiary)' }}
-                title={col.locked ? t('table.unlockColumn') : t('table.lockColumn')}
-              >
-                {col.locked ? <Lock className="w-3.5 h-3.5" /> : <Unlock className="w-3.5 h-3.5" />}
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setEditingColumn(col);
-                }}
-                className="p-0.5 rounded transition-colors hover:bg-black/10 dark:hover:bg-white/10 shrink-0"
-                style={{ color: 'var(--text-tertiary)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--primary-blue)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
-                title={t('table.editColumn')}
-              >
-                <Edit3 className="w-3.5 h-3.5" />
-              </button>
-              <button
-                onClick={(e) => {
-                  e.stopPropagation();
-                  if (confirm(`"${col.name}" 열을 삭제하시겠습니까?`)) {
-                    deleteColumn(projectId, sheet.id, col.id);
-                  }
-                }}
-                className="p-0.5 rounded transition-colors hover:bg-black/10 dark:hover:bg-white/10 shrink-0"
-                style={{ color: 'var(--text-tertiary)' }}
-                onMouseEnter={(e) => e.currentTarget.style.color = 'var(--error)'}
-                onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
-                title={t('table.deleteColumn')}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            </div>
+          <div
+            className="flex items-center justify-center gap-1 h-full overflow-hidden cursor-pointer select-none"
+            onClick={() => {
+              // 해당 컬럼의 모든 셀 선택
+              const allCellsInColumn = sheet.rows.map(row => ({
+                rowId: row.id,
+                columnId: col.id
+              }));
+              setSelectedCells(allCellsInColumn);
+              if (allCellsInColumn.length > 0) {
+                setSelectedCell(allCellsInColumn[0]);
+              }
+            }}
+            onContextMenu={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setColumnContextMenu({ x: e.clientX, y: e.clientY, column: col });
+            }}
+          >
+            {col.locked && (
+              <Lock className="w-3 h-3 shrink-0" style={{ color: 'var(--warning)' }} />
+            )}
+            <span className="font-medium truncate">{col.name}</span>
+            {col.type === 'formula' && (
+              <span className="text-xs shrink-0" style={{ color: 'var(--text-tertiary)' }}>ƒ</span>
+            )}
+            {col.validation && (
+              <span title={t('table.validationSet')} className="shrink-0"><CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--primary-green)' }} /></span>
+            )}
           </div>
         ),
         cell: ({ row, getValue }) => {
@@ -1473,17 +1550,27 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                   ref={inputRef}
                   key={`edit-${row.original.id}-${col.id}`}
                   type="text"
-                  value={editValue}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setEditValue(val);
+                  defaultValue={editValue}
+                  onInput={(e) => {
+                    const val = (e.target as HTMLInputElement).value;
                     // 수식 시작 시에만 자동완성 토글 (상태 업데이트 최소화, 즉시 실행)
                     if (val.startsWith('=') && val.length > 1) {
                       if (!showAutocomplete) setShowAutocomplete(true);
                     } else {
                       if (showAutocomplete) setShowAutocomplete(false);
                     }
-                    // 수식바 동기화 (오픈소스 방식: 즉시 동기화, debounce/throttle 없음)
+                    // 수식바 동기화 - IME 조합 중이 아닐 때만
+                    if (!isComposingRef.current) {
+                      setFormulaBarValue(val);
+                    }
+                  }}
+                  onCompositionStart={() => {
+                    isComposingRef.current = true;
+                  }}
+                  onCompositionEnd={(e) => {
+                    isComposingRef.current = false;
+                    // 조합 완료 시 수식바 동기화
+                    const val = e.currentTarget.value;
                     setFormulaBarValue(val);
                   }}
                   onBlur={(e) => {
@@ -1565,6 +1652,9 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
 
           // 셀 스타일 가져오기
           const cellStyle = row.original.cellStyles?.[col.id];
+
+          // 메모 확인
+          const cellMemo = row.original.cellMemos?.[col.id];
 
           // 셀 배경색 결정 - 값이 있을 때만 색상 표시
           const getCellBackground = () => {
@@ -1702,6 +1792,25 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                 <span className="absolute right-1 top-1 text-xs opacity-0 group-hover:opacity-100" style={{ color: 'var(--warning)' }}>
                   ✎
                 </span>
+              )}
+              {/* 메모 표시 (삼각형) */}
+              {cellMemo && (
+                <div
+                  className="absolute top-0 right-0 w-0 h-0 cursor-pointer group/memo"
+                  style={{
+                    borderLeft: '12px solid transparent',
+                    borderTop: '12px solid var(--warning)',
+                  }}
+                  title={cellMemo}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setMemoModal({
+                      rowId: row.original.id,
+                      columnId: col.id,
+                      memo: cellMemo,
+                    });
+                  }}
+                />
               )}
               {/* 채우기 핸들 (선택된 셀의 오른쪽 하단) */}
               {isSelected && !isEditing && !isLocked && (
@@ -1909,6 +2018,43 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
+      {/* 숨겨진 input - IME 입력 처리 (한글 등) */}
+      <input
+        ref={hiddenInputRef}
+        type="text"
+        onChange={handleHiddenInputChange}
+        onCompositionStart={handleHiddenInputCompositionStart}
+        onCompositionEnd={handleHiddenInputCompositionEnd}
+        onBlur={() => {
+          // 포커스를 잃으면 값 초기화
+          if (hiddenInputRef.current) {
+            hiddenInputRef.current.value = '';
+          }
+          isComposingRef.current = false;
+        }}
+        onKeyDown={(e) => {
+          // Enter로 편집 모드 진입 (값이 있으면)
+          if (e.key === 'Enter' && !e.nativeEvent.isComposing) {
+            const value = e.currentTarget.value;
+            if (value && selectedCell && !editingCell) {
+              setEditingCell({ rowId: selectedCell.rowId, columnId: selectedCell.columnId });
+              setEditValue(value);
+              setFormulaBarValue(value);
+              e.currentTarget.value = '';
+            }
+          }
+          // Escape로 취소
+          else if (e.key === 'Escape') {
+            e.currentTarget.value = '';
+            e.currentTarget.blur();
+          }
+        }}
+        className="absolute opacity-0 w-0 h-0 pointer-events-none"
+        style={{ position: 'fixed', top: -9999, left: -9999 }}
+        tabIndex={-1}
+        aria-hidden="true"
+      />
+
       {/* 서식 툴바 (x-spreadsheet 패턴) */}
       <SheetToolbar
         disabled={!selectedCell}
@@ -1969,7 +2115,13 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
 
         {/* 취소/확인 버튼 - 입력창 왼쪽 */}
         {isFormulaBarFocused && selectedCell && (
-          <div className="flex items-center gap-0.5 flex-shrink-0">
+          <div
+            className="flex items-center gap-0.5 flex-shrink-0 rounded px-1 py-0.5"
+            style={{
+              border: '1px solid var(--border-primary)',
+              background: 'var(--bg-primary)',
+            }}
+          >
             <button
               onClick={() => {
                 // 원래 값 복원
@@ -1985,6 +2137,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
             >
               <X className="w-4 h-4" />
             </button>
+            <div className="w-px h-4" style={{ background: 'var(--border-primary)' }} />
             <button
               onClick={finishFormulaBarEditing}
               className="p-1 rounded transition-colors hover:bg-[var(--bg-hover)]"
@@ -2340,31 +2493,199 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
       )}
 
       {/* 셀 컨텍스트 메뉴 */}
-      {contextMenu && (
-        <CellContextMenu
-          x={contextMenu.x}
-          y={contextMenu.y}
-          onClose={() => setContextMenu(null)}
-          onCopy={copySelectedCells}
-          onCut={cutSelectedCells}
-          onPaste={pasteToSelectedCells}
-          onDelete={clearSelectedCells}
-          onInsertRowAbove={insertRowAbove}
-          onInsertRowBelow={insertRowBelow}
-          onInsertColumnLeft={insertColumnLeft}
-          onInsertColumnRight={insertColumnRight}
-          onDeleteRow={deleteSelectedRows}
-          onDeleteColumn={deleteSelectedColumn}
-          canPaste={!!clipboardData || true}
-          isMultiSelect={selectedCells.length > 1}
-          isRowNumberCell={contextMenu.isRowNumberCell}
-          isHeaderCell={contextMenu.isHeaderCell}
+      {contextMenu && (() => {
+        const row = sheet.rows.find(r => r.id === contextMenu.rowId);
+        const hasMemo = !!(row?.cellMemos?.[contextMenu.columnId]);
+        const currentMemo = row?.cellMemos?.[contextMenu.columnId] || '';
+
+        return (
+          <CellContextMenu
+            x={contextMenu.x}
+            y={contextMenu.y}
+            onClose={() => setContextMenu(null)}
+            onCopy={copySelectedCells}
+            onCut={cutSelectedCells}
+            onPaste={pasteToSelectedCells}
+            onDelete={clearSelectedCells}
+            onInsertRowAbove={insertRowAbove}
+            onInsertRowBelow={insertRowBelow}
+            onInsertColumnLeft={insertColumnLeft}
+            onInsertColumnRight={insertColumnRight}
+            onDeleteRow={deleteSelectedRows}
+            onDeleteColumn={deleteSelectedColumn}
+            onAddMemo={() => {
+              setMemoModal({
+                rowId: contextMenu.rowId,
+                columnId: contextMenu.columnId,
+                memo: currentMemo,
+              });
+              setContextMenu(null);
+            }}
+            onDeleteMemo={hasMemo ? () => {
+              if (row) {
+                const newMemos = { ...row.cellMemos };
+                delete newMemos[contextMenu.columnId];
+                updateRow(projectId, sheet.id, contextMenu.rowId, {
+                  cellMemos: Object.keys(newMemos).length > 0 ? newMemos : undefined,
+                });
+              }
+              setContextMenu(null);
+            } : undefined}
+            canPaste={!!clipboardData || true}
+            isMultiSelect={selectedCells.length > 1}
+            isRowNumberCell={contextMenu.isRowNumberCell}
+            isHeaderCell={contextMenu.isHeaderCell}
+            hasMemo={hasMemo}
+          />
+        );
+      })()}
+
+      {/* 컬럼 헤더 컨텍스트 메뉴 */}
+      {columnContextMenu && (
+        <ColumnContextMenu
+          x={columnContextMenu.x}
+          y={columnContextMenu.y}
+          columnName={columnContextMenu.column.name}
+          isLocked={columnContextMenu.column.locked || false}
+          onClose={() => setColumnContextMenu(null)}
+          onToggleLock={() => {
+            updateColumn(projectId, sheet.id, columnContextMenu.column.id, {
+              locked: !columnContextMenu.column.locked
+            });
+          }}
+          onEdit={() => {
+            setEditingColumn(columnContextMenu.column);
+          }}
+          onDelete={() => {
+            if (confirm(t('table.confirmDeleteColumn', { name: columnContextMenu.column.name }))) {
+              deleteColumn(projectId, sheet.id, columnContextMenu.column.id);
+            }
+          }}
+          onInsertLeft={() => {
+            const colIdx = sheet.columns.findIndex(c => c.id === columnContextMenu.column.id);
+            insertColumn(projectId, sheet.id, {
+              name: t('table.newColumn'),
+              type: 'general',
+            }, colIdx);
+          }}
+          onInsertRight={() => {
+            const colIdx = sheet.columns.findIndex(c => c.id === columnContextMenu.column.id);
+            insertColumn(projectId, sheet.id, {
+              name: t('table.newColumn'),
+              type: 'general',
+            }, colIdx + 1);
+          }}
         />
+      )}
+
+      {/* 행 헤더 컨텍스트 메뉴 */}
+      {rowContextMenu && (
+        <RowContextMenu
+          x={rowContextMenu.x}
+          y={rowContextMenu.y}
+          rowIndex={rowContextMenu.rowIndex}
+          isLocked={rowContextMenu.row.locked || false}
+          onClose={() => setRowContextMenu(null)}
+          onToggleLock={() => {
+            updateRow(projectId, sheet.id, rowContextMenu.row.id, {
+              locked: !rowContextMenu.row.locked
+            });
+          }}
+          onDelete={() => {
+            deleteRow(projectId, sheet.id, rowContextMenu.row.id);
+          }}
+          onInsertAbove={() => {
+            insertRow(projectId, sheet.id, rowContextMenu.rowIndex);
+          }}
+          onInsertBelow={() => {
+            insertRow(projectId, sheet.id, rowContextMenu.rowIndex + 1);
+          }}
+        />
+      )}
+
+      {/* 메모 모달 */}
+      {memoModal && (
+        <div className="fixed inset-0 modal-overlay flex items-center justify-center z-[9999] p-2 sm:p-4">
+          <div className="card w-full max-w-md animate-scaleIn">
+            <div className="border-b px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between" style={{
+              borderColor: 'var(--border-primary)'
+            }}>
+              <h3 className="font-semibold text-sm sm:text-base" style={{ color: 'var(--text-primary)' }}>
+                {memoModal.memo ? t('contextMenu.editMemo') : t('contextMenu.addMemo')}
+              </h3>
+              <button
+                onClick={() => setMemoModal(null)}
+                className="p-1.5 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+                style={{ color: 'var(--text-tertiary)' }}
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-4 sm:p-5 space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                  {t('memo.content')}
+                </label>
+                <textarea
+                  value={memoModal.memo}
+                  onChange={(e) => setMemoModal({ ...memoModal, memo: e.target.value })}
+                  placeholder={t('memo.placeholder')}
+                  rows={4}
+                  className="w-full px-3 py-2 border rounded-lg text-sm resize-none"
+                  style={{
+                    background: 'var(--bg-primary)',
+                    borderColor: 'var(--border-primary)',
+                    color: 'var(--text-primary)'
+                  }}
+                  autoFocus
+                />
+              </div>
+            </div>
+            <div className="border-t px-4 sm:px-5 py-3 sm:py-4 flex justify-end gap-2" style={{
+              borderColor: 'var(--border-primary)'
+            }}>
+              <button
+                onClick={() => setMemoModal(null)}
+                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors"
+                style={{
+                  background: 'var(--bg-tertiary)',
+                  color: 'var(--text-secondary)'
+                }}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={() => {
+                  const row = sheet.rows.find(r => r.id === memoModal.rowId);
+                  if (row) {
+                    const newMemos = { ...row.cellMemos };
+                    if (memoModal.memo.trim()) {
+                      newMemos[memoModal.columnId] = memoModal.memo.trim();
+                    } else {
+                      delete newMemos[memoModal.columnId];
+                    }
+                    updateRow(projectId, sheet.id, memoModal.rowId, {
+                      cellMemos: Object.keys(newMemos).length > 0 ? newMemos : undefined,
+                    });
+                  }
+                  setMemoModal(null);
+                }}
+                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors"
+                style={{
+                  background: 'var(--accent)',
+                  color: 'white'
+                }}
+              >
+                {t('common.save')}
+              </button>
+            </div>
+          </div>
+        </div>
       )}
 
       {/* 일괄 수정 모달 */}
       {showBulkEdit && (
-        <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-2 sm:p-4">
+        <div className="fixed inset-0 modal-overlay flex items-center justify-center z-[9999] p-2 sm:p-4">
           <div className="card w-full max-w-md animate-scaleIn">
             <div className="border-b px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between" style={{
               borderColor: 'var(--border-primary)'

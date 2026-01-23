@@ -90,7 +90,7 @@ export default function ColumnModal({
   };
 
   return (
-    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-2 sm:p-4">
+    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-[9999] p-2 sm:p-4">
       <div className="card w-full max-w-md animate-scaleIn max-h-[95vh] overflow-y-auto">
         <div className="border-b px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between" style={{
           borderColor: 'var(--border-primary)'

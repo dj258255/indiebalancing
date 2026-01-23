@@ -77,7 +77,7 @@ function Tooltip({ children, label, shortcut }: TooltipProps) {
       {children}
       {show && (
         <div
-          className="fixed z-[9999] px-2 py-1 rounded shadow-lg text-xs whitespace-nowrap pointer-events-none"
+          className="fixed z-[100] px-2 py-1 rounded shadow-lg text-xs whitespace-nowrap pointer-events-none"
           style={{
             left: position.x,
             top: position.y,

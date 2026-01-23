@@ -27,6 +27,7 @@ const getTabHelp = (t: any) => ({
   dps: {
     title: t('dps.title'),
     description: t('dps.desc'),
+    formula: t('dps.formula'),
     terms: [
       { name: t('dps.damage'), desc: t('dps.damageDesc') },
       { name: t('dps.attackSpeed'), desc: t('dps.attackSpeedDesc') },
@@ -39,6 +40,7 @@ const getTabHelp = (t: any) => ({
   ttk: {
     title: t('ttk.title'),
     description: t('ttk.desc'),
+    formula: t('ttk.formula'),
     terms: [
       { name: t('ttk.targetHp'), desc: t('ttk.targetHpDesc') },
       { name: t('ttk.damage'), desc: t('ttk.damageDesc') },
@@ -50,6 +52,7 @@ const getTabHelp = (t: any) => ({
   ehp: {
     title: t('ehp.title'),
     description: t('ehp.desc'),
+    formula: t('ehp.formula'),
     terms: [
       { name: t('ehp.hp'), desc: t('ehp.hpDesc') },
       { name: t('ehp.def'), desc: t('ehp.defDesc') },
@@ -61,6 +64,7 @@ const getTabHelp = (t: any) => ({
   damage: {
     title: t('damageCalc.title'),
     description: t('damageCalc.desc'),
+    formula: t('damageCalc.formula'),
     terms: [
       { name: t('damageCalc.atk'), desc: t('damageCalc.atkDesc') },
       { name: t('damageCalc.def'), desc: t('damageCalc.defDesc') },
@@ -72,6 +76,7 @@ const getTabHelp = (t: any) => ({
   scale: {
     title: t('scale.title'),
     description: t('scale.desc'),
+    formula: t('scale.formula'),
     terms: [
       { name: t('scale.base'), desc: t('scale.baseDesc') },
       { name: t('scale.level'), desc: t('scale.levelDesc') },
@@ -199,11 +204,11 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
   }, [scaleInputs]);
 
   const tabs = [
-    { id: 'dps' as const, name: 'DPS', icon: Zap },
-    { id: 'ttk' as const, name: 'TTK', icon: Crosshair },
-    { id: 'ehp' as const, name: 'EHP', icon: Shield },
-    { id: 'damage' as const, name: 'DAMAGE', icon: CalcIcon },
-    { id: 'scale' as const, name: 'SCALE', icon: TrendingUp },
+    { id: 'dps' as const, name: 'DPS', icon: Zap, tooltip: t('tabTooltip.dps') },
+    { id: 'ttk' as const, name: 'TTK', icon: Crosshair, tooltip: t('tabTooltip.ttk') },
+    { id: 'ehp' as const, name: 'EHP', icon: Shield, tooltip: t('tabTooltip.ehp') },
+    { id: 'damage' as const, name: 'DAMAGE', icon: CalcIcon, tooltip: t('tabTooltip.damage') },
+    { id: 'scale' as const, name: 'SCALE', icon: TrendingUp, tooltip: t('tabTooltip.scale') },
   ];
 
   const loadFromSelectedRow = (row: typeof selectedRows[0]) => {
@@ -239,7 +244,7 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
   // 공통 wrapper 클래스
   const wrapperClass = isPanel
     ? "flex flex-col h-full"
-    : "fixed inset-0 modal-overlay flex items-center justify-center z-50 p-2 sm:p-4";
+    : "fixed inset-0 modal-overlay flex items-center justify-center z-[9999] p-2 sm:p-4";
 
   const cardClass = isPanel
     ? "flex flex-col h-full"
@@ -336,6 +341,7 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
+                title={tab.tooltip}
                 className={cn(
                   'flex items-center gap-1 sm:gap-2 px-2 sm:px-4 py-2 sm:py-3 border-b-2 transition-all whitespace-nowrap',
                   activeTab === tab.id
@@ -367,31 +373,34 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
           )}
         </div>
 
-        {/* 현재 탭 도움말 (모달 모드) */}
+        {/* 현재 탭 도움말 (모달 모드) - 공식 중심 */}
         {!isPanel && showHelp && (
           <div className="px-6 py-4 border-b animate-fadeIn" style={{
             background: 'var(--bg-tertiary)',
             borderColor: 'var(--border-primary)'
           }}>
-            <div className="flex items-start justify-between mb-2">
-              <h4 className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
-                {TAB_HELP[activeTab].title}
-              </h4>
+            {/* 공식 먼저 표시 */}
+            <div className="p-3 rounded-lg mb-3" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid var(--accent)' }}>
+              <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('formula')}</div>
+              <code className="text-sm font-mono font-medium" style={{ color: 'var(--accent)' }}>
+                {TAB_HELP[activeTab].formula}
+              </code>
             </div>
-            <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>{TAB_HELP[activeTab].description}</p>
 
+            {/* 변수 설명 */}
             <div className="flex flex-wrap gap-2 mb-3">
               {TAB_HELP[activeTab].terms.map((term, i) => (
-                <div key={i} className="badge badge-primary">
-                  <span className="font-medium">{term.name}</span>
-                  <span className="mx-1 opacity-50">·</span>
-                  <span className="opacity-75">{term.desc}</span>
+                <div key={i} className="text-xs px-2 py-1 rounded" style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
+                  <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{term.name}</span>
+                  <span className="mx-1">:</span>
+                  <span>{term.desc}</span>
                 </div>
               ))}
             </div>
 
-            <div className="text-xs p-2 rounded-lg" style={{ background: 'var(--bg-primary)', color: 'var(--text-tertiary)' }}>
-              예시: {TAB_HELP[activeTab].example}
+            {/* 예시 */}
+            <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+              {t('example')}: {TAB_HELP[activeTab].example}
             </div>
           </div>
         )}
@@ -450,6 +459,12 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
           {/* DPS 계산기 */}
           {activeTab === 'dps' && (
             <div className="space-y-6">
+              {/* 탭 설명 헤더 */}
+              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)', borderLeft: '3px solid var(--accent)' }}>
+                <div className="font-medium text-sm mb-1" style={{ color: 'var(--text-primary)' }}>{TAB_HELP.dps.title}</div>
+                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{TAB_HELP.dps.description}</div>
+                <div className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{t('useCase')}: {TAB_HELP.dps.useCase}</div>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <InputField
                   label={t('damage1hit')}
@@ -496,6 +511,12 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
           {/* TTK 계산기 */}
           {activeTab === 'ttk' && (
             <div className="space-y-6">
+              {/* 탭 설명 헤더 */}
+              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)', borderLeft: '3px solid var(--error)' }}>
+                <div className="font-medium text-sm mb-1" style={{ color: 'var(--text-primary)' }}>{TAB_HELP.ttk.title}</div>
+                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{TAB_HELP.ttk.description}</div>
+                <div className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{t('useCase')}: {TAB_HELP.ttk.useCase}</div>
+              </div>
               <div className="grid grid-cols-3 gap-4">
                 <InputField
                   label={t('targetHp')}
@@ -539,6 +560,12 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
           {/* EHP 계산기 */}
           {activeTab === 'ehp' && (
             <div className="space-y-6">
+              {/* 탭 설명 헤더 */}
+              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)', borderLeft: '3px solid var(--accent)' }}>
+                <div className="font-medium text-sm mb-1" style={{ color: 'var(--text-primary)' }}>{TAB_HELP.ehp.title}</div>
+                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{TAB_HELP.ehp.description}</div>
+                <div className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{t('useCase')}: {TAB_HELP.ehp.useCase}</div>
+              </div>
               <div className="grid grid-cols-3 gap-4">
                 <InputField
                   label={t('hp')}
@@ -578,6 +605,12 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
           {/* DAMAGE 계산기 */}
           {activeTab === 'damage' && (
             <div className="space-y-6">
+              {/* 탭 설명 헤더 */}
+              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)', borderLeft: '3px solid var(--warning)' }}>
+                <div className="font-medium text-sm mb-1" style={{ color: 'var(--text-primary)' }}>{TAB_HELP.damage.title}</div>
+                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{TAB_HELP.damage.description}</div>
+                <div className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{t('useCase')}: {TAB_HELP.damage.useCase}</div>
+              </div>
               <div className="grid grid-cols-3 gap-4">
                 <InputField
                   label={t('atk')}
@@ -621,6 +654,12 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
           {/* SCALE 계산기 */}
           {activeTab === 'scale' && (
             <div className="space-y-6">
+              {/* 탭 설명 헤더 */}
+              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)', borderLeft: '3px solid var(--success)' }}>
+                <div className="font-medium text-sm mb-1" style={{ color: 'var(--text-primary)' }}>{TAB_HELP.scale.title}</div>
+                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>{TAB_HELP.scale.description}</div>
+                <div className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{t('useCase')}: {TAB_HELP.scale.useCase}</div>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <InputField
                   label={t('baseValue')}

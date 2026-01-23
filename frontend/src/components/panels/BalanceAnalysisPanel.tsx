@@ -149,12 +149,12 @@ export default function BalanceAnalysisPanel({ onClose, onDragStart }: BalanceAn
     setCorrelationResult(result);
   };
 
-  const tabs: { id: AnalysisTab; label: string; icon: React.ReactNode }[] = [
-    { id: 'matchup', label: '상성 분석', icon: <GitBranch className="w-4 h-4" /> },
-    { id: 'power', label: '파워 커브', icon: <TrendingUp className="w-4 h-4" /> },
-    { id: 'correlation', label: '상관관계', icon: <BarChart2 className="w-4 h-4" /> },
-    { id: 'deadzone', label: '데드존', icon: <AlertTriangle className="w-4 h-4" /> },
-    { id: 'curve', label: '커브 생성', icon: <Target className="w-4 h-4" /> },
+  const tabs: { id: AnalysisTab; label: string; icon: React.ReactNode; tooltip: string; color: string }[] = [
+    { id: 'matchup', label: '상성 분석', icon: <GitBranch className="w-4 h-4" />, tooltip: '가위바위보 상성 관계 분석', color: '#6366f1' },
+    { id: 'power', label: '파워 커브', icon: <TrendingUp className="w-4 h-4" />, tooltip: '레벨별 스탯 성장 패턴 분석', color: '#22c55e' },
+    { id: 'correlation', label: '상관관계', icon: <BarChart2 className="w-4 h-4" />, tooltip: '스탯 간 상관계수 분석', color: '#3b82f6' },
+    { id: 'deadzone', label: '데드존', icon: <AlertTriangle className="w-4 h-4" />, tooltip: '활용되지 않는 스탯 구간 탐지', color: '#f59e0b' },
+    { id: 'curve', label: '커브 생성', icon: <Target className="w-4 h-4" />, tooltip: '밸런스 곡선 자동 생성', color: '#8b5cf6' },
   ];
 
   // 승률 매트릭스 색상 함수 (모달과 공유)
@@ -182,7 +182,7 @@ export default function BalanceAnalysisPanel({ onClose, onDragStart }: BalanceAn
 
         return (
           <div
-            className="fixed inset-0 z-[100] flex items-center justify-center p-6"
+            className="fixed inset-0 z-[1000] flex items-center justify-center p-6"
             style={{ background: 'rgba(0,0,0,0.75)' }}
             onClick={() => setShowMatrixModal(false)}
           >
@@ -444,12 +444,13 @@ export default function BalanceAnalysisPanel({ onClose, onDragStart }: BalanceAn
           <button
             key={tab.id}
             onClick={() => setActiveTab(tab.id)}
+            title={tab.tooltip}
             className={`flex items-center gap-1.5 px-3 py-2 text-sm whitespace-nowrap transition-colors ${
               activeTab === tab.id ? 'border-b-2' : ''
             }`}
             style={{
-              color: activeTab === tab.id ? 'var(--accent)' : 'var(--text-secondary)',
-              borderColor: activeTab === tab.id ? 'var(--accent)' : 'transparent',
+              color: activeTab === tab.id ? tab.color : 'var(--text-secondary)',
+              borderColor: activeTab === tab.id ? tab.color : 'transparent',
             }}
           >
             {tab.icon}
@@ -462,6 +463,11 @@ export default function BalanceAnalysisPanel({ onClose, onDragStart }: BalanceAn
       <div className="flex-1 overflow-y-auto p-4">
         {activeTab === 'matchup' && (
           <div className="space-y-4">
+            {/* 탭 설명 */}
+            <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)', borderLeft: '3px solid #6366f1' }}>
+              <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>상성 분석 (Perfect Imbalance)</div>
+              <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>모든 유닛 조합의 전투를 시뮬레이션하여 상성 관계와 밸런스를 분석합니다. 지배적/약한 유닛과 가위바위보 순환 관계를 탐지합니다.</div>
+            </div>
             <div className="flex items-end gap-3">
               <div className="flex-1">
                 <label className="text-xs" style={{ color: 'var(--text-secondary)' }}>
@@ -725,9 +731,10 @@ export default function BalanceAnalysisPanel({ onClose, onDragStart }: BalanceAn
 
         {activeTab === 'power' && (
           <div className="space-y-4">
-            {/* 안내 메시지 */}
-            <div className="p-3 rounded-lg text-xs" style={{ background: 'rgba(16, 185, 129, 0.08)', color: 'var(--text-secondary)' }}>
-              레벨별 파워가 어떤 패턴(선형/지수/로그)으로 성장하는지 분석합니다. <strong style={{ color: '#10b981' }}>level 컬럼</strong>이 필요합니다.
+            {/* 탭 설명 */}
+            <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)', borderLeft: '3px solid #22c55e' }}>
+              <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>파워 커브 분석</div>
+              <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>레벨별 스탯 성장이 선형/지수/로그 중 어떤 패턴인지 분석합니다. R² 값으로 피팅 정확도를 확인하세요. <strong style={{ color: '#22c55e' }}>level 컬럼 필수</strong></div>
             </div>
 
             <button
@@ -834,9 +841,15 @@ export default function BalanceAnalysisPanel({ onClose, onDragStart }: BalanceAn
 
         {activeTab === 'correlation' && (
           <div className="space-y-4">
-            {/* 안내 메시지 */}
-            <div className="p-3 rounded-lg text-xs" style={{ background: 'rgba(99, 102, 241, 0.08)', color: 'var(--text-secondary)' }}>
-              스탯 간 상관관계를 분석합니다. <strong style={{ color: '#6366f1' }}>+1에 가까우면 양의 상관</strong>, <strong style={{ color: '#6366f1' }}>-1에 가까우면 음의 상관</strong>입니다.
+            {/* 탭 설명 */}
+            <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)', borderLeft: '3px solid #3b82f6' }}>
+              <div className="font-medium text-sm mb-1" style={{ color: 'var(--text-primary)' }}>스탯 상관관계 분석</div>
+              <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                스탯 간의 통계적 연관성을 분석합니다. <strong style={{ color: '#22c55e' }}>+1에 가까우면 양의 상관</strong>(함께 증가), <strong style={{ color: '#ef4444' }}>-1에 가까우면 음의 상관</strong>(반대로 변화)입니다.
+              </div>
+              <div className="text-xs mt-1.5" style={{ color: 'var(--text-tertiary)' }}>
+                <strong>사용법:</strong> 분석 버튼을 클릭하면 모든 스탯 쌍의 상관계수를 계산합니다. 강한 상관관계(|r| &gt; 0.7)가 있으면 스탯 설계를 재검토하세요.
+              </div>
             </div>
 
             <button
@@ -941,9 +954,15 @@ export default function BalanceAnalysisPanel({ onClose, onDragStart }: BalanceAn
 
         {activeTab === 'deadzone' && (
           <div className="space-y-4">
-            {/* 안내 메시지 */}
-            <div className="p-3 rounded-lg text-xs" style={{ background: 'rgba(245, 158, 11, 0.08)', color: 'var(--text-secondary)' }}>
-              <strong style={{ color: '#f59e0b' }}>데드존</strong>은 게임에서 사용되지 않는 스탯 구간입니다. 유닛들이 특정 구간에만 몰려있거나, 빈 구간이 있으면 경고합니다.
+            {/* 탭 설명 */}
+            <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)', borderLeft: '3px solid #f59e0b' }}>
+              <div className="font-medium text-sm mb-1" style={{ color: 'var(--text-primary)' }}>데드존 탐지</div>
+              <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                활용되지 않는 스탯 구간(데드존)을 탐지합니다. 유닛들이 특정 구간에만 몰려있거나 빈 구간이 있으면 밸런스 문제일 수 있습니다.
+              </div>
+              <div className="text-xs mt-1.5" style={{ color: 'var(--text-tertiary)' }}>
+                <strong>사용법:</strong> 각 스탯별로 분포 상태를 자동 분석합니다. 경고가 표시된 스탯은 값 범위를 재조정하거나 중간 구간의 유닛을 추가하세요.
+              </div>
             </div>
 
             <div className="rounded-xl overflow-hidden" style={{ border: '1px solid var(--border-primary)' }}>
@@ -1006,9 +1025,15 @@ export default function BalanceAnalysisPanel({ onClose, onDragStart }: BalanceAn
 
         {activeTab === 'curve' && (
           <div className="space-y-4">
-            {/* 안내 메시지 */}
-            <div className="p-3 rounded-lg text-xs" style={{ background: 'rgba(139, 92, 246, 0.08)', color: 'var(--text-secondary)' }}>
-              <strong style={{ color: '#8b5cf6' }}>레벨별 스탯 성장표</strong>를 자동 생성합니다. 기본 스탯, 최대 레벨, 성장률을 입력하세요.
+            {/* 탭 설명 */}
+            <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)', borderLeft: '3px solid #8b5cf6' }}>
+              <div className="font-medium text-sm mb-1" style={{ color: 'var(--text-primary)' }}>밸런스 커브 생성</div>
+              <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                레벨별 스탯 성장 곡선을 자동으로 생성합니다. 선형, 지수, 로그 등 다양한 성장 패턴을 지원합니다.
+              </div>
+              <div className="text-xs mt-1.5" style={{ color: 'var(--text-tertiary)' }}>
+                <strong>사용법:</strong> 기본 스탯, 최대 레벨, 성장률을 입력하고 성장 타입을 선택하세요. 생성된 테이블을 복사하여 스프레드시트에 붙여넣을 수 있습니다.
+              </div>
             </div>
 
             <CurveGenerator />

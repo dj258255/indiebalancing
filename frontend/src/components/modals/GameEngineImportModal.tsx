@@ -167,7 +167,7 @@ export default function GameEngineImportModal({ onClose }: GameEngineImportModal
   }, {} as Record<string, typeof IMPORT_FORMATS>);
 
   return (
-    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4">
+    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-[9999] p-4">
       <div className="card w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col animate-scaleIn">
         {/* 헤더 */}
         <div className="flex items-center justify-between px-6 py-4 border-b" style={{ borderColor: 'var(--border-primary)' }}>

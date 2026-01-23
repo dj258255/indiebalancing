@@ -226,7 +226,7 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
   // 공통 wrapper 클래스
   const wrapperClass = isPanel
     ? "flex flex-col h-full"
-    : "fixed inset-0 modal-overlay flex items-center justify-center z-50 p-4";
+    : "fixed inset-0 modal-overlay flex items-center justify-center z-[9999] p-4";
 
   const cardClass = isPanel
     ? "flex flex-col h-full"
@@ -534,23 +534,27 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
                       </option>
                     ))}
                 </select>
-                <div className="space-y-1">
+                {/* 비교 대상 목록 - 그리드 형태로 배치 */}
+                <div className={cn(
+                  'gap-1.5',
+                  items.length <= 2 ? 'space-y-1.5' : 'grid grid-cols-1'
+                )}>
                   {items.map((item) => (
                     <div
                       key={item.id}
-                      className="flex items-center justify-between px-2 py-1.5 rounded-lg"
-                      style={{ background: 'var(--bg-tertiary)' }}
+                      className="flex items-center gap-1.5 px-2 py-1 rounded-lg group"
+                      style={{ background: 'var(--bg-tertiary)', borderLeft: `3px solid ${item.color}` }}
                     >
-                      <div className="flex items-center gap-2">
-                        <div
-                          className="w-3 h-3 rounded-full"
-                          style={{ backgroundColor: item.color }}
-                        />
-                        <span className="text-sm" style={{ color: 'var(--text-primary)' }}>{item.name}</span>
-                      </div>
+                      <span
+                        className="flex-1 text-xs truncate"
+                        style={{ color: 'var(--text-primary)' }}
+                        title={item.name}
+                      >
+                        {item.name}
+                      </span>
                       <button
                         onClick={() => removeItem(item.id)}
-                        className="p-1 rounded transition-colors hover:text-red-500"
+                        className="p-0.5 rounded transition-colors opacity-60 hover:opacity-100 hover:text-red-500 shrink-0"
                         style={{ color: 'var(--text-tertiary)' }}
                       >
                         <Trash2 className="w-3 h-3" />
@@ -558,6 +562,12 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
                     </div>
                   ))}
                 </div>
+                {/* 비교 대상 개수 표시 */}
+                {items.length > 0 && (
+                  <div className="mt-2 text-xs text-center py-1 rounded" style={{ background: 'var(--bg-secondary)', color: 'var(--text-tertiary)' }}>
+                    {t('itemCount', { count: items.length })}
+                  </div>
+                )}
               </div>
 
               {/* 비교 항목 (컬럼) 선택 */}

@@ -587,11 +587,20 @@ export default function BalanceValidator({ onClose, onDragStart }: BalanceValida
               className="rounded-lg p-4 border space-y-4 animate-fadeIn"
               style={{ background: 'var(--bg-secondary)', borderColor: 'var(--accent)' }}
             >
-              <div className="flex items-center gap-2">
-                <HelpCircle className="w-5 h-5" style={{ color: 'var(--accent)' }} />
-                <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-                  {t('helpTitle')}
-                </span>
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <HelpCircle className="w-5 h-5" style={{ color: 'var(--accent)' }} />
+                  <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
+                    {t('helpTitle')}
+                  </span>
+                </div>
+                <button
+                  onClick={() => setShowHelp(false)}
+                  className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  <ChevronUp className="w-4 h-4" />
+                </button>
               </div>
 
               {/* 개요 */}

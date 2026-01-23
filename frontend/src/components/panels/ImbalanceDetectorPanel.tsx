@@ -477,12 +477,16 @@ export default function ImbalanceDetectorPanel({ onClose, onDragStart }: Imbalan
                     <div
                       key={issue.id}
                       className="rounded-lg overflow-hidden"
-                      style={{ border: `1px solid ${color}30` }}
+                      style={{
+                        border: `1px solid ${color}50`,
+                        borderLeft: `4px solid ${color}`,
+                        background: 'var(--bg-primary)'
+                      }}
                     >
                       <button
                         onClick={() => toggleIssue(issue.id)}
                         className="w-full flex items-center gap-3 p-3 text-left"
-                        style={{ background: `${color}10` }}
+                        style={{ background: `${color}08` }}
                       >
                         <div
                           className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0"

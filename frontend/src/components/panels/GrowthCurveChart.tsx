@@ -362,7 +362,7 @@ export default function GrowthCurveChart({
       {/* 그래프만 확대 모달 */}
       {showChartModal && (
         <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-6"
+          className="fixed inset-0 z-[1000] flex items-center justify-center p-6"
           style={{ background: 'rgba(0,0,0,0.85)' }}
           onClick={() => setShowChartModal(false)}
         >

@@ -96,7 +96,14 @@
     "insertColumnRight": "오른쪽에 열 삽입",
     "deleteRow": "행 삭제",
     "deleteRows": "선택한 행 삭제",
-    "deleteColumn": "열 삭제"
+    "deleteColumn": "열 삭제",
+    "addMemo": "메모 추가",
+    "editMemo": "메모 편집",
+    "deleteMemo": "메모 삭제"
+  },
+  "memo": {
+    "content": "메모 내용",
+    "placeholder": "메모를 입력하세요..."
   },
   "toolbar": {
     "undo": "실행 취소",
@@ -355,10 +362,13 @@
     "template": "템플릿",
     "addFromTemplate": "템플릿에서 추가",
     "invalidValue": "유효하지 않은 값입니다",
+    "row": "행",
     "lockRow": "행 잠금",
     "unlockRow": "행 잠금 해제",
     "lockColumn": "열 잠금",
     "unlockColumn": "열 잠금 해제",
+    "newColumn": "새 열",
+    "confirmDeleteColumn": "\"{name}\" 열을 삭제하시겠습니까?",
     "defaultFormula": "기본 수식: {formula}",
     "noFormula": "없음",
     "dragToFill": "드래그하여 수식/값 채우기",
@@ -1090,6 +1100,16 @@
     "helpDps": "DPS: 초당 데미지, TTK: 처치 시간",
     "helpEhp": "EHP: 유효 체력, SCALE: 성장 곡선",
     "helpTip": "각 탭에서 ? 버튼으로 상세 도움말 확인",
+    "tabTooltip": {
+      "dps": "초당 데미지 계산",
+      "ttk": "처치 시간 계산",
+      "ehp": "유효 체력 계산",
+      "damage": "최종 데미지 계산",
+      "scale": "레벨별 성장 계산"
+    },
+    "useCase": "쓰임새",
+    "formula": "공식",
+    "example": "예시",
     "selectedData": "선택된 데이터",
     "deselectAll": "전체 해제",
     "load": "불러오기",
@@ -1130,6 +1150,7 @@
     "dps": {
       "title": "DPS (Damage Per Second)",
       "desc": "1초 동안 적에게 줄 수 있는 총 데미지입니다.",
+      "formula": "damage × (1 + critRate × (critDamage - 1)) × attackSpeed",
       "damage": "데미지",
       "damageDesc": "한 번 공격 시 피해량",
       "attackSpeed": "공격 속도",
@@ -1144,6 +1165,7 @@
     "ttk": {
       "title": "TTK (Time To Kill)",
       "desc": "적을 처치하는 데 걸리는 시간입니다.",
+      "formula": "(ceil(targetHP / damage) - 1) / attackSpeed",
       "targetHp": "적 HP",
       "targetHpDesc": "적의 체력",
       "damage": "데미지",
@@ -1156,6 +1178,7 @@
     "ehp": {
       "title": "EHP (Effective HP)",
       "desc": "방어력을 고려한 실질 체력입니다.",
+      "formula": "hp × (1 + def/100) × (1 / (1 - damageReduction))",
       "hp": "HP",
       "hpDesc": "기본 체력",
       "def": "방어력",
@@ -1168,6 +1191,7 @@
     "damageCalc": {
       "title": "DAMAGE (최종 데미지)",
       "desc": "방어력에 의해 감소된 데미지를 계산합니다.",
+      "formula": "atk × (100 / (100 + def)) × multiplier",
       "atk": "공격력",
       "atkDesc": "기본 데미지",
       "def": "방어력",
@@ -1180,6 +1204,7 @@
     "scale": {
       "title": "SCALE (성장 계산)",
       "desc": "레벨업 시 스탯 증가를 계산합니다.",
+      "formula": "곡선에 따라 다름 (선형: base + rate × level)",
       "base": "기본값",
       "baseDesc": "레벨 1 스탯",
       "level": "레벨",
@@ -1347,6 +1372,7 @@
     "recommendMinimum": "최소 1개 대상, 3개 이상 항목 권장",
     "selectColumnToAnalyze": "왼쪽에서 분석할 열을 선택하세요",
     "noNumericData": "숫자 데이터가 없습니다",
+    "itemCount": "{count}개 대상 선택됨",
     "distribution": "{column} 분포",
     "count": "개"
   },

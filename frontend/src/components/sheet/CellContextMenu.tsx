@@ -13,7 +13,9 @@ import {
   ArrowRight,
   Type,
   Columns,
-  Rows
+  Rows,
+  MessageSquare,
+  MessageSquarePlus
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -31,10 +33,13 @@ interface CellContextMenuProps {
   onInsertColumnRight: () => void;
   onDeleteRow: () => void;
   onDeleteColumn: () => void;
+  onAddMemo: () => void;
+  onDeleteMemo?: () => void;
   canPaste: boolean;
   isMultiSelect: boolean;
   isRowNumberCell?: boolean;
   isHeaderCell?: boolean;
+  hasMemo?: boolean;
 }
 
 interface MenuItem {
@@ -61,10 +66,13 @@ export default function CellContextMenu({
   onInsertColumnRight,
   onDeleteRow,
   onDeleteColumn,
+  onAddMemo,
+  onDeleteMemo,
   canPaste,
   isMultiSelect,
   isRowNumberCell,
   isHeaderCell,
+  hasMemo,
 }: CellContextMenuProps) {
   const t = useTranslations();
   const menuRef = useRef<HTMLDivElement>(null);
@@ -132,8 +140,27 @@ export default function CellContextMenu({
       icon: <Type className="w-4 h-4" />,
       onClick: onDelete,
       shortcut: 'Del',
-      divider: true,
     },
+    {
+      label: hasMemo ? t('contextMenu.editMemo') : t('contextMenu.addMemo'),
+      icon: hasMemo ? <MessageSquare className="w-4 h-4" /> : <MessageSquarePlus className="w-4 h-4" />,
+      onClick: onAddMemo,
+      divider: !hasMemo,
+    },
+  ];
+
+  // 메모가 있을 때만 삭제 옵션 표시
+  if (hasMemo && onDeleteMemo) {
+    menuItems.push({
+      label: t('contextMenu.deleteMemo'),
+      icon: <Trash2 className="w-4 h-4" />,
+      onClick: onDeleteMemo,
+      danger: true,
+      divider: true,
+    });
+  }
+
+  menuItems.push(
     {
       label: t('contextMenu.insertRowAbove'),
       icon: <ArrowUp className="w-4 h-4" />,
@@ -145,7 +172,7 @@ export default function CellContextMenu({
       onClick: onInsertRowBelow,
       divider: !isHeaderCell,
     },
-  ];
+  );
 
   // 헤더 셀이 아닐 때만 열 삽입 옵션 표시
   if (!isRowNumberCell) {
@@ -185,13 +212,17 @@ export default function CellContextMenu({
   return (
     <div
       ref={menuRef}
-      className="fixed z-50 min-w-[200px] py-1 rounded-lg shadow-lg animate-scaleIn"
+      className="fixed z-[60] min-w-[200px] py-1 rounded-lg shadow-lg animate-scaleIn"
       style={{
         left: x,
         top: y,
         background: 'var(--bg-primary)',
         border: '1px solid var(--border-primary)',
         boxShadow: 'var(--shadow-lg)',
+      }}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        onClose();
       }}
     >
       {menuItems.map((item, index) => (

@@ -99,7 +99,9 @@ function solveDefenseForReduction(
     return {
       success: false,
       formula: 'DEF = C × Reduction / (1 - Reduction)',
-      explanation: '피해감소율은 0 이상 1 미만이어야 합니다.',
+      explanation: targetReduction >= 1
+        ? '피해감소율은 100% 미만이어야 합니다. 100% 이상은 모든 피해를 무효화하므로 불가능합니다.'
+        : '피해감소율은 0% 이상이어야 합니다.',
     };
   }
 
@@ -109,8 +111,8 @@ function solveDefenseForReduction(
     success: true,
     value: Math.ceil(requiredDef),
     formula: `DEF = ${constant} × ${targetReduction.toFixed(2)} / ${(1 - targetReduction).toFixed(2)}`,
-    explanation: `${(targetReduction * 100).toFixed(0)}% 피해감소를 위해 방어력 ${Math.ceil(requiredDef)}이 필요합니다.`,
-    warnings: targetReduction > 0.75 ? ['높은 피해감소율은 밸런스에 주의가 필요합니다.'] : undefined,
+    explanation: `${(targetReduction * 100).toFixed(0)}% 피해감소(받는 피해가 ${(100 - targetReduction * 100).toFixed(0)}%가 됨)를 위해 방어력 ${Math.ceil(requiredDef)}이 필요합니다. 공식: 피해감소율 = 방어력 / (방어력 + ${constant})`,
+    warnings: targetReduction > 0.75 ? ['75% 이상의 피해감소율은 게임 밸런스에 주의가 필요합니다.'] : undefined,
   };
 }
 
@@ -154,17 +156,19 @@ function solveCostForROI(
     return {
       success: false,
       formula: 'Cost = Output / (1 + ROI)',
-      explanation: 'ROI는 -100% 초과여야 합니다.',
+      explanation: 'ROI(투자 수익률)는 -100% 초과여야 합니다.',
     };
   }
 
   const appropriateCost = expectedOutput / (1 + targetROI);
+  const profit = expectedOutput - appropriateCost;
 
   return {
     success: true,
     value: Math.round(appropriateCost),
     formula: `Cost = ${expectedOutput} / (1 + ${targetROI})`,
-    explanation: `${(targetROI * 100).toFixed(0)}% ROI를 위해 비용을 ${Math.round(appropriateCost)}로 설정하세요.`,
+    explanation: `ROI(Return on Investment, 투자 수익률)는 투자 대비 수익의 비율입니다. 예상 산출물 ${expectedOutput}에서 ${(targetROI * 100).toFixed(0)}% ROI를 달성하려면 비용을 ${Math.round(appropriateCost)}로 설정하세요. 이 경우 순이익은 ${Math.round(profit)}입니다.`,
+    warnings: targetROI < 0 ? ['ROI가 음수면 손실이 발생합니다.'] : undefined,
   };
 }
 
@@ -430,11 +434,11 @@ export const SOLVER_FORMULAS: {
   {
     id: 'cost_for_roi',
     name: 'ROI에서 적정 비용',
-    description: '목표 투자 수익률에서 적정 비용을 계산',
+    description: 'ROI(투자 수익률)에서 적정 비용을 계산. ROI = (산출물 - 비용) / 비용',
     targetLabel: '목표 ROI',
     targetUnit: '%',
     params: [
-      { key: 'expectedOutput', label: '예상 산출물', defaultValue: 1000 },
+      { key: 'expectedOutput', label: '예상 산출물 (획득 보상)', defaultValue: 1000 },
     ],
   },
 ];

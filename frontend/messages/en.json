@@ -96,7 +96,14 @@
     "insertColumnRight": "Insert column right",
     "deleteRow": "Delete row",
     "deleteRows": "Delete selected rows",
-    "deleteColumn": "Delete column"
+    "deleteColumn": "Delete column",
+    "addMemo": "Add memo",
+    "editMemo": "Edit memo",
+    "deleteMemo": "Delete memo"
+  },
+  "memo": {
+    "content": "Memo content",
+    "placeholder": "Enter memo..."
   },
   "toolbar": {
     "undo": "Undo",
@@ -355,10 +362,13 @@
     "template": "Template",
     "addFromTemplate": "Add from Template",
     "invalidValue": "Invalid value",
+    "row": "Row",
     "lockRow": "Lock Row",
     "unlockRow": "Unlock Row",
     "lockColumn": "Lock Column",
     "unlockColumn": "Unlock Column",
+    "newColumn": "New Column",
+    "confirmDeleteColumn": "Are you sure you want to delete the \"{name}\" column?",
     "defaultFormula": "Default formula: {formula}",
     "noFormula": "None",
     "dragToFill": "Drag to fill formula/value",
@@ -1090,6 +1100,16 @@
     "helpDps": "DPS: Damage per second, TTK: Time to kill",
     "helpEhp": "EHP: Effective HP, SCALE: Growth curves",
     "helpTip": "Use ? button in each tab for detailed help",
+    "tabTooltip": {
+      "dps": "Calculate damage per second",
+      "ttk": "Calculate time to kill",
+      "ehp": "Calculate effective HP",
+      "damage": "Calculate final damage",
+      "scale": "Calculate level-based growth"
+    },
+    "useCase": "Use case",
+    "formula": "Formula",
+    "example": "Example",
     "selectedData": "Selected Data",
     "deselectAll": "Deselect All",
     "load": "Load",
@@ -1130,6 +1150,7 @@
     "dps": {
       "title": "DPS (Damage Per Second)",
       "desc": "Total damage you can deal to enemy per second.",
+      "formula": "damage × (1 + critRate × (critDamage - 1)) × attackSpeed",
       "damage": "Damage",
       "damageDesc": "Damage per attack",
       "attackSpeed": "Attack Speed",
@@ -1144,6 +1165,7 @@
     "ttk": {
       "title": "TTK (Time To Kill)",
       "desc": "Time required to defeat an enemy.",
+      "formula": "(ceil(targetHP / damage) - 1) / attackSpeed",
       "targetHp": "Target HP",
       "targetHpDesc": "Enemy health",
       "damage": "Damage",
@@ -1156,6 +1178,7 @@
     "ehp": {
       "title": "EHP (Effective HP)",
       "desc": "Actual health considering defense.",
+      "formula": "hp × (1 + def/100) × (1 / (1 - damageReduction))",
       "hp": "HP",
       "hpDesc": "Base health",
       "def": "Defense",
@@ -1168,6 +1191,7 @@
     "damageCalc": {
       "title": "DAMAGE (Final Damage)",
       "desc": "Calculate damage reduced by defense.",
+      "formula": "atk × (100 / (100 + def)) × multiplier",
       "atk": "Attack",
       "atkDesc": "Base damage",
       "def": "Defense",
@@ -1180,6 +1204,7 @@
     "scale": {
       "title": "SCALE (Growth Calculation)",
       "desc": "Calculate stat increase per level.",
+      "formula": "Varies by curve (Linear: base + rate × level)",
       "base": "Base Value",
       "baseDesc": "Level 1 stat",
       "level": "Level",
@@ -1347,6 +1372,7 @@
     "recommendMinimum": "Minimum 1 target, 3+ items recommended",
     "selectColumnToAnalyze": "Select a column to analyze on the left",
     "noNumericData": "No numeric data",
+    "itemCount": "{count} targets selected",
     "distribution": "{column} Distribution",
     "count": " items"
   },

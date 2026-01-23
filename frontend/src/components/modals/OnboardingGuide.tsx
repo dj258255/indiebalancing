@@ -236,7 +236,7 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
   const step = TUTORIAL_STEPS[currentStep];
 
   return (
-    <div className="fixed inset-0 flex items-center justify-center z-50 p-2 sm:p-4" style={{ background: 'rgba(0, 0, 0, 0.6)' }}>
+    <div className="fixed inset-0 flex items-center justify-center z-[9999] p-2 sm:p-4" style={{ background: 'rgba(0, 0, 0, 0.6)' }}>
       <div className="rounded-2xl w-full max-w-2xl max-h-[95vh] sm:max-h-[90vh] shadow-2xl overflow-hidden flex flex-col" style={{ background: 'var(--bg-primary)' }}>
         {/* 진행 표시 바 */}
         <div className="h-1" style={{ background: 'var(--bg-tertiary)' }}>
