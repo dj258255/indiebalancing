@@ -18,7 +18,8 @@ function getRowDisplayName(rowId: string, currentSheet: { name: string; rows: { 
 interface CalculatorProps {
   onClose: () => void;
   isPanel?: boolean;
-  onDragStart?: (e: React.MouseEvent) => void;
+  showHelp?: boolean;
+  setShowHelp?: (value: boolean) => void;
 }
 
 type CalculatorTab = 'dps' | 'ttk' | 'ehp' | 'damage' | 'scale';
@@ -117,10 +118,9 @@ const getCurveTypeHelp = (t: any): Record<string, { name: string; formula: strin
   },
 });
 
-export default function Calculator({ onClose, isPanel = false, onDragStart }: CalculatorProps) {
+export default function Calculator({ onClose, isPanel = false, showHelp = false, setShowHelp }: CalculatorProps) {
   const t = useTranslations('calculator');
   const [activeTab, setActiveTab] = useState<CalculatorTab>('dps');
-  const [showHelp, setShowHelp] = useState(false);
   const [showTabDropdown, setShowTabDropdown] = useState(false);
   const { selectedRows, clearSelectedRows, deselectRow, projects, currentProjectId, currentSheetId } = useProjectStore();
 
@@ -255,79 +255,30 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
   return (
     <div className={wrapperClass}>
       <div className={cardClass}>
-        {/* 헤더 */}
-        <div
-          className={`flex items-center justify-between shrink-0 ${isPanel ? 'px-4 py-3 relative z-20 cursor-grab active:cursor-grabbing' : 'px-4 sm:px-6 py-3 sm:py-4 border-b'}`}
-          style={{ background: isPanel ? '#8b5cf615' : undefined, borderColor: isPanel ? '#8b5cf640' : 'var(--border-primary)', borderBottom: isPanel ? '1px solid #8b5cf640' : undefined }}
-          onMouseDown={(e) => {
-            if (isPanel && !(e.target as HTMLElement).closest('button') && onDragStart) {
-              onDragStart(e);
-            }
-          }}
-        >
-          <div className="flex items-center gap-2 sm:gap-3">
-            <div className={`rounded-xl flex items-center justify-center ${isPanel ? 'w-8 h-8' : 'w-8 h-8 sm:w-10 sm:h-10'}`} style={{ background: '#8b5cf6' }}>
-              <CalcIcon className={isPanel ? 'w-4 h-4 text-white' : 'w-4 h-4 sm:w-5 sm:h-5 text-white'} />
-            </div>
-            <div>
-              <h2 className={isPanel ? 'text-base font-semibold' : 'text-base sm:text-lg font-semibold'} style={{ color: isPanel ? '#8b5cf6' : 'var(--text-primary)' }}>
-                {isPanel ? t('title') : t('fullTitle')}
-              </h2>
-              {!isPanel && <p className="text-xs sm:text-sm hidden sm:block" style={{ color: 'var(--text-tertiary)' }}>{t('subtitle')}</p>}
-            </div>
-            {isPanel && (
-              <button
-                onClick={() => setShowHelp(!showHelp)}
-                className={`p-1 rounded-lg transition-colors ${showHelp ? 'bg-[#8b5cf6]/20' : 'hover:bg-[var(--bg-hover)]'}`}
-                style={{ border: showHelp ? '1px solid #8b5cf6' : '1px solid var(--border-secondary)' }}
-              >
-                <HelpCircle className="w-4 h-4" style={{ color: showHelp ? '#8b5cf6' : 'var(--text-tertiary)' }} />
-              </button>
-            )}
-          </div>
-          <button
-            onClick={onClose}
-            className={`rounded-lg transition-colors ${isPanel ? 'p-1.5 hover:bg-black/5 dark:hover:bg-white/5' : 'p-2'}`}
-            style={{ color: 'var(--text-tertiary)' }}
+        {/* 헤더 - 모달일 때만 표시 */}
+        {!isPanel && (
+          <div
+            className="flex items-center justify-between shrink-0 px-4 sm:px-6 py-3 sm:py-4 border-b"
+            style={{ borderColor: 'var(--border-primary)' }}
           >
-            <X className={isPanel ? 'w-4 h-4' : 'w-5 h-5'} />
-          </button>
-        </div>
-
-        {/* 패널 모드 헤더 도움말 - 공식 중심 */}
-        {isPanel && showHelp && (
-          <div className="shrink-0 animate-slideDown flex flex-col" style={{ borderBottom: '1px solid var(--border-primary)' }}>
-            <div
-              className="px-4 py-3"
-              style={{ background: 'var(--bg-tertiary)' }}
-            >
-              <div className="font-medium mb-2 text-sm" style={{ color: 'var(--text-primary)' }}>{t('helpTitle')}</div>
-              <div className="space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-                <div className="flex items-start gap-2">
-                  <span className="font-mono font-semibold shrink-0" style={{ color: 'var(--accent)' }}>DPS</span>
-                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Damage Per Second (초당 피해량)</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="font-mono font-semibold shrink-0" style={{ color: 'var(--accent)' }}>TTK</span>
-                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Time To Kill (처치까지 걸리는 시간)</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="font-mono font-semibold shrink-0" style={{ color: 'var(--accent)' }}>EHP</span>
-                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Effective HP (유효 체력, 방어력 포함)</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="font-mono font-semibold shrink-0" style={{ color: 'var(--accent)' }}>DAMAGE</span>
-                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>실제 피해량 (방어력 적용 후)</span>
-                </div>
-                <div className="flex items-start gap-2">
-                  <span className="font-mono font-semibold shrink-0" style={{ color: 'var(--accent)' }}>SCALE</span>
-                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>레벨별 스탯 성장 계산</span>
-                </div>
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="rounded-xl flex items-center justify-center w-8 h-8 sm:w-10 sm:h-10" style={{ background: '#8b5cf6' }}>
+                <CalcIcon className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
               </div>
-              <div className="pt-2 mt-2 border-t text-xs" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
-                {t('helpTip')}
+              <div>
+                <h2 className="text-base sm:text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  {t('fullTitle')}
+                </h2>
+                <p className="text-xs sm:text-sm hidden sm:block" style={{ color: 'var(--text-tertiary)' }}>{t('subtitle')}</p>
               </div>
             </div>
+            <button
+              onClick={onClose}
+              className="rounded-lg transition-colors p-2"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
         )}
 
@@ -397,7 +348,7 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
               </>
             )}
           </div>
-          {!isPanel && (
+          {!isPanel && setShowHelp && (
             <button
               onClick={() => setShowHelp(!showHelp)}
               className="flex items-center justify-center w-9 h-9 rounded-lg transition-all shrink-0"
@@ -493,7 +444,39 @@ export default function Calculator({ onClose, isPanel = false, onDragStart }: Ca
         )}
 
         {/* 컨텐츠 */}
-        <div className="flex-1 overflow-y-auto p-6">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-6">
+          {/* 패널 모드 도움말 */}
+          {isPanel && showHelp && (
+            <div className="mb-6 p-3 rounded-lg animate-slideDown" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+              <div className="font-medium mb-2 text-sm" style={{ color: 'var(--text-primary)' }}>{t('helpTitle')}</div>
+              <div className="space-y-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-semibold shrink-0" style={{ color: 'var(--accent)' }}>DPS</span>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Damage Per Second (초당 피해량)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-semibold shrink-0" style={{ color: 'var(--accent)' }}>TTK</span>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Time To Kill (처치까지 걸리는 시간)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-semibold shrink-0" style={{ color: 'var(--accent)' }}>EHP</span>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Effective HP (유효 체력, 방어력 포함)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-semibold shrink-0" style={{ color: 'var(--accent)' }}>DAMAGE</span>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>실제 피해량 (방어력 적용 후)</span>
+                </div>
+                <div className="flex items-start gap-2">
+                  <span className="font-mono font-semibold shrink-0" style={{ color: 'var(--accent)' }}>SCALE</span>
+                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>레벨별 스탯 성장 계산</span>
+                </div>
+              </div>
+              <div className="pt-2 mt-2 border-t text-xs" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
+                {t('helpTip')}
+              </div>
+            </div>
+          )}
+
           {/* DPS 계산기 */}
           {activeTab === 'dps' && (
             <div className="space-y-6">

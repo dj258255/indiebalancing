@@ -345,12 +345,12 @@ input[type="checkbox"]:checked::after {
 }
 
 @keyframes slideDown {
-  from { opacity: 0; max-height: 0; transform: translateY(-8px); }
-  to { opacity: 1; max-height: 200px; transform: translateY(0); }
+  from { opacity: 0; max-height: 0; transform: translateY(-8px); overflow: hidden; }
+  to { opacity: 1; max-height: 2000px; transform: translateY(0); overflow: visible; }
 }
 
 .animate-slideDown {
-  animation: slideDown 0.25s ease-out forwards;
+  animation: slideDown 0.3s ease-out forwards;
 }
 
 /* 호버 효과 */

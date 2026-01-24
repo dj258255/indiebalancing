@@ -66,24 +66,24 @@ export const TOOL_CONFIGS: Record<AllToolId, ToolConfig> = {
     icon: FunctionSquare,
     color: '#3b82f6',
     titleKey: 'bottomTabs.formulaHelper',
-    defaultIndex: 7,
+    defaultIndex: 0, // 하단 패널 첫번째 (왼쪽)
   },
   balanceValidator: {
     icon: Shield,
     color: '#22c55e',
     titleKey: 'bottomTabs.balanceValidator',
-    defaultIndex: 8,
+    defaultIndex: 1, // 하단 패널 두번째
   },
   difficultyCurve: {
     icon: TrendingUp,
     color: '#8b5cf6',
     titleKey: 'bottomTabs.difficultyCurve',
-    defaultIndex: 9,
+    defaultIndex: 2, // 하단 패널 세번째
   },
   simulation: {
     icon: Swords,
     color: '#ef4444',
     titleKey: 'bottomTabs.simulation',
-    defaultIndex: 10,
+    defaultIndex: 3, // 하단 패널 네번째 (오른쪽)
   },
 };

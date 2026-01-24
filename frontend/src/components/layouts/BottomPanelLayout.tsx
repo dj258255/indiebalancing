@@ -1,7 +1,10 @@
 'use client';
 
-import { ReactNode, useState, useCallback, useRef, useEffect, isValidElement, cloneElement } from 'react';
+import { ReactNode, useState, useCallback, useRef, useEffect } from 'react';
+import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useToolLayoutStore, AllToolId } from '@/stores/toolLayoutStore';
+import PanelHeader from './PanelHeader';
 
 interface PanelSize {
   width: number;
@@ -17,10 +20,15 @@ interface BottomPanelLayoutProps {
   show: boolean;
   defaultIndex?: number;
   className?: string;
-  buttonX?: number; // 버튼의 X 좌표 (패널 중앙을 버튼에 맞춤)
+  // 헤더 관련 props
+  title: string;
+  icon: LucideIcon;
+  color: string;
+  onClose: () => void;
+  headerExtra?: ReactNode;
 }
 
-const SIDEBAR_WIDTH = 224;
+const SIDEBAR_WIDTH = 256;
 const DEFAULT_WIDTH = 380;
 const DEFAULT_HEIGHT = 400;
 const MIN_WIDTH = 280;
@@ -28,11 +36,10 @@ const MAX_WIDTH = 800;
 const MIN_HEIGHT = 200;
 const MAX_HEIGHT = 800;
 const MIN_LEFT = 50;
+const PANEL_GAP = 10;
 
-// localStorage 키
 const getStorageKey = (panelId: string) => `bottom-panel-position-${panelId}`;
 
-// 저장된 위치 불러오기
 const loadSavedPosition = (panelId: string): PanelSize | null => {
   if (typeof window === 'undefined') return null;
   try {
@@ -46,7 +53,6 @@ const loadSavedPosition = (panelId: string): PanelSize | null => {
   return null;
 };
 
-// 위치 저장
 const savePosition = (panelId: string, size: PanelSize) => {
   if (typeof window === 'undefined') return;
   try {
@@ -62,67 +68,51 @@ export default function BottomPanelLayout({
   show,
   defaultIndex = 0,
   className,
-  buttonX,
+  title,
+  icon,
+  color,
+  onClose,
+  headerExtra,
 }: BottomPanelLayoutProps) {
-  const prevShow = useRef(show);
-  const hasUserMovedPanel = useRef(false);
+  const { bringToolToFront, getToolZIndex } = useToolLayoutStore();
 
-  // 버튼 X 좌표가 있으면 패널 중앙을 버튼에 맞춤, 없으면 기본 위치 사용
-  const calculateInitialLeft = useCallback(() => {
-    if (buttonX !== undefined) {
-      // buttonX는 버튼의 왼쪽 좌표이므로, 버튼 너비(약 100px)의 절반을 더해서 버튼 중앙을 구함
-      const buttonCenter = buttonX + 50; // 버튼 대략적인 너비의 절반
-      let left = buttonCenter - DEFAULT_WIDTH / 2;
-      // 화면 밖으로 나가지 않도록 조정
-      const maxLeft = window.innerWidth - DEFAULT_WIDTH - 10;
-      left = Math.max(MIN_LEFT, Math.min(maxLeft, left));
-      return left;
-    }
-    return SIDEBAR_WIDTH + defaultIndex * DEFAULT_WIDTH;
-  }, [buttonX, defaultIndex]);
+  const calculateDefaultLeft = useCallback(() => {
+    return SIDEBAR_WIDTH + PANEL_GAP + defaultIndex * (DEFAULT_WIDTH + PANEL_GAP);
+  }, [defaultIndex]);
 
-  // 초기 위치: 저장된 위치 > buttonX 기반 > 기본값
   const getInitialSize = useCallback((): PanelSize => {
     const saved = loadSavedPosition(panelId);
     if (saved) {
-      hasUserMovedPanel.current = true;
+      if (typeof window !== 'undefined') {
+        const maxLeft = window.innerWidth - saved.width - 10;
+        const adjustedLeft = Math.max(MIN_LEFT, Math.min(maxLeft, saved.left));
+        return { ...saved, left: adjustedLeft };
+      }
       return saved;
     }
     return {
       width: DEFAULT_WIDTH,
       height: DEFAULT_HEIGHT,
-      left: calculateInitialLeft(),
+      left: calculateDefaultLeft(),
     };
-  }, [panelId, calculateInitialLeft]);
+  }, [panelId, calculateDefaultLeft]);
 
   const [size, setSize] = useState<PanelSize>(getInitialSize);
 
-  // 컴포넌트 마운트 시 저장된 위치 불러오기
   useEffect(() => {
     const saved = loadSavedPosition(panelId);
     if (saved) {
-      hasUserMovedPanel.current = true;
-      setSize(saved);
+      const maxLeft = window.innerWidth - saved.width - 10;
+      const adjustedLeft = Math.max(MIN_LEFT, Math.min(maxLeft, saved.left));
+      setSize({ ...saved, left: adjustedLeft });
+    } else {
+      setSize({
+        width: DEFAULT_WIDTH,
+        height: DEFAULT_HEIGHT,
+        left: calculateDefaultLeft(),
+      });
     }
-  }, [panelId]);
-
-  // 패널이 닫혔다가 다시 열릴 때: 사용자가 이동한 적 없으면 buttonX 기반으로 위치 설정
-  useEffect(() => {
-    if (show && !prevShow.current) {
-      // 저장된 위치가 있으면 그 위치 사용
-      const saved = loadSavedPosition(panelId);
-      if (saved) {
-        setSize(saved);
-      } else if (buttonX !== undefined) {
-        // 저장된 위치가 없으면 버튼 기준으로 위치 설정
-        setSize(prev => ({
-          ...prev,
-          left: calculateInitialLeft(),
-        }));
-      }
-    }
-    prevShow.current = show;
-  }, [show, buttonX, calculateInitialLeft, panelId]);
+  }, [panelId, calculateDefaultLeft]);
 
   const [interaction, setInteraction] = useState<{
     type: 'resize' | 'drag';
@@ -149,7 +139,8 @@ export default function BottomPanelLayout({
     setInteraction({ type: 'drag' });
     startPos.current = { x: e.clientX, y: e.clientY };
     startSize.current = { ...size };
-  }, [size]);
+    bringToolToFront(panelId as AllToolId);
+  }, [size, bringToolToFront, panelId]);
 
   useEffect(() => {
     if (!interaction) return;
@@ -185,7 +176,6 @@ export default function BottomPanelLayout({
 
     const handleMouseUp = () => {
       setInteraction(null);
-      // 현재 size를 저장 (클로저 문제로 인해 setSize 콜백 내에서 최신 값을 가져옴)
       setSize(currentSize => {
         savePosition(panelId, currentSize);
         return currentSize;
@@ -199,11 +189,12 @@ export default function BottomPanelLayout({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [interaction]);
+  }, [interaction, panelId]);
 
   if (!show) return null;
 
   const isDragging = interaction?.type === 'drag';
+  const toolZIndex = getToolZIndex(panelId as AllToolId);
 
   const panelStyle = {
     background: 'var(--bg-primary)',
@@ -216,12 +207,11 @@ export default function BottomPanelLayout({
     left: `${size.left}px`,
     width: `${size.width}px`,
     height: `${size.height}px`,
-    zIndex: isDragging ? 35 : 30,
+    zIndex: isDragging ? 100 : toolZIndex,
   };
 
   return (
     <>
-      {/* Interaction overlay */}
       {interaction && (
         <div
           className="fixed inset-0 z-40"
@@ -233,44 +223,41 @@ export default function BottomPanelLayout({
         className={cn("fixed bottom-0 z-30 hidden md:flex flex-col overflow-hidden", className)}
         style={panelStyle}
       >
-        {/* Top resize handle - 최상단에 배치 */}
+        {/* Resize handles */}
         <div
           className="absolute -top-1 left-4 right-4 h-3 cursor-ns-resize z-40 hover:bg-[var(--accent)]/20 transition-colors"
           onMouseDown={(e) => handleResizeStart(e, 'vertical')}
         />
-
-        {/* Top-left corner resize */}
         <div
           className="absolute -top-1 -left-1 w-5 h-5 cursor-nwse-resize z-40 hover:bg-[var(--accent)]/30 rounded-tl-xl transition-colors"
           onMouseDown={(e) => handleResizeStart(e, 'both-left')}
         />
-
-        {/* Top-right corner resize */}
         <div
           className="absolute -top-1 -right-1 w-5 h-5 cursor-nesw-resize z-40 hover:bg-[var(--accent)]/30 rounded-tr-xl transition-colors"
           onMouseDown={(e) => handleResizeStart(e, 'both')}
         />
-
-
-        {/* Left resize handle */}
         <div
           className="absolute top-4 -left-1 bottom-0 w-2 cursor-ew-resize z-30 hover:bg-[var(--accent)]/20 transition-colors"
           onMouseDown={(e) => handleResizeStart(e, 'horizontal-left')}
         />
-
-        {/* Right resize handle */}
         <div
           className="absolute top-4 -right-1 bottom-0 w-2 cursor-ew-resize z-30 hover:bg-[var(--accent)]/20 transition-colors"
           onMouseDown={(e) => handleResizeStart(e, 'horizontal')}
         />
 
-        {/* Content - 패널 컴포넌트가 자체 헤더를 가지고 있음 */}
-        <div className="flex-1 overflow-hidden flex flex-col">
-          {isValidElement(children)
-            ? cloneElement(children as React.ReactElement<{ onDragStart?: (e: React.MouseEvent) => void }>, {
-                onDragStart: handleDragStart,
-              })
-            : children}
+        {/* 공통 헤더 - 레이아웃에서 제공 */}
+        <PanelHeader
+          title={title}
+          icon={icon}
+          color={color}
+          onClose={onClose}
+          onDragStart={handleDragStart}
+          extraContent={headerExtra}
+        />
+
+        {/* Content */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
+          {children}
         </div>
       </div>
     </>

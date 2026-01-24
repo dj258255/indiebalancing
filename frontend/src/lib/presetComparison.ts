@@ -4,7 +4,8 @@
  * - 행 이름/인덱스 기반 매칭 (복제된 시트도 비교 가능)
  */
 
-import type { Sheet, CellValue } from '@/types';
+import type { Sheet, CellValue, Project } from '@/types';
+import { evaluateFormula } from '@/lib/formulaEngine';
 
 // 비교 결과 타입
 export interface ComparisonResult {
@@ -37,6 +38,8 @@ export interface CellChange {
   columnName: string;
   oldValue: CellValue;
   newValue: CellValue;
+  oldComputedValue?: number | null; // 수식인 경우 계산된 값
+  newComputedValue?: number | null; // 수식인 경우 계산된 값
   diff: number | null; // 숫자인 경우 차이값
   diffPercent: number | null; // 숫자인 경우 퍼센트 차이
 }
@@ -159,6 +162,63 @@ function getRowIdentifier(
 }
 
 /**
+ * 시트의 모든 셀에 대해 계산된 값을 반환
+ */
+function computeSheetValues(
+  sheet: Sheet,
+  allSheets: Sheet[] = []
+): Record<string, CellValue>[] {
+  const result: Record<string, CellValue>[] = [];
+
+  for (let rowIndex = 0; rowIndex < sheet.rows.length; rowIndex++) {
+    const row = sheet.rows[rowIndex];
+    const computedRow: Record<string, CellValue> = { ...row.cells };
+
+    for (const column of sheet.columns) {
+      const rawValue = row.cells[column.id];
+
+      // 셀 자체에 수식이 있는 경우
+      if (typeof rawValue === 'string' && rawValue.startsWith('=')) {
+        const evalResult = evaluateFormula(rawValue, {
+          sheets: allSheets,
+          currentSheet: sheet,
+          currentRow: computedRow,
+          currentRowIndex: rowIndex,
+          allRows: result,
+        });
+        computedRow[column.id] = evalResult.error ? `#ERR: ${evalResult.error}` : evalResult.value;
+        continue;
+      }
+
+      // 셀에 직접 값이 있으면 그 값 사용
+      if (rawValue !== null && rawValue !== undefined) {
+        computedRow[column.id] = rawValue;
+        continue;
+      }
+
+      // 셀이 비어있고 컬럼이 formula 타입이면 컬럼 수식 사용
+      if (column.type === 'formula' && column.formula) {
+        const evalResult = evaluateFormula(column.formula, {
+          sheets: allSheets,
+          currentSheet: sheet,
+          currentRow: computedRow,
+          currentRowIndex: rowIndex,
+          allRows: result,
+        });
+        computedRow[column.id] = evalResult.error ? `#ERR: ${evalResult.error}` : evalResult.value;
+        continue;
+      }
+
+      computedRow[column.id] = rawValue;
+    }
+
+    result.push(computedRow);
+  }
+
+  return result;
+}
+
+/**
  * 두 시트 비교 (이름 기반 매칭)
  */
 export function compareSheets(
@@ -167,9 +227,14 @@ export function compareSheets(
   options: {
     nameColumnId?: string; // 행 이름을 가져올 컬럼 (old 시트 기준)
     ignoreColumnNames?: string[]; // 무시할 컬럼 이름들
+    allSheets?: Sheet[]; // 수식 계산을 위한 전체 시트 목록
   } = {}
 ): ComparisonResult {
-  const { ignoreColumnNames = [] } = options;
+  const { ignoreColumnNames = [], allSheets = [] } = options;
+
+  // 계산된 값 미리 계산
+  const oldComputedRows = computeSheetValues(oldSheet, allSheets);
+  const newComputedRows = computeSheetValues(newSheet, allSheets);
 
   // 컬럼 이름 기반 매핑 생성
   const oldColumnNameToId = new Map(oldSheet.columns.map(c => [c.name, c.id]));
@@ -237,57 +302,94 @@ export function compareSheets(
 
     if (!oldEntry) {
       // 새로 추가된 행
+      const newComputedRow = newComputedRows[newEntry!.index];
       rowChanges.push({
         rowId: newEntry!.row.id,
         rowName,
         type: 'added',
-        cellChanges: Array.from(allColumnNames).map(colName => ({
-          columnId: newColumnNameToId.get(colName) || colName,
-          columnName: colName,
-          oldValue: null,
-          newValue: getValueByColumnName(newEntry!.row, colName, newColumnNameToId),
-          diff: null,
-          diffPercent: null,
-        })),
+        cellChanges: Array.from(allColumnNames).map(colName => {
+          const colId = newColumnNameToId.get(colName);
+          const newValue = getValueByColumnName(newEntry!.row, colName, newColumnNameToId);
+          const newComputed = colId && newComputedRow ? newComputedRow[colId] : null;
+          const isFormula = typeof newValue === 'string' && newValue.startsWith('=');
+          return {
+            columnId: colId || colName,
+            columnName: colName,
+            oldValue: null,
+            newValue,
+            oldComputedValue: null,
+            newComputedValue: isFormula && typeof newComputed === 'number' ? newComputed : null,
+            diff: null,
+            diffPercent: null,
+          };
+        }),
       });
     } else if (!newEntry) {
       // 삭제된 행
+      const oldComputedRow = oldComputedRows[oldEntry.index];
       rowChanges.push({
         rowId: oldEntry.row.id,
         rowName,
         type: 'removed',
-        cellChanges: Array.from(allColumnNames).map(colName => ({
-          columnId: oldColumnNameToId.get(colName) || colName,
-          columnName: colName,
-          oldValue: getValueByColumnName(oldEntry.row, colName, oldColumnNameToId),
-          newValue: null,
-          diff: null,
-          diffPercent: null,
-        })),
+        cellChanges: Array.from(allColumnNames).map(colName => {
+          const colId = oldColumnNameToId.get(colName);
+          const oldValue = getValueByColumnName(oldEntry.row, colName, oldColumnNameToId);
+          const oldComputed = colId && oldComputedRow ? oldComputedRow[colId] : null;
+          const isFormula = typeof oldValue === 'string' && oldValue.startsWith('=');
+          return {
+            columnId: colId || colName,
+            columnName: colName,
+            oldValue,
+            newValue: null,
+            oldComputedValue: isFormula && typeof oldComputed === 'number' ? oldComputed : null,
+            newComputedValue: null,
+            diff: null,
+            diffPercent: null,
+          };
+        }),
       });
     } else {
       // 기존 행 - 셀 비교
       const cellChanges: CellChange[] = [];
       let hasChanges = false;
+      const oldComputedRow = oldComputedRows[oldEntry.index];
+      const newComputedRow = newComputedRows[newEntry.index];
 
       for (const colName of allColumnNames) {
+        const oldColId = oldColumnNameToId.get(colName);
+        const newColId = newColumnNameToId.get(colName);
+
         const oldValue = getValueByColumnName(oldEntry.row, colName, oldColumnNameToId);
         const newValue = getValueByColumnName(newEntry.row, colName, newColumnNameToId);
+
+        // 계산된 값 가져오기
+        const oldComputed = oldColId && oldComputedRow ? oldComputedRow[oldColId] : null;
+        const newComputed = newColId && newComputedRow ? newComputedRow[newColId] : null;
+
+        // 수식인지 확인
+        const oldIsFormula = typeof oldValue === 'string' && oldValue.startsWith('=');
+        const newIsFormula = typeof newValue === 'string' && newValue.startsWith('=');
 
         let diff: number | null = null;
         let diffPercent: number | null = null;
 
-        // 숫자 비교
-        const oldNum = typeof oldValue === 'number' ? oldValue : parseFloat(String(oldValue));
-        const newNum = typeof newValue === 'number' ? newValue : parseFloat(String(newValue));
+        // 계산된 값으로 숫자 비교 (수식인 경우 계산된 값 사용)
+        const oldNum = oldIsFormula
+          ? (typeof oldComputed === 'number' ? oldComputed : NaN)
+          : (typeof oldValue === 'number' ? oldValue : parseFloat(String(oldValue)));
+        const newNum = newIsFormula
+          ? (typeof newComputed === 'number' ? newComputed : NaN)
+          : (typeof newValue === 'number' ? newValue : parseFloat(String(newValue)));
 
         if (!isNaN(oldNum) && !isNaN(newNum)) {
           diff = newNum - oldNum;
           diffPercent = oldNum !== 0 ? ((newNum - oldNum) / oldNum) * 100 : (newNum !== 0 ? 100 : 0);
         }
 
-        // 값이 다른지 확인
-        const isDifferent = String(oldValue ?? '') !== String(newValue ?? '');
+        // 값이 다른지 확인 (계산된 값 기준으로 비교)
+        const oldCompareValue = oldIsFormula ? oldComputed : oldValue;
+        const newCompareValue = newIsFormula ? newComputed : newValue;
+        const isDifferent = String(oldCompareValue ?? '') !== String(newCompareValue ?? '');
 
         if (isDifferent) {
           hasChanges = true;
@@ -295,10 +397,12 @@ export function compareSheets(
         }
 
         cellChanges.push({
-          columnId: newColumnNameToId.get(colName) || oldColumnNameToId.get(colName) || colName,
+          columnId: newColId || oldColId || colName,
           columnName: colName,
           oldValue,
           newValue,
+          oldComputedValue: oldIsFormula && typeof oldComputed === 'number' ? oldComputed : null,
+          newComputedValue: newIsFormula && typeof newComputed === 'number' ? newComputed : null,
           diff: isDifferent ? diff : null,
           diffPercent: isDifferent ? diffPercent : null,
         });

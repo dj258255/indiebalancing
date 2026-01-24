@@ -20,6 +20,8 @@ interface GrowthCurveChartProps {
   initialBase?: number;
   initialRate?: number;
   initialMaxLevel?: number;
+  showHelp?: boolean;
+  setShowHelp?: (value: boolean) => void;
 }
 
 const CURVE_COLORS = {
@@ -37,6 +39,8 @@ export default function GrowthCurveChart({
   initialBase = 100,
   initialRate = 1.1,
   initialMaxLevel = 50,
+  showHelp = false,
+  setShowHelp,
 }: GrowthCurveChartProps) {
   const [base, setBase] = useState(initialBase);
   const [rate, setRate] = useState(initialRate);
@@ -94,305 +98,362 @@ export default function GrowthCurveChart({
   }, [base, rate, previewLevel, customBase, customRate, customCurve, showCustom]);
 
   return (
-    <div className="space-y-4">
-      {/* 설정 패널 */}
-      <div className="grid grid-cols-1 gap-4 mb-6">
-        {/* 기본 설정 */}
-        <div className="space-y-3">
-          <h4 className="font-medium text-sm" style={{ color: 'var(--text-secondary)' }}>{t('basicSettings')}</h4>
-          <div>
-            <label className="block text-sm mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('baseValue')}</label>
-            <NumberInput
-              value={base}
-              onChange={setBase}
-              className="w-full px-3 py-1.5 rounded-lg text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('rate')}</label>
-            <NumberInput
-              value={rate}
-              onChange={setRate}
-              className="w-full px-3 py-1.5 rounded-lg text-sm"
-            />
-          </div>
-          <div>
-            <label className="block text-sm mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('maxLevel')}</label>
-            <NumberInput
-              value={maxLevel}
-              onChange={setMaxLevel}
-              max={200}
-              className="w-full px-3 py-1.5 rounded-lg text-sm"
-            />
-          </div>
-        </div>
+    <div className="flex flex-col h-full">
+      <div className="p-4 space-y-4 overflow-y-auto overflow-x-hidden flex-1">
+        {/* 도움말 섹션 */}
+        {showHelp && (
+          <div className="p-3 rounded-lg animate-slideDown" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+            <p className="mb-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
+              {t('helpDesc')}
+            </p>
 
-        {/* 곡선 선택 */}
-        <div className="space-y-2">
-          <h4 className="font-medium text-sm" style={{ color: 'var(--text-secondary)' }}>{t('curvesToShow')}</h4>
-          {CURVE_KEYS.map((key) => {
-            const color = CURVE_COLORS[key as keyof typeof CURVE_COLORS];
-            const isChecked = showCurves[key as keyof typeof showCurves];
-            return (
-              <button
-                key={key}
-                onClick={() => setShowCurves((prev) => ({ ...prev, [key]: !prev[key as keyof typeof showCurves] }))}
-                className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm transition-all"
-                style={{
-                  background: isChecked ? `${color}15` : 'var(--bg-tertiary)',
-                  border: `1px solid ${isChecked ? color : 'transparent'}`,
-                }}
-              >
-                <div className="flex items-center gap-2">
-                  <span
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: color }}
-                  />
-                  <span style={{ color: isChecked ? color : 'var(--text-secondary)' }}>{t(key)}</span>
+            <div className="space-y-2 mb-3">
+              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #3b82f6' }}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-medium text-sm" style={{ color: '#3b82f6' }}>{t('linearHelp.name')}</span>
+                  <code className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>{t('linearHelp.formula')}</code>
                 </div>
-                <div
-                  className="w-9 h-5 rounded-full relative transition-all"
-                  style={{
-                    background: isChecked ? color : 'var(--border-primary)',
-                  }}
-                >
-                  <div
-                    className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all"
-                    style={{
-                      left: isChecked ? '18px' : '2px',
-                    }}
-                  />
-                </div>
-              </button>
-            );
-          })}
-          <button
-            onClick={() => setShowCustom(!showCustom)}
-            className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm transition-all"
-            style={{
-              background: showCustom ? `${CURVE_COLORS.custom}15` : 'var(--bg-tertiary)',
-              border: `1px solid ${showCustom ? CURVE_COLORS.custom : 'transparent'}`,
-            }}
-          >
-            <div className="flex items-center gap-2">
-              <span
-                className="w-3 h-3 rounded-full"
-                style={{ backgroundColor: CURVE_COLORS.custom }}
-              />
-              <span style={{ color: showCustom ? CURVE_COLORS.custom : 'var(--text-secondary)' }}>{t('customCurve')}</span>
-            </div>
-            <div
-              className="w-9 h-5 rounded-full relative transition-all"
-              style={{
-                background: showCustom ? CURVE_COLORS.custom : 'var(--border-primary)',
-              }}
-            >
-              <div
-                className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all"
-                style={{
-                  left: showCustom ? '18px' : '2px',
-                }}
-              />
-            </div>
-          </button>
-        </div>
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('linearHelp.desc')}</p>
+              </div>
 
-        {/* 커스텀 곡선 설정 */}
-        {showCustom && (
+              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #ef4444' }}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-medium text-sm" style={{ color: '#ef4444' }}>{t('exponentialHelp.name')}</span>
+                  <code className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>{t('exponentialHelp.formula')}</code>
+                </div>
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('exponentialHelp.desc')}</p>
+              </div>
+
+              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #22c55e' }}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-medium text-sm" style={{ color: '#22c55e' }}>{t('logarithmicHelp.name')}</span>
+                  <code className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>{t('logarithmicHelp.formula')}</code>
+                </div>
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('logarithmicHelp.desc')}</p>
+              </div>
+
+              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #f59e0b' }}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-medium text-sm" style={{ color: '#f59e0b' }}>{t('quadraticHelp.name')}</span>
+                  <code className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>{t('quadraticHelp.formula')}</code>
+                </div>
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('quadraticHelp.desc')}</p>
+              </div>
+
+              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #8b5cf6' }}>
+                <div className="flex items-center justify-between mb-1">
+                  <span className="font-medium text-sm" style={{ color: '#8b5cf6' }}>{t('sCurveHelp.name')}</span>
+                  <code className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>{t('sCurveHelp.formula')}</code>
+                </div>
+                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('sCurveHelp.desc')}</p>
+              </div>
+            </div>
+
+            <div className="text-xs p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
+              {t('helpTip')}
+            </div>
+          </div>
+        )}
+
+        {/* 설정 패널 */}
+        <div className="grid grid-cols-1 gap-4 mb-6">
+          {/* 기본 설정 */}
           <div className="space-y-3">
-            <h4 className="font-medium text-sm" style={{ color: 'var(--text-secondary)' }}>{t('customCurve')}</h4>
-            <div>
-              <label className="block text-sm mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('curveTypeLabel')}</label>
-              <select
-                value={customCurve}
-                onChange={(e) => setCustomCurve(e.target.value as CurveType)}
-                className="w-full px-3 py-1.5 rounded-lg text-sm"
-              >
-                <option value="linear">{t('linear')}</option>
-                <option value="exponential">{t('exponential')}</option>
-                <option value="logarithmic">{t('logarithmic')}</option>
-                <option value="quadratic">{t('quadratic')}</option>
-                <option value="scurve">{t('sCurve')}</option>
-              </select>
-            </div>
+            <h4 className="font-medium text-sm" style={{ color: 'var(--text-secondary)' }}>{t('basicSettings')}</h4>
             <div>
               <label className="block text-sm mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('baseValue')}</label>
               <NumberInput
-                value={customBase}
-                onChange={setCustomBase}
+                value={base}
+                onChange={setBase}
                 className="w-full px-3 py-1.5 rounded-lg text-sm"
               />
             </div>
             <div>
               <label className="block text-sm mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('rate')}</label>
               <NumberInput
-                value={customRate}
-                onChange={setCustomRate}
+                value={rate}
+                onChange={setRate}
+                className="w-full px-3 py-1.5 rounded-lg text-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-sm mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('maxLevel')}</label>
+              <NumberInput
+                value={maxLevel}
+                onChange={setMaxLevel}
+                max={200}
                 className="w-full px-3 py-1.5 rounded-lg text-sm"
               />
             </div>
           </div>
-        )}
-      </div>
 
-      {/* 차트 */}
-      <div className="relative h-[400px] mb-6 group">
-        {/* 차트 확대 버튼 */}
-        <button
-          onClick={() => setShowChartModal(true)}
-          className="absolute top-2 right-2 z-10 p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100"
-          style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}
-          title={t('enlargeGraph')}
-        >
-          <Maximize2 className="w-4 h-4" />
-        </button>
-        <ResponsiveContainer width="100%" height="100%">
-          <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
-            <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
-            <XAxis
-              dataKey="level"
-              label={{ value: t('levelUnit'), position: 'insideBottomRight', offset: -5, fill: 'var(--text-tertiary)' }}
-              tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
-            />
-            <YAxis
-              label={{ value: '값', angle: -90, position: 'insideLeft', fill: 'var(--text-tertiary)' }}
-              tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
-              tickFormatter={(value) => value.toLocaleString()}
-            />
-            <Tooltip
-              formatter={(value: number) => value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-              labelFormatter={(label) => `${t('levelUnit')} ${label}`}
-              contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }}
-            />
-            <Legend />
-            {showCurves.linear && (
-              <Line type="monotone" dataKey="linear" name={t('linear')} stroke={CURVE_COLORS.linear} dot={false} strokeWidth={2} />
-            )}
-            {showCurves.exponential && (
-              <Line type="monotone" dataKey="exponential" name={t('exponential')} stroke={CURVE_COLORS.exponential} dot={false} strokeWidth={2} />
-            )}
-            {showCurves.logarithmic && (
-              <Line type="monotone" dataKey="logarithmic" name={t('logarithmic')} stroke={CURVE_COLORS.logarithmic} dot={false} strokeWidth={2} />
-            )}
-            {showCurves.quadratic && (
-              <Line type="monotone" dataKey="quadratic" name={t('quadratic')} stroke={CURVE_COLORS.quadratic} dot={false} strokeWidth={2} />
-            )}
-            {showCustom && (
-              <Line type="monotone" dataKey="custom" name={t('customCurve')} stroke={CURVE_COLORS.custom} dot={false} strokeWidth={2} strokeDasharray="5 5" />
-            )}
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-
-      {/* 그래프만 확대 모달 */}
-      {showChartModal && (
-        <div
-          className="fixed inset-0 z-[1000] flex items-center justify-center p-6"
-          style={{ background: 'rgba(0,0,0,0.85)' }}
-          onClick={() => setShowChartModal(false)}
-        >
-          <div
-            className="w-full max-w-6xl h-[80vh] rounded-2xl overflow-hidden flex flex-col"
-            style={{ background: 'var(--bg-primary)' }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            {/* 모달 헤더 */}
-            <div className="flex items-center justify-between px-6 py-4 shrink-0" style={{ borderBottom: '1px solid var(--border-primary)' }}>
-              <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('graphTitle')}</h3>
-              <button
-                onClick={() => setShowChartModal(false)}
-                className="p-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
-                style={{ color: 'var(--text-tertiary)' }}
+          {/* 곡선 선택 */}
+          <div className="space-y-2">
+            <h4 className="font-medium text-sm" style={{ color: 'var(--text-secondary)' }}>{t('curvesToShow')}</h4>
+            {CURVE_KEYS.map((key) => {
+              const color = CURVE_COLORS[key as keyof typeof CURVE_COLORS];
+              const isChecked = showCurves[key as keyof typeof showCurves];
+              return (
+                <button
+                  key={key}
+                  onClick={() => setShowCurves((prev) => ({ ...prev, [key]: !prev[key as keyof typeof showCurves] }))}
+                  className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm transition-all"
+                  style={{
+                    background: isChecked ? `${color}15` : 'var(--bg-tertiary)',
+                    border: `1px solid ${isChecked ? color : 'transparent'}`,
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <span
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: color }}
+                    />
+                    <span style={{ color: isChecked ? color : 'var(--text-secondary)' }}>{t(key)}</span>
+                  </div>
+                  <div
+                    className="w-9 h-5 rounded-full relative transition-all"
+                    style={{
+                      background: isChecked ? color : 'var(--border-primary)',
+                    }}
+                  >
+                    <div
+                      className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all"
+                      style={{
+                        left: isChecked ? '18px' : '2px',
+                      }}
+                    />
+                  </div>
+                </button>
+              );
+            })}
+            <button
+              onClick={() => setShowCustom(!showCustom)}
+              className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm transition-all"
+              style={{
+                background: showCustom ? `${CURVE_COLORS.custom}15` : 'var(--bg-tertiary)',
+                border: `1px solid ${showCustom ? CURVE_COLORS.custom : 'transparent'}`,
+              }}
+            >
+              <div className="flex items-center gap-2">
+                <span
+                  className="w-3 h-3 rounded-full"
+                  style={{ backgroundColor: CURVE_COLORS.custom }}
+                />
+                <span style={{ color: showCustom ? CURVE_COLORS.custom : 'var(--text-secondary)' }}>{t('customCurve')}</span>
+              </div>
+              <div
+                className="w-9 h-5 rounded-full relative transition-all"
+                style={{
+                  background: showCustom ? CURVE_COLORS.custom : 'var(--border-primary)',
+                }}
               >
-                <X className="w-5 h-5" />
-              </button>
+                <div
+                  className="absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-all"
+                  style={{
+                    left: showCustom ? '18px' : '2px',
+                  }}
+                />
+              </div>
+            </button>
+          </div>
+
+          {/* 커스텀 곡선 설정 */}
+          {showCustom && (
+            <div className="space-y-3">
+              <h4 className="font-medium text-sm" style={{ color: 'var(--text-secondary)' }}>{t('customCurve')}</h4>
+              <div>
+                <label className="block text-sm mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('curveTypeLabel')}</label>
+                <select
+                  value={customCurve}
+                  onChange={(e) => setCustomCurve(e.target.value as CurveType)}
+                  className="w-full px-3 py-1.5 rounded-lg text-sm"
+                >
+                  <option value="linear">{t('linear')}</option>
+                  <option value="exponential">{t('exponential')}</option>
+                  <option value="logarithmic">{t('logarithmic')}</option>
+                  <option value="quadratic">{t('quadratic')}</option>
+                  <option value="scurve">{t('sCurve')}</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('baseValue')}</label>
+                <NumberInput
+                  value={customBase}
+                  onChange={setCustomBase}
+                  className="w-full px-3 py-1.5 rounded-lg text-sm"
+                />
+              </div>
+              <div>
+                <label className="block text-sm mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('rate')}</label>
+                <NumberInput
+                  value={customRate}
+                  onChange={setCustomRate}
+                  className="w-full px-3 py-1.5 rounded-lg text-sm"
+                />
+              </div>
             </div>
-            {/* 모달 차트 - 꽉 채움 */}
-            <div className="flex-1 p-6">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData} margin={{ top: 20, right: 40, left: 30, bottom: 20 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
-                  <XAxis
-                    dataKey="level"
-                    label={{ value: t('levelUnit'), position: 'insideBottomRight', offset: -10, fill: 'var(--text-tertiary)', fontSize: 14 }}
-                    tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
-                  />
-                  <YAxis
-                    label={{ value: '값', angle: -90, position: 'insideLeft', fill: 'var(--text-tertiary)', fontSize: 14 }}
-                    tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
-                    tickFormatter={(value) => value.toLocaleString()}
-                  />
-                  <Tooltip
-                    formatter={(value: number) => value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
-                    labelFormatter={(label) => `${t('levelUnit')} ${label}`}
-                    contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', fontSize: 14 }}
-                  />
-                  <Legend wrapperStyle={{ fontSize: 14 }} />
-                  {showCurves.linear && (
-                    <Line type="monotone" dataKey="linear" name={t('linear')} stroke={CURVE_COLORS.linear} dot={false} strokeWidth={3} />
-                  )}
-                  {showCurves.exponential && (
-                    <Line type="monotone" dataKey="exponential" name={t('exponential')} stroke={CURVE_COLORS.exponential} dot={false} strokeWidth={3} />
-                  )}
-                  {showCurves.logarithmic && (
-                    <Line type="monotone" dataKey="logarithmic" name={t('logarithmic')} stroke={CURVE_COLORS.logarithmic} dot={false} strokeWidth={3} />
-                  )}
-                  {showCurves.quadratic && (
-                    <Line type="monotone" dataKey="quadratic" name={t('quadratic')} stroke={CURVE_COLORS.quadratic} dot={false} strokeWidth={3} />
-                  )}
-                  {showCustom && (
-                    <Line type="monotone" dataKey="custom" name={t('customCurve')} stroke={CURVE_COLORS.custom} dot={false} strokeWidth={3} strokeDasharray="5 5" />
-                  )}
-                </LineChart>
-              </ResponsiveContainer>
+          )}
+        </div>
+
+        {/* 차트 */}
+        <div className="relative h-[400px] mb-6 group">
+          {/* 차트 확대 버튼 */}
+          <button
+            onClick={() => setShowChartModal(true)}
+            className="absolute top-2 right-2 z-10 p-2 rounded-lg transition-all opacity-0 group-hover:opacity-100"
+            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}
+            title={t('enlargeGraph')}
+          >
+            <Maximize2 className="w-4 h-4" />
+          </button>
+          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
+            <LineChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
+              <XAxis
+                dataKey="level"
+                label={{ value: t('levelUnit'), position: 'insideBottomRight', offset: -5, fill: 'var(--text-tertiary)' }}
+                tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
+              />
+              <YAxis
+                label={{ value: '값', angle: -90, position: 'insideLeft', fill: 'var(--text-tertiary)' }}
+                tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
+                tickFormatter={(value) => value.toLocaleString()}
+              />
+              <Tooltip
+                formatter={(value: number) => value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                labelFormatter={(label) => `${t('levelUnit')} ${label}`}
+                contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }}
+              />
+              <Legend />
+              {showCurves.linear && (
+                <Line type="monotone" dataKey="linear" name={t('linear')} stroke={CURVE_COLORS.linear} dot={false} strokeWidth={2} />
+              )}
+              {showCurves.exponential && (
+                <Line type="monotone" dataKey="exponential" name={t('exponential')} stroke={CURVE_COLORS.exponential} dot={false} strokeWidth={2} />
+              )}
+              {showCurves.logarithmic && (
+                <Line type="monotone" dataKey="logarithmic" name={t('logarithmic')} stroke={CURVE_COLORS.logarithmic} dot={false} strokeWidth={2} />
+              )}
+              {showCurves.quadratic && (
+                <Line type="monotone" dataKey="quadratic" name={t('quadratic')} stroke={CURVE_COLORS.quadratic} dot={false} strokeWidth={2} />
+              )}
+              {showCustom && (
+                <Line type="monotone" dataKey="custom" name={t('customCurve')} stroke={CURVE_COLORS.custom} dot={false} strokeWidth={2} strokeDasharray="5 5" />
+              )}
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* 그래프만 확대 모달 */}
+        {showChartModal && (
+          <div
+            className="fixed inset-0 z-[1000] flex items-center justify-center p-6"
+            style={{ background: 'rgba(0,0,0,0.85)' }}
+            onClick={() => setShowChartModal(false)}
+          >
+            <div
+              className="w-full max-w-6xl h-[80vh] rounded-2xl overflow-hidden flex flex-col"
+              style={{ background: 'var(--bg-primary)' }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              {/* 모달 헤더 */}
+              <div className="flex items-center justify-between px-6 py-4 shrink-0" style={{ borderBottom: '1px solid var(--border-primary)' }}>
+                <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('graphTitle')}</h3>
+                <button
+                  onClick={() => setShowChartModal(false)}
+                  className="p-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
+                  style={{ color: 'var(--text-tertiary)' }}
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              {/* 모달 차트 - 꽉 채움 */}
+              <div className="flex-1 p-6">
+                <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
+                  <LineChart data={chartData} margin={{ top: 20, right: 40, left: 30, bottom: 20 }}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
+                    <XAxis
+                      dataKey="level"
+                      label={{ value: t('levelUnit'), position: 'insideBottomRight', offset: -10, fill: 'var(--text-tertiary)', fontSize: 14 }}
+                      tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
+                    />
+                    <YAxis
+                      label={{ value: '값', angle: -90, position: 'insideLeft', fill: 'var(--text-tertiary)', fontSize: 14 }}
+                      tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
+                      tickFormatter={(value) => value.toLocaleString()}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
+                      labelFormatter={(label) => `${t('levelUnit')} ${label}`}
+                      contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', fontSize: 14 }}
+                    />
+                    <Legend wrapperStyle={{ fontSize: 14 }} />
+                    {showCurves.linear && (
+                      <Line type="monotone" dataKey="linear" name={t('linear')} stroke={CURVE_COLORS.linear} dot={false} strokeWidth={3} />
+                    )}
+                    {showCurves.exponential && (
+                      <Line type="monotone" dataKey="exponential" name={t('exponential')} stroke={CURVE_COLORS.exponential} dot={false} strokeWidth={3} />
+                    )}
+                    {showCurves.logarithmic && (
+                      <Line type="monotone" dataKey="logarithmic" name={t('logarithmic')} stroke={CURVE_COLORS.logarithmic} dot={false} strokeWidth={3} />
+                    )}
+                    {showCurves.quadratic && (
+                      <Line type="monotone" dataKey="quadratic" name={t('quadratic')} stroke={CURVE_COLORS.quadratic} dot={false} strokeWidth={3} />
+                    )}
+                    {showCustom && (
+                      <Line type="monotone" dataKey="custom" name={t('customCurve')} stroke={CURVE_COLORS.custom} dot={false} strokeWidth={3} strokeDasharray="5 5" />
+                    )}
+                  </LineChart>
+                </ResponsiveContainer>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      {/* 레벨별 값 미리보기 */}
-      <div className="border-t pt-4" style={{ borderColor: 'var(--border-primary)' }}>
-        <div className="flex items-center gap-4 mb-3">
-          <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t('levelPreview')}</span>
-          <NumberInput
-            value={previewLevel}
-            onChange={setPreviewLevel}
-            max={maxLevel}
-            className="w-20 px-2 py-1 rounded-lg text-sm"
-          />
-          <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('levelUnit')}</span>
-        </div>
-        <div className="space-y-1.5">
-          {showCurves.linear && (
-            <div className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-              <span className="text-sm font-medium" style={{ color: '#3b82f6' }}>{t('linear')}</span>
-              <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>{previewValues.linear.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-            </div>
-          )}
-          {showCurves.exponential && (
-            <div className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-              <span className="text-sm font-medium" style={{ color: '#ef4444' }}>{t('exponential')}</span>
-              <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>{previewValues.exponential.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-            </div>
-          )}
-          {showCurves.logarithmic && (
-            <div className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-              <span className="text-sm font-medium" style={{ color: '#22c55e' }}>{t('logarithmic')}</span>
-              <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>{previewValues.logarithmic.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-            </div>
-          )}
-          {showCurves.quadratic && (
-            <div className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-              <span className="text-sm font-medium" style={{ color: '#f59e0b' }}>{t('quadratic')}</span>
-              <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>{previewValues.quadratic.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-            </div>
-          )}
-          {showCustom && previewValues.custom !== null && (
-            <div className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-              <span className="text-sm font-medium" style={{ color: '#8b5cf6' }}>{t('customCurve')}</span>
-              <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>{previewValues.custom.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
-            </div>
-          )}
+        {/* 레벨별 값 미리보기 */}
+        <div className="border-t pt-4" style={{ borderColor: 'var(--border-primary)' }}>
+          <div className="flex items-center gap-4 mb-3">
+            <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t('levelPreview')}</span>
+            <NumberInput
+              value={previewLevel}
+              onChange={setPreviewLevel}
+              max={maxLevel}
+              className="w-20 px-2 py-1 rounded-lg text-sm"
+            />
+            <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('levelUnit')}</span>
+          </div>
+          <div className="space-y-1.5">
+            {showCurves.linear && (
+              <div className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                <span className="text-sm font-medium" style={{ color: '#3b82f6' }}>{t('linear')}</span>
+                <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>{previewValues.linear.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+              </div>
+            )}
+            {showCurves.exponential && (
+              <div className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                <span className="text-sm font-medium" style={{ color: '#ef4444' }}>{t('exponential')}</span>
+                <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>{previewValues.exponential.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+              </div>
+            )}
+            {showCurves.logarithmic && (
+              <div className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                <span className="text-sm font-medium" style={{ color: '#22c55e' }}>{t('logarithmic')}</span>
+                <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>{previewValues.logarithmic.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+              </div>
+            )}
+            {showCurves.quadratic && (
+              <div className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                <span className="text-sm font-medium" style={{ color: '#f59e0b' }}>{t('quadratic')}</span>
+                <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>{previewValues.quadratic.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+              </div>
+            )}
+            {showCustom && previewValues.custom !== null && (
+              <div className="flex items-center justify-between px-3 py-2 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+                <span className="text-sm font-medium" style={{ color: '#8b5cf6' }}>{t('customCurve')}</span>
+                <span className="text-sm font-semibold tabular-nums" style={{ color: 'var(--text-secondary)' }}>{previewValues.custom.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

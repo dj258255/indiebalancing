@@ -1,8 +1,10 @@
 'use client';
 
 import { ReactNode } from 'react';
+import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import type { DraggableState } from '@/hooks';
+import PanelHeader from './PanelHeader';
 
 interface FloatingPanelLayoutProps {
   panelId: string;
@@ -10,21 +12,33 @@ interface FloatingPanelLayoutProps {
   show: boolean;
   panelState: DraggableState;
   onBringToFront: () => void;
+  onDragStart: (e: React.MouseEvent) => void;
   onResizeE: (e: React.MouseEvent) => void;
   onResizeS: (e: React.MouseEvent) => void;
   onResizeSE: (e: React.MouseEvent) => void;
+  // 헤더 관련 props
+  title: string;
+  icon: LucideIcon;
+  color: string;
+  onClose: () => void;
+  headerExtra?: ReactNode;
   className?: string;
 }
 
 export default function FloatingPanelLayout({
-  panelId,
   children,
   show,
   panelState,
   onBringToFront,
+  onDragStart,
   onResizeE,
   onResizeS,
   onResizeSE,
+  title,
+  icon,
+  color,
+  onClose,
+  headerExtra,
   className,
 }: FloatingPanelLayoutProps) {
   if (!show) return null;
@@ -46,8 +60,18 @@ export default function FloatingPanelLayout({
       style={panelStyle}
       onMouseDown={onBringToFront}
     >
-      {/* Content - 패널 컴포넌트가 자체 헤더를 가지고 있음 */}
-      <div className="flex-1 overflow-hidden flex flex-col">
+      {/* 공통 헤더 - 레이아웃에서 제공 */}
+      <PanelHeader
+        title={title}
+        icon={icon}
+        color={color}
+        onClose={onClose}
+        onDragStart={onDragStart}
+        extraContent={headerExtra}
+      />
+
+      {/* Content */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
         {children}
       </div>
 

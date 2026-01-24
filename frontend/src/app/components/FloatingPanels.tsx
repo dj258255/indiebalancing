@@ -123,7 +123,6 @@ export default function FloatingPanels({
           <Calculator
             onClose={() => panels.calculator.setShow(false)}
             isPanel
-            onDragStart={createDragHandler('calculator')}
           />
           <ResizeHandles panelId="calculator" />
         </div>
@@ -139,7 +138,6 @@ export default function FloatingPanels({
           <ComparisonChart
             onClose={() => panels.comparison.setShow(false)}
             isPanel
-            onDragStart={createDragHandler('comparison')}
           />
           <ResizeHandles panelId="comparison" />
         </div>
@@ -294,7 +292,6 @@ export default function FloatingPanels({
           <PresetComparisonModal
             onClose={() => panels.preset.setShow(false)}
             isPanel
-            onDragStart={createDragHandler('preset')}
           />
           <ResizeHandles panelId="preset" />
         </div>
@@ -309,7 +306,6 @@ export default function FloatingPanels({
         >
           <ImbalanceDetectorPanel
             onClose={() => panels.imbalance.setShow(false)}
-            onDragStart={createDragHandler('imbalance')}
           />
           <ResizeHandles panelId="imbalance" />
         </div>
@@ -324,7 +320,6 @@ export default function FloatingPanels({
         >
           <GoalSolverPanel
             onClose={() => panels.goal.setShow(false)}
-            onDragStart={createDragHandler('goal')}
           />
           <ResizeHandles panelId="goal" />
         </div>
@@ -339,7 +334,6 @@ export default function FloatingPanels({
         >
           <BalanceAnalysisPanel
             onClose={() => panels.balance.setShow(false)}
-            onDragStart={createDragHandler('balance')}
           />
           <ResizeHandles panelId="balance" />
         </div>
@@ -353,7 +347,9 @@ export default function FloatingPanels({
           style={getPanelStyle('formulaHelper')}
           onMouseDown={() => bringToFront('formulaHelper')}
         >
-          <FormulaHelper onClose={() => panels.formulaHelper.setShow(false)} />
+          <FormulaHelper
+            onClose={() => panels.formulaHelper.setShow(false)}
+          />
           <ResizeHandles panelId="formulaHelper" />
         </div>
       )}
@@ -365,7 +361,9 @@ export default function FloatingPanels({
           style={getPanelStyle('balanceValidator')}
           onMouseDown={() => bringToFront('balanceValidator')}
         >
-          <BalanceValidator onClose={() => panels.balanceValidator.setShow(false)} />
+          <BalanceValidator
+            onClose={() => panels.balanceValidator.setShow(false)}
+          />
           <ResizeHandles panelId="balanceValidator" />
         </div>
       )}
@@ -377,7 +375,9 @@ export default function FloatingPanels({
           style={getPanelStyle('difficultyCurve')}
           onMouseDown={() => bringToFront('difficultyCurve')}
         >
-          <DifficultyCurve onClose={() => panels.difficultyCurve.setShow(false)} />
+          <DifficultyCurve
+            onClose={() => panels.difficultyCurve.setShow(false)}
+          />
           <ResizeHandles panelId="difficultyCurve" />
         </div>
       )}
@@ -389,7 +389,9 @@ export default function FloatingPanels({
           style={getPanelStyle('simulation')}
           onMouseDown={() => bringToFront('simulation')}
         >
-          <SimulationPanel onClose={() => panels.simulation.setShow(false)} />
+          <SimulationPanel
+            onClose={() => panels.simulation.setShow(false)}
+          />
           <ResizeHandles panelId="simulation" />
         </div>
       )}

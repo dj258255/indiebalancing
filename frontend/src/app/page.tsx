@@ -524,18 +524,51 @@ export default function Home() {
           simulation: showSimulation,
         }}
         setShow={{
-          formulaHelper: setShowFormulaHelper,
-          balanceValidator: setShowBalanceValidator,
-          difficultyCurve: setShowDifficultyCurve,
-          simulation: setShowSimulation,
+          formulaHelper: (value) => {
+            setShowFormulaHelper(value);
+            if (value) bringToFront('formulaHelper');
+          },
+          balanceValidator: (value) => {
+            setShowBalanceValidator(value);
+            if (value) bringToFront('balanceValidator');
+          },
+          difficultyCurve: (value) => {
+            setShowDifficultyCurve(value);
+            if (value) bringToFront('difficultyCurve');
+          },
+          simulation: (value) => {
+            setShowSimulation(value);
+            if (value) bringToFront('simulation');
+          },
         }}
-        onShowCalculator={() => setShowCalculator(!showCalculator)}
-        onShowComparison={() => setShowComparison(!showComparison)}
-        onShowChart={() => setShowChart(!showChart)}
-        onShowPresetComparison={() => setShowPresetComparison(!showPresetComparison)}
-        onShowImbalanceDetector={() => setShowImbalanceDetector(!showImbalanceDetector)}
-        onShowGoalSolver={() => setShowGoalSolver(!showGoalSolver)}
-        onShowBalanceAnalysis={() => setShowBalanceAnalysis(!showBalanceAnalysis)}
+        onShowCalculator={() => {
+          setShowCalculator(!showCalculator);
+          if (!showCalculator) bringToFront('calculator');
+        }}
+        onShowComparison={() => {
+          setShowComparison(!showComparison);
+          if (!showComparison) bringToFront('comparison');
+        }}
+        onShowChart={() => {
+          setShowChart(!showChart);
+          if (!showChart) bringToFront('chart');
+        }}
+        onShowPresetComparison={() => {
+          setShowPresetComparison(!showPresetComparison);
+          if (!showPresetComparison) bringToFront('preset');
+        }}
+        onShowImbalanceDetector={() => {
+          setShowImbalanceDetector(!showImbalanceDetector);
+          if (!showImbalanceDetector) bringToFront('imbalance');
+        }}
+        onShowGoalSolver={() => {
+          setShowGoalSolver(!showGoalSolver);
+          if (!showGoalSolver) bringToFront('goal');
+        }}
+        onShowBalanceAnalysis={() => {
+          setShowBalanceAnalysis(!showBalanceAnalysis);
+          if (!showBalanceAnalysis) bringToFront('balance');
+        }}
         isModalOpen={isModalOpen}
       />
     </div>

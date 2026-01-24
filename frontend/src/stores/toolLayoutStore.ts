@@ -32,8 +32,14 @@ interface ToolLayoutState {
   // 사이드바 너비 (px)
   sidebarWidth: number;
 
+  // 도구 섹션 높이 (px)
+  toolsSectionHeight: number;
+
   // 사이드바 너비 설정
   setSidebarWidth: (width: number) => void;
+
+  // 도구 섹션 높이 설정
+  setToolsSectionHeight: (height: number) => void;
 
   // 도구 위치 변경 (sidebar <-> bottom)
   moveToolToLocation: (toolId: AllToolId, location: ToolLocation, xPosition?: number) => void;
@@ -99,11 +105,18 @@ export const useToolLayoutStore = create<ToolLayoutState>()(
       sidebarToolOrder: [...DEFAULT_SIDEBAR_ORDER],
       bottomToolZOrder: ['formulaHelper', 'balanceValidator', 'difficultyCurve', 'simulation'] as AllToolId[],
       sidebarWidth: 256, // 기본값 256px (w-64)
+      toolsSectionHeight: 200, // 기본값 200px
 
       setSidebarWidth: (width) => {
         // 최소 200px, 최대 400px
         const clampedWidth = Math.max(200, Math.min(400, width));
         set({ sidebarWidth: clampedWidth });
+      },
+
+      setToolsSectionHeight: (height) => {
+        // 최소 60px, 최대 600px
+        const clampedHeight = Math.max(60, Math.min(600, height));
+        set({ toolsSectionHeight: clampedHeight });
       },
 
       moveToolToLocation: (toolId, location, xPosition) => {
@@ -205,11 +218,20 @@ export const useToolLayoutStore = create<ToolLayoutState>()(
           sidebarToolOrder: [...DEFAULT_SIDEBAR_ORDER],
           bottomToolZOrder: ['formulaHelper', 'balanceValidator', 'difficultyCurve', 'simulation'] as AllToolId[],
           sidebarWidth: 256,
+          toolsSectionHeight: 200,
         });
       },
     }),
     {
       name: 'tool-layout-storage',
+      partialize: (state) => ({
+        toolLocations: state.toolLocations,
+        bottomToolPositions: state.bottomToolPositions,
+        sidebarToolOrder: state.sidebarToolOrder,
+        bottomToolZOrder: state.bottomToolZOrder,
+        sidebarWidth: state.sidebarWidth,
+        toolsSectionHeight: state.toolsSectionHeight,
+      }),
     }
   )
 );

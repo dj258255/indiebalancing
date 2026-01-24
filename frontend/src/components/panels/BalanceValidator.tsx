@@ -19,9 +19,12 @@ import {
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 
+const PANEL_COLOR = '#22c55e';
+
 interface BalanceValidatorProps {
   onClose?: () => void;
-  onDragStart?: (e: React.MouseEvent) => void;
+  showHelp?: boolean;
+  setShowHelp?: (value: boolean) => void;
 }
 
 // 역할별 기대 범위
@@ -176,7 +179,7 @@ function simulate1v1(unitA: UnitData, unitB: UnitData): { winner: string; rounds
   }
 }
 
-export default function BalanceValidator({ onClose, onDragStart }: BalanceValidatorProps) {
+export default function BalanceValidator({ onClose, showHelp = false, setShowHelp }: BalanceValidatorProps) {
   const t = useTranslations('balanceValidator');
   const [units, setUnits] = useState<UnitData[]>([
     {
@@ -192,7 +195,6 @@ export default function BalanceValidator({ onClose, onDragStart }: BalanceValida
   ]);
   const [selectedUnits, setSelectedUnits] = useState<[number, number]>([0, 0]);
   const [simResult, setSimResult] = useState<{ winner: string; rounds: number; hpRemaining: number } | null>(null);
-  const [showHelp, setShowHelp] = useState(false);
 
   const addUnit = () => {
     setUnits([
@@ -248,75 +250,34 @@ export default function BalanceValidator({ onClose, onDragStart }: BalanceValida
   }, [validations]);
 
   return (
-    <div className="card overflow-hidden h-full flex flex-col">
-      {/* 헤더 */}
-      <div
-        className="flex items-center justify-between px-4 py-2 shrink-0 cursor-grab active:cursor-grabbing"
-        style={{ background: 'var(--bg-tertiary)' }}
-        onMouseDown={(e) => {
-          if (!(e.target as HTMLElement).closest('button') && onDragStart) {
-            onDragStart(e);
-          }
-        }}
-      >
-        <div className="flex items-center gap-2">
-          <div
-            className="w-6 h-6 rounded-lg flex items-center justify-center"
-            style={{ background: '#10b981' }}
-          >
-            <Target className="w-3.5 h-3.5 text-white" />
-          </div>
-          <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
-            {t('title')}
-          </span>
-          <div className="group relative">
-            <HelpCircle className="w-3.5 h-3.5 cursor-help" style={{ color: 'var(--text-tertiary)' }} />
-            <div className="absolute left-0 top-5 z-50 hidden group-hover:block w-72 p-3 rounded-lg text-xs shadow-lg" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}>
-              <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>{t('tooltipTitle')}</div>
-              <p className="mb-2">{t('tooltipDesc')}</p>
-              <div className="space-y-1 mb-2">
-                <div>- {t('tooltipFeature1')}</div>
-                <div>- {t('tooltipFeature2')}</div>
-                <div>- {t('tooltipFeature3')}</div>
-              </div>
-              <div className="pt-2 border-t space-y-1" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
-                <div>{t('tooltipVsAnalysis')}</div>
-                <div>{t('tooltipVsSim')}</div>
+    <div className="flex flex-col h-full">
+      <div className="p-3 pb-12 space-y-3 overflow-y-auto overflow-x-hidden flex-1">
+          {/* 도움말 섹션 */}
+          {showHelp && (
+            <div className="mb-4 p-3 rounded-lg animate-slideDown" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+              <div className="space-y-2">
+                <div className="flex items-start gap-2">
+                  <div className="w-5 h-5 rounded flex items-center justify-center shrink-0 mt-0.5" style={{ background: `${PANEL_COLOR}20` }}>
+                    <Shield className="w-3 h-3" style={{ color: PANEL_COLOR }} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{t('tooltipTitle')}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{t('tooltipDesc')}</p>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                    <span className="font-medium" style={{ color: PANEL_COLOR }}>DPS</span>
+                    <span className="ml-1" style={{ color: 'var(--text-tertiary)' }}>{t('tooltipFeature1')}</span>
+                  </div>
+                  <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                    <span className="font-medium" style={{ color: PANEL_COLOR }}>EHP</span>
+                    <span className="ml-1" style={{ color: 'var(--text-tertiary)' }}>{t('tooltipFeature2')}</span>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-          <span
-            className="text-xs px-2 py-0.5 rounded-full"
-            style={{
-              background: overallBalance.isBalanced ? 'var(--success-light)' : 'var(--warning-light)',
-              color: overallBalance.isBalanced ? 'var(--success)' : 'var(--warning)',
-            }}
-          >
-            {overallBalance.isBalanced ? t('statusGood') : t('statusAdjust')}
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setShowHelp(!showHelp)}
-            className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-            style={{ color: showHelp ? 'var(--accent)' : 'var(--text-tertiary)' }}
-            title="사용법 보기"
-          >
-            <HelpCircle className="w-4 h-4" />
-          </button>
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-              style={{ color: 'var(--text-tertiary)' }}
-            >
-              <X className="w-4 h-4" />
-            </button>
           )}
-        </div>
-      </div>
-
-      <div className="p-3 pb-12 space-y-3 overflow-y-auto flex-1">
           {/* 기준값 표시 */}
           <div
             className="rounded-lg p-3 text-xs"
@@ -582,7 +543,7 @@ export default function BalanceValidator({ onClose, onDragStart }: BalanceValida
           </div>
 
           {/* 도움말 */}
-          {showHelp && (
+          {showHelp && setShowHelp && (
             <div
               className="rounded-lg p-4 border space-y-4 animate-fadeIn"
               style={{ background: 'var(--bg-secondary)', borderColor: 'var(--accent)' }}
@@ -707,7 +668,7 @@ export default function BalanceValidator({ onClose, onDragStart }: BalanceValida
           )}
 
           {/* 간단 도움말 (접힌 상태) */}
-          {!showHelp && (
+          {!showHelp && setShowHelp && (
             <div
               className="rounded-lg p-3 text-xs border cursor-pointer hover:border-opacity-70 transition-colors"
               style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-primary)' }}

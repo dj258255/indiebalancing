@@ -98,7 +98,22 @@ export default function Sidebar({
     duplicateSheet,
   } = useProjectStore();
 
-  const { toolLocations, getSidebarTools, reorderSidebarTools, sidebarWidth } = useToolLayoutStore();
+  const {
+    toolLocations,
+    getSidebarTools,
+    reorderSidebarTools,
+    sidebarWidth,
+    toolsSectionHeight,
+    setToolsSectionHeight
+  } = useToolLayoutStore();
+
+  // 클라이언트 마운트 후에만 저장된 값 사용 (SSR 하이드레이션 불일치 방지)
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+  const effectiveWidth = mounted ? sidebarWidth : 256;
+  const effectiveToolsHeight = mounted ? toolsSectionHeight : 200;
 
   // 도구 드래그 앤 드롭 상태 (toolId 기반으로 변경)
   const [draggedToolId, setDraggedToolId] = useState<string | null>(null);
@@ -137,8 +152,7 @@ export default function Sidebar({
   } | null>(null);
   const sheetContextMenuRef = useRef<HTMLDivElement>(null);
 
-  // 도구 섹션 높이 상태 (리사이즈 가능)
-  const [toolsSectionHeight, setToolsSectionHeight] = useState(200);
+  // 도구 섹션 리사이즈 상태
   const [isResizingToolsSection, setIsResizingToolsSection] = useState(false);
   const toolsResizeStartY = useRef(0);
   const toolsResizeStartHeight = useRef(0);
@@ -230,11 +244,15 @@ export default function Sidebar({
         <div className="fixed inset-0 z-50" style={{ cursor: 'ns-resize' }} />
       )}
 
-      <div className="flex flex-col h-full border-r shrink-0" style={{
-        width: `${sidebarWidth}px`,
-        background: 'var(--bg-primary)',
-        borderColor: 'var(--border-primary)'
-      }}>
+      <div
+        className="flex flex-col h-full border-r shrink-0 transition-opacity duration-150"
+        style={{
+          width: `${effectiveWidth}px`,
+          background: 'var(--bg-primary)',
+          borderColor: 'var(--border-primary)',
+          opacity: mounted ? 1 : 0,
+        }}
+      >
       {/* 헤더 */}
       <div className="px-4 py-3 border-b flex items-center justify-between" style={{ borderColor: 'var(--border-primary)' }}>
         <div className="flex items-center gap-2">
@@ -550,7 +568,7 @@ export default function Sidebar({
       <div
         id="sidebar-tools-section"
         className="p-2 flex flex-col shrink-0"
-        style={{ height: `${toolsSectionHeight}px`, minHeight: '60px', maxHeight: '600px' }}
+        style={{ height: `${effectiveToolsHeight}px`, minHeight: '60px', maxHeight: '600px' }}
       >
         <div className="text-[10px] font-medium uppercase tracking-wider px-2 mb-1.5 shrink-0" style={{ color: 'var(--text-tertiary)' }}>
           {t('sidebar.tools')}

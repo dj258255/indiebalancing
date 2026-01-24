@@ -337,18 +337,29 @@ export default function ReferencesModal({ onClose }: ReferencesModalProps) {
   return (
     <div className="fixed inset-0 flex items-center justify-center z-[9999] p-4" style={{ background: 'rgba(0, 0, 0, 0.5)' }}>
       <div className="rounded-xl w-full max-w-4xl max-h-[85vh] flex flex-col shadow-2xl" style={{ background: 'var(--bg-primary)' }}>
-        {/* 헤더 */}
-        <div className="flex items-center justify-between px-6 py-4 border-b rounded-t-xl" style={{ background: 'linear-gradient(to right, var(--primary-purple), var(--primary-blue))', borderColor: 'transparent' }}>
-          <div className="flex items-center gap-3 text-white">
-            <BookOpen className="w-6 h-6" />
+        {/* 헤더 - 슬랙 스타일 */}
+        <div className="flex items-center justify-between px-5 py-3 border-b" style={{ background: 'var(--bg-primary)', borderColor: 'var(--border-primary)' }}>
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-light)' }}>
+              <BookOpen className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+            </div>
             <div>
-              <h2 className="text-xl font-semibold">{t('title')}</h2>
-              <p className="text-sm text-white/80 mt-0.5">{t('subtitle')}</p>
+              <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>{t('title')}</h2>
+              <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('subtitle')}</p>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-2 hover:bg-white/20 rounded-lg text-white/80 hover:text-white transition-colors"
+            className="p-1.5 rounded-md transition-colors"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = 'var(--bg-hover)';
+              e.currentTarget.style.color = 'var(--text-primary)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
+              e.currentTarget.style.color = 'var(--text-tertiary)';
+            }}
           >
             <X className="w-5 h-5" />
           </button>
@@ -547,6 +558,28 @@ export default function ReferencesModal({ onClose }: ReferencesModalProps) {
                   <li>• {t('sources.outlierDetection')}: {t('sources.outlierNote')}</li>
                   <li>• {t('sources.varianceAnalysis')}: {t('sources.varianceNote')}</li>
                   <li>• {t('sources.powerCreep')}: <a href="https://gamebalanceconcepts.wordpress.com/2010/08/11/level-4-the-tao-of-game-balance/" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Game Balance Concepts - Tao of Balance</a></li>
+                </ul>
+              </div>
+
+              {/* 난이도 곡선 추가 출처 */}
+              <div>
+                <div className="font-medium mb-1" style={{ color: 'var(--primary-purple)' }}>{t('sources.difficultyCurveAdvanced')}</div>
+                <ul className="space-y-0.5" style={{ color: 'var(--text-secondary)' }}>
+                  <li>• {t('sources.difficultySaw')}: <a href="https://www.gamedeveloper.com/design/difficulty-curves" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Game Developer - Difficulty Curves</a></li>
+                  <li>• {t('sources.difficultyMastering')}: <a href="https://www.numberanalytics.com/blog/mastering-game-difficulty-curves" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Number Analytics</a></li>
+                  <li>• {t('sources.idleGameDesign')}: <a href="https://machinations.io/articles/idle-games-and-how-to-design-them" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Machinations.io</a></li>
+                  <li>• {t('sources.idleRetention')}: <a href="https://www.gameanalytics.com/blog/how-to-make-an-idle-game-adjust" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>GameAnalytics</a></li>
+                  <li>• {t('sources.playerRetention')}: <a href="https://gamedesignskills.com/game-design/player-retention/" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Game Design Skills</a></li>
+                </ul>
+              </div>
+
+              {/* 전투 시뮬레이션 추가 출처 */}
+              <div>
+                <div className="font-medium mb-1" style={{ color: 'var(--error)' }}>{t('sources.combatSimulationAdvanced')}</div>
+                <ul className="space-y-0.5" style={{ color: 'var(--text-secondary)' }}>
+                  <li>• {t('sources.simultaneousAction')}: <a href="https://en.wikipedia.org/wiki/Simultaneous_action_selection" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Wikipedia - Simultaneous Action Selection</a></li>
+                  <li>• {t('sources.monteCarloMethod')}: <a href="https://en.wikipedia.org/wiki/Monte_Carlo_method" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Wikipedia - Monte Carlo Method</a></li>
+                  <li>• {t('sources.wilsonScore')}: <a href="https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval#Wilson_score_interval" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Wikipedia - Wilson Score Interval</a></li>
                 </ul>
               </div>
             </div>

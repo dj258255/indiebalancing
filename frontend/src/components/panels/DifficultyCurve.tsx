@@ -7,7 +7,6 @@ import {
   AlertTriangle,
   Clock,
   HelpCircle,
-  ChevronDown,
   Wand2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -25,9 +24,12 @@ const hideSpinnerStyle = `
   }
 `;
 
+const PANEL_COLOR = '#8b5cf6';
+
 interface DifficultyCurveProps {
   onClose?: () => void;
-  onDragStart?: (e: React.MouseEvent) => void;
+  showHelp?: boolean;
+  setShowHelp?: (value: boolean) => void;
 }
 
 // 난이도 구간 정의
@@ -80,7 +82,7 @@ interface MilestoneData {
   powerBonus: number; // 플레이어 파워 증가율 (예: 30 = +30%)
 }
 
-export default function DifficultyCurve({ onClose, onDragStart }: DifficultyCurveProps) {
+export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp }: DifficultyCurveProps) {
   const t = useTranslations('difficultyCurve');
   const [preset, setPreset] = useState<keyof typeof CURVE_PRESETS>('balanced');
   const [playtime, setPlaytime] = useState<keyof typeof PLAYTIME_TARGETS>('1hr');
@@ -92,7 +94,6 @@ export default function DifficultyCurve({ onClose, onDragStart }: DifficultyCurv
     50: { name: '각성 시스템 해금', powerBonus: 50 },
     100: { name: '엔드게임 콘텐츠', powerBonus: 0 },
   });
-  const [showHelp, setShowHelp] = useState(false);
 
   const config = CURVE_PRESETS[preset];
   const targetPlaytime = PLAYTIME_TARGETS[playtime];
@@ -119,8 +120,8 @@ export default function DifficultyCurve({ onClose, onDragStart }: DifficultyCurv
 
       const ratio = playerPower / enemyPower;
       let type: DifficultySegment['type'] = 'normal';
-      if (ratio > 1.3) type = 'easy';
-      else if (ratio < 0.8) type = 'wall';
+      if (isWall || ratio < 0.8) type = 'wall';  // 벽 스테이지 우선
+      else if (ratio > 1.3) type = 'easy';
       else if (milestone) type = 'reward';
 
       data.push({
@@ -146,15 +147,21 @@ export default function DifficultyCurve({ onClose, onDragStart }: DifficultyCurv
     let day = 0;
 
     for (const segment of curveData) {
-      if (segment.type === 'wall') {
-        // 벽에서는 하루 정도 막힌다고 가정
-        day += 1;
-      }
+      // 스테이지 진행
       totalStages++;
+
+      // 하루 플레이 분량 채우면 다음 날로
       if (totalStages >= targetPlaytime.stagesPerDay) {
         totalStages = 0;
         day++;
       }
+
+      // 벽에서는 추가로 하루 정도 막힌다고 가정 (파밍/강화 시간)
+      if (segment.type === 'wall') {
+        day += 1;
+        totalStages = 0; // 벽 돌파 후 새로운 날 시작
+      }
+
       result[segment.stage] = day;
     }
 
@@ -250,57 +257,90 @@ export default function DifficultyCurve({ onClose, onDragStart }: DifficultyCurv
   };
 
   return (
-    <div className="card overflow-hidden h-full flex flex-col">
+    <div className="flex flex-col h-full">
       <style>{hideSpinnerStyle}</style>
-      {/* 헤더 */}
-      <div
-        className="flex items-center justify-between px-4 py-2 shrink-0 cursor-grab active:cursor-grabbing"
-        style={{ background: 'var(--bg-tertiary)' }}
-        onMouseDown={(e) => {
-          if (!(e.target as HTMLElement).closest('button') && onDragStart) {
-            onDragStart(e);
-          }
-        }}
-      >
-        <div className="flex items-center gap-2">
-          <div
-            className="w-6 h-6 rounded-lg flex items-center justify-center"
-            style={{ background: '#8b5cf6' }}
-          >
-            <TrendingUp className="w-3.5 h-3.5 text-white" />
-          </div>
-          <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
-            {t('title')}
-          </span>
-          <span
-            className="text-xs px-2 py-0.5 rounded-full"
-            style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
-          >
-            {t('wallCount', { count: wallStages.length })}
-          </span>
-        </div>
-        <div className="flex items-center gap-1">
-          <button
-            onClick={() => setShowHelp(!showHelp)}
-            className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-            style={{ color: showHelp ? 'var(--accent)' : 'var(--text-tertiary)' }}
-            title="사용법 보기"
-          >
-            <HelpCircle className="w-4 h-4" />
-          </button>
-          {onClose && (
-            <button
-              onClick={onClose}
-              className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-              style={{ color: 'var(--text-tertiary)' }}
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-      </div>
 
-      <div className="p-3 pb-12 space-y-3 overflow-y-auto flex-1">
+      <div className="p-3 pb-12 space-y-3 overflow-y-auto overflow-x-hidden flex-1">
+          {/* 도움말 섹션 */}
+          {showHelp && (
+            <div className="mb-4 p-3 rounded-lg animate-slideDown" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+              <div className="space-y-3">
+                {/* 개요 */}
+                <div className="flex items-start gap-2">
+                  <div className="w-5 h-5 rounded flex items-center justify-center shrink-0 mt-0.5" style={{ background: `${PANEL_COLOR}20` }}>
+                    <TrendingUp className="w-3 h-3" style={{ color: PANEL_COLOR }} />
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{t('helpTitle')}</p>
+                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{t('helpOverviewDesc')}</p>
+                  </div>
+                </div>
+
+                {/* 핵심 개념 */}
+                <div className="grid grid-cols-2 gap-2 text-xs">
+                  <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                    <span className="font-medium" style={{ color: PANEL_COLOR }}>{t('helpWall')}</span>
+                    <span className="ml-1" style={{ color: 'var(--text-tertiary)' }}>{t('helpWallDesc')}</span>
+                  </div>
+                  <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                    <span className="font-medium" style={{ color: PANEL_COLOR }}>{t('helpMilestone')}</span>
+                    <span className="ml-1" style={{ color: 'var(--text-tertiary)' }}>{t('helpMilestoneDesc')}</span>
+                  </div>
+                </div>
+
+                {/* 사용 방법 */}
+                <div className="space-y-1.5">
+                  <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpUsage')}</div>
+                  <div className="grid grid-cols-2 gap-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="flex gap-1.5 items-start">
+                      <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] shrink-0" style={{ background: PANEL_COLOR, color: 'white' }}>1</span>
+                      <span>{t('helpStep1')}</span>
+                    </div>
+                    <div className="flex gap-1.5 items-start">
+                      <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] shrink-0" style={{ background: PANEL_COLOR, color: 'white' }}>2</span>
+                      <span>{t('helpStep2')}</span>
+                    </div>
+                    <div className="flex gap-1.5 items-start">
+                      <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] shrink-0" style={{ background: PANEL_COLOR, color: 'white' }}>3</span>
+                      <span>{t('helpStep3')}</span>
+                    </div>
+                    <div className="flex gap-1.5 items-start">
+                      <span className="w-4 h-4 rounded-full flex items-center justify-center text-[10px] shrink-0" style={{ background: PANEL_COLOR, color: 'white' }}>4</span>
+                      <span>{t('helpStep4')}</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 그래프 읽는 법 */}
+                <div className="space-y-1">
+                  <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpGraph')}</div>
+                  <div className="flex gap-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded" style={{ background: '#3b82f6' }} />
+                      <span>{t('player')}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <div className="w-3 h-3 rounded" style={{ background: '#ef4444' }} />
+                      <span>{t('enemy')}</span>
+                    </div>
+                  </div>
+                  <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('helpGraphDesc')}</p>
+                </div>
+
+                {/* 디자인 팁 */}
+                <div className="space-y-1">
+                  <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpTips')}</div>
+                  <div className="grid grid-cols-2 gap-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <div>• {t('helpTip1')}</div>
+                    <div>• {t('helpTip2')}</div>
+                    <div>• {t('helpTip3')}</div>
+                    <div>• {t('helpTip4')}</div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* 프리셋 선택 */}
           <div className="space-y-2">
             <label className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
@@ -595,180 +635,6 @@ export default function DifficultyCurve({ onClose, onDragStart }: DifficultyCurv
             </div>
           </div>
 
-          {/* 도움말 */}
-          {showHelp && (
-            <div
-              className="rounded-lg p-4 border space-y-4 animate-fadeIn"
-              style={{ background: 'var(--bg-secondary)', borderColor: 'var(--accent)' }}
-            >
-              <div className="flex items-center gap-2">
-                <HelpCircle className="w-5 h-5" style={{ color: 'var(--accent)' }} />
-                <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-                  {t('helpTitle')}
-                </span>
-              </div>
-
-              {/* 개요 */}
-              <div className="space-y-1">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpOverview')}</div>
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  {t('helpOverviewDesc')}
-                </p>
-              </div>
-
-              {/* 사용 방법 */}
-              <div className="space-y-2">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpUsage')}</div>
-                <div className="space-y-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  <div className="flex gap-2">
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
-                          style={{ background: 'var(--accent)', color: 'white' }}>1</span>
-                    <span>{t('helpStep1')}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
-                          style={{ background: 'var(--accent)', color: 'white' }}>2</span>
-                    <span>{t('helpStep2')}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
-                          style={{ background: 'var(--accent)', color: 'white' }}>3</span>
-                    <span>{t('helpStep3')}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
-                          style={{ background: 'var(--accent)', color: 'white' }}>4</span>
-                    <span>{t('helpStep4')}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 프리셋 설명 */}
-              <div className="space-y-2">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpPresets')}</div>
-                <div className="grid grid-cols-3 gap-2 text-xs">
-                  <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('presets.casual')}</div>
-                    <div style={{ color: 'var(--text-tertiary)' }}>
-                      {t('helpCasualDesc')}
-                    </div>
-                  </div>
-                  <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('presets.balanced')}</div>
-                    <div style={{ color: 'var(--text-tertiary)' }}>
-                      {t('helpBalancedDesc')}
-                    </div>
-                  </div>
-                  <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('presets.hardcore')}</div>
-                    <div style={{ color: 'var(--text-tertiary)' }}>
-                      {t('helpHardcoreDesc')}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 그래프 읽는 법 */}
-              <div className="space-y-1">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpGraph')}</div>
-                <div className="flex gap-4 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded" style={{ background: '#3b82f6' }} />
-                    <span>{t('player')}</span>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <div className="w-3 h-3 rounded" style={{ background: '#ef4444' }} />
-                    <span>{t('enemy')}</span>
-                  </div>
-                </div>
-                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                  {t('helpGraphDesc')}
-                </p>
-              </div>
-
-              {/* 수식 */}
-              <div className="space-y-2">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpFormulas')}</div>
-                <div className="space-y-2 text-xs">
-                  <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('helpPowerGrowth')}</div>
-                    <code className="block px-2 py-1 rounded text-[11px]" style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
-                      Power(n) = 100 × growth^(n-1)
-                    </code>
-                    <div className="mt-1" style={{ color: 'var(--text-tertiary)' }}>
-                      {t('helpPowerGrowthDesc')}
-                    </div>
-                  </div>
-                  <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('helpWallPower')}</div>
-                    <code className="block px-2 py-1 rounded text-[11px]" style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
-                      EnemyPower(wall) = EnemyPower × 1.5
-                    </code>
-                    <div className="mt-1" style={{ color: 'var(--text-tertiary)' }}>
-                      {t('helpWallPowerDesc')}
-                    </div>
-                  </div>
-                  <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('helpMilestonePower')}</div>
-                    <code className="block px-2 py-1 rounded text-[11px]" style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
-                      PlayerPower(milestone) = PlayerPower × (1 + bonus/100)
-                    </code>
-                    <div className="mt-1" style={{ color: 'var(--text-tertiary)' }}>
-                      {t('helpMilestonePowerDesc')}
-                    </div>
-                  </div>
-                  <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('helpDifficultyCheck')}</div>
-                    <code className="block px-2 py-1 rounded text-[11px]" style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
-                      Ratio = PlayerPower / EnemyPower
-                    </code>
-                    <div className="mt-1" style={{ color: 'var(--text-tertiary)' }}>
-                      {t('helpDifficultyCheckDesc')}
-                    </div>
-                  </div>
-                  <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('helpEstimatedDays')}</div>
-                    <code className="block px-2 py-1 rounded text-[11px]" style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
-                      Days = (Stage / StagesPerDay) + WallCount
-                    </code>
-                    <div className="mt-1" style={{ color: 'var(--text-tertiary)' }}>
-                      {t('helpEstimatedDaysDesc')}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 디자인 팁 */}
-              <div className="space-y-1">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpTips')}</div>
-                <ul className="text-xs space-y-0.5" style={{ color: 'var(--text-secondary)' }}>
-                  <li>• {t('helpTip1')}</li>
-                  <li>• {t('helpTip2')}</li>
-                  <li>• {t('helpTip3')}</li>
-                  <li>• {t('helpTip4')}</li>
-                  <li>• {t('helpTip5')}</li>
-                  <li>• {t('helpTip6')}</li>
-                </ul>
-              </div>
-            </div>
-          )}
-
-          {/* 간단 도움말 (접힌 상태) */}
-          {!showHelp && (
-            <div
-              className="rounded-lg p-3 text-xs border cursor-pointer hover:border-opacity-70 transition-colors"
-              style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-primary)' }}
-              onClick={() => setShowHelp(true)}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
-                  <HelpCircle className="w-3.5 h-3.5" />
-                  <span>{t('showHelp')}</span>
-                </div>
-                <ChevronDown className="w-3.5 h-3.5" style={{ color: 'var(--text-tertiary)' }} />
-              </div>
-            </div>
-          )}
       </div>
     </div>
   );

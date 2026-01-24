@@ -440,6 +440,12 @@
     "catStat": "통계",
     "catTrig": "삼각함수",
     "catLogic": "조건/논리",
+    "helpTitle": "수식 도우미",
+    "helpDesc": "게임 밸런싱에 필요한 수식들을 제공합니다. 셀에서 =로 시작하면 수식으로 인식됩니다.",
+    "helpUsage": "사용법",
+    "helpUsageDesc": "함수 클릭 시 예제 복사",
+    "helpTest": "테스트",
+    "helpTestDesc": "상단에서 수식 직접 실행",
     "functions": {
       "SCALE": "레벨 스케일링",
       "DAMAGE": "데미지 계산 (감소율 공식)",
@@ -605,6 +611,12 @@
   },
   "difficultyCurve": {
     "title": "난이도 곡선 설계",
+    "helpTitle": "난이도 곡선 설계",
+    "helpDesc": "스테이지별 난이도와 마일스톤을 설계합니다.",
+    "helpWall": "벽",
+    "helpWallDesc": "난이도 급상승 구간",
+    "helpMilestone": "마일스톤",
+    "helpMilestoneDesc": "신규 시스템 해금 지점",
     "wallCount": "{count}개 벽",
     "presetLabel": "난이도 프리셋",
     "playtimeLabel": "일일 플레이타임 목표",
@@ -679,6 +691,7 @@
     "unit1": "유닛 1 (공격자)",
     "unit2": "유닛 2 (방어자)",
     "select": "선택...",
+    "loadFromSheet": "시트에서 불러오기",
     "runs": "반복 횟수",
     "damageFormula": "데미지 공식",
     "defenseFormula": "방어 공식",
@@ -733,7 +746,13 @@
       "10000": "10,000회",
       "50000": "50,000회",
       "100000": "100,000회"
-    }
+    },
+    "columnMapping": "컬럼 매핑",
+    "colName": "이름",
+    "colCritRate": "치명타율",
+    "colCritDmg": "치명타 피해",
+    "autoDetect": "자동 감지",
+    "detected": "감지됨"
   },
   "references": {
     "title": "참고 자료 및 권장 수치 가이드",
@@ -1023,7 +1042,17 @@
       "outlierNote": "Z-score (통계학)",
       "varianceAnalysis": "분산 분석",
       "varianceNote": "CV (변동계수)",
-      "powerCreep": "파워크립"
+      "powerCreep": "파워크립",
+      "difficultyCurveAdvanced": "난이도 곡선 (심화)",
+      "difficultySaw": "톱니 곡선 패턴",
+      "difficultyMastering": "난이도 곡선 마스터링",
+      "idleGameDesign": "방치형 게임 설계",
+      "idleRetention": "방치형 게임 리텐션",
+      "playerRetention": "플레이어 리텐션 전략",
+      "combatSimulationAdvanced": "전투 시뮬레이션 (심화)",
+      "simultaneousAction": "동시 행동 해결",
+      "monteCarloMethod": "몬테카를로 방법론",
+      "wilsonScore": "Wilson 신뢰구간"
     }
   },
   "goalSolver": {
@@ -1047,10 +1076,14 @@
     "title": "불균형 감지",
     "helpTitle": "불균형 감지 (자동 경고)",
     "helpDesc": "시트 데이터를 스캔해서 문제가 될 수 있는 패턴을 자동으로 찾아 경고해줍니다.",
-    "helpOutlier": "- 이상치: 다른 값과 동떨어진 값",
-    "helpPowerCreep": "- 파워크립: 후반 급상승",
-    "helpCliff": "- 절벽: 연속 값의 급격한 변화",
-    "helpVariance": "- 분산: 같은 그룹 내 큰 편차",
+    "outlier": "이상치",
+    "powerCreep": "파워크립",
+    "cliff": "절벽",
+    "variance": "분산",
+    "helpOutlier": "다른 값과 동떨어진 극단적인 값을 감지합니다",
+    "helpPowerCreep": "후반부에서 급격하게 증가하는 값을 감지합니다",
+    "helpCliff": "연속 값 사이의 급격한 변화를 감지합니다",
+    "helpVariance": "같은 그룹 내에서 큰 편차를 감지합니다",
     "helpVsAnalysis": "vs 밸런스 분석: 분석은 심층 패턴 분석, 감지는 즉각적 문제 발견",
     "settings": "감지 설정",
     "settingsTooltip": "값이 낮을수록 민감하게 감지합니다. 너무 낮으면 오탐이 많고, 너무 높으면 문제를 놓칠 수 있습니다.",
@@ -1249,11 +1282,15 @@
     "title": "프리셋 비교",
     "subtitle": "두 시트 또는 스냅샷의 차이를 분석합니다",
     "helpDesc": "두 시트 또는 스냅샷의 차이를 비교합니다. 컬럼 이름과 행 이름(name/이름 컬럼)을 기준으로 매칭하므로, 복제된 시트나 다른 시트 간에도 정확한 비교가 가능합니다.",
-    "helpSnapshot": "- 스냅샷: 현재 상태 저장",
-    "helpCompare": "- 비교: 변경된 값, 추가/삭제 확인",
-    "helpExport": "- 내보내기: JSON으로 결과 저장",
-    "helpMatching": "- 매칭: 컬럼명/행명 기반 (ID 무관)",
-    "helpUseCase": "활용: 밸런스 패치 전후 비교, A/B 테스트",
+    "helpSnapshotTitle": "스냅샷",
+    "helpSnapshot": "현재 시트 상태를 저장하여 나중에 비교할 수 있습니다. 밸런스 조정 전에 스냅샷을 생성해두세요.",
+    "helpCompareTitle": "비교",
+    "helpCompare": "두 시트/스냅샷을 선택하고 비교하면 변경된 값, 추가/삭제된 행을 확인할 수 있습니다.",
+    "helpExportTitle": "내보내기",
+    "helpExport": "비교 결과를 JSON 파일로 저장하여 기록을 남기거나 팀과 공유할 수 있습니다.",
+    "helpMatchingTitle": "자동 매칭",
+    "helpMatching": "컬럼명과 행 이름을 기준으로 매칭합니다. ID가 달라도 이름이 같으면 비교됩니다.",
+    "helpUseCase": "활용 예시: 밸런스 패치 전후 비교, 시즌별 변화 추적, A/B 테스트 결과 분석",
     "before": "이전 (Before)",
     "after": "이후 (After)",
     "select": "선택...",
@@ -1331,6 +1368,9 @@
     "title": "비교 분석",
     "fullTitle": "데이터 비교 및 분석",
     "helpDesc": "캐릭터, 무기, 아이템의 스탯을 시각적으로 비교합니다.",
+    "radar": "레이더 차트",
+    "bar": "막대 차트",
+    "histogram": "히스토그램",
     "helpSelectTarget": "최소 1개 대상과 3개 이상 항목을 선택하세요.",
     "helpRadar": "레이더: 종합 스탯 비교",
     "helpBar": "막대: 정확한 수치 비교",
@@ -1588,6 +1628,18 @@
       "gacha": "가챠",
       "reward": "보상",
       "analysis": "분석"
+    }
+  },
+  "help": {
+    "simulation": {
+      "title": "전투 시뮬레이션",
+      "desc": "두 유닛의 전투를 시뮬레이션하여 승률, TTK, DPS를 분석합니다.",
+      "dps": "초당 피해량",
+      "ttk": "처치 소요 시간",
+      "winRate": "승률",
+      "winRateDesc": "N회 전투 중 승리 비율",
+      "monteCarlo": "몬테카를로",
+      "monteCarloDesc": "확률적 반복 시뮬레이션"
     }
   }
 }

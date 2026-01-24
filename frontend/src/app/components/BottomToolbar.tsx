@@ -84,12 +84,19 @@ export default function BottomToolbar({
     sidebarWidth
   } = useToolLayoutStore();
 
+  // 클라이언트 마운트 후에만 저장된 너비 사용
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
   const [draggingTool, setDraggingTool] = useState<AllToolId | null>(null);
   const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
   const [isOverToolsSection, setIsOverToolsSection] = useState(false);
   const [toolsSectionRect, setToolsSectionRect] = useState<DOMRect | null>(null);
   const [isDraggingFromSidebar, setIsDraggingFromSidebar] = useState(false);
   const [isGlobalDragging, setIsGlobalDragging] = useState(false);
+  const [dragMode, setDragMode] = useState<'horizontal' | 'detach' | null>(null);
 
   const dragStartX = useRef(0);
   const dragStartY = useRef(0);
@@ -97,28 +104,72 @@ export default function BottomToolbar({
   const pendingTool = useRef<AllToolId | null>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const DETACH_THRESHOLD = 50; // 위로 50px 이상 드래그하면 떼기 모드
+
   const bottomTools = getBottomTools();
 
-  const sidebarToolHandlers: Record<string, (() => void) | undefined> = {
-    calculator: onShowCalculator,
-    comparison: onShowComparison,
-    chart: onShowChart,
-    presetComparison: onShowPresetComparison,
-    imbalanceDetector: onShowImbalanceDetector,
-    goalSolver: onShowGoalSolver,
-    balanceAnalysis: onShowBalanceAnalysis,
+  // 최신 props를 ref로 저장해서 stale closure 방지
+  const propsRef = useRef({
+    isModalOpen,
+    show,
+    setShow,
+    onShowCalculator,
+    onShowComparison,
+    onShowChart,
+    onShowPresetComparison,
+    onShowImbalanceDetector,
+    onShowGoalSolver,
+    onShowBalanceAnalysis,
+  });
+
+  // 매 렌더링마다 ref 업데이트
+  propsRef.current = {
+    isModalOpen,
+    show,
+    setShow,
+    onShowCalculator,
+    onShowComparison,
+    onShowChart,
+    onShowPresetComparison,
+    onShowImbalanceDetector,
+    onShowGoalSolver,
+    onShowBalanceAnalysis,
   };
 
   const handleToolClick = useCallback((toolId: AllToolId) => {
-    if (isModalOpen) return;
+    const {
+      isModalOpen: modalOpen,
+      show: currentShow,
+      setShow: currentSetShow,
+      onShowCalculator: calcHandler,
+      onShowComparison: compHandler,
+      onShowChart: chartHandler,
+      onShowPresetComparison: presetHandler,
+      onShowImbalanceDetector: imbalanceHandler,
+      onShowGoalSolver: goalHandler,
+      onShowBalanceAnalysis: balanceHandler,
+    } = propsRef.current;
+
+    if (modalOpen) return;
+
+    // 클릭 시 맨 앞으로 가져오기
+    const { bringToolToFront } = useToolLayoutStore.getState();
+    bringToolToFront(toolId);
 
     if (isPanelTool(toolId)) {
-      setShow[toolId](!show[toolId]);
+      currentSetShow[toolId](!currentShow[toolId]);
     } else {
-      const handler = sidebarToolHandlers[toolId];
-      if (handler) handler();
+      switch (toolId) {
+        case 'calculator': calcHandler?.(); break;
+        case 'comparison': compHandler?.(); break;
+        case 'chart': chartHandler?.(); break;
+        case 'presetComparison': presetHandler?.(); break;
+        case 'imbalanceDetector': imbalanceHandler?.(); break;
+        case 'goalSolver': goalHandler?.(); break;
+        case 'balanceAnalysis': balanceHandler?.(); break;
+      }
     }
-  }, [isModalOpen, show, setShow, sidebarToolHandlers]);
+  }, []);
 
   const handleMouseDown = (e: React.MouseEvent, toolId: AllToolId) => {
     if (e.button !== 0) return;
@@ -134,57 +185,68 @@ export default function BottomToolbar({
       if (!pendingTool.current) return;
 
       const deltaX = Math.abs(e.clientX - dragStartX.current);
-      const deltaY = Math.abs(e.clientY - dragStartY.current);
+      const deltaY = dragStartY.current - e.clientY; // 위로 가면 양수
 
-      if (!hasMoved.current && (deltaX > 5 || deltaY > 5)) {
+      if (!hasMoved.current && (deltaX > 5 || Math.abs(deltaY) > 5)) {
         hasMoved.current = true;
         setDraggingTool(pendingTool.current);
+        setDragMode('horizontal'); // 기본은 수평 모드
       }
 
       if (hasMoved.current && pendingTool.current) {
-        setDragPosition({ x: e.clientX, y: e.clientY });
+        // 위로 일정 거리 이상 드래그하면 떼기 모드로 전환
+        if (deltaY > DETACH_THRESHOLD) {
+          setDragMode('detach');
+          setDragPosition({ x: e.clientX, y: e.clientY });
 
-        // 도구 섹션 영역 체크
-        const toolsSection = document.getElementById('sidebar-tools-section');
-        if (toolsSection) {
-          const rect = toolsSection.getBoundingClientRect();
-          setToolsSectionRect(rect);
-          const isInToolsSection =
-            e.clientX >= rect.left &&
-            e.clientX <= rect.right &&
-            e.clientY >= rect.top &&
-            e.clientY <= rect.bottom;
-          setIsOverToolsSection(isInToolsSection);
+          // 도구 섹션 영역 체크 (떼기 모드에서만)
+          const toolsSection = document.getElementById('sidebar-tools-section');
+          if (toolsSection) {
+            const rect = toolsSection.getBoundingClientRect();
+            setToolsSectionRect(rect);
+            const isInToolsSection =
+              e.clientX >= rect.left &&
+              e.clientX <= rect.right &&
+              e.clientY >= rect.top &&
+              e.clientY <= rect.bottom;
+            setIsOverToolsSection(isInToolsSection);
+          } else {
+            setIsOverToolsSection(false);
+          }
         } else {
+          // 수평 모드: X 좌표만 업데이트
+          setDragMode('horizontal');
+          setDragPosition({ x: e.clientX, y: dragStartY.current });
           setIsOverToolsSection(false);
+          setToolsSectionRect(null);
         }
       }
     };
 
     const handleMouseUp = (e: MouseEvent) => {
       const currentTool = pendingTool.current;
+      const currentDragMode = dragMode;
 
       if (currentTool && !hasMoved.current) {
         handleToolClick(currentTool);
       } else if (currentTool && hasMoved.current) {
-        // 도구 섹션 영역에서 놓으면 사이드바로 이동
-        const toolsSection = document.getElementById('sidebar-tools-section');
-        if (toolsSection) {
-          const rect = toolsSection.getBoundingClientRect();
-          const isInToolsSection =
-            e.clientX >= rect.left &&
-            e.clientX <= rect.right &&
-            e.clientY >= rect.top &&
-            e.clientY <= rect.bottom;
-          if (isInToolsSection) {
-            moveToolToLocation(currentTool, 'sidebar');
-          } else {
-            // 하단 영역에서 좌우로 이동 - X 좌표 업데이트 (버튼 중앙 기준)
-            const buttonHalfWidth = 50; // 버튼 대략적인 너비의 절반
-            updateBottomToolPosition(currentTool, e.clientX - buttonHalfWidth);
+        if (currentDragMode === 'detach') {
+          // 떼기 모드: 도구 섹션 영역에서 놓으면 사이드바로 이동
+          const toolsSection = document.getElementById('sidebar-tools-section');
+          if (toolsSection) {
+            const rect = toolsSection.getBoundingClientRect();
+            const isInToolsSection =
+              e.clientX >= rect.left &&
+              e.clientX <= rect.right &&
+              e.clientY >= rect.top &&
+              e.clientY <= rect.bottom;
+            if (isInToolsSection) {
+              moveToolToLocation(currentTool, 'sidebar');
+            }
+            // 떼기 모드에서 사이드바 밖에 놓으면 위치 변경 없음 (원래 위치 유지)
           }
         } else {
-          // 도구 섹션을 찾을 수 없으면 좌우 이동만 처리 (버튼 중앙 기준)
+          // 수평 모드: 좌우로만 이동
           const buttonHalfWidth = 50;
           updateBottomToolPosition(currentTool, e.clientX - buttonHalfWidth);
         }
@@ -192,6 +254,7 @@ export default function BottomToolbar({
 
       setDraggingTool(null);
       setDragPosition(null);
+      setDragMode(null);
       setIsOverToolsSection(false);
       setToolsSectionRect(null);
       pendingTool.current = null;
@@ -205,7 +268,7 @@ export default function BottomToolbar({
       document.removeEventListener('mousemove', handleMouseMove);
       document.removeEventListener('mouseup', handleMouseUp);
     };
-  }, [handleToolClick, moveToolToLocation, updateBottomToolPosition]);
+  }, [handleToolClick, moveToolToLocation, updateBottomToolPosition, dragMode]);
 
   // 유효한 도구 ID 목록
   const validToolIds = Object.keys(TOOL_CONFIG);
@@ -260,7 +323,9 @@ export default function BottomToolbar({
 
   const isMobile = useIsMobile();
   // 모바일에서는 sidebarWidth가 아닌 0 사용 (사이드바가 숨겨지므로)
-  const responsiveLeftOffset = isMobile ? 0 : sidebarWidth;
+  // 클라이언트 마운트 전에는 기본값 256 사용
+  const effectiveSidebarWidth = mounted ? sidebarWidth : 256;
+  const responsiveLeftOffset = isMobile ? 0 : effectiveSidebarWidth;
 
   // 하단 도구가 없으면 드롭 영역만 표시 (항상 드롭 가능하도록 영역은 유지)
   if (bottomTools.length === 0) {
@@ -301,8 +366,8 @@ export default function BottomToolbar({
 
   return (
     <>
-      {/* 도구 섹션 드롭 영역 표시 */}
-      {draggingTool && isOverToolsSection && toolsSectionRect && (
+      {/* 도구 섹션 드롭 영역 표시 - 떼기 모드에서만 */}
+      {draggingTool && dragMode === 'detach' && isOverToolsSection && toolsSectionRect && (
         <div
           className="fixed z-50 pointer-events-none flex items-center justify-center rounded-lg"
           style={{
@@ -326,15 +391,15 @@ export default function BottomToolbar({
         </div>
       )}
 
-      {/* 드래그 중인 버튼 미리보기 */}
-      {draggingTool && dragPosition && (
+      {/* 드래그 중인 버튼 미리보기 - 떼기 모드일 때만 자유롭게 이동 */}
+      {draggingTool && dragPosition && dragMode === 'detach' && (
         <div
           className="fixed z-50 pointer-events-none"
           style={{
             left: dragPosition.x - 50,
             top: dragPosition.y - 20,
-            opacity: 0.8,
-            transform: 'scale(1.05)',
+            opacity: 0.9,
+            transform: 'scale(1.1)',
           }}
         >
           {(() => {
@@ -450,16 +515,26 @@ export default function BottomToolbar({
               const isDraggingThis = draggingTool === toolId;
               const zIndex = getToolZIndex(toolId);
 
+              // 수평 드래그 중이면 dragPosition.x 사용, 아니면 저장된 position.x 사용
+              const displayX = isDraggingThis && dragMode === 'horizontal' && dragPosition
+                ? dragPosition.x - 50  // 버튼 중앙 기준
+                : position.x;
+
+              // 떼기 모드면 숨김 (미리보기로 대체)
+              if (isDraggingThis && dragMode === 'detach') {
+                return null;
+              }
+
               return (
                 <div
                   key={toolId}
                   className={cn(
-                    'fixed bottom-0 cursor-grab active:cursor-grabbing transition-all hidden md:block'
+                    'fixed bottom-0 cursor-grab active:cursor-grabbing hidden md:block',
+                    !isDraggingThis && 'transition-all'
                   )}
                   style={{
-                    left: `${position.x}px`,
-                    zIndex: 45 + zIndex,
-                    opacity: isDraggingThis ? 0.5 : 1,
+                    left: `${displayX}px`,
+                    zIndex: isDraggingThis ? 100 : 45 + zIndex,
                   }}
                   onMouseDown={(e) => handleMouseDown(e, toolId)}
                 >

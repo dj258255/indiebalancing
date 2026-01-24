@@ -45,9 +45,9 @@ export default function MobilePanels({ panels }: MobilePanelsProps) {
       {/* Chart Mobile */}
       {panels.chart.show && (
         <div className="md:hidden fixed inset-0 modal-overlay flex items-center justify-center z-[9999] p-2">
-          <div className="card w-full max-h-[95vh] overflow-y-auto animate-scaleIn">
+          <div className="card w-full h-[95vh] flex flex-col animate-scaleIn">
             <div
-              className="sticky top-0 border-b px-4 py-3 flex items-center justify-between"
+              className="shrink-0 border-b px-4 py-3 flex items-center justify-between"
               style={{
                 background: 'var(--bg-primary)',
                 borderColor: 'var(--border-primary)',
@@ -64,7 +64,7 @@ export default function MobilePanels({ panels }: MobilePanelsProps) {
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-4">
+            <div className="flex-1 min-h-0 overflow-hidden">
               <GrowthCurveChart />
             </div>
           </div>

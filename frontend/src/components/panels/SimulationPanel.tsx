@@ -1,92 +1,405 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
-import { X, Play, Settings, BarChart3, Clock, Swords, Heart, Shield, Zap, ChevronDown, ChevronUp, RefreshCw } from 'lucide-react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
+import { X, Play, Settings, BarChart3, Clock, Swords, Heart, Shield, Zap, ChevronDown, ChevronUp, RefreshCw, HelpCircle, FileSpreadsheet, User, Grid3X3 } from 'lucide-react';
 import { useProjectStore } from '@/stores/projectStore';
 import type { UnitStats, SimulationResult, BattleConfig, DefenseFormulaType, ArmorPenetrationConfig } from '@/lib/simulation/types';
 import { runMonteCarloSimulationAsync } from '@/lib/simulation/monteCarloSimulator';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useTranslations } from 'next-intl';
 
-interface SimulationPanelProps {
-  onClose: () => void;
-  onDragStart?: (e: React.MouseEvent) => void;
-}
+const PANEL_COLOR = '#ef4444'; // 빨간색 (전투시뮬레이션 테마)
 
-// 히스토그램 컴포넌트
-function Histogram({ data, label, color }: { data: number[]; label: string; color: string }) {
-  if (!data || data.length === 0) return null;
-
-  const max = Math.max(...data);
+// 셀 선택 가능한 스탯 입력 컴포넌트
+function StatInput({
+  icon: Icon,
+  label,
+  value,
+  onChange,
+  onCellSelect,
+  color = 'var(--text-tertiary)'
+}: {
+  icon: React.ElementType;
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  onCellSelect: () => void;
+  color?: string;
+}) {
+  const [isHovered, setIsHovered] = useState(false);
 
   return (
-    <div className="space-y-1">
-      <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</div>
-      <div className="flex items-end gap-0.5 h-16">
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <label className="flex items-center gap-1 text-xs mb-1" style={{ color }}>
+        <Icon className="w-3 h-3" /> {label}
+      </label>
+      <div className="relative">
+        <input
+          type="number"
+          value={value}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="w-full px-2 py-1 pr-7 rounded text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
+        />
+        {isHovered && (
+          <button
+            onClick={onCellSelect}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors hover:bg-[var(--bg-tertiary)]"
+            title="셀에서 값 가져오기"
+          >
+            <Grid3X3 className="w-3.5 h-3.5" style={{ color: 'var(--text-tertiary)' }} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// 커스텀 유닛 선택 드롭다운
+function UnitPicker({
+  units,
+  onSelect,
+  color,
+  buttonText
+}: {
+  units: UnitStats[];
+  onSelect: (unit: UnitStats) => void;
+  color: string;
+  buttonText: string;
+}) {
+  const [isOpen, setIsOpen] = useState(false);
+  const [showTooltip, setShowTooltip] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isOpen]);
+
+  if (units.length === 0) return null;
+
+  return (
+    <div className="relative shrink-0" ref={dropdownRef}>
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        onMouseEnter={() => setShowTooltip(true)}
+        onMouseLeave={() => setShowTooltip(false)}
+        className="flex items-center gap-1 px-1.5 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105 whitespace-nowrap"
+        style={{
+          background: `${color}10`,
+          color: color,
+          border: `1.5px solid ${color}`,
+          boxShadow: `0 1px 3px ${color}20`
+        }}
+      >
+        <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
+        <ChevronDown className={`w-3 h-3 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {/* 커스텀 툴팁 */}
+      {showTooltip && !isOpen && (
+        <div
+          className="absolute right-0 bottom-full mb-1.5 px-2 py-1 rounded text-xs whitespace-nowrap z-50 pointer-events-none animate-fadeIn"
+          style={{
+            background: 'var(--bg-secondary)',
+            color: 'var(--text-primary)',
+            border: '1px solid var(--border-primary)',
+            boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
+          }}
+        >
+          {buttonText}
+          <div
+            className="absolute right-3 top-full w-0 h-0"
+            style={{
+              borderLeft: '5px solid transparent',
+              borderRight: '5px solid transparent',
+              borderTop: '5px solid var(--border-primary)'
+            }}
+          />
+        </div>
+      )}
+
+      {isOpen && (
+        <div
+          className="absolute right-0 top-full mt-1 w-56 rounded-lg shadow-xl overflow-hidden z-50 animate-slideDown"
+          style={{
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-primary)'
+          }}
+        >
+          <div className="px-3 py-2 border-b" style={{ borderColor: 'var(--border-primary)', background: 'var(--bg-tertiary)' }}>
+            <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+              {buttonText}
+            </div>
+          </div>
+          <div className="max-h-48 overflow-y-auto">
+            {units.map((unit, index) => (
+              <button
+                key={unit.id}
+                onClick={() => {
+                  onSelect(unit);
+                  setIsOpen(false);
+                }}
+                className="w-full px-3 py-2 flex items-center gap-3 hover:bg-[var(--bg-tertiary)] transition-colors text-left"
+              >
+                <div
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold"
+                  style={{ background: `${color}20`, color: color }}
+                >
+                  {index + 1}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
+                    {unit.name}
+                  </div>
+                  <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                    <span className="flex items-center gap-0.5">
+                      <Heart className="w-2.5 h-2.5" style={{ color: '#ef4444' }} />
+                      {unit.maxHp}
+                    </span>
+                    <span className="flex items-center gap-0.5">
+                      <Swords className="w-2.5 h-2.5" style={{ color: '#f59e0b' }} />
+                      {unit.atk}
+                    </span>
+                    <span className="flex items-center gap-0.5">
+                      <Shield className="w-2.5 h-2.5" style={{ color: '#3b82f6' }} />
+                      {unit.def}
+                    </span>
+                  </div>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+interface SimulationPanelProps {
+  onClose: () => void;
+  showHelp?: boolean;
+  setShowHelp?: (value: boolean) => void;
+}
+
+// 히스토그램 컴포넌트 (인터랙티브 툴팁 포함)
+function Histogram({ data, label, color, unit = '', rangeLabels }: {
+  data: number[];
+  label: string;
+  color: string;
+  unit?: string;
+  rangeLabels?: { min: number; max: number };
+}) {
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
+  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="space-y-2">
+        <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</div>
+        <div className="h-20 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
+          <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>데이터 없음</span>
+        </div>
+      </div>
+    );
+  }
+
+  const max = Math.max(...data);
+  const total = data.reduce((a, b) => a + b, 0);
+
+  const handleMouseMove = (e: React.MouseEvent, index: number) => {
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      setTooltipPosition({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+    }
+    setHoveredIndex(index);
+  };
+
+  // 범위 레이블 계산
+  const getRangeLabel = (index: number) => {
+    if (!rangeLabels) return `구간 ${index + 1}`;
+    const step = (rangeLabels.max - rangeLabels.min) / data.length;
+    const start = rangeLabels.min + step * index;
+    const end = start + step;
+    return `${start.toFixed(1)}${unit} ~ ${end.toFixed(1)}${unit}`;
+  };
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</div>
+        {hoveredIndex !== null && (
+          <div className="text-xs px-2 py-0.5 rounded" style={{ background: `${color}20`, color }}>
+            {data[hoveredIndex].toLocaleString()}회 ({((data[hoveredIndex] / total) * 100).toFixed(1)}%)
+          </div>
+        )}
+      </div>
+      <div
+        ref={containerRef}
+        className="relative flex items-end gap-px h-20 p-1 rounded-lg"
+        style={{ background: 'var(--bg-primary)' }}
+        onMouseLeave={() => setHoveredIndex(null)}
+      >
         {data.map((value, i) => (
           <div
             key={i}
-            className="flex-1 rounded-t transition-all"
+            className="flex-1 rounded-t transition-all cursor-pointer relative group"
             style={{
               height: max > 0 ? `${(value / max) * 100}%` : '0%',
               background: color,
-              minHeight: value > 0 ? '2px' : '0'
+              opacity: hoveredIndex === i ? 1 : 0.7,
+              minHeight: value > 0 ? '2px' : '0',
+              transform: hoveredIndex === i ? 'scaleY(1.05)' : 'scaleY(1)',
+              transformOrigin: 'bottom'
             }}
-            title={`${value}회`}
+            onMouseMove={(e) => handleMouseMove(e, i)}
+            onMouseEnter={() => setHoveredIndex(i)}
           />
         ))}
+
+        {/* 툴팁 */}
+        {hoveredIndex !== null && (
+          <div
+            className="absolute z-50 px-2 py-1.5 rounded-lg text-xs pointer-events-none whitespace-nowrap"
+            style={{
+              left: Math.min(tooltipPosition.x, (containerRef.current?.clientWidth || 200) - 120),
+              top: Math.max(tooltipPosition.y - 50, 0),
+              background: 'var(--bg-secondary)',
+              border: '1px solid var(--border-primary)',
+              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+            }}
+          >
+            <div className="font-medium" style={{ color }}>{getRangeLabel(hoveredIndex)}</div>
+            <div style={{ color: 'var(--text-secondary)' }}>
+              {data[hoveredIndex].toLocaleString()}회 ({((data[hoveredIndex] / total) * 100).toFixed(1)}%)
+            </div>
+          </div>
+        )}
       </div>
+      {/* X축 레이블 */}
+      {rangeLabels && (
+        <div className="flex justify-between text-xs" style={{ color: 'var(--text-tertiary)' }}>
+          <span>{rangeLabels.min.toFixed(1)}{unit}</span>
+          <span>{rangeLabels.max.toFixed(1)}{unit}</span>
+        </div>
+      )}
     </div>
   );
 }
 
-// 신뢰구간 표시
-function ConfidenceBar({ winRate, confidence, color }: {
+// 신뢰구간 표시 (개선된 버전)
+function ConfidenceBar({ winRate, confidence, color, wins, total }: {
   winRate: number;
   confidence: { lower: number; upper: number };
   color: string;
+  wins?: number;
+  total?: number;
 }) {
+  const [isHovered, setIsHovered] = useState(false);
+
   return (
-    <div className="relative h-6 rounded-lg overflow-hidden" style={{ background: 'var(--bg-tertiary)' }}>
-      {/* 신뢰구간 범위 */}
-      <div
-        className="absolute h-full opacity-30"
-        style={{
-          left: `${confidence.lower * 100}%`,
-          width: `${(confidence.upper - confidence.lower) * 100}%`,
-          background: color
-        }}
-      />
-      {/* 실제 승률 */}
-      <div
-        className="absolute h-full"
-        style={{
-          width: `${winRate * 100}%`,
-          background: color
-        }}
-      />
-      {/* 승률 텍스트 */}
-      <div className="absolute inset-0 flex items-center justify-center text-xs font-bold text-white">
-        {(winRate * 100).toFixed(1)}%
+    <div
+      className="relative"
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className="relative h-8 rounded-lg overflow-hidden cursor-pointer" style={{ background: 'var(--bg-primary)' }}>
+        {/* 신뢰구간 범위 */}
+        <div
+          className="absolute h-full transition-opacity"
+          style={{
+            left: `${confidence.lower * 100}%`,
+            width: `${(confidence.upper - confidence.lower) * 100}%`,
+            background: `${color}30`,
+            opacity: isHovered ? 1 : 0.5
+          }}
+        />
+        {/* 실제 승률 바 */}
+        <div
+          className="absolute h-full transition-all"
+          style={{
+            width: `${winRate * 100}%`,
+            background: `linear-gradient(90deg, ${color}90, ${color})`,
+            boxShadow: isHovered ? `0 0 10px ${color}50` : 'none'
+          }}
+        />
+        {/* 승률 텍스트 */}
+        <div
+          className="absolute inset-0 flex items-center justify-center text-sm font-bold transition-transform"
+          style={{
+            color: 'var(--text-primary)',
+            textShadow: '0 0 4px var(--bg-primary), 0 0 4px var(--bg-primary), 0 0 8px var(--bg-primary)',
+            transform: isHovered ? 'scale(1.1)' : 'scale(1)'
+          }}
+        >
+          {(winRate * 100).toFixed(1)}%
+        </div>
       </div>
+
+      {/* 호버 시 상세 정보 */}
+      {isHovered && wins !== undefined && total !== undefined && (
+        <div
+          className="absolute left-1/2 -translate-x-1/2 top-full mt-2 px-3 py-2 rounded-lg text-xs z-50 whitespace-nowrap"
+          style={{
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-primary)',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
+          }}
+        >
+          <div className="font-medium mb-1" style={{ color }}>{wins.toLocaleString()}승 / {total.toLocaleString()}전</div>
+          <div style={{ color: 'var(--text-tertiary)' }}>
+            95% 신뢰구간: {(confidence.lower * 100).toFixed(1)}% ~ {(confidence.upper * 100).toFixed(1)}%
+          </div>
+        </div>
+      )}
     </div>
   );
 }
 
-export default function SimulationPanel({ onClose, onDragStart }: SimulationPanelProps) {
+export default function SimulationPanel({ onClose, showHelp = false, setShowHelp }: SimulationPanelProps) {
   const t = useTranslations('simulation');
+  const tCommon = useTranslations();
   // ESC 키로 패널 닫기
   useEscapeKey(onClose);
 
-  const { projects, currentProjectId, currentSheetId } = useProjectStore();
+  const { projects, currentProjectId, currentSheetId, startCellSelection } = useProjectStore();
 
   // 현재 시트 데이터
   const currentProject = projects.find(p => p.id === currentProjectId);
   const currentSheet = currentProject?.sheets.find(s => s.id === currentSheetId);
 
-  // 상태
-  const [unit1Id, setUnit1Id] = useState<string>('');
-  const [unit2Id, setUnit2Id] = useState<string>('');
+  // 기본 유닛 스탯
+  const defaultStats: UnitStats = {
+    id: '',
+    name: '',
+    hp: 100,
+    maxHp: 100,
+    atk: 10,
+    def: 0,
+    speed: 1,
+    critRate: 0,
+    critDamage: 1.5,
+    accuracy: 1,
+    evasion: 0
+  };
+
+  // 상태 - 직접 편집 가능한 유닛 스탯
+  const [unit1Stats, setUnit1Stats] = useState<UnitStats>({ ...defaultStats, id: 'unit1', name: '유닛 A' });
+  const [unit2Stats, setUnit2Stats] = useState<UnitStats>({ ...defaultStats, id: 'unit2', name: '유닛 B' });
   const [runs, setRuns] = useState(10000);
   const [damageFormula, setDamageFormula] = useState<BattleConfig['damageFormula']>('simple');
   const [defenseFormula, setDefenseFormula] = useState<DefenseFormulaType>('subtractive');
@@ -103,50 +416,86 @@ export default function SimulationPanel({ onClose, onDragStart }: SimulationPane
   const [showDetailedStats, setShowDetailedStats] = useState(false);
   const [selectedBattleIndex, setSelectedBattleIndex] = useState(0);
 
+  // 컬럼 매핑 상태
+  const [columnMapping, setColumnMapping] = useState<{
+    name: string;
+    hp: string;
+    atk: string;
+    def: string;
+    speed: string;
+    critRate: string;
+    critDamage: string;
+  }>({
+    name: '',
+    hp: '',
+    atk: '',
+    def: '',
+    speed: '',
+    critRate: '',
+    critDamage: '',
+  });
+
+  // 자동 컬럼 감지 (폴백용)
+  const autoDetectedColumns = useMemo(() => {
+    if (!currentSheet) return { name: '', hp: '', atk: '', def: '', speed: '', critRate: '', critDamage: '' };
+
+    const columns = currentSheet.columns;
+    const findCol = (patterns: string[]) => {
+      const col = columns.find(c =>
+        patterns.some(p => c.name.toLowerCase() === p.toLowerCase() || c.name.includes(p))
+      );
+      return col?.id || '';
+    };
+
+    return {
+      name: findCol(['name', '이름']),
+      hp: findCol(['hp', 'maxhp', '체력', 'HP']),
+      atk: findCol(['atk', 'attack', '공격력', 'damage', '데미지', 'ATK']),
+      def: findCol(['def', 'defense', '방어력', 'DEF']),
+      speed: findCol(['speed', '속도', 'spd']),
+      critRate: findCol(['critrate', 'crit_rate', '치명타율', '크리티컬']),
+      critDamage: findCol(['critdmg', 'crit_damage', '치명타피해', '크리티컬데미지']),
+    };
+  }, [currentSheet]);
+
+  // 실제 사용할 매핑 (사용자 설정 > 자동 감지)
+  const effectiveMapping = useMemo(() => ({
+    name: columnMapping.name || autoDetectedColumns.name,
+    hp: columnMapping.hp || autoDetectedColumns.hp,
+    atk: columnMapping.atk || autoDetectedColumns.atk,
+    def: columnMapping.def || autoDetectedColumns.def,
+    speed: columnMapping.speed || autoDetectedColumns.speed,
+    critRate: columnMapping.critRate || autoDetectedColumns.critRate,
+    critDamage: columnMapping.critDamage || autoDetectedColumns.critDamage,
+  }), [columnMapping, autoDetectedColumns]);
+
   // 시트에서 유닛 목록 추출
   const units = useMemo(() => {
     if (!currentSheet) return [];
 
     const sheetName = currentSheet.name;
-    // 컬럼에서 필요한 스탯 찾기
-    const columns = currentSheet.columns;
-    // 이름 컬럼: '이름', 'name' 등 명시적으로 찾기 (폴백 없음)
-    const nameCol = columns.find(c =>
-      c.name.toLowerCase() === 'name' ||
-      c.name === '이름' ||
-      c.name.toLowerCase().includes('name') ||
-      c.name.includes('이름')
-    );
-    const hpCol = columns.find(c => c.name.toLowerCase() === 'hp' || c.name.toLowerCase() === 'maxhp' || c.name.includes('체력'));
-    const atkCol = columns.find(c => c.name.toLowerCase() === 'atk' || c.name.toLowerCase() === 'attack' || c.name.includes('공격력'));
-    const defCol = columns.find(c => c.name.toLowerCase() === 'def' || c.name.toLowerCase() === 'defense' || c.name.includes('방어력'));
-    const speedCol = columns.find(c => c.name.toLowerCase() === 'speed' || c.name.includes('속도'));
-    const critRateCol = columns.find(c => c.name.toLowerCase().includes('crit') && c.name.toLowerCase().includes('rate') || c.name.includes('치명타율'));
-    const critDmgCol = columns.find(c => c.name.toLowerCase().includes('crit') && c.name.toLowerCase().includes('dmg') || c.name.includes('치명타피해'));
 
     return currentSheet.rows.map((row, index) => {
-      // 이름 추출: nameCol이 있으면 그 값, 없으면 시트명 + 행번호
       const rowNumber = index + 1;
       let displayName: string;
 
-      if (nameCol) {
-        const rawName = row.cells[nameCol.id];
+      if (effectiveMapping.name) {
+        const rawName = row.cells[effectiveMapping.name];
         if (rawName !== null && rawName !== undefined && String(rawName).trim() !== '') {
           displayName = String(rawName);
         } else {
           displayName = `${sheetName} #${rowNumber}`;
         }
       } else {
-        // 이름 컬럼이 없으면 시트명 + 행번호
         displayName = `${sheetName} #${rowNumber}`;
       }
 
-      const hp = hpCol ? Number(row.cells[hpCol.id]) || 100 : 100;
-      const atk = atkCol ? Number(row.cells[atkCol.id]) || 10 : 10;
-      const def = defCol ? Number(row.cells[defCol.id]) || 0 : 0;
-      const speed = speedCol ? Number(row.cells[speedCol.id]) || 1 : 1;
-      const critRate = critRateCol ? Number(row.cells[critRateCol.id]) || 0 : 0;
-      const critDamage = critDmgCol ? Number(row.cells[critDmgCol.id]) || 1.5 : 1.5;
+      const hp = effectiveMapping.hp ? Number(row.cells[effectiveMapping.hp]) || 100 : 100;
+      const atk = effectiveMapping.atk ? Number(row.cells[effectiveMapping.atk]) || 10 : 10;
+      const def = effectiveMapping.def ? Number(row.cells[effectiveMapping.def]) || 0 : 0;
+      const speed = effectiveMapping.speed ? Number(row.cells[effectiveMapping.speed]) || 1 : 1;
+      const critRate = effectiveMapping.critRate ? Number(row.cells[effectiveMapping.critRate]) || 0 : 0;
+      const critDamage = effectiveMapping.critDamage ? Number(row.cells[effectiveMapping.critDamage]) || 1.5 : 1.5;
 
       return {
         id: row.id,
@@ -162,14 +511,23 @@ export default function SimulationPanel({ onClose, onDragStart }: SimulationPane
         evasion: 0
       } as UnitStats;
     }).filter(u => u.name && u.maxHp > 0);
-  }, [currentSheet]);
+  }, [currentSheet, effectiveMapping]);
+
+  // 시트에서 유닛 불러오기 핸들러
+  const loadFromSheet = (unitNumber: 1 | 2, sheetUnit: UnitStats) => {
+    if (unitNumber === 1) {
+      setUnit1Stats({ ...sheetUnit });
+    } else {
+      setUnit2Stats({ ...sheetUnit });
+    }
+  };
 
   // 시뮬레이션 실행
   const runSimulation = useCallback(async () => {
-    const unit1 = units.find(u => u.id === unit1Id);
-    const unit2 = units.find(u => u.id === unit2Id);
-
-    if (!unit1 || !unit2) return;
+    // 유효성 검사
+    if (!unit1Stats.name || !unit2Stats.name || unit1Stats.maxHp <= 0 || unit2Stats.maxHp <= 0) {
+      return;
+    }
 
     setIsRunning(true);
     setProgress(0);
@@ -177,8 +535,8 @@ export default function SimulationPanel({ onClose, onDragStart }: SimulationPane
 
     try {
       const simulationResult = await runMonteCarloSimulationAsync(
-        unit1,
-        unit2,
+        unit1Stats,
+        unit2Stats,
         [],
         [],
         {
@@ -203,125 +561,187 @@ export default function SimulationPanel({ onClose, onDragStart }: SimulationPane
       setIsRunning(false);
       setProgress(100);
     }
-  }, [unit1Id, unit2Id, units, runs, maxDuration, damageFormula, defenseFormula, useArmorPen, armorPen]);
-
-  const unit1 = units.find(u => u.id === unit1Id);
-  const unit2 = units.find(u => u.id === unit2Id);
+  }, [unit1Stats, unit2Stats, runs, maxDuration, damageFormula, defenseFormula, useArmorPen, armorPen]);
 
   return (
     <div className="flex flex-col h-full">
-      {/* 헤더 */}
-      <div
-        className="flex items-center justify-between px-4 py-3 border-b cursor-grab active:cursor-grabbing"
-        style={{ borderColor: 'var(--border-primary)' }}
-        onMouseDown={(e) => {
-          if (!(e.target as HTMLElement).closest('button') && onDragStart) {
-            onDragStart(e);
-          }
-        }}
-      >
-        <div className="flex items-center gap-2">
-          <Swords className="w-5 h-5" style={{ color: 'var(--accent)' }} />
-          <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>{t('title')}</h3>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
-            style={{ color: 'var(--text-secondary)' }}
-          >
-            <Settings className="w-4 h-4" />
-          </button>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
-            style={{ color: 'var(--text-tertiary)' }}
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
       {/* 내용 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {/* 유닛 선택 */}
-        <div className="grid grid-cols-2 gap-3">
-          <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-              {t('unit1')}
-            </label>
-            <select
-              value={unit1Id}
-              onChange={(e) => setUnit1Id(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg text-sm"
-              style={{
-                background: 'var(--bg-tertiary)',
-                border: '1px solid var(--border-primary)',
-                color: 'var(--text-primary)'
-              }}
-            >
-              <option value="">{t('select')}</option>
-              {units.map(u => (
-                <option key={u.id} value={u.id}>{u.name}</option>
-              ))}
-            </select>
-          </div>
-          <div>
-            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-              {t('unit2')}
-            </label>
-            <select
-              value={unit2Id}
-              onChange={(e) => setUnit2Id(e.target.value)}
-              className="w-full px-3 py-2 rounded-lg text-sm"
-              style={{
-                background: 'var(--bg-tertiary)',
-                border: '1px solid var(--border-primary)',
-                color: 'var(--text-primary)'
-              }}
-            >
-              <option value="">{t('select')}</option>
-              {units.map(u => (
-                <option key={u.id} value={u.id}>{u.name}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* 유닛 스탯 미리보기 */}
-        {(unit1 || unit2) && (
-          <div className="grid grid-cols-2 gap-3">
-            {unit1 && (
-              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-                <div className="text-sm font-medium mb-2" style={{ color: 'var(--primary-blue)' }}>{unit1.name}</div>
-                <div className="grid grid-cols-2 gap-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  <div className="flex items-center gap-1"><Heart className="w-3 h-3" /> {unit1.maxHp}</div>
-                  <div className="flex items-center gap-1"><Swords className="w-3 h-3" /> {unit1.atk}</div>
-                  <div className="flex items-center gap-1"><Shield className="w-3 h-3" /> {unit1.def}</div>
-                  <div className="flex items-center gap-1"><Zap className="w-3 h-3" /> {unit1.speed}</div>
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
+        {/* 도움말 섹션 */}
+        {showHelp && (
+          <div className="mb-4 p-3 rounded-lg animate-slideDown" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+            <div className="space-y-3">
+              <div className="flex items-start gap-2">
+                <div className="w-5 h-5 rounded flex items-center justify-center shrink-0 mt-0.5" style={{ background: `${PANEL_COLOR}20` }}>
+                  <Swords className="w-3 h-3" style={{ color: PANEL_COLOR }} />
+                </div>
+                <div>
+                  <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{tCommon('help.simulation.title')}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{tCommon('help.simulation.desc')}</p>
                 </div>
               </div>
-            )}
-            {unit2 && (
-              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-                <div className="text-sm font-medium mb-2" style={{ color: 'var(--primary-red)' }}>{unit2.name}</div>
-                <div className="grid grid-cols-2 gap-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  <div className="flex items-center gap-1"><Heart className="w-3 h-3" /> {unit2.maxHp}</div>
-                  <div className="flex items-center gap-1"><Swords className="w-3 h-3" /> {unit2.atk}</div>
-                  <div className="flex items-center gap-1"><Shield className="w-3 h-3" /> {unit2.def}</div>
-                  <div className="flex items-center gap-1"><Zap className="w-3 h-3" /> {unit2.speed}</div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+                <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                  <span className="font-medium" style={{ color: PANEL_COLOR }}>DPS</span>
+                  <span className="ml-1" style={{ color: 'var(--text-tertiary)' }}>{tCommon('help.simulation.dps')}</span>
+                </div>
+                <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                  <span className="font-medium" style={{ color: PANEL_COLOR }}>TTK</span>
+                  <span className="ml-1" style={{ color: 'var(--text-tertiary)' }}>{tCommon('help.simulation.ttk')}</span>
+                </div>
+                <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                  <span className="font-medium" style={{ color: PANEL_COLOR }}>{tCommon('help.simulation.winRate')}</span>
+                  <span className="ml-1" style={{ color: 'var(--text-tertiary)' }}>{tCommon('help.simulation.winRateDesc')}</span>
+                </div>
+                <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                  <span className="font-medium" style={{ color: PANEL_COLOR }}>{tCommon('help.simulation.monteCarlo')}</span>
+                  <span className="ml-1" style={{ color: 'var(--text-tertiary)' }}>{tCommon('help.simulation.monteCarloDesc')}</span>
                 </div>
               </div>
-            )}
+            </div>
           </div>
         )}
+        {/* 유닛 스탯 입력 - 반응형 레이아웃 */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+          {/* 유닛 A */}
+          <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)', border: '2px solid var(--primary-blue)' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <input
+                type="text"
+                value={unit1Stats.name}
+                onChange={(e) => setUnit1Stats(prev => ({ ...prev, name: e.target.value }))}
+                className="text-sm font-medium bg-transparent border-none outline-none flex-1 min-w-0"
+                style={{ color: 'var(--primary-blue)' }}
+                placeholder="유닛 A"
+              />
+              <UnitPicker
+                units={units}
+                onSelect={(unit) => loadFromSheet(1, unit)}
+                color="var(--primary-blue)"
+                buttonText={t('loadFromSheet')}
+              />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-2">
+              <StatInput
+                icon={Heart}
+                label="HP"
+                value={unit1Stats.maxHp}
+                onChange={(v) => setUnit1Stats(prev => ({ ...prev, maxHp: v, hp: v }))}
+                onCellSelect={() => startCellSelection('HP (유닛 A)', (value) => {
+                  const num = Number(value);
+                  if (!isNaN(num)) setUnit1Stats(prev => ({ ...prev, maxHp: num, hp: num }));
+                })}
+                color="#ef4444"
+              />
+              <StatInput
+                icon={Swords}
+                label="ATK"
+                value={unit1Stats.atk}
+                onChange={(v) => setUnit1Stats(prev => ({ ...prev, atk: v }))}
+                onCellSelect={() => startCellSelection('ATK (유닛 A)', (value) => {
+                  const num = Number(value);
+                  if (!isNaN(num)) setUnit1Stats(prev => ({ ...prev, atk: num }));
+                })}
+                color="#f59e0b"
+              />
+              <StatInput
+                icon={Shield}
+                label="DEF"
+                value={unit1Stats.def}
+                onChange={(v) => setUnit1Stats(prev => ({ ...prev, def: v }))}
+                onCellSelect={() => startCellSelection('DEF (유닛 A)', (value) => {
+                  const num = Number(value);
+                  if (!isNaN(num)) setUnit1Stats(prev => ({ ...prev, def: num }));
+                })}
+                color="#3b82f6"
+              />
+              <StatInput
+                icon={Zap}
+                label="SPD"
+                value={unit1Stats.speed}
+                onChange={(v) => setUnit1Stats(prev => ({ ...prev, speed: v }))}
+                onCellSelect={() => startCellSelection('SPD (유닛 A)', (value) => {
+                  const num = Number(value);
+                  if (!isNaN(num)) setUnit1Stats(prev => ({ ...prev, speed: num }));
+                })}
+                color="#8b5cf6"
+              />
+            </div>
+          </div>
+
+          {/* 유닛 B */}
+          <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)', border: '2px solid var(--primary-red)' }}>
+            <div className="flex items-center gap-2 mb-3">
+              <input
+                type="text"
+                value={unit2Stats.name}
+                onChange={(e) => setUnit2Stats(prev => ({ ...prev, name: e.target.value }))}
+                className="text-sm font-medium bg-transparent border-none outline-none flex-1 min-w-0"
+                style={{ color: 'var(--primary-red)' }}
+                placeholder="유닛 B"
+              />
+              <UnitPicker
+                units={units}
+                onSelect={(unit) => loadFromSheet(2, unit)}
+                color="var(--primary-red)"
+                buttonText={t('loadFromSheet')}
+              />
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-2 gap-2">
+              <StatInput
+                icon={Heart}
+                label="HP"
+                value={unit2Stats.maxHp}
+                onChange={(v) => setUnit2Stats(prev => ({ ...prev, maxHp: v, hp: v }))}
+                onCellSelect={() => startCellSelection('HP (유닛 B)', (value) => {
+                  const num = Number(value);
+                  if (!isNaN(num)) setUnit2Stats(prev => ({ ...prev, maxHp: num, hp: num }));
+                })}
+                color="#ef4444"
+              />
+              <StatInput
+                icon={Swords}
+                label="ATK"
+                value={unit2Stats.atk}
+                onChange={(v) => setUnit2Stats(prev => ({ ...prev, atk: v }))}
+                onCellSelect={() => startCellSelection('ATK (유닛 B)', (value) => {
+                  const num = Number(value);
+                  if (!isNaN(num)) setUnit2Stats(prev => ({ ...prev, atk: num }));
+                })}
+                color="#f59e0b"
+              />
+              <StatInput
+                icon={Shield}
+                label="DEF"
+                value={unit2Stats.def}
+                onChange={(v) => setUnit2Stats(prev => ({ ...prev, def: v }))}
+                onCellSelect={() => startCellSelection('DEF (유닛 B)', (value) => {
+                  const num = Number(value);
+                  if (!isNaN(num)) setUnit2Stats(prev => ({ ...prev, def: num }));
+                })}
+                color="#3b82f6"
+              />
+              <StatInput
+                icon={Zap}
+                label="SPD"
+                value={unit2Stats.speed}
+                onChange={(v) => setUnit2Stats(prev => ({ ...prev, speed: v }))}
+                onCellSelect={() => startCellSelection('SPD (유닛 B)', (value) => {
+                  const num = Number(value);
+                  if (!isNaN(num)) setUnit2Stats(prev => ({ ...prev, speed: num }));
+                })}
+                color="#8b5cf6"
+              />
+            </div>
+          </div>
+        </div>
 
         {/* 설정 패널 */}
         {showSettings && (
           <div className="p-3 rounded-lg space-y-3" style={{ background: 'var(--bg-tertiary)' }}>
             <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t('settings')}</div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
                 <label className="block text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>{t('runs')}</label>
                 <select
@@ -413,7 +833,7 @@ export default function SimulationPanel({ onClose, onDragStart }: SimulationPane
               </label>
 
               {useArmorPen && (
-                <div className="grid grid-cols-2 gap-3 mt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
                   <div>
                     <label className="block text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>
                       {t('flatPen')}
@@ -453,31 +873,94 @@ export default function SimulationPanel({ onClose, onDragStart }: SimulationPane
                 </div>
               )}
             </div>
+
+            {/* 컬럼 매핑 설정 */}
+            {currentSheet && (
+              <div className="pt-3 border-t" style={{ borderColor: 'var(--border-primary)' }}>
+                <div className="text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
+                  {t('columnMapping')}
+                </div>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {[
+                    { key: 'name' as const, label: t('colName') },
+                    { key: 'hp' as const, label: 'HP' },
+                    { key: 'atk' as const, label: 'ATK' },
+                    { key: 'def' as const, label: 'DEF' },
+                    { key: 'speed' as const, label: 'Speed' },
+                    { key: 'critRate' as const, label: t('colCritRate') },
+                    { key: 'critDamage' as const, label: t('colCritDmg') },
+                  ].map(({ key, label }) => (
+                    <div key={key}>
+                      <label className="block text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>
+                        {label}
+                      </label>
+                      <select
+                        value={columnMapping[key]}
+                        onChange={(e) => setColumnMapping(prev => ({ ...prev, [key]: e.target.value }))}
+                        className="w-full px-2 py-1 rounded text-xs"
+                        style={{
+                          background: 'var(--bg-primary)',
+                          border: '1px solid var(--border-primary)',
+                          color: 'var(--text-primary)'
+                        }}
+                      >
+                        <option value="">{t('autoDetect')}</option>
+                        {currentSheet.columns.map(col => (
+                          <option key={col.id} value={col.id}>
+                            {col.name}
+                            {autoDetectedColumns[key] === col.id ? ` (${t('detected')})` : ''}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
         )}
 
-        {/* 실행 버튼 */}
-        <button
-          onClick={runSimulation}
-          disabled={!unit1Id || !unit2Id || isRunning}
-          className="w-full py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
-          style={{
-            background: isRunning ? 'var(--bg-tertiary)' : 'var(--accent)',
-            color: isRunning ? 'var(--text-secondary)' : 'white'
-          }}
-        >
-          {isRunning ? (
-            <>
-              <RefreshCw className="w-4 h-4 animate-spin" />
-              {t('running')} {progress.toFixed(0)}%
-            </>
-          ) : (
-            <>
-              <Play className="w-4 h-4" />
-              {t('runSimulation')} ({runs.toLocaleString()})
-            </>
-          )}
-        </button>
+        {/* 실행 버튼 + 횟수 선택 */}
+        <div className="flex gap-2">
+          <button
+            onClick={runSimulation}
+            disabled={!unit1Stats.name || !unit2Stats.name || unit1Stats.maxHp <= 0 || unit2Stats.maxHp <= 0 || isRunning}
+            className="flex-1 py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+            style={{
+              background: isRunning ? 'var(--bg-tertiary)' : 'var(--accent)',
+              color: isRunning ? 'var(--text-secondary)' : 'white'
+            }}
+          >
+            {isRunning ? (
+              <>
+                <RefreshCw className="w-4 h-4 animate-spin" />
+                {t('running')} {progress.toFixed(0)}%
+              </>
+            ) : (
+              <>
+                <Play className="w-4 h-4" />
+                {t('runSimulation')}
+              </>
+            )}
+          </button>
+          <select
+            value={runs}
+            onChange={(e) => setRuns(Number(e.target.value))}
+            disabled={isRunning}
+            className="px-3 py-2.5 rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
+            style={{
+              background: 'var(--bg-tertiary)',
+              border: '1px solid var(--border-primary)',
+              color: 'var(--text-primary)'
+            }}
+          >
+            <option value={1000}>1K</option>
+            <option value={5000}>5K</option>
+            <option value={10000}>10K</option>
+            <option value={50000}>50K</option>
+            <option value={100000}>100K</option>
+          </select>
+        </div>
 
         {/* 진행률 바 */}
         {isRunning && (
@@ -495,176 +978,172 @@ export default function SimulationPanel({ onClose, onDragStart }: SimulationPane
         {/* 결과 표시 */}
         {result && (
           <div className="space-y-4">
-            {/* 승률 */}
-            <div className="p-4 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-              <div className="text-sm font-medium mb-3" style={{ color: 'var(--text-primary)' }}>{t('winRate')}</div>
+            {/* 승률 - 개선된 디자인 */}
+            <div className="p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+              <div className="flex items-center justify-between mb-4">
+                <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('winRate')}</div>
+                <div className="text-xs px-2 py-1 rounded-full" style={{ background: 'var(--bg-primary)', color: 'var(--text-tertiary)' }}>
+                  {result.totalRuns.toLocaleString()}전
+                </div>
+              </div>
 
-              <div className="space-y-2">
+              <div className="space-y-4">
                 <div>
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <span style={{ color: 'var(--primary-blue)' }}>{unit1?.name}</span>
-                    <span style={{ color: 'var(--text-tertiary)' }}>
-                      {(result.winRateConfidence.unit1.lower * 100).toFixed(1)}% - {(result.winRateConfidence.unit1.upper * 100).toFixed(1)}%
+                  <div className="flex items-center justify-between text-xs mb-2">
+                    <span className="font-medium" style={{ color: 'var(--primary-blue)' }}>{unit1Stats.name}</span>
+                    <span className="px-2 py-0.5 rounded" style={{ background: 'var(--primary-blue)15', color: 'var(--primary-blue)' }}>
+                      {result.unit1Wins.toLocaleString()}승
                     </span>
                   </div>
                   <ConfidenceBar
                     winRate={result.unit1WinRate}
                     confidence={result.winRateConfidence.unit1}
                     color="var(--primary-blue)"
+                    wins={result.unit1Wins}
+                    total={result.totalRuns}
                   />
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between text-xs mb-1">
-                    <span style={{ color: 'var(--primary-red)' }}>{unit2?.name}</span>
-                    <span style={{ color: 'var(--text-tertiary)' }}>
-                      {(result.winRateConfidence.unit2.lower * 100).toFixed(1)}% - {(result.winRateConfidence.unit2.upper * 100).toFixed(1)}%
+                  <div className="flex items-center justify-between text-xs mb-2">
+                    <span className="font-medium" style={{ color: 'var(--primary-red)' }}>{unit2Stats.name}</span>
+                    <span className="px-2 py-0.5 rounded" style={{ background: 'var(--primary-red)15', color: 'var(--primary-red)' }}>
+                      {result.unit2Wins.toLocaleString()}승
                     </span>
                   </div>
                   <ConfidenceBar
                     winRate={result.unit2WinRate}
                     confidence={result.winRateConfidence.unit2}
                     color="var(--primary-red)"
+                    wins={result.unit2Wins}
+                    total={result.totalRuns}
                   />
                 </div>
 
                 {result.draws > 0 && (
-                  <div className="text-xs text-center mt-2" style={{ color: 'var(--text-tertiary)' }}>
-                    {t('draw')}: {result.draws} ({((result.draws / result.totalRuns) * 100).toFixed(1)}%)
+                  <div className="flex items-center justify-center gap-2 pt-2 border-t" style={{ borderColor: 'var(--border-primary)' }}>
+                    <div className="w-3 h-3 rounded-full" style={{ background: 'var(--text-tertiary)' }} />
+                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                      {t('draw')}: {result.draws.toLocaleString()} ({((result.draws / result.totalRuns) * 100).toFixed(1)}%)
+                    </span>
                   </div>
                 )}
               </div>
             </div>
 
-            {/* TTK (Time To Kill) 통계 */}
-            <div className="p-4 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-              <div className="flex items-center gap-2 mb-3">
-                <Clock className="w-4 h-4" style={{ color: 'var(--primary-yellow)' }} />
-                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t('ttk')}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-xs mb-1" style={{ color: 'var(--primary-blue)' }}>
-                    {t('killTarget', { name: unit1?.name || '' })}
+            {/* TTK & DPS 통계 - 병합된 카드 */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* TTK 카드 */}
+              <div className="p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'var(--primary-yellow)20' }}>
+                    <Clock className="w-4 h-4" style={{ color: 'var(--primary-yellow)' }} />
                   </div>
-                  {result.ttkStats?.unit1 && result.ttkStats.unit1.avg > 0 ? (
-                    <div className="space-y-1">
-                      <div className="text-lg font-bold" style={{ color: 'var(--primary-blue)' }}>
-                        {result.ttkStats.unit1.avg.toFixed(1)}s
-                      </div>
-                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                        {result.ttkStats.unit1.min.toFixed(1)}s ~ {result.ttkStats.unit1.max.toFixed(1)}s
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('noWin')}</div>
-                  )}
+                  <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('ttk')}</span>
                 </div>
-                <div>
-                  <div className="text-xs mb-1" style={{ color: 'var(--primary-red)' }}>
-                    {t('killTarget', { name: unit2?.name || '' })}
-                  </div>
-                  {result.ttkStats?.unit2 && result.ttkStats.unit2.avg > 0 ? (
-                    <div className="space-y-1">
-                      <div className="text-lg font-bold" style={{ color: 'var(--primary-red)' }}>
-                        {result.ttkStats.unit2.avg.toFixed(1)}s
-                      </div>
-                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                        {result.ttkStats.unit2.min.toFixed(1)}s ~ {result.ttkStats.unit2.max.toFixed(1)}s
-                      </div>
+                <div className="space-y-3">
+                  <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                    <div className="text-xs mb-1 font-medium" style={{ color: 'var(--primary-blue)' }}>
+                      {unit1Stats.name}
                     </div>
-                  ) : (
-                    <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('noWin')}</div>
-                  )}
+                    {result.ttkStats?.unit1 && result.ttkStats.unit1.avg > 0 ? (
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-xl font-bold" style={{ color: 'var(--primary-blue)' }}>
+                          {result.ttkStats.unit1.avg.toFixed(1)}s
+                        </span>
+                        <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                          ({result.ttkStats.unit1.min.toFixed(1)}~{result.ttkStats.unit1.max.toFixed(1)}s)
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('noWin')}</span>
+                    )}
+                  </div>
+                  <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                    <div className="text-xs mb-1 font-medium" style={{ color: 'var(--primary-red)' }}>
+                      {unit2Stats.name}
+                    </div>
+                    {result.ttkStats?.unit2 && result.ttkStats.unit2.avg > 0 ? (
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-xl font-bold" style={{ color: 'var(--primary-red)' }}>
+                          {result.ttkStats.unit2.avg.toFixed(1)}s
+                        </span>
+                        <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                          ({result.ttkStats.unit2.min.toFixed(1)}~{result.ttkStats.unit2.max.toFixed(1)}s)
+                        </span>
+                      </div>
+                    ) : (
+                      <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('noWin')}</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* DPS 카드 */}
+              <div className="p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+                <div className="flex items-center gap-2 mb-3">
+                  <div className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent)20' }}>
+                    <Zap className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+                  </div>
+                  <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('dpsComparison')}</span>
+                </div>
+                <div className="space-y-3">
+                  <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                    <div className="text-xs mb-1 font-medium" style={{ color: 'var(--primary-blue)' }}>{unit1Stats.name}</div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-xl font-bold" style={{ color: 'var(--primary-blue)' }}>
+                        {result.unit1AvgDps.toFixed(1)}
+                      </span>
+                      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>DPS</span>
+                      {result.theoreticalDps && result.unit1AvgDps < result.theoreticalDps.unit1 * 0.9 && (
+                        <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: '#fef3c720', color: '#eab308' }}>
+                          -{((1 - result.unit1AvgDps / result.theoreticalDps.unit1) * 100).toFixed(0)}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                  <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                    <div className="text-xs mb-1 font-medium" style={{ color: 'var(--primary-red)' }}>{unit2Stats.name}</div>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-xl font-bold" style={{ color: 'var(--primary-red)' }}>
+                        {result.unit2AvgDps.toFixed(1)}
+                      </span>
+                      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>DPS</span>
+                      {result.theoreticalDps && result.unit2AvgDps < result.theoreticalDps.unit2 * 0.9 && (
+                        <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: '#fef3c720', color: '#eab308' }}>
+                          -{((1 - result.unit2AvgDps / result.theoreticalDps.unit2) * 100).toFixed(0)}%
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
 
-            {/* DPS 통계 */}
-            <div className="p-4 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-              <div className="flex items-center gap-2 mb-3">
-                <Zap className="w-4 h-4" style={{ color: 'var(--accent)' }} />
-                <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t('dpsComparison')}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="text-xs mb-1" style={{ color: 'var(--primary-blue)' }}>{unit1?.name}</div>
-                  <div className="text-lg font-bold" style={{ color: 'var(--primary-blue)' }}>
-                    {result.unit1AvgDps.toFixed(1)} <span className="text-xs font-normal">{t('measured')}</span>
-                  </div>
-                  {result.theoreticalDps && (
-                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                      {t('theoretical')}: {result.theoreticalDps.unit1.toFixed(1)}
-                      {result.unit1AvgDps < result.theoreticalDps.unit1 * 0.9 && (
-                        <span className="ml-1 text-yellow-500">(-{((1 - result.unit1AvgDps / result.theoreticalDps.unit1) * 100).toFixed(0)}%)</span>
-                      )}
-                    </div>
-                  )}
-                </div>
-                <div>
-                  <div className="text-xs mb-1" style={{ color: 'var(--primary-red)' }}>{unit2?.name}</div>
-                  <div className="text-lg font-bold" style={{ color: 'var(--primary-red)' }}>
-                    {result.unit2AvgDps.toFixed(1)} <span className="text-xs font-normal">{t('measured')}</span>
-                  </div>
-                  {result.theoreticalDps && (
-                    <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                      {t('theoretical')}: {result.theoreticalDps.unit2.toFixed(1)}
-                      {result.unit2AvgDps < result.theoreticalDps.unit2 * 0.9 && (
-                        <span className="ml-1 text-yellow-500">(-{((1 - result.unit2AvgDps / result.theoreticalDps.unit2) * 100).toFixed(0)}%)</span>
-                      )}
-                    </div>
-                  )}
-                </div>
-              </div>
-              {/* DPS 비율 바 */}
-              <div className="mt-3 pt-3 border-t" style={{ borderColor: 'var(--border-primary)' }}>
-                <div className="flex h-3 rounded-full overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
-                  <div
-                    className="transition-all"
-                    style={{
-                      width: `${(result.unit1AvgDps / (result.unit1AvgDps + result.unit2AvgDps)) * 100}%`,
-                      background: 'var(--primary-blue)'
-                    }}
-                  />
-                  <div
-                    className="transition-all"
-                    style={{
-                      width: `${(result.unit2AvgDps / (result.unit1AvgDps + result.unit2AvgDps)) * 100}%`,
-                      background: 'var(--primary-red)'
-                    }}
-                  />
-                </div>
-                <div className="flex justify-between mt-1 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                  <span>{((result.unit1AvgDps / (result.unit1AvgDps + result.unit2AvgDps)) * 100).toFixed(0)}%</span>
-                  <span>{((result.unit2AvgDps / (result.unit1AvgDps + result.unit2AvgDps)) * 100).toFixed(0)}%</span>
-                </div>
-              </div>
-            </div>
-
-            {/* 통계 요약 */}
+            {/* 통계 요약 - 개선된 카드 */}
             <div className="grid grid-cols-3 gap-2">
-              <div className="p-3 rounded-lg text-center" style={{ background: 'var(--bg-tertiary)' }}>
-                <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('avgBattleTime')}</div>
-                <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
-                  {result.avgDuration.toFixed(1)}s
+              <div className="p-3 rounded-xl text-center transition-transform hover:scale-105" style={{ background: 'linear-gradient(135deg, var(--bg-tertiary), var(--bg-primary))', border: '1px solid var(--border-primary)' }}>
+                <div className="text-xs mb-1 font-medium" style={{ color: 'var(--text-tertiary)' }}>{t('avgBattleTime')}</div>
+                <div className="text-xl font-bold" style={{ color: 'var(--accent)' }}>
+                  {result.avgDuration.toFixed(1)}<span className="text-sm font-normal">s</span>
                 </div>
               </div>
-              <div className="p-3 rounded-lg text-center" style={{ background: 'var(--bg-tertiary)' }}>
-                <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('totalSimulations')}</div>
-                <div className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
-                  {result.totalRuns.toLocaleString()}
+              <div className="p-3 rounded-xl text-center transition-transform hover:scale-105" style={{ background: 'linear-gradient(135deg, var(--bg-tertiary), var(--bg-primary))', border: '1px solid var(--border-primary)' }}>
+                <div className="text-xs mb-1 font-medium" style={{ color: 'var(--text-tertiary)' }}>{t('totalSimulations')}</div>
+                <div className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
+                  {result.totalRuns >= 1000 ? `${(result.totalRuns / 1000).toFixed(0)}K` : result.totalRuns}
                 </div>
               </div>
-              <div className="p-3 rounded-lg text-center" style={{ background: 'var(--bg-tertiary)' }}>
-                <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('timeRange')}</div>
+              <div className="p-3 rounded-xl text-center transition-transform hover:scale-105" style={{ background: 'linear-gradient(135deg, var(--bg-tertiary), var(--bg-primary))', border: '1px solid var(--border-primary)' }}>
+                <div className="text-xs mb-1 font-medium" style={{ color: 'var(--text-tertiary)' }}>{t('timeRange')}</div>
                 <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
-                  {result.minDuration.toFixed(1)}~{result.maxDuration.toFixed(1)}s
+                  {result.minDuration.toFixed(1)}~{result.maxDuration.toFixed(1)}<span className="text-xs font-normal">s</span>
                 </div>
               </div>
             </div>
 
             {/* 히스토그램 */}
-            <div className="p-4 rounded-lg space-y-4" style={{ background: 'var(--bg-tertiary)' }}>
+            <div className="p-4 rounded-lg space-y-5" style={{ background: 'var(--bg-tertiary)' }}>
               <div className="flex items-center gap-2">
                 <BarChart3 className="w-4 h-4" style={{ color: 'var(--accent)' }} />
                 <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t('distribution')}</span>
@@ -674,17 +1153,19 @@ export default function SimulationPanel({ onClose, onDragStart }: SimulationPane
                 data={result.durationDistribution}
                 label={t('battleTimeDist')}
                 color="var(--accent)"
+                unit="s"
+                rangeLabels={{ min: result.minDuration, max: result.maxDuration }}
               />
 
               <Histogram
                 data={result.damageDistribution.unit1}
-                label={t('totalDamageDist', { name: unit1?.name || '' })}
+                label={t('totalDamageDist', { name: unit1Stats.name || '' })}
                 color="var(--primary-blue)"
               />
 
               <Histogram
                 data={result.damageDistribution.unit2}
-                label={t('totalDamageDist', { name: unit2?.name || '' })}
+                label={t('totalDamageDist', { name: unit2Stats.name || '' })}
                 color="var(--primary-red)"
               />
             </div>
@@ -705,9 +1186,9 @@ export default function SimulationPanel({ onClose, onDragStart }: SimulationPane
 
             {showDetailedStats && (
               <div className="p-4 rounded-lg space-y-3" style={{ background: 'var(--bg-tertiary)' }}>
-                <div className="grid grid-cols-2 gap-4 text-sm">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                   <div>
-                    <div className="font-medium mb-2" style={{ color: 'var(--primary-blue)' }}>{unit1?.name}</div>
+                    <div className="font-medium mb-2" style={{ color: 'var(--primary-blue)' }}>{unit1Stats.name}</div>
                     <div className="space-y-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
                       <div>{t('wins')}: {result.unit1Wins}</div>
                       <div>{t('avgDamage')}: {result.unit1AvgDamage.toFixed(0)}</div>
@@ -715,7 +1196,14 @@ export default function SimulationPanel({ onClose, onDragStart }: SimulationPane
                     </div>
                   </div>
                   <div>
-                    <div className="font-medium mb-2" style={{ color: 'var(--primary-red)' }}>{unit2?.name}</div>
+                    <div className="font-medium mb-2" style={{ color: 'var(--text-tertiary)' }}>{t('draw')}</div>
+                    <div className="space-y-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                      <div>{result.draws.toLocaleString()}</div>
+                      <div>({((result.draws / result.totalRuns) * 100).toFixed(1)}%)</div>
+                    </div>
+                  </div>
+                  <div>
+                    <div className="font-medium mb-2" style={{ color: 'var(--primary-red)' }}>{unit2Stats.name}</div>
                     <div className="space-y-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
                       <div>{t('wins')}: {result.unit2Wins}</div>
                       <div>{t('avgDamage')}: {result.unit2AvgDamage.toFixed(0)}</div>
@@ -771,7 +1259,7 @@ export default function SimulationPanel({ onClose, onDragStart }: SimulationPane
                       <span
                         className="font-medium"
                         style={{
-                          color: entry.actor === unit1?.name ? 'var(--primary-blue)' : 'var(--primary-red)'
+                          color: entry.actor === unit1Stats.name ? 'var(--primary-blue)' : 'var(--primary-red)'
                         }}
                       >
                         {entry.actor}
@@ -810,9 +1298,9 @@ export default function SimulationPanel({ onClose, onDragStart }: SimulationPane
                         : 'var(--text-secondary)'
                   }}>
                     {result.sampleBattles[selectedBattleIndex]?.winner === 'unit1'
-                      ? unit1?.name
+                      ? unit1Stats.name
                       : result.sampleBattles[selectedBattleIndex]?.winner === 'unit2'
-                        ? unit2?.name
+                        ? unit2Stats.name
                         : t('draw')}
                   </span>
                   {' '}| {t('battleTime')}: {result.sampleBattles[selectedBattleIndex]?.duration.toFixed(1)}s

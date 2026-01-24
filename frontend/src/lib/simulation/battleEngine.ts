@@ -202,59 +202,68 @@ export function simulateBattle(
   while (time < cfg.maxDuration && state1.hp > 0 && state2.hp > 0) {
     time += cfg.timeStep;
 
-    // Unit1 공격
-    if (time >= unit1NextAttack) {
-      const result = calculateDamage(state1, state2, cfg.damageFormula, cfg.defenseFormula, cfg.armorPenetration);
+    // 동시 공격 처리: 같은 타임스텝에서 양쪽 데미지를 먼저 계산한 뒤 적용
+    const unit1Attacks = time >= unit1NextAttack;
+    const unit2Attacks = time >= unit2NextAttack;
 
-      if (!result.isMiss) {
-        state2.hp = cfg.allowOverkill
-          ? state2.hp - result.damage
-          : Math.max(0, state2.hp - result.damage);
+    let unit1Result: ReturnType<typeof calculateDamage> | null = null;
+    let unit2Result: ReturnType<typeof calculateDamage> | null = null;
 
-        unit1TotalDamage += result.damage;
-        unit1Hits++;
-        if (result.isCrit) unit1Crits++;
-      }
+    // 데미지 계산 (아직 적용 전)
+    if (unit1Attacks) {
+      unit1Result = calculateDamage(state1, state2, cfg.damageFormula, cfg.defenseFormula, cfg.armorPenetration);
+    }
+    if (unit2Attacks) {
+      unit2Result = calculateDamage(state2, state1, cfg.damageFormula, cfg.defenseFormula, cfg.armorPenetration);
+    }
 
+    // 데미지 적용 (동시에)
+    if (unit1Result && !unit1Result.isMiss) {
+      state2.hp = cfg.allowOverkill
+        ? state2.hp - unit1Result.damage
+        : Math.max(0, state2.hp - unit1Result.damage);
+
+      unit1TotalDamage += unit1Result.damage;
+      unit1Hits++;
+      if (unit1Result.isCrit) unit1Crits++;
+    }
+
+    if (unit2Result && !unit2Result.isMiss) {
+      state1.hp = cfg.allowOverkill
+        ? state1.hp - unit2Result.damage
+        : Math.max(0, state1.hp - unit2Result.damage);
+
+      unit2TotalDamage += unit2Result.damage;
+      unit2Hits++;
+      if (unit2Result.isCrit) unit2Crits++;
+    }
+
+    // 로그 기록
+    if (unit1Result) {
       log.push({
         time: Math.round(time * 100) / 100,
         actor: state1.name,
         action: 'attack',
         target: state2.name,
-        damage: result.damage,
-        isCrit: result.isCrit,
-        isMiss: result.isMiss,
+        damage: unit1Result.damage,
+        isCrit: unit1Result.isCrit,
+        isMiss: unit1Result.isMiss,
         remainingHp: state2.hp,
       });
-
       unit1NextAttack = time + 1 / state1.speed;
     }
 
-    // Unit2 공격 (Unit1이 아직 살아있으면)
-    if (state1.hp > 0 && time >= unit2NextAttack) {
-      const result = calculateDamage(state2, state1, cfg.damageFormula, cfg.defenseFormula, cfg.armorPenetration);
-
-      if (!result.isMiss) {
-        state1.hp = cfg.allowOverkill
-          ? state1.hp - result.damage
-          : Math.max(0, state1.hp - result.damage);
-
-        unit2TotalDamage += result.damage;
-        unit2Hits++;
-        if (result.isCrit) unit2Crits++;
-      }
-
+    if (unit2Result) {
       log.push({
         time: Math.round(time * 100) / 100,
         actor: state2.name,
         action: 'attack',
         target: state1.name,
-        damage: result.damage,
-        isCrit: result.isCrit,
-        isMiss: result.isMiss,
+        damage: unit2Result.damage,
+        isCrit: unit2Result.isCrit,
+        isMiss: unit2Result.isMiss,
         remainingHp: state1.hp,
       });
-
       unit2NextAttack = time + 1 / state2.speed;
     }
   }

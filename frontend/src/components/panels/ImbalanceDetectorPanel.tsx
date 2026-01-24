@@ -24,7 +24,8 @@ import { useTranslations } from 'next-intl';
 
 interface ImbalanceDetectorPanelProps {
   onClose: () => void;
-  onDragStart?: (e: React.MouseEvent) => void;
+  showHelp?: boolean;
+  setShowHelp?: (value: boolean) => void;
 }
 
 // 타입별 아이콘 매핑
@@ -36,7 +37,7 @@ const TYPE_ICONS: Record<string, typeof AlertTriangle> = {
   efficiency: Scale,
 };
 
-export default function ImbalanceDetectorPanel({ onClose, onDragStart }: ImbalanceDetectorPanelProps) {
+export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShowHelp, setShowHelp: externalSetShowHelp }: ImbalanceDetectorPanelProps) {
   // ESC 키로 패널 닫기
   useEscapeKey(onClose);
   const t = useTranslations('imbalanceDetector');
@@ -53,8 +54,11 @@ export default function ImbalanceDetectorPanel({ onClose, onDragStart }: Imbalan
   const [expandedIssues, setExpandedIssues] = useState<Set<string>>(new Set());
   const [showSettings, setShowSettings] = useState(false);
   const [filterSeverity, setFilterSeverity] = useState<Severity | 'all'>('all');
-  const [showHelp, setShowHelp] = useState(false);
-  const [helpHeight, setHelpHeight] = useState(120);
+  const [internalShowHelp, setInternalShowHelp] = useState(false);
+
+  // 외부 상태가 있으면 사용, 없으면 내부 상태 사용
+  const showHelp = externalShowHelp !== undefined ? externalShowHelp : internalShowHelp;
+  const setShowHelp = externalSetShowHelp || setInternalShowHelp;
 
   // 설정
   const [config, setConfig] = useState<DetectionConfig>({
@@ -110,91 +114,36 @@ export default function ImbalanceDetectorPanel({ onClose, onDragStart }: Imbalan
 
   return (
     <div className="flex flex-col h-full">
-      {/* 헤더 */}
-      <div
-        className="flex items-center justify-between px-4 py-3 relative z-20 cursor-grab active:cursor-grabbing"
-        style={{ background: '#eab30815', borderBottom: '1px solid #eab30840' }}
-        onMouseDown={(e) => {
-          if (!(e.target as HTMLElement).closest('button') && onDragStart) {
-            onDragStart(e);
-          }
-        }}
-      >
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#eab308' }}>
-            <AlertTriangle className="w-4 h-4 text-white" />
-          </div>
-          <h3 className="font-semibold" style={{ color: '#eab308' }}>{t('title')}</h3>
-          <button
-            onClick={() => setShowHelp(!showHelp)}
-            className={`p-1 rounded-lg transition-colors ${showHelp ? 'bg-[#eab308]/20' : 'hover:bg-[var(--bg-hover)]'}`}
-            style={{ border: showHelp ? '1px solid #eab308' : '1px solid var(--border-secondary)' }}
-          >
-            <HelpCircle className="w-4 h-4" style={{ color: showHelp ? '#eab308' : 'var(--text-tertiary)' }} />
-          </button>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setShowSettings(!showSettings)}
-            className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
-            style={{ color: 'var(--text-secondary)' }}
-          >
-            <Settings className="w-4 h-4" />
-          </button>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
-            style={{ color: 'var(--text-tertiary)' }}
-          >
-            <X className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-
-      {/* 도움말 패널 */}
-      {showHelp && (
-        <div className="shrink-0 animate-slideDown flex flex-col" style={{ height: `${helpHeight + 6}px`, minHeight: '66px', maxHeight: '306px', borderBottom: '1px solid var(--border-primary)' }}>
-          <div
-            className="flex-1 px-4 py-3 text-sm overflow-y-auto"
-            style={{ background: 'var(--bg-tertiary)' }}
-          >
-            <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>{t('helpTitle')}</div>
-            <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>{t('helpDesc')}</p>
-            <div className="space-y-1 mb-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-              <div>{t('helpOutlier')}</div>
-              <div>{t('helpPowerCreep')}</div>
-              <div>{t('helpCliff')}</div>
-              <div>{t('helpVariance')}</div>
+      {/* 내용 */}
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
+        {/* 도움말 패널 */}
+        {showHelp && (
+          <div className="mb-4 p-3 rounded-lg animate-slideDown" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+            <div className="font-medium mb-2 text-sm" style={{ color: 'var(--text-primary)' }}>{t('helpTitle')}</div>
+            <p className="mb-3 text-sm" style={{ color: 'var(--text-secondary)' }}>{t('helpDesc')}</p>
+            <div className="space-y-2 mb-3">
+              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #ef4444' }}>
+                <span className="font-medium text-sm" style={{ color: '#ef4444' }}>{t('outlier')}</span>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpOutlier')}</p>
+              </div>
+              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #f59e0b' }}>
+                <span className="font-medium text-sm" style={{ color: '#f59e0b' }}>{t('powerCreep')}</span>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpPowerCreep')}</p>
+              </div>
+              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #8b5cf6' }}>
+                <span className="font-medium text-sm" style={{ color: '#8b5cf6' }}>{t('cliff')}</span>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpCliff')}</p>
+              </div>
+              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #3b82f6' }}>
+                <span className="font-medium text-sm" style={{ color: '#3b82f6' }}>{t('variance')}</span>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpVariance')}</p>
+              </div>
             </div>
             <div className="pt-2 border-t text-xs" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
               {t('helpVsAnalysis')}
             </div>
           </div>
-          {/* 리사이저 */}
-          <div
-            className="h-1.5 shrink-0 cursor-ns-resize hover:bg-[var(--accent)] transition-colors"
-            style={{ background: 'var(--border-secondary)' }}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              const startY = e.clientY;
-              const startH = helpHeight;
-              const onMouseMove = (moveEvent: MouseEvent) => {
-                const newHeight = Math.max(60, Math.min(300, startH + moveEvent.clientY - startY));
-                setHelpHeight(newHeight);
-              };
-              const onMouseUp = () => {
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
-              };
-              document.addEventListener('mousemove', onMouseMove);
-              document.addEventListener('mouseup', onMouseUp);
-            }}
-          />
-        </div>
-      )}
-
-      {/* 내용 */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        )}
         {/* 설정 패널 */}
         {showSettings && (
           <div className="p-3 rounded-lg space-y-3" style={{ background: 'var(--bg-tertiary)' }}>

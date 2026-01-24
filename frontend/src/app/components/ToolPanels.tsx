@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { BarChart3, HelpCircle, X } from 'lucide-react';
+import { HelpCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   Calculator,
@@ -18,155 +18,34 @@ import {
 import { PresetComparisonModal } from '@/components/modals';
 import { ToolPanelRenderer } from '@/components/layouts';
 import { TOOL_CONFIGS } from '@/config/toolConfig';
-import { useToolLayoutStore } from '@/stores/toolLayoutStore';
 import type { DraggableState } from '@/hooks';
 
-// GrowthCurveChart는 헤더가 없어서 래퍼 컴포넌트로 감싸기
-function GrowthCurveChartWrapper({
-  onClose,
-  onDragStart,
+// 도움말 버튼 컴포넌트
+function HelpButton({
+  showHelp,
+  setShowHelp,
+  color,
 }: {
-  onClose: () => void;
-  onDragStart?: (e: React.MouseEvent) => void;
+  showHelp: boolean;
+  setShowHelp: (value: boolean) => void;
+  color: string;
 }) {
-  const t = useTranslations();
-  const [showHelp, setShowHelp] = useState(false);
-  const [helpHeight, setHelpHeight] = useState(100);
-
   return (
-    <div className="flex flex-col h-full">
-      {/* Header */}
-      <div
-        className="flex items-center justify-between px-4 py-3 shrink-0 cursor-grab active:cursor-grabbing"
-        style={{ background: '#22c55e15', borderBottom: '1px solid #22c55e40' }}
-        onMouseDown={onDragStart}
-      >
-        <div className="flex items-center gap-2">
-          <div
-            className="w-8 h-8 rounded-lg flex items-center justify-center"
-            style={{ background: '#22c55e' }}
-          >
-            <BarChart3 className="w-4 h-4 text-white" />
-          </div>
-          <h2 className="text-sm font-semibold" style={{ color: '#22c55e' }}>
-            {t('growthCurve.title')}
-          </h2>
-          <button
-            onClick={() => setShowHelp(!showHelp)}
-            className={`p-1 rounded-lg transition-colors ${
-              showHelp ? 'bg-[#22c55e]/20' : 'hover:bg-[var(--bg-hover)]'
-            }`}
-            style={{
-              border: showHelp ? '1px solid #22c55e' : '1px solid var(--border-secondary)',
-            }}
-          >
-            <HelpCircle
-              className="w-4 h-4"
-              style={{ color: showHelp ? '#22c55e' : 'var(--text-tertiary)' }}
-            />
-          </button>
-        </div>
-        <button
-          onClick={onClose}
-          className="p-1.5 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-          style={{ color: 'var(--text-tertiary)' }}
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* Help section */}
-      {showHelp && (
-        <div
-          className="shrink-0 animate-slideDown flex flex-col"
-          style={{
-            height: `${helpHeight + 6}px`,
-            minHeight: '66px',
-            maxHeight: '400px',
-            borderBottom: '1px solid var(--border-primary)',
-          }}
-        >
-          <div
-            className="flex-1 px-4 py-3 text-sm overflow-y-auto"
-            style={{ background: 'var(--bg-tertiary)' }}
-          >
-            <p className="mb-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
-              {t('growthCurve.helpDesc')}
-            </p>
-
-            <div className="space-y-2 mb-3">
-              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #3b82f6' }}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium text-sm" style={{ color: '#3b82f6' }}>{t('growthCurve.linearHelp.name')}</span>
-                  <code className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>{t('growthCurve.linearHelp.formula')}</code>
-                </div>
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('growthCurve.linearHelp.desc')}</p>
-              </div>
-
-              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #ef4444' }}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium text-sm" style={{ color: '#ef4444' }}>{t('growthCurve.exponentialHelp.name')}</span>
-                  <code className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>{t('growthCurve.exponentialHelp.formula')}</code>
-                </div>
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('growthCurve.exponentialHelp.desc')}</p>
-              </div>
-
-              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #22c55e' }}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium text-sm" style={{ color: '#22c55e' }}>{t('growthCurve.logarithmicHelp.name')}</span>
-                  <code className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>{t('growthCurve.logarithmicHelp.formula')}</code>
-                </div>
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('growthCurve.logarithmicHelp.desc')}</p>
-              </div>
-
-              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #f59e0b' }}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium text-sm" style={{ color: '#f59e0b' }}>{t('growthCurve.quadraticHelp.name')}</span>
-                  <code className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>{t('growthCurve.quadraticHelp.formula')}</code>
-                </div>
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('growthCurve.quadraticHelp.desc')}</p>
-              </div>
-
-              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #8b5cf6' }}>
-                <div className="flex items-center justify-between mb-1">
-                  <span className="font-medium text-sm" style={{ color: '#8b5cf6' }}>{t('growthCurve.sCurveHelp.name')}</span>
-                  <code className="text-[11px] px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>{t('growthCurve.sCurveHelp.formula')}</code>
-                </div>
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{t('growthCurve.sCurveHelp.desc')}</p>
-              </div>
-            </div>
-
-            <div className="text-xs p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
-              {t('growthCurve.helpTip')}
-            </div>
-          </div>
-          <div
-            className="h-1.5 shrink-0 cursor-ns-resize hover:bg-[var(--accent)] transition-colors"
-            style={{ background: 'var(--border-secondary)' }}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              const startY = e.clientY;
-              const startH = helpHeight;
-              const onMouseMove = (moveEvent: MouseEvent) => {
-                const newHeight = Math.max(60, Math.min(250, startH + moveEvent.clientY - startY));
-                setHelpHeight(newHeight);
-              };
-              const onMouseUp = () => {
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
-              };
-              document.addEventListener('mousemove', onMouseMove);
-              document.addEventListener('mouseup', onMouseUp);
-            }}
-          />
-        </div>
-      )}
-
-      {/* Content */}
-      <div className="flex-1 overflow-y-auto p-4">
-        <GrowthCurveChart />
-      </div>
-    </div>
+    <button
+      onClick={() => setShowHelp(!showHelp)}
+      className={`p-1 rounded-lg transition-colors ${
+        showHelp ? '' : 'hover:bg-[var(--bg-hover)]'
+      }`}
+      style={{
+        background: showHelp ? `${color}20` : undefined,
+        border: showHelp ? `1px solid ${color}` : '1px solid var(--border-secondary)',
+      }}
+    >
+      <HelpCircle
+        className="w-4 h-4"
+        style={{ color: showHelp ? color : 'var(--text-tertiary)' }}
+      />
+    </button>
   );
 }
 
@@ -202,13 +81,20 @@ export default function ToolPanels({
   createResizeHandler,
   panels,
 }: ToolPanelsProps) {
-  const { bottomToolPositions } = useToolLayoutStore();
+  const t = useTranslations();
 
-  // 도구의 버튼 X 좌표 가져오기 (하단 버튼의 위치)
-  const getButtonX = (toolId: string): number | undefined => {
-    const position = bottomToolPositions[toolId];
-    return position?.x;
-  };
+  // 각 패널별 도움말 상태 (패널 내부에서 관리할 수 있도록)
+  const [calculatorHelp, setCalculatorHelp] = useState(false);
+  const [comparisonHelp, setComparisonHelp] = useState(false);
+  const [chartHelp, setChartHelp] = useState(false);
+  const [presetHelp, setPresetHelp] = useState(false);
+  const [imbalanceHelp, setImbalanceHelp] = useState(false);
+  const [goalHelp, setGoalHelp] = useState(false);
+  const [balanceAnalysisHelp, setBalanceAnalysisHelp] = useState(false);
+  const [formulaHelperHelp, setFormulaHelperHelp] = useState(false);
+  const [balanceValidatorHelp, setBalanceValidatorHelp] = useState(false);
+  const [difficultyCurveHelp, setDifficultyCurveHelp] = useState(false);
+  const [simulationHelp, setSimulationHelp] = useState(false);
 
   return (
     <>
@@ -217,18 +103,30 @@ export default function ToolPanels({
         toolId="calculator"
         panelId="calculator"
         show={panels.calculator.show}
+        onClose={() => panels.calculator.setShow(false)}
+        title={t('sidebar.calculator')}
+        icon={TOOL_CONFIGS.calculator.icon}
+        color={TOOL_CONFIGS.calculator.color}
+        headerExtra={
+          <HelpButton
+            showHelp={calculatorHelp}
+            setShowHelp={setCalculatorHelp}
+            color={TOOL_CONFIGS.calculator.color}
+          />
+        }
         panelState={panelStates.calculator}
         onBringToFront={() => bringToFront('calculator')}
+        onDragStart={createDragHandler('calculator')}
         onResizeE={createResizeHandler('calculator', 'e')}
         onResizeS={createResizeHandler('calculator', 's')}
         onResizeSE={createResizeHandler('calculator', 'se')}
         defaultIndex={TOOL_CONFIGS.calculator.defaultIndex}
-        buttonX={getButtonX('calculator')}
       >
         <Calculator
           onClose={() => panels.calculator.setShow(false)}
           isPanel
-          onDragStart={createDragHandler('calculator')}
+          showHelp={calculatorHelp}
+          setShowHelp={setCalculatorHelp}
         />
       </ToolPanelRenderer>
 
@@ -237,38 +135,58 @@ export default function ToolPanels({
         toolId="comparison"
         panelId="comparison"
         show={panels.comparison.show}
+        onClose={() => panels.comparison.setShow(false)}
+        title={t('sidebar.comparison')}
+        icon={TOOL_CONFIGS.comparison.icon}
+        color={TOOL_CONFIGS.comparison.color}
+        headerExtra={
+          <HelpButton
+            showHelp={comparisonHelp}
+            setShowHelp={setComparisonHelp}
+            color={TOOL_CONFIGS.comparison.color}
+          />
+        }
         panelState={panelStates.comparison}
         onBringToFront={() => bringToFront('comparison')}
+        onDragStart={createDragHandler('comparison')}
         onResizeE={createResizeHandler('comparison', 'e')}
         onResizeS={createResizeHandler('comparison', 's')}
         onResizeSE={createResizeHandler('comparison', 'se')}
         defaultIndex={TOOL_CONFIGS.comparison.defaultIndex}
-        buttonX={getButtonX('comparison')}
       >
         <ComparisonChart
           onClose={() => panels.comparison.setShow(false)}
           isPanel
-          onDragStart={createDragHandler('comparison')}
+          showHelp={comparisonHelp}
+          setShowHelp={setComparisonHelp}
         />
       </ToolPanelRenderer>
 
-      {/* Growth Curve Chart - 헤더가 없는 컴포넌트라 래퍼로 감싸기 */}
+      {/* Growth Curve Chart */}
       <ToolPanelRenderer
         toolId="chart"
         panelId="chart"
         show={panels.chart.show}
+        onClose={() => panels.chart.setShow(false)}
+        title={t('growthCurve.title')}
+        icon={TOOL_CONFIGS.chart.icon}
+        color={TOOL_CONFIGS.chart.color}
+        headerExtra={
+          <HelpButton
+            showHelp={chartHelp}
+            setShowHelp={setChartHelp}
+            color={TOOL_CONFIGS.chart.color}
+          />
+        }
         panelState={panelStates.chart}
         onBringToFront={() => bringToFront('chart')}
+        onDragStart={createDragHandler('chart')}
         onResizeE={createResizeHandler('chart', 'e')}
         onResizeS={createResizeHandler('chart', 's')}
         onResizeSE={createResizeHandler('chart', 'se')}
         defaultIndex={TOOL_CONFIGS.chart.defaultIndex}
-        buttonX={getButtonX('chart')}
       >
-        <GrowthCurveChartWrapper
-          onClose={() => panels.chart.setShow(false)}
-          onDragStart={createDragHandler('chart')}
-        />
+        <GrowthCurveChart showHelp={chartHelp} setShowHelp={setChartHelp} />
       </ToolPanelRenderer>
 
       {/* Preset Comparison */}
@@ -276,18 +194,30 @@ export default function ToolPanels({
         toolId="presetComparison"
         panelId="preset"
         show={panels.preset.show}
+        onClose={() => panels.preset.setShow(false)}
+        title={t('sidebar.presetComparison')}
+        icon={TOOL_CONFIGS.presetComparison.icon}
+        color={TOOL_CONFIGS.presetComparison.color}
+        headerExtra={
+          <HelpButton
+            showHelp={presetHelp}
+            setShowHelp={setPresetHelp}
+            color={TOOL_CONFIGS.presetComparison.color}
+          />
+        }
         panelState={panelStates.preset}
         onBringToFront={() => bringToFront('preset')}
+        onDragStart={createDragHandler('preset')}
         onResizeE={createResizeHandler('preset', 'e')}
         onResizeS={createResizeHandler('preset', 's')}
         onResizeSE={createResizeHandler('preset', 'se')}
         defaultIndex={TOOL_CONFIGS.presetComparison.defaultIndex}
-        buttonX={getButtonX('presetComparison')}
       >
         <PresetComparisonModal
           onClose={() => panels.preset.setShow(false)}
           isPanel
-          onDragStart={createDragHandler('preset')}
+          showHelp={presetHelp}
+          setShowHelp={setPresetHelp}
         />
       </ToolPanelRenderer>
 
@@ -296,17 +226,29 @@ export default function ToolPanels({
         toolId="imbalanceDetector"
         panelId="imbalance"
         show={panels.imbalance.show}
+        onClose={() => panels.imbalance.setShow(false)}
+        title={t('sidebar.imbalanceDetector')}
+        icon={TOOL_CONFIGS.imbalanceDetector.icon}
+        color={TOOL_CONFIGS.imbalanceDetector.color}
+        headerExtra={
+          <HelpButton
+            showHelp={imbalanceHelp}
+            setShowHelp={setImbalanceHelp}
+            color={TOOL_CONFIGS.imbalanceDetector.color}
+          />
+        }
         panelState={panelStates.imbalance}
         onBringToFront={() => bringToFront('imbalance')}
+        onDragStart={createDragHandler('imbalance')}
         onResizeE={createResizeHandler('imbalance', 'e')}
         onResizeS={createResizeHandler('imbalance', 's')}
         onResizeSE={createResizeHandler('imbalance', 'se')}
         defaultIndex={TOOL_CONFIGS.imbalanceDetector.defaultIndex}
-        buttonX={getButtonX('imbalanceDetector')}
       >
         <ImbalanceDetectorPanel
           onClose={() => panels.imbalance.setShow(false)}
-          onDragStart={createDragHandler('imbalance')}
+          showHelp={imbalanceHelp}
+          setShowHelp={setImbalanceHelp}
         />
       </ToolPanelRenderer>
 
@@ -315,17 +257,29 @@ export default function ToolPanels({
         toolId="goalSolver"
         panelId="goal"
         show={panels.goal.show}
+        onClose={() => panels.goal.setShow(false)}
+        title={t('sidebar.goalSolver')}
+        icon={TOOL_CONFIGS.goalSolver.icon}
+        color={TOOL_CONFIGS.goalSolver.color}
+        headerExtra={
+          <HelpButton
+            showHelp={goalHelp}
+            setShowHelp={setGoalHelp}
+            color={TOOL_CONFIGS.goalSolver.color}
+          />
+        }
         panelState={panelStates.goal}
         onBringToFront={() => bringToFront('goal')}
+        onDragStart={createDragHandler('goal')}
         onResizeE={createResizeHandler('goal', 'e')}
         onResizeS={createResizeHandler('goal', 's')}
         onResizeSE={createResizeHandler('goal', 'se')}
         defaultIndex={TOOL_CONFIGS.goalSolver.defaultIndex}
-        buttonX={getButtonX('goalSolver')}
       >
         <GoalSolverPanel
           onClose={() => panels.goal.setShow(false)}
-          onDragStart={createDragHandler('goal')}
+          showHelp={goalHelp}
+          setShowHelp={setGoalHelp}
         />
       </ToolPanelRenderer>
 
@@ -334,17 +288,29 @@ export default function ToolPanels({
         toolId="balanceAnalysis"
         panelId="balance"
         show={panels.balance.show}
+        onClose={() => panels.balance.setShow(false)}
+        title={t('sidebar.balanceAnalysis')}
+        icon={TOOL_CONFIGS.balanceAnalysis.icon}
+        color={TOOL_CONFIGS.balanceAnalysis.color}
+        headerExtra={
+          <HelpButton
+            showHelp={balanceAnalysisHelp}
+            setShowHelp={setBalanceAnalysisHelp}
+            color={TOOL_CONFIGS.balanceAnalysis.color}
+          />
+        }
         panelState={panelStates.balance}
         onBringToFront={() => bringToFront('balance')}
+        onDragStart={createDragHandler('balance')}
         onResizeE={createResizeHandler('balance', 'e')}
         onResizeS={createResizeHandler('balance', 's')}
         onResizeSE={createResizeHandler('balance', 'se')}
         defaultIndex={TOOL_CONFIGS.balanceAnalysis.defaultIndex}
-        buttonX={getButtonX('balanceAnalysis')}
       >
         <BalanceAnalysisPanel
           onClose={() => panels.balance.setShow(false)}
-          onDragStart={createDragHandler('balance')}
+          showHelp={balanceAnalysisHelp}
+          setShowHelp={setBalanceAnalysisHelp}
         />
       </ToolPanelRenderer>
 
@@ -353,15 +319,30 @@ export default function ToolPanels({
         toolId="formulaHelper"
         panelId="formulaHelper"
         show={panels.formulaHelper.show}
+        onClose={() => panels.formulaHelper.setShow(false)}
+        title={t('bottomTabs.formulaHelper')}
+        icon={TOOL_CONFIGS.formulaHelper.icon}
+        color={TOOL_CONFIGS.formulaHelper.color}
+        headerExtra={
+          <HelpButton
+            showHelp={formulaHelperHelp}
+            setShowHelp={setFormulaHelperHelp}
+            color={TOOL_CONFIGS.formulaHelper.color}
+          />
+        }
         panelState={panelStates.formulaHelper}
         onBringToFront={() => bringToFront('formulaHelper')}
+        onDragStart={createDragHandler('formulaHelper')}
         onResizeE={createResizeHandler('formulaHelper', 'e')}
         onResizeS={createResizeHandler('formulaHelper', 's')}
         onResizeSE={createResizeHandler('formulaHelper', 'se')}
         defaultIndex={TOOL_CONFIGS.formulaHelper.defaultIndex}
-        buttonX={getButtonX('formulaHelper')}
       >
-        <FormulaHelper onClose={() => panels.formulaHelper.setShow(false)} />
+        <FormulaHelper
+          onClose={() => panels.formulaHelper.setShow(false)}
+          showHelp={formulaHelperHelp}
+          setShowHelp={setFormulaHelperHelp}
+        />
       </ToolPanelRenderer>
 
       {/* Balance Validator */}
@@ -369,15 +350,30 @@ export default function ToolPanels({
         toolId="balanceValidator"
         panelId="balanceValidator"
         show={panels.balanceValidator.show}
+        onClose={() => panels.balanceValidator.setShow(false)}
+        title={t('bottomTabs.balanceValidator')}
+        icon={TOOL_CONFIGS.balanceValidator.icon}
+        color={TOOL_CONFIGS.balanceValidator.color}
+        headerExtra={
+          <HelpButton
+            showHelp={balanceValidatorHelp}
+            setShowHelp={setBalanceValidatorHelp}
+            color={TOOL_CONFIGS.balanceValidator.color}
+          />
+        }
         panelState={panelStates.balanceValidator}
         onBringToFront={() => bringToFront('balanceValidator')}
+        onDragStart={createDragHandler('balanceValidator')}
         onResizeE={createResizeHandler('balanceValidator', 'e')}
         onResizeS={createResizeHandler('balanceValidator', 's')}
         onResizeSE={createResizeHandler('balanceValidator', 'se')}
         defaultIndex={TOOL_CONFIGS.balanceValidator.defaultIndex}
-        buttonX={getButtonX('balanceValidator')}
       >
-        <BalanceValidator onClose={() => panels.balanceValidator.setShow(false)} />
+        <BalanceValidator
+          onClose={() => panels.balanceValidator.setShow(false)}
+          showHelp={balanceValidatorHelp}
+          setShowHelp={setBalanceValidatorHelp}
+        />
       </ToolPanelRenderer>
 
       {/* Difficulty Curve */}
@@ -385,15 +381,30 @@ export default function ToolPanels({
         toolId="difficultyCurve"
         panelId="difficultyCurve"
         show={panels.difficultyCurve.show}
+        onClose={() => panels.difficultyCurve.setShow(false)}
+        title={t('bottomTabs.difficultyCurve')}
+        icon={TOOL_CONFIGS.difficultyCurve.icon}
+        color={TOOL_CONFIGS.difficultyCurve.color}
+        headerExtra={
+          <HelpButton
+            showHelp={difficultyCurveHelp}
+            setShowHelp={setDifficultyCurveHelp}
+            color={TOOL_CONFIGS.difficultyCurve.color}
+          />
+        }
         panelState={panelStates.difficultyCurve}
         onBringToFront={() => bringToFront('difficultyCurve')}
+        onDragStart={createDragHandler('difficultyCurve')}
         onResizeE={createResizeHandler('difficultyCurve', 'e')}
         onResizeS={createResizeHandler('difficultyCurve', 's')}
         onResizeSE={createResizeHandler('difficultyCurve', 'se')}
         defaultIndex={TOOL_CONFIGS.difficultyCurve.defaultIndex}
-        buttonX={getButtonX('difficultyCurve')}
       >
-        <DifficultyCurve onClose={() => panels.difficultyCurve.setShow(false)} />
+        <DifficultyCurve
+          onClose={() => panels.difficultyCurve.setShow(false)}
+          showHelp={difficultyCurveHelp}
+          setShowHelp={setDifficultyCurveHelp}
+        />
       </ToolPanelRenderer>
 
       {/* Simulation */}
@@ -401,15 +412,30 @@ export default function ToolPanels({
         toolId="simulation"
         panelId="simulation"
         show={panels.simulation.show}
+        onClose={() => panels.simulation.setShow(false)}
+        title={t('bottomTabs.simulation')}
+        icon={TOOL_CONFIGS.simulation.icon}
+        color={TOOL_CONFIGS.simulation.color}
+        headerExtra={
+          <HelpButton
+            showHelp={simulationHelp}
+            setShowHelp={setSimulationHelp}
+            color={TOOL_CONFIGS.simulation.color}
+          />
+        }
         panelState={panelStates.simulation}
         onBringToFront={() => bringToFront('simulation')}
+        onDragStart={createDragHandler('simulation')}
         onResizeE={createResizeHandler('simulation', 'e')}
         onResizeS={createResizeHandler('simulation', 's')}
         onResizeSE={createResizeHandler('simulation', 'se')}
         defaultIndex={TOOL_CONFIGS.simulation.defaultIndex}
-        buttonX={getButtonX('simulation')}
       >
-        <SimulationPanel onClose={() => panels.simulation.setShow(false)} />
+        <SimulationPanel
+          onClose={() => panels.simulation.setShow(false)}
+          showHelp={simulationHelp}
+          setShowHelp={setSimulationHelp}
+        />
       </ToolPanelRenderer>
     </>
   );

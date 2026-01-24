@@ -168,15 +168,16 @@ export function usePanelManager(options: UsePanelManagerOptions) {
     });
   }, [panels, initialStates]);
 
-  const [maxZ, setMaxZ] = useState(30 + panels.length);
+  const maxZRef = useRef(30 + panels.length);
 
   const bringToFront = useCallback((panelId: string) => {
+    maxZRef.current += 1;
+    const newZ = maxZRef.current;
     setPanelStates((prev) => ({
       ...prev,
-      [panelId]: { ...prev[panelId], zIndex: maxZ + 1 },
+      [panelId]: { ...prev[panelId], zIndex: newZ },
     }));
-    setMaxZ((z) => z + 1);
-  }, [maxZ]);
+  }, []);
 
   const updatePanel = useCallback(
     (panelId: string, updates: Partial<DraggableState>) => {
@@ -213,6 +214,7 @@ export function usePanelManager(options: UsePanelManagerOptions) {
       e.preventDefault();
 
       const state = panelStates[panelId];
+      if (!state) return;
       const startX = e.clientX;
       const startY = e.clientY;
       const startPosX = state.x;

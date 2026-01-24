@@ -11,10 +11,11 @@ import { useTranslations } from 'next-intl';
 interface PresetComparisonModalProps {
   onClose: () => void;
   isPanel?: boolean;
-  onDragStart?: (e: React.MouseEvent) => void;
+  showHelp?: boolean;
+  setShowHelp?: (value: boolean) => void;
 }
 
-export default function PresetComparisonModal({ onClose, isPanel = false, onDragStart }: PresetComparisonModalProps) {
+export default function PresetComparisonModal({ onClose, isPanel = false, showHelp: externalShowHelp, setShowHelp: externalSetShowHelp }: PresetComparisonModalProps) {
   // ESC 키로 모달 닫기
   useEscapeKey(onClose);
 
@@ -31,8 +32,11 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
   const [result, setResult] = useState<ComparisonResult | null>(null);
   const [showUnchanged, setShowUnchanged] = useState(false);
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  const [showHelp, setShowHelp] = useState(false);
-  const [helpHeight, setHelpHeight] = useState(280);
+  const [internalShowHelp, setInternalShowHelp] = useState(false);
+
+  // 외부 props가 있으면 외부 상태 사용, 없으면 내부 상태 사용
+  const showHelp = externalShowHelp !== undefined ? externalShowHelp : internalShowHelp;
+  const setShowHelp = externalSetShowHelp || setInternalShowHelp;
 
   // 비교 가능한 소스 목록 (시트 + 스냅샷)
   const sources = useMemo(() => [
@@ -57,7 +61,10 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
     if (!oldSource || !newSource) return;
 
     // 이름 기반 매칭으로 비교 실행 (컬럼 이름, 행 이름 자동 탐지)
-    const comparisonResult = compareSheets(oldSource.data, newSource.data);
+    // allSheets를 전달하여 수식 계산 시 다른 시트 참조 가능
+    const comparisonResult = compareSheets(oldSource.data, newSource.data, {
+      allSheets: sheets,
+    });
     setResult(comparisonResult);
   };
 
@@ -123,92 +130,62 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
   return (
     <div className={wrapperClass}>
       <div className={cardClass}>
-        {/* 헤더 */}
-        <div
-          className={`flex items-center justify-between shrink-0 relative z-20 ${isPanel ? 'px-4 py-3 cursor-grab active:cursor-grabbing' : 'px-6 py-4 border-b'}`}
-          style={{ background: isPanel ? '#f9731615' : undefined, borderColor: isPanel ? '#f9731640' : 'var(--border-primary)', borderBottom: isPanel ? '1px solid #f9731640' : undefined }}
-          onMouseDown={(e) => {
-            if (isPanel && !(e.target as HTMLElement).closest('button') && onDragStart) {
-              onDragStart(e);
-            }
-          }}
-        >
-          <div className="flex items-center gap-3">
-            <div className={`rounded-lg flex items-center justify-center ${isPanel ? 'w-8 h-8' : 'w-10 h-10'}`} style={{ background: isPanel ? '#f97316' : 'var(--accent-light)' }}>
-              <GitCompare className={`${isPanel ? 'w-4 h-4' : 'w-5 h-5'} ${isPanel ? 'text-white' : ''}`} style={{ color: isPanel ? 'white' : 'var(--accent)' }} />
-            </div>
-            <div>
-              <h2 className={isPanel ? 'text-sm font-semibold' : 'text-lg font-semibold'} style={{ color: isPanel ? '#f97316' : 'var(--text-primary)' }}>{t('title')}</h2>
-              {!isPanel && <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('subtitle')}</p>}
-            </div>
-            {isPanel && (
-              <button
-                onClick={() => setShowHelp(!showHelp)}
-                className={`p-1 rounded-lg transition-colors ${showHelp ? 'bg-[#f97316]/20' : 'hover:bg-[var(--bg-hover)]'}`}
-                style={{ border: showHelp ? '1px solid #f97316' : '1px solid var(--border-secondary)' }}
-              >
-                <HelpCircle className="w-4 h-4" style={{ color: showHelp ? '#f97316' : 'var(--text-tertiary)' }} />
-              </button>
-            )}
-          </div>
-          <button
-            onClick={onClose}
-            className={`rounded-lg transition-colors hover:bg-[var(--bg-hover)] ${isPanel ? 'p-1.5' : 'p-2'}`}
-            style={{ color: 'var(--text-tertiary)' }}
+        {/* 헤더 - 모달일 때만 표시 */}
+        {!isPanel && (
+          <div
+            className="flex items-center justify-between shrink-0 relative z-20 px-6 py-4 border-b"
+            style={{ borderColor: 'var(--border-primary)' }}
           >
-            <X className={isPanel ? 'w-4 h-4' : 'w-5 h-5'} />
-          </button>
-        </div>
-
-        {/* 도움말 패널 */}
-        {isPanel && showHelp && (
-          <div className="shrink-0 animate-slideDown flex flex-col" style={{ borderBottom: '1px solid #f9731630' }}>
-            <div
-              className="px-4 py-3 overflow-y-auto"
-              style={{ background: '#f9731608', height: `${helpHeight}px`, minHeight: '100px', maxHeight: '600px' }}
-            >
-              <div className="space-y-1.5 text-sm" style={{ color: 'var(--text-tertiary)' }}>
-                {t('helpDesc').split('. ').map((sentence, i, arr) => (
-                  <div key={i}>
-                    {sentence}{i < arr.length - 1 ? '.' : ''}
-                  </div>
-                ))}
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'var(--accent-light)' }}>
+                <GitCompare className="w-5 h-5" style={{ color: 'var(--accent)' }} />
               </div>
-              <div className="mt-2 pt-2 border-t space-y-1.5 text-sm" style={{ borderColor: '#f9731630', color: 'var(--text-tertiary)' }}>
-                <div>{t('helpSnapshot')}</div>
-                <div>{t('helpCompare')}</div>
-                <div>{t('helpExport')}</div>
-                <div>{t('helpMatching')}</div>
-              </div>
-              <div className="mt-2 pt-2 border-t text-sm" style={{ borderColor: '#f9731630', color: 'var(--text-tertiary)' }}>
-                {t('helpUseCase')}
+              <div>
+                <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{t('title')}</h2>
+                <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('subtitle')}</p>
               </div>
             </div>
-            {/* 리사이저 */}
-            <div
-              className="h-1.5 shrink-0 cursor-ns-resize hover:bg-[var(--accent)] transition-colors"
-              style={{ background: 'var(--border-secondary)' }}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                const startY = e.clientY;
-                const startH = helpHeight;
-                const onMouseMove = (moveEvent: MouseEvent) => {
-                  const newHeight = Math.max(100, Math.min(600, startH + moveEvent.clientY - startY));
-                  setHelpHeight(newHeight);
-                };
-                const onMouseUp = () => {
-                  document.removeEventListener('mousemove', onMouseMove);
-                  document.removeEventListener('mouseup', onMouseUp);
-                };
-                document.addEventListener('mousemove', onMouseMove);
-                document.addEventListener('mouseup', onMouseUp);
-              }}
-            />
+            <button
+              onClick={onClose}
+              className="rounded-lg transition-colors hover:bg-[var(--bg-hover)] p-2"
+              style={{ color: 'var(--text-tertiary)' }}
+            >
+              <X className="w-5 h-5" />
+            </button>
           </div>
         )}
 
         {/* 내용 */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-4 sm:space-y-6">
+        <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 sm:p-6 space-y-4 sm:space-y-6">
+          {/* 도움말 패널 - 패널 모드에서 내부에서 토글 */}
+          {isPanel && showHelp && (
+            <div className="mb-4 p-3 rounded-lg animate-slideDown" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+              <div className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
+                {t('helpDesc')}
+              </div>
+              <div className="space-y-2">
+                <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #3b82f6' }}>
+                  <span className="font-medium text-sm" style={{ color: '#3b82f6' }}>{t('helpSnapshotTitle')}</span>
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{t('helpSnapshot')}</p>
+                </div>
+                <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #22c55e' }}>
+                  <span className="font-medium text-sm" style={{ color: '#22c55e' }}>{t('helpCompareTitle')}</span>
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{t('helpCompare')}</p>
+                </div>
+                <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #f59e0b' }}>
+                  <span className="font-medium text-sm" style={{ color: '#f59e0b' }}>{t('helpExportTitle')}</span>
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{t('helpExport')}</p>
+                </div>
+                <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #8b5cf6' }}>
+                  <span className="font-medium text-sm" style={{ color: '#8b5cf6' }}>{t('helpMatchingTitle')}</span>
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{t('helpMatching')}</p>
+                </div>
+              </div>
+              <div className="mt-3 p-2.5 rounded-lg text-xs" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+                {t('helpUseCase')}
+              </div>
+            </div>
+          )}
           {/* 비교 대상 선택 - 반응형 */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-end">
             <div className="flex-1 min-w-0">
@@ -470,12 +447,28 @@ export default function PresetComparisonModal({ onClose, isPanel = false, onDrag
                                         {cell.columnName}
                                       </span>
                                       <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap flex-1 min-w-0">
-                                        <span className="px-2 py-0.5 rounded text-xs font-mono truncate max-w-[80px] sm:max-w-none" style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#dc2626' }}>
-                                          {String(cell.oldValue ?? '-')}
+                                        <span
+                                          className="px-2 py-0.5 rounded text-xs font-mono truncate max-w-[120px] sm:max-w-none"
+                                          style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#dc2626' }}
+                                          title={cell.oldComputedValue !== null && cell.oldComputedValue !== undefined
+                                            ? `${cell.oldComputedValue.toLocaleString()}${typeof cell.oldValue === 'string' && cell.oldValue.startsWith('=') ? ` (${cell.oldValue})` : ''}`
+                                            : String(cell.oldValue ?? '-')}
+                                        >
+                                          {cell.oldComputedValue !== null && cell.oldComputedValue !== undefined
+                                            ? `${cell.oldComputedValue.toLocaleString()}`
+                                            : String(cell.oldValue ?? '-')}
                                         </span>
                                         <ArrowRight className="w-3 h-3 sm:w-4 sm:h-4 shrink-0" style={{ color: 'var(--text-tertiary)' }} />
-                                        <span className="px-2 py-0.5 rounded text-xs font-mono truncate max-w-[80px] sm:max-w-none" style={{ background: 'rgba(34, 197, 94, 0.1)', color: '#16a34a' }}>
-                                          {String(cell.newValue ?? '-')}
+                                        <span
+                                          className="px-2 py-0.5 rounded text-xs font-mono truncate max-w-[120px] sm:max-w-none"
+                                          style={{ background: 'rgba(34, 197, 94, 0.1)', color: '#16a34a' }}
+                                          title={cell.newComputedValue !== null && cell.newComputedValue !== undefined
+                                            ? `${cell.newComputedValue.toLocaleString()}${typeof cell.newValue === 'string' && cell.newValue.startsWith('=') ? ` (${cell.newValue})` : ''}`
+                                            : String(cell.newValue ?? '-')}
+                                        >
+                                          {cell.newComputedValue !== null && cell.newComputedValue !== undefined
+                                            ? `${cell.newComputedValue.toLocaleString()}`
+                                            : String(cell.newValue ?? '-')}
                                         </span>
                                         {cell.diff !== null && (
                                           <span className="text-xs font-mono font-semibold shrink-0 ml-auto" style={{

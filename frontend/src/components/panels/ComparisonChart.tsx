@@ -16,7 +16,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from 'recharts';
-import { X, Trash2, Download, Check, HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Trash2, Download, Check, HelpCircle, ChevronDown, ChevronUp, PieChart } from 'lucide-react';
 import { useProjectStore } from '@/stores/projectStore';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
@@ -24,7 +24,8 @@ import { useTranslations } from 'next-intl';
 interface ComparisonChartProps {
   onClose: () => void;
   isPanel?: boolean;
-  onDragStart?: (e: React.MouseEvent) => void;
+  showHelp?: boolean;
+  setShowHelp?: (value: boolean) => void;
 }
 
 interface ComparisonItem {
@@ -45,7 +46,7 @@ const COLORS = [
   '#f97316', // orange
 ];
 
-export default function ComparisonChart({ onClose, isPanel = false, onDragStart }: ComparisonChartProps) {
+export default function ComparisonChart({ onClose, isPanel = false, showHelp = false, setShowHelp }: ComparisonChartProps) {
   const { getCurrentProject, getCurrentSheet, selectedRows, clearSelectedRows, deselectRow } = useProjectStore();
   const currentProject = getCurrentProject();
   const currentSheet = getCurrentSheet();
@@ -54,8 +55,6 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
   const [activeTab, setActiveTab] = useState<'radar' | 'bar' | 'histogram'>('radar');
   const [items, setItems] = useState<ComparisonItem[]>([]);
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
-  const [showHelp, setShowHelp] = useState(false);
-  const [helpHeight, setHelpHeight] = useState(120);
 
   // 숫자 컬럼만 필터링 (general 타입도 숫자일 수 있음)
   const numericColumns = useMemo(() => {
@@ -240,107 +239,50 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
   return (
     <div className={wrapperClass}>
       <div className={cardClass}>
-        {/* 헤더 */}
-        <div
-          className={`flex items-center justify-between shrink-0 ${isPanel ? 'px-4 py-3 relative z-20 cursor-grab active:cursor-grabbing' : 'px-6 py-4 border-b'}`}
-          style={{ background: isPanel ? '#3b82f615' : undefined, borderColor: isPanel ? '#3b82f640' : 'var(--border-primary)', borderBottom: isPanel ? '1px solid #3b82f640' : undefined }}
-          onMouseDown={(e) => {
-            if (isPanel && !(e.target as HTMLElement).closest('button') && onDragStart) {
-              onDragStart(e);
-            }
-          }}
-        >
-          <div className="flex items-center gap-2">
-            {isPanel && (
-              <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#3b82f6' }}>
-                <div className="w-4 h-4 rounded-full bg-white/30" />
+        {/* 헤더 - 모달일 때만 표시 */}
+        {!isPanel && (
+          <div
+            className="flex items-center justify-between shrink-0 px-6 py-4 border-b"
+            style={{ borderColor: 'var(--border-primary)' }}
+          >
+            <div className="flex items-center gap-2">
+              <div>
+                <h2 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  {t('fullTitle')}
+                </h2>
+                {hasSheet && (
+                  <p className="text-sm mt-1" style={{ color: 'var(--text-tertiary)' }}>
+                    {t('visualizeData', { sheetName: currentSheet.name })}
+                  </p>
+                )}
               </div>
-            )}
-            <div>
-              <h2 className={isPanel ? 'text-sm font-semibold' : 'text-xl font-semibold'} style={{ color: isPanel ? '#3b82f6' : 'var(--text-primary)' }}>
-                {isPanel ? t('title') : t('fullTitle')}
-              </h2>
-              {!isPanel && hasSheet && (
-                <p className="text-sm mt-1" style={{ color: 'var(--text-tertiary)' }}>
-                  {t('visualizeData', { sheetName: currentSheet.name })}
-                </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {setShowHelp && (
+                <button
+                  onClick={() => setShowHelp(!showHelp)}
+                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm transition-colors"
+                  style={{
+                    background: showHelp ? 'var(--accent-light)' : 'var(--bg-tertiary)',
+                    color: showHelp ? 'var(--accent-text)' : 'var(--text-secondary)'
+                  }}
+                >
+                  <HelpCircle className="w-4 h-4" />
+                  {t('help')}
+                  {showHelp ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                </button>
               )}
-            </div>
-            {isPanel && (
               <button
-                onClick={() => setShowHelp(!showHelp)}
-                className={`p-1 rounded-lg transition-colors ${showHelp ? 'bg-[#3b82f6]/20' : 'hover:bg-[var(--bg-hover)]'}`}
-                style={{ border: showHelp ? '1px solid #3b82f6' : '1px solid var(--border-secondary)' }}
+                onClick={onClose}
+                className="rounded-lg transition-colors p-2"
+                style={{ color: 'var(--text-tertiary)' }}
               >
-                <HelpCircle className="w-4 h-4" style={{ color: showHelp ? '#3b82f6' : 'var(--text-tertiary)' }} />
+                <X className="w-5 h-5" />
               </button>
-            )}
-          </div>
-          <div className="flex items-center gap-2">
-            {!isPanel && (
-              <button
-                onClick={() => setShowHelp(!showHelp)}
-                className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm transition-colors"
-                style={{
-                  background: showHelp ? 'var(--accent-light)' : 'var(--bg-tertiary)',
-                  color: showHelp ? 'var(--accent-text)' : 'var(--text-secondary)'
-                }}
-              >
-                <HelpCircle className="w-4 h-4" />
-                {t('help')}
-                {showHelp ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
-              </button>
-            )}
-            <button
-              onClick={onClose}
-              className={`rounded-lg transition-colors ${isPanel ? 'p-1.5 hover:bg-black/5 dark:hover:bg-white/5' : 'p-2'}`}
-              style={{ color: 'var(--text-tertiary)' }}
-            >
-              <X className={isPanel ? 'w-4 h-4' : 'w-5 h-5'} />
-            </button>
-          </div>
-        </div>
-
-        {/* 패널 모드 도움말 - 탭 위에 표시 */}
-        {isPanel && showHelp && (
-          <div className="shrink-0 animate-slideDown flex flex-col" style={{ height: `${helpHeight}px`, minHeight: '60px', maxHeight: '300px', borderBottom: '1px solid var(--border-primary)' }}>
-            <div
-              className="flex-1 px-4 py-3 text-sm overflow-y-auto"
-              style={{ background: 'var(--bg-tertiary)' }}
-            >
-              <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>{t('title')}</div>
-              <p className="mb-2" style={{ color: 'var(--text-secondary)' }}>{t('helpDesc')}</p>
-              <div className="space-y-1 mb-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                <div>{t('helpRadar')}</div>
-                <div>{t('helpBar')}</div>
-                <div>{t('helpHistogram')}</div>
-              </div>
-              <div className="pt-2 border-t text-xs" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
-                {t('helpUsage')}
-              </div>
             </div>
-            {/* 리사이저 */}
-            <div
-              className="h-1 shrink-0 cursor-ns-resize hover:bg-[var(--accent)] transition-colors"
-              style={{ background: 'var(--border-secondary)' }}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                const startY = e.clientY;
-                const startH = helpHeight;
-                const onMouseMove = (moveEvent: MouseEvent) => {
-                  const newHeight = Math.max(60, Math.min(300, startH + moveEvent.clientY - startY));
-                  setHelpHeight(newHeight);
-                };
-                const onMouseUp = () => {
-                  document.removeEventListener('mousemove', onMouseMove);
-                  document.removeEventListener('mouseup', onMouseUp);
-                };
-                document.addEventListener('mousemove', onMouseMove);
-                document.addEventListener('mouseup', onMouseUp);
-              }}
-            />
           </div>
         )}
+
 
         {/* 모달 모드 도움말 */}
         {!isPanel && showHelp && (
@@ -514,11 +456,38 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
           </div>
         )}
 
+        {/* 패널 모드 도움말 - 시트 유무와 관계없이 표시 */}
+        {isPanel && showHelp && (
+          <div className="mb-4 p-3 rounded-lg animate-slideDown mx-4 mt-4" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+            <div className="font-medium mb-2 text-sm" style={{ color: 'var(--text-primary)' }}>{t('title')}</div>
+            <p className="mb-3 text-sm" style={{ color: 'var(--text-secondary)' }}>{t('helpDesc')}</p>
+            <div className="space-y-2 mb-3">
+              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #3b82f6' }}>
+                <span className="font-medium text-sm" style={{ color: '#3b82f6' }}>{t('radar')}</span>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpRadar')}</p>
+              </div>
+              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #22c55e' }}>
+                <span className="font-medium text-sm" style={{ color: '#22c55e' }}>{t('bar')}</span>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpBar')}</p>
+              </div>
+              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #f59e0b' }}>
+                <span className="font-medium text-sm" style={{ color: '#f59e0b' }}>{t('histogram')}</span>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpHistogram')}</p>
+              </div>
+            </div>
+            <div className="pt-2 border-t text-xs" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
+              {t('helpUsage')}
+            </div>
+          </div>
+        )}
+
         {/* 시트가 없으면 빈 상태 표시 */}
         {!hasSheet ? (
           <EmptyState />
         ) : (
-        <div className="flex-1 min-h-0 overflow-hidden flex">
+        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+
+          <div className="flex-1 min-h-0 overflow-hidden flex">
           {/* 사이드바 - 레이더/바 차트용 */}
           {(activeTab === 'radar' || activeTab === 'bar') && (
             <div className="w-64 shrink-0 border-r p-4 overflow-y-auto" style={{ borderColor: 'var(--border-primary)' }}>
@@ -666,7 +635,7 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
                 ) : (
                   <>
                     <div className="flex-1" style={{ minHeight: 0 }}>
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
                         <RadarChart data={radarData}>
                           <PolarGrid stroke="var(--border-primary)" />
                           <PolarAngleAxis dataKey="stat" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
@@ -710,7 +679,7 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
                 ) : (
                   <>
                     <div className="flex-1" style={{ minHeight: 0 }}>
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
                         <BarChart data={barData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
                           <XAxis dataKey="stat" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
@@ -750,7 +719,7 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
                   <>
                     <h3 className="text-sm font-medium mb-2 shrink-0" style={{ color: 'var(--text-primary)' }}>{t('distribution', { column: histogramColumn })}</h3>
                     <div className="flex-1" style={{ minHeight: 0 }}>
-                      <ResponsiveContainer width="100%" height="100%">
+                      <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
                         <BarChart data={histogramData}>
                           <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
                           <XAxis dataKey="range" tick={{ fontSize: 10, fill: 'var(--text-secondary)' }} angle={-45} textAnchor="end" height={50} />
@@ -768,6 +737,7 @@ export default function ComparisonChart({ onClose, isPanel = false, onDragStart 
                 )}
               </>
             )}
+          </div>
           </div>
         </div>
         )}

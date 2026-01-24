@@ -1,6 +1,7 @@
 'use client';
 
 import { ReactNode } from 'react';
+import { LucideIcon } from 'lucide-react';
 import { useToolLayoutStore, AllToolId } from '@/stores/toolLayoutStore';
 import FloatingPanelLayout from './FloatingPanelLayout';
 import BottomPanelLayout from './BottomPanelLayout';
@@ -11,15 +12,21 @@ interface ToolPanelRendererProps {
   panelId: string;
   children: ReactNode;
   show: boolean;
-  // For floating panel (sidebar location)
+  onClose: () => void;
+  // 헤더 정보 (필수)
+  title: string;
+  icon: LucideIcon;
+  color: string;
+  headerExtra?: ReactNode;
+  // Floating panel props (sidebar location)
   panelState?: DraggableState;
   onBringToFront?: () => void;
+  onDragStart?: (e: React.MouseEvent) => void;
   onResizeE?: (e: React.MouseEvent) => void;
   onResizeS?: (e: React.MouseEvent) => void;
   onResizeSE?: (e: React.MouseEvent) => void;
-  // For bottom panel
+  // Bottom panel props
   defaultIndex?: number;
-  buttonX?: number; // 버튼의 X 좌표 (패널 중앙을 버튼에 맞춤)
   className?: string;
 }
 
@@ -28,13 +35,18 @@ export default function ToolPanelRenderer({
   panelId,
   children,
   show,
+  onClose,
+  title,
+  icon,
+  color,
+  headerExtra,
   panelState,
   onBringToFront,
+  onDragStart,
   onResizeE,
   onResizeS,
   onResizeSE,
   defaultIndex = 0,
-  buttonX,
   className,
 }: ToolPanelRendererProps) {
   const { toolLocations } = useToolLayoutStore();
@@ -44,7 +56,7 @@ export default function ToolPanelRenderer({
 
   // Sidebar location -> Floating Panel
   if (location === 'sidebar') {
-    if (!panelState || !onBringToFront || !onResizeE || !onResizeS || !onResizeSE) {
+    if (!panelState || !onBringToFront || !onDragStart || !onResizeE || !onResizeS || !onResizeSE) {
       console.warn(`ToolPanelRenderer: Missing floating panel props for ${toolId}`);
       return null;
     }
@@ -55,9 +67,15 @@ export default function ToolPanelRenderer({
         show={show}
         panelState={panelState}
         onBringToFront={onBringToFront}
+        onDragStart={onDragStart}
         onResizeE={onResizeE}
         onResizeS={onResizeS}
         onResizeSE={onResizeSE}
+        title={title}
+        icon={icon}
+        color={color}
+        onClose={onClose}
+        headerExtra={headerExtra}
         className={className}
       >
         {children}
@@ -71,7 +89,11 @@ export default function ToolPanelRenderer({
       panelId={panelId}
       show={show}
       defaultIndex={defaultIndex}
-      buttonX={buttonX}
+      title={title}
+      icon={icon}
+      color={color}
+      onClose={onClose}
+      headerExtra={headerExtra}
       className={className}
     >
       {children}

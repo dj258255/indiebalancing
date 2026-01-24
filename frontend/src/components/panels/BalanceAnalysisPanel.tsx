@@ -42,12 +42,13 @@ import {
 
 interface BalanceAnalysisPanelProps {
   onClose: () => void;
-  onDragStart?: (e: React.MouseEvent) => void;
+  showHelp?: boolean;
+  setShowHelp?: (value: boolean) => void;
 }
 
 type AnalysisTab = 'matchup' | 'power' | 'correlation' | 'deadzone' | 'curve';
 
-export default function BalanceAnalysisPanel({ onClose, onDragStart }: BalanceAnalysisPanelProps) {
+export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHelp, setShowHelp: externalSetShowHelp }: BalanceAnalysisPanelProps) {
   // ESC 키로 패널 닫기
   useEscapeKey(onClose);
 
@@ -59,9 +60,12 @@ export default function BalanceAnalysisPanel({ onClose, onDragStart }: BalanceAn
   const [correlationResult, setCorrelationResult] = useState<CorrelationResult[] | null>(null);
   const [runsPerMatch, setRunsPerMatch] = useState(50);
   const [showMatrixModal, setShowMatrixModal] = useState(false);
-  const [showHelp, setShowHelp] = useState(false);
-  const [helpHeight, setHelpHeight] = useState(180);
+  const [internalShowHelp, setInternalShowHelp] = useState(false);
   const [showTabDropdown, setShowTabDropdown] = useState(false);
+
+  // 외부 상태가 있으면 사용, 없으면 내부 상태 사용
+  const showHelp = externalShowHelp !== undefined ? externalShowHelp : internalShowHelp;
+  const setShowHelp = externalSetShowHelp || setInternalShowHelp;
 
   const currentProject = projects.find(p => p.id === currentProjectId);
   const currentSheet = currentProject?.sheets.find(s => s.id === currentSheetId);
@@ -308,138 +312,6 @@ export default function BalanceAnalysisPanel({ onClose, onDragStart }: BalanceAn
         );
       })()}
 
-      {/* 헤더 */}
-      <div
-        className="flex items-center justify-between px-4 py-3 relative z-20 cursor-grab active:cursor-grabbing"
-        style={{ background: '#ec489915', borderBottom: '1px solid #ec489940' }}
-        onMouseDown={(e) => {
-          if (!(e.target as HTMLElement).closest('button') && onDragStart) {
-            onDragStart(e);
-          }
-        }}
-      >
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-xl flex items-center justify-center" style={{ background: '#ec4899' }}>
-            <TrendingUp className="w-4 h-4 text-white" />
-          </div>
-          <h3 className="font-semibold" style={{ color: '#ec4899' }}>밸런스 분석</h3>
-          <button
-            onClick={() => setShowHelp(!showHelp)}
-            className={`p-1 rounded-lg transition-colors ${showHelp ? 'bg-[#ec4899]/20' : 'hover:bg-[var(--bg-hover)]'}`}
-            style={{ border: showHelp ? '1px solid #ec4899' : '1px solid var(--border-secondary)' }}
-          >
-            <HelpCircle className="w-4 h-4" style={{ color: showHelp ? '#ec4899' : 'var(--text-tertiary)' }} />
-          </button>
-        </div>
-        <button
-          onClick={onClose}
-          className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
-          style={{ color: 'var(--text-tertiary)' }}
-        >
-          <X className="w-4 h-4" />
-        </button>
-      </div>
-
-      {/* 도움말 패널 */}
-      {showHelp && (
-        <div className="shrink-0 animate-slideDown flex flex-col" style={{ height: `${helpHeight + 6}px`, minHeight: '66px', maxHeight: '506px', borderBottom: '1px solid var(--border-primary)' }}>
-          <div
-            className="flex-1 px-4 py-3 overflow-y-auto"
-            style={{ background: 'var(--bg-tertiary)' }}
-          >
-            <div className="font-semibold mb-3 text-sm" style={{ color: 'var(--text-primary)' }}>밸런스 분석 도구</div>
-            <p className="mb-3 text-sm" style={{ color: 'var(--text-secondary)' }}>시트 데이터를 기반으로 심층적인 패턴 분석을 수행합니다.</p>
-
-            <div className="space-y-3">
-              {/* 상성 분석 */}
-              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <GitBranch className="w-4 h-4" style={{ color: '#6366f1' }} />
-                  <span className="font-semibold text-sm" style={{ color: '#6366f1' }}>상성 분석</span>
-                </div>
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>유닛 간 1:1 전투 시뮬레이션으로 승률 매트릭스 생성</p>
-                <div className="mt-2 text-xs space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                  <div>- 필요 컬럼: name, hp, atk, def, speed</div>
-                  <div>- 결과: 승률표, OP/약캐 감지, 가위바위보 순환 탐지</div>
-                </div>
-              </div>
-
-              {/* 파워 커브 */}
-              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <TrendingUp className="w-4 h-4" style={{ color: '#22c55e' }} />
-                  <span className="font-semibold text-sm" style={{ color: '#22c55e' }}>파워 커브</span>
-                </div>
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>레벨별 파워가 어떤 패턴으로 성장하는지 분석</p>
-                <div className="mt-2 text-xs space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                  <div>- 필요 컬럼: level + 스탯들</div>
-                  <div>- 결과: 선형/지수/로그 타입, 이상치 감지</div>
-                </div>
-              </div>
-
-              {/* 상관관계 */}
-              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <BarChart2 className="w-4 h-4" style={{ color: '#3b82f6' }} />
-                  <span className="font-semibold text-sm" style={{ color: '#3b82f6' }}>상관관계</span>
-                </div>
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>스탯 간 상관계수 분석 (HP-DEF 등)</p>
-                <div className="mt-2 text-xs space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                  <div>- 필요: 3개 이상 유닛</div>
-                  <div>- 결과: 강한 상관(-1~1), 밸런스 의도 확인</div>
-                </div>
-              </div>
-
-              {/* 데드존 */}
-              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <AlertTriangle className="w-4 h-4" style={{ color: '#f59e0b' }} />
-                  <span className="font-semibold text-sm" style={{ color: '#f59e0b' }}>데드존</span>
-                </div>
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>사용되지 않는 스탯 구간 자동 탐지</p>
-                <div className="mt-2 text-xs space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                  <div>- 자동 분석 (버튼 없음)</div>
-                  <div>- 결과: 비어있는 구간, 밀집/분산 경고</div>
-                </div>
-              </div>
-
-              {/* 커브 생성 */}
-              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                <div className="flex items-center gap-2 mb-1.5">
-                  <Target className="w-4 h-4" style={{ color: '#8b5cf6' }} />
-                  <span className="font-semibold text-sm" style={{ color: '#8b5cf6' }}>커브 생성</span>
-                </div>
-                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>레벨별 스탯 성장표를 자동 생성</p>
-                <div className="mt-2 text-xs space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                  <div>- 입력: 기본스탯, 최대레벨, 성장률, 타입</div>
-                  <div>- 결과: 복사해서 시트에 붙여넣기 가능</div>
-                </div>
-              </div>
-            </div>
-          </div>
-          {/* 리사이저 */}
-          <div
-            className="h-1.5 shrink-0 cursor-ns-resize hover:bg-[var(--accent)] transition-colors"
-            style={{ background: 'var(--border-secondary)' }}
-            onMouseDown={(e) => {
-              e.preventDefault();
-              const startY = e.clientY;
-              const startH = helpHeight;
-              const onMouseMove = (moveEvent: MouseEvent) => {
-                const newHeight = Math.max(60, Math.min(400, startH + moveEvent.clientY - startY));
-                setHelpHeight(newHeight);
-              };
-              const onMouseUp = () => {
-                document.removeEventListener('mousemove', onMouseMove);
-                document.removeEventListener('mouseup', onMouseUp);
-              };
-              document.addEventListener('mousemove', onMouseMove);
-              document.addEventListener('mouseup', onMouseUp);
-            }}
-          />
-        </div>
-      )}
-
       {/* 분석 유형 선택 드롭다운 */}
       <div className="flex items-center gap-2 px-3 py-2 border-b" style={{ borderColor: 'var(--border-primary)' }}>
         <div className="relative flex-1">
@@ -518,7 +390,82 @@ export default function BalanceAnalysisPanel({ onClose, onDragStart }: BalanceAn
       </div>
 
       {/* 내용 */}
-      <div className="flex-1 overflow-y-auto p-4">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4">
+        {/* 도움말 패널 */}
+        {showHelp && (
+          <div className="mb-4 p-3 rounded-lg animate-slideDown" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+            <div className="font-semibold mb-3 text-sm" style={{ color: 'var(--text-primary)' }}>밸런스 분석 도구</div>
+            <p className="mb-3 text-sm" style={{ color: 'var(--text-secondary)' }}>시트 데이터를 기반으로 심층적인 패턴 분석을 수행합니다.</p>
+
+            <div className="space-y-3">
+              {/* 상성 분석 */}
+              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <GitBranch className="w-4 h-4" style={{ color: '#6366f1' }} />
+                  <span className="font-semibold text-sm" style={{ color: '#6366f1' }}>상성 분석</span>
+                </div>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>유닛 간 1:1 전투 시뮬레이션으로 승률 매트릭스 생성</p>
+                <div className="mt-2 text-xs space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                  <div>- 필요 컬럼: name, hp, atk, def, speed</div>
+                  <div>- 결과: 승률표, OP/약캐 감지, 가위바위보 순환 탐지</div>
+                </div>
+              </div>
+
+              {/* 파워 커브 */}
+              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <TrendingUp className="w-4 h-4" style={{ color: '#22c55e' }} />
+                  <span className="font-semibold text-sm" style={{ color: '#22c55e' }}>파워 커브</span>
+                </div>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>레벨별 파워가 어떤 패턴으로 성장하는지 분석</p>
+                <div className="mt-2 text-xs space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                  <div>- 필요 컬럼: level + 스탯들</div>
+                  <div>- 결과: 선형/지수/로그 타입, 이상치 감지</div>
+                </div>
+              </div>
+
+              {/* 상관관계 */}
+              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <BarChart2 className="w-4 h-4" style={{ color: '#3b82f6' }} />
+                  <span className="font-semibold text-sm" style={{ color: '#3b82f6' }}>상관관계</span>
+                </div>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>스탯 간 상관계수 분석 (HP-DEF 등)</p>
+                <div className="mt-2 text-xs space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                  <div>- 필요: 3개 이상 유닛</div>
+                  <div>- 결과: 강한 상관(-1~1), 밸런스 의도 확인</div>
+                </div>
+              </div>
+
+              {/* 데드존 */}
+              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <AlertTriangle className="w-4 h-4" style={{ color: '#f59e0b' }} />
+                  <span className="font-semibold text-sm" style={{ color: '#f59e0b' }}>데드존</span>
+                </div>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>사용되지 않는 스탯 구간 자동 탐지</p>
+                <div className="mt-2 text-xs space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                  <div>- 자동 분석 (버튼 없음)</div>
+                  <div>- 결과: 비어있는 구간, 밀집/분산 경고</div>
+                </div>
+              </div>
+
+              {/* 커브 생성 */}
+              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <Target className="w-4 h-4" style={{ color: '#8b5cf6' }} />
+                  <span className="font-semibold text-sm" style={{ color: '#8b5cf6' }}>커브 생성</span>
+                </div>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>레벨별 스탯 성장표를 자동 생성</p>
+                <div className="mt-2 text-xs space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                  <div>- 입력: 기본스탯, 최대레벨, 성장률, 타입</div>
+                  <div>- 결과: 복사해서 시트에 붙여넣기 가능</div>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {activeTab === 'matchup' && (
           <div className="space-y-4">
             {/* 탭 설명 */}

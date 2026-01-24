@@ -439,6 +439,12 @@
     "catStat": "Statistics",
     "catTrig": "Trigonometry",
     "catLogic": "Condition/Logic",
+    "helpTitle": "Formula Helper",
+    "helpDesc": "Provides formulas for game balancing. Start with = in a cell to use formulas.",
+    "helpUsage": "Usage",
+    "helpUsageDesc": "Click function to copy example",
+    "helpTest": "Test",
+    "helpTestDesc": "Execute formulas directly above",
     "functions": {
       "SCALE": "Level Scaling",
       "DAMAGE": "Damage Calculation (Reduction Formula)",
@@ -604,6 +610,12 @@
   },
   "difficultyCurve": {
     "title": "Difficulty Curve Design",
+    "helpTitle": "Difficulty Curve Design",
+    "helpDesc": "Design stage difficulty and milestones.",
+    "helpWall": "Wall",
+    "helpWallDesc": "Difficulty spike sections",
+    "helpMilestone": "Milestone",
+    "helpMilestoneDesc": "New system unlock points",
     "wallCount": "{count} walls",
     "presetLabel": "Difficulty Preset",
     "playtimeLabel": "Daily Playtime Target",
@@ -678,6 +690,7 @@
     "unit1": "Unit 1 (Attacker)",
     "unit2": "Unit 2 (Defender)",
     "select": "Select...",
+    "loadFromSheet": "Load from Sheet",
     "runs": "Iterations",
     "damageFormula": "Damage Formula",
     "defenseFormula": "Defense Formula",
@@ -732,7 +745,13 @@
       "10000": "10,000 runs",
       "50000": "50,000 runs",
       "100000": "100,000 runs"
-    }
+    },
+    "columnMapping": "Column Mapping",
+    "colName": "Name",
+    "colCritRate": "Crit Rate",
+    "colCritDmg": "Crit Damage",
+    "autoDetect": "Auto Detect",
+    "detected": "detected"
   },
   "references": {
     "title": "Reference Guide & Recommended Values",
@@ -1022,7 +1041,17 @@
       "outlierNote": "Z-score (statistics)",
       "varianceAnalysis": "Variance Analysis",
       "varianceNote": "CV (coefficient of variation)",
-      "powerCreep": "Power Creep"
+      "powerCreep": "Power Creep",
+      "difficultyCurveAdvanced": "Difficulty Curve (Advanced)",
+      "difficultySaw": "Difficulty Saw Pattern",
+      "difficultyMastering": "Mastering Difficulty Curves",
+      "idleGameDesign": "Idle Game Design",
+      "idleRetention": "Idle Game Retention",
+      "playerRetention": "Player Retention Strategies",
+      "combatSimulationAdvanced": "Combat Simulation (Advanced)",
+      "simultaneousAction": "Simultaneous Action Resolution",
+      "monteCarloMethod": "Monte Carlo Methodology",
+      "wilsonScore": "Wilson Confidence Interval"
     }
   },
   "goalSolver": {
@@ -1046,10 +1075,14 @@
     "title": "Imbalance Detector",
     "helpTitle": "Imbalance Detector (Auto Warning)",
     "helpDesc": "Scans sheet data to automatically find and warn about potential issues.",
-    "helpOutlier": "- Outlier: Values far from others",
-    "helpPowerCreep": "- Power Creep: Late-game surge",
-    "helpCliff": "- Cliff: Sharp changes in consecutive values",
-    "helpVariance": "- Variance: Large deviation within same group",
+    "outlier": "Outlier",
+    "powerCreep": "Power Creep",
+    "cliff": "Cliff",
+    "variance": "Variance",
+    "helpOutlier": "Detects extreme values far from others",
+    "helpPowerCreep": "Detects values that surge rapidly in late game",
+    "helpCliff": "Detects sharp changes between consecutive values",
+    "helpVariance": "Detects large deviations within the same group",
     "helpVsAnalysis": "vs Balance Analysis: Analysis is deep pattern analysis, Detector is immediate issue finding",
     "settings": "Detection Settings",
     "settingsTooltip": "Lower values = more sensitive detection. Too low = false positives, too high = miss issues.",
@@ -1248,10 +1281,15 @@
     "title": "Preset Comparison",
     "subtitle": "Analyze differences between two sheets or snapshots",
     "helpDesc": "Compare differences between two sheets or snapshots.",
-    "helpSnapshot": "- Snapshot: Save current state",
-    "helpCompare": "- Compare: Check changed values, additions/deletions",
-    "helpExport": "- Export: Save results as JSON",
-    "helpUseCase": "Use case: Balance patch before/after comparison, A/B testing",
+    "helpSnapshotTitle": "Snapshot",
+    "helpSnapshot": "Save the current state of a sheet for later comparison. Create a snapshot before making balance adjustments.",
+    "helpCompareTitle": "Compare",
+    "helpCompare": "Select two sheets/snapshots and compare to see changed values, added/removed rows.",
+    "helpExportTitle": "Export",
+    "helpExport": "Save comparison results as a JSON file for record keeping or sharing with your team.",
+    "helpMatchingTitle": "Auto Matching",
+    "helpMatching": "Matches by column name and row name. Even different IDs will match if names are the same.",
+    "helpUseCase": "Use cases: Balance patch before/after comparison, seasonal change tracking, A/B test result analysis",
     "before": "Before",
     "after": "After",
     "select": "Select...",
@@ -1326,6 +1364,9 @@
     "title": "Comparison Analysis",
     "fullTitle": "Data Comparison & Analysis",
     "helpDesc": "Visually compare stats of characters, weapons, and items.",
+    "radar": "Radar Chart",
+    "bar": "Bar Chart",
+    "histogram": "Histogram",
     "helpSelectTarget": "Select at least 1 target and 3+ stats to compare.",
     "helpRadar": "Radar: Compare overall stats",
     "helpBar": "Bar: Compare exact values",
@@ -1583,6 +1624,18 @@
       "gacha": "Gacha",
       "reward": "Reward",
       "analysis": "Analysis"
+    }
+  },
+  "help": {
+    "simulation": {
+      "title": "Battle Simulation",
+      "desc": "Simulate battles between two units to analyze win rate, TTK, and DPS.",
+      "dps": "Damage Per Second",
+      "ttk": "Time To Kill",
+      "winRate": "Win Rate",
+      "winRateDesc": "Win ratio out of N battles",
+      "monteCarlo": "Monte Carlo",
+      "monteCarloDesc": "Probabilistic repeated simulation"
     }
   }
 }
