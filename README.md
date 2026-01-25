@@ -25,7 +25,11 @@ A spreadsheet-based tool designed specifically for game balancing. Calculate DPS
 - **70+ Game-Specific Formulas** - DPS, EHP, TTK, SCALE, DIMINISH, and more
 - **Monte Carlo Simulation** - 1,000~100,000 battle simulations with 95% confidence intervals
 - **Balance Analysis** - Z-score outlier detection, power curve analysis
+- **Economy Simulation** - Faucet/Sink model, inflation calculator
+- **DPS Variance Visualization** - Distribution graphs, build comparisons
+- **Curve Fitting** - Draw graphs, auto-generate formulas (Linear, Exponential, Sigmoid, etc.)
 - **Game Engine Export** - Unity (ScriptableObject), Godot (Resource), Unreal (USTRUCT)
+- **SDK/API Integration** - REST, WebSocket, Firebase connection support
 - **Local-First** - All data stored in browser (IndexedDB), no server required
 
 ## Quick Start
@@ -98,9 +102,12 @@ Contributions are welcome!
 - [x] 70+ game-specific formulas
 - [x] Monte Carlo simulation
 - [x] Game engine export
+- [x] Economy system simulation (Faucet/Sink, Inflation Calculator)
+- [x] DPS Variance Visualization
+- [x] Curve Fitting (Graph to Formula)
+- [x] Game Data SDK/API Integration (REST, WebSocket, Firebase)
 - [ ] Cloud sync
 - [ ] Team collaboration
-- [ ] Economy system simulation
 
 ## License
 
@@ -129,7 +136,11 @@ MIT License - see [LICENSE](LICENSE) for details.
 - **70개+ 게임 특화 수식** - DPS, EHP, TTK, SCALE, DIMINISH 등
 - **몬테카를로 시뮬레이션** - 1,000~100,000회 전투 시뮬레이션, 95% 신뢰구간
 - **밸런스 분석** - Z-score 이상치 탐지, 파워 커브 분석
+- **경제 시뮬레이션** - Faucet/Sink 모델, 인플레이션 계산기
+- **DPS 분산 시각화** - 분포 그래프, 빌드 비교
+- **곡선 피팅** - 그래프 그리기 → 자동 수식화 (선형, 지수, 시그모이드 등)
 - **게임 엔진 내보내기** - Unity (ScriptableObject), Godot (Resource), Unreal (USTRUCT)
+- **SDK/API 연동** - REST, WebSocket, Firebase 연결 지원
 - **로컬 저장** - 브라우저에 저장 (IndexedDB), 서버 불필요
 
 ## 빠른 시작
@@ -164,8 +175,24 @@ npm run dev
 
 ## 참고 자료
 
+### 게임 밸런스 이론
 - [Game Balance Concepts](https://gamebalanceconcepts.wordpress.com/) - Ian Schreiber
-- [Game Balancing](https://gamebalancing.wordpress.com/) - 실무 적용 사례
+- [Game Balance Dissected](https://gamebalancing.wordpress.com/) - DPS, TTK, Fire Rate 계산
+
+### 경제 설계
+- [Machinations.io - Game Inflation](https://machinations.io/articles/what-is-game-economy-inflation-how-to-foresee-it-and-how-to-overcome-it-in-your-game-design) - Faucet/Sink 모델
+- [Department of Play - Economy Principles](https://departmentofplay.net/the-principles-of-building-a-game-economy/) - 게임 경제 원칙
+- [Lost Garden - Value Chains](https://lostgarden.com/2021/12/12/value-chains/) - 가치 사슬 설계
+
+### 성장 곡선 및 난이도
+- [Davide Aversa - RPG Progression](https://www.davideaversa.it/blog/gamedesign-math-rpg-level-based-progression/) - 레벨 성장 수식
+- [Game Developer - Difficulty Curves](https://www.gamedeveloper.com/design/difficulty-curves) - 난이도 곡선 패턴
+
+### 통계 및 분석
+- [GeeksforGeeks - Z-Score](https://www.geeksforgeeks.org/machine-learning/z-score-for-outlier-detection-python/) - 이상치 감지
+- [Wikipedia - Monte Carlo Method](https://en.wikipedia.org/wiki/Monte_Carlo_method) - 몬테카를로 시뮬레이션
+
+### 문서
 - [상세 기획 문서 (한국어)](docs/DESIGN_KO.md)
 - [Documentation (English)](docs/DESIGN_EN.md)
 

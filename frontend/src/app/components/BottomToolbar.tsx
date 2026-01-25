@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { FunctionSquare, Shield, TrendingUp, Swords, Calculator, PieChart, BarChart3, GitCompare, AlertTriangle, Target } from 'lucide-react';
+import { FunctionSquare, Shield, TrendingUp, Swords, Calculator, PieChart, BarChart3, GitCompare, AlertTriangle, Target, Coins, BarChart2, PenTool } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useToolLayoutStore, AllToolId, PanelToolId } from '@/stores/toolLayoutStore';
 import { cn } from '@/lib/utils';
@@ -40,6 +40,9 @@ interface BottomToolbarProps {
   onShowImbalanceDetector?: () => void;
   onShowGoalSolver?: () => void;
   onShowBalanceAnalysis?: () => void;
+  onShowEconomy?: () => void;
+  onShowDpsVariance?: () => void;
+  onShowCurveFitting?: () => void;
   isModalOpen: boolean;
 }
 
@@ -55,6 +58,9 @@ const TOOL_CONFIG: Record<AllToolId, { icon: typeof FunctionSquare; color: strin
   imbalanceDetector: { icon: AlertTriangle, color: '#eab308', labelKey: 'sidebar.imbalanceDetector' },
   goalSolver: { icon: Target, color: '#14b8a6', labelKey: 'sidebar.goalSolver' },
   balanceAnalysis: { icon: TrendingUp, color: '#ec4899', labelKey: 'sidebar.balanceAnalysis' },
+  economy: { icon: Coins, color: '#f59e0b', labelKey: 'sidebar.economy' },
+  dpsVariance: { icon: BarChart2, color: '#f97316', labelKey: 'sidebar.dpsVariance' },
+  curveFitting: { icon: PenTool, color: '#6366f1', labelKey: 'sidebar.curveFitting' },
 };
 
 const isPanelTool = (toolId: AllToolId): toolId is PanelToolId => {
@@ -71,6 +77,9 @@ export default function BottomToolbar({
   onShowImbalanceDetector,
   onShowGoalSolver,
   onShowBalanceAnalysis,
+  onShowEconomy,
+  onShowDpsVariance,
+  onShowCurveFitting,
   isModalOpen
 }: BottomToolbarProps) {
   const t = useTranslations();
@@ -120,6 +129,9 @@ export default function BottomToolbar({
     onShowImbalanceDetector,
     onShowGoalSolver,
     onShowBalanceAnalysis,
+    onShowEconomy,
+    onShowDpsVariance,
+    onShowCurveFitting,
   });
 
   // 매 렌더링마다 ref 업데이트
@@ -134,6 +146,9 @@ export default function BottomToolbar({
     onShowImbalanceDetector,
     onShowGoalSolver,
     onShowBalanceAnalysis,
+    onShowEconomy,
+    onShowDpsVariance,
+    onShowCurveFitting,
   };
 
   const handleToolClick = useCallback((toolId: AllToolId) => {
@@ -148,6 +163,9 @@ export default function BottomToolbar({
       onShowImbalanceDetector: imbalanceHandler,
       onShowGoalSolver: goalHandler,
       onShowBalanceAnalysis: balanceHandler,
+      onShowEconomy: economyHandler,
+      onShowDpsVariance: dpsVarianceHandler,
+      onShowCurveFitting: curveFittingHandler,
     } = propsRef.current;
 
     if (modalOpen) return;
@@ -167,6 +185,9 @@ export default function BottomToolbar({
         case 'imbalanceDetector': imbalanceHandler?.(); break;
         case 'goalSolver': goalHandler?.(); break;
         case 'balanceAnalysis': balanceHandler?.(); break;
+        case 'economy': economyHandler?.(); break;
+        case 'dpsVariance': dpsVarianceHandler?.(); break;
+        case 'curveFitting': curveFittingHandler?.(); break;
       }
     }
   }, []);

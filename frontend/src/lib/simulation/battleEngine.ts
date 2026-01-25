@@ -10,6 +10,8 @@ import type {
   BattleResult,
   ArmorPenetrationConfig,
   DefenseFormulaType,
+  ActiveHoT,
+  InvincibleTradeoff,
 } from './types';
 
 // 기본 설정
@@ -390,7 +392,144 @@ function calculateSkillDamage(
 }
 
 /**
- * 스킬이 있는 전투 시뮬레이션
+ * 힐 스킬 처리
+ */
+function processHealSkill(
+  skill: Skill,
+  caster: UnitStats & { hp: number; maxHp: number }
+): { healAmount: number; newHp: number } {
+  const healAmount = skill.healType === 'percent'
+    ? Math.round(caster.maxHp * (skill.healAmount || 0))
+    : Math.round(skill.healAmount || 0);
+
+  const newHp = Math.min(caster.maxHp, caster.hp + healAmount);
+  return { healAmount, newHp };
+}
+
+/**
+ * 무적 스킬 처리
+ */
+function processInvincibleSkill(
+  skill: Skill,
+  currentTime: number
+): { invincibleUntil: number; tradeoff?: InvincibleTradeoff } {
+  return {
+    invincibleUntil: currentTime + (skill.invincibleDuration || 0),
+    tradeoff: skill.invincibleTradeoff
+  };
+}
+
+/**
+ * HoT (Heal Over Time) 스킬 생성
+ */
+function createHoT(
+  skill: Skill,
+  currentTime: number,
+  casterMaxHp: number
+): ActiveHoT {
+  return {
+    skillId: skill.id,
+    skillName: skill.name,
+    endTime: currentTime + (skill.hotDuration || 5),
+    nextTickTime: currentTime + (skill.hotTickInterval || 1),
+    tickInterval: skill.hotTickInterval || 1,
+    healAmount: skill.hotAmount || 0,
+    healType: skill.hotType || 'flat',
+    casterMaxHp,
+  };
+}
+
+/**
+ * HoT 틱 처리
+ */
+function processHoTTick(
+  hot: ActiveHoT,
+  currentHp: number,
+  maxHp: number
+): { healAmount: number; newHp: number } {
+  const healAmount = hot.healType === 'percent'
+    ? Math.round(hot.casterMaxHp * hot.healAmount)
+    : Math.round(hot.healAmount);
+
+  const newHp = Math.min(maxHp, currentHp + healAmount);
+  return { healAmount, newHp };
+}
+
+/**
+ * 활성 HoT 목록 처리 (틱 적용 및 만료 제거)
+ */
+function processActiveHoTs(
+  hots: ActiveHoT[],
+  currentTime: number,
+  unit: { hp: number; maxHp: number; name: string },
+  log: BattleLogEntry[]
+): ActiveHoT[] {
+  const remainingHots: ActiveHoT[] = [];
+
+  for (const hot of hots) {
+    // HoT 만료 체크
+    if (currentTime >= hot.endTime) {
+      log.push({
+        time: Math.round(currentTime * 100) / 100,
+        actor: unit.name,
+        action: 'hot_end',
+        skillName: hot.skillName,
+        remainingHp: unit.hp,
+      });
+      continue;
+    }
+
+    // 틱 시간 체크
+    if (currentTime >= hot.nextTickTime) {
+      const tickResult = processHoTTick(hot, unit.hp, unit.maxHp);
+      unit.hp = tickResult.newHp;
+
+      log.push({
+        time: Math.round(currentTime * 100) / 100,
+        actor: unit.name,
+        action: 'hot_tick',
+        skillName: hot.skillName,
+        healAmount: tickResult.healAmount,
+        remainingHp: unit.hp,
+      });
+
+      // 다음 틱 시간 업데이트
+      hot.nextTickTime = currentTime + hot.tickInterval;
+    }
+
+    remainingHots.push(hot);
+  }
+
+  return remainingHots;
+}
+
+/**
+ * 부활 스킬 체크 (죽었을 때 발동)
+ */
+function checkReviveSkill(
+  skills: Skill[],
+  skillCooldowns: Map<string, number>,
+  time: number,
+  maxHp: number
+): { revived: boolean; newHp: number; skillName?: string } {
+  for (const skill of skills) {
+    if (skill.skillType !== 'revive') continue;
+
+    const cooldownEnds = skillCooldowns.get(skill.id) || 0;
+    if (time < cooldownEnds) continue;
+
+    // 부활 확률 체크
+    if (skill.trigger?.chance && Math.random() > skill.trigger.chance) continue;
+
+    const newHp = Math.round(maxHp * (skill.reviveHpPercent || 0.3));
+    skillCooldowns.set(skill.id, time + skill.cooldown);
+    return { revived: true, newHp, skillName: skill.name };
+  }
+  return { revived: false, newHp: 0 };
+}
+
+/**
+ * 스킬이 있는 전투 시뮬레이션 (힐/무적/부활 지원)
  */
 export function simulateBattleWithSkills(
   unit1: UnitStats,
@@ -428,70 +567,274 @@ export function simulateBattleWithSkills(
   let unit1Turns = 0;
   let unit2Turns = 0;
 
+  // 무적 상태 (무적 종료 시간)
+  let unit1InvincibleUntil = 0;
+  let unit2InvincibleUntil = 0;
+
+  // 무적 트레이드오프 저장
+  let unit1InvincibleTradeoff: InvincibleTradeoff | undefined;
+  let unit2InvincibleTradeoff: InvincibleTradeoff | undefined;
+
+  // 부활 사용 여부 (한 전투에 1회만)
+  let unit1ReviveUsed = false;
+  let unit2ReviveUsed = false;
+
+  // 활성 HoT 효과 목록
+  let unit1ActiveHoTs: ActiveHoT[] = [];
+  let unit2ActiveHoTs: ActiveHoT[] = [];
+
+  // 스킬 처리 함수
+  const processSkill = (
+    skill: Skill,
+    caster: typeof state1,
+    target: typeof state2,
+    skillCooldowns: Map<string, number>,
+    isUnit1: boolean,
+    currentTime: number
+  ): void => {
+    const skillType = skill.skillType || 'damage';
+
+    switch (skillType) {
+      case 'damage': {
+        // 타겟이 무적 상태인지 확인
+        const targetInvincibleUntil = isUnit1 ? unit2InvincibleUntil : unit1InvincibleUntil;
+        if (currentTime < targetInvincibleUntil) {
+          log.push({
+            time: Math.round(currentTime * 100) / 100,
+            actor: caster.name,
+            action: 'skill',
+            target: target.name,
+            skillName: skill.name,
+            damage: 0,
+            isMiss: true,
+            remainingHp: target.hp,
+          });
+          break;
+        }
+
+        const skillDamage = Math.round(calculateSkillDamage(skill, caster, target, cfg.damageFormula));
+        target.hp = cfg.allowOverkill
+          ? target.hp - skillDamage
+          : Math.max(0, target.hp - skillDamage);
+
+        if (isUnit1) {
+          unit1TotalDamage += skillDamage;
+        } else {
+          unit2TotalDamage += skillDamage;
+        }
+
+        log.push({
+          time: Math.round(currentTime * 100) / 100,
+          actor: caster.name,
+          action: 'skill',
+          target: target.name,
+          skillName: skill.name,
+          damage: skillDamage,
+          remainingHp: target.hp,
+        });
+        break;
+      }
+
+      case 'heal': {
+        const healResult = processHealSkill(skill, caster);
+        caster.hp = healResult.newHp;
+
+        log.push({
+          time: Math.round(currentTime * 100) / 100,
+          actor: caster.name,
+          action: 'heal',
+          skillName: skill.name,
+          healAmount: healResult.healAmount,
+          remainingHp: caster.hp,
+        });
+        break;
+      }
+
+      case 'hot': {
+        // HoT 효과 생성 및 추가
+        const newHoT = createHoT(skill, currentTime, caster.maxHp);
+        if (isUnit1) {
+          unit1ActiveHoTs.push(newHoT);
+        } else {
+          unit2ActiveHoTs.push(newHoT);
+        }
+
+        log.push({
+          time: Math.round(currentTime * 100) / 100,
+          actor: caster.name,
+          action: 'skill',
+          skillName: skill.name,
+          remainingHp: caster.hp,
+        });
+        break;
+      }
+
+      case 'invincible': {
+        const invResult = processInvincibleSkill(skill, currentTime);
+        if (isUnit1) {
+          unit1InvincibleUntil = invResult.invincibleUntil;
+          unit1InvincibleTradeoff = invResult.tradeoff;
+        } else {
+          unit2InvincibleUntil = invResult.invincibleUntil;
+          unit2InvincibleTradeoff = invResult.tradeoff;
+        }
+
+        log.push({
+          time: Math.round(currentTime * 100) / 100,
+          actor: caster.name,
+          action: 'invincible',
+          skillName: skill.name,
+          remainingHp: caster.hp,
+        });
+        break;
+      }
+
+      // revive는 별도로 처리 (사망 시 체크)
+      case 'revive':
+        break;
+    }
+
+    skillCooldowns.set(skill.id, currentTime + skill.cooldown);
+  };
+
+  // 부활 체크 함수
+  const checkAndProcessRevive = (
+    unit: typeof state1,
+    skills: Skill[],
+    skillCooldowns: Map<string, number>,
+    currentTime: number,
+    reviveUsed: boolean
+  ): { revived: boolean; newReviveUsed: boolean } => {
+    if (reviveUsed || unit.hp > 0) {
+      return { revived: false, newReviveUsed: reviveUsed };
+    }
+
+    const reviveResult = checkReviveSkill(skills, skillCooldowns, currentTime, unit.maxHp);
+    if (reviveResult.revived) {
+      unit.hp = reviveResult.newHp;
+
+      log.push({
+        time: Math.round(currentTime * 100) / 100,
+        actor: unit.name,
+        action: 'revive',
+        skillName: reviveResult.skillName,
+        remainingHp: unit.hp,
+      });
+
+      return { revived: true, newReviveUsed: true };
+    }
+
+    return { revived: false, newReviveUsed: reviveUsed };
+  };
+
   // 시뮬레이션 루프
   let time = 0;
 
   while (time < cfg.maxDuration && state1.hp > 0 && state2.hp > 0) {
     time += cfg.timeStep;
 
-    // Unit1 공격
-    if (time >= unit1NextAttack) {
-      unit1Turns++;
-      const result = calculateDamage(state1, state2, cfg.damageFormula, cfg.defenseFormula, cfg.armorPenetration);
+    // HoT 틱 처리
+    unit1ActiveHoTs = processActiveHoTs(unit1ActiveHoTs, time, state1, log);
+    unit2ActiveHoTs = processActiveHoTs(unit2ActiveHoTs, time, state2, log);
 
-      if (!result.isMiss) {
-        state2.hp = cfg.allowOverkill
-          ? state2.hp - result.damage
-          : Math.max(0, state2.hp - result.damage);
-
-        unit1TotalDamage += result.damage;
-        unit1Hits++;
-        if (result.isCrit) unit1Crits++;
-      }
-
+    // 무적 종료 로그 (한 번만 기록)
+    if (unit1InvincibleUntil > 0 && time >= unit1InvincibleUntil && time < unit1InvincibleUntil + cfg.timeStep) {
       log.push({
         time: Math.round(time * 100) / 100,
         actor: state1.name,
-        action: 'attack',
-        target: state2.name,
-        damage: result.damage,
-        isCrit: result.isCrit,
-        isMiss: result.isMiss,
+        action: 'invincible_end',
+        remainingHp: state1.hp,
+      });
+      unit1InvincibleTradeoff = undefined;
+    }
+    if (unit2InvincibleUntil > 0 && time >= unit2InvincibleUntil && time < unit2InvincibleUntil + cfg.timeStep) {
+      log.push({
+        time: Math.round(time * 100) / 100,
+        actor: state2.name,
+        action: 'invincible_end',
         remainingHp: state2.hp,
       });
+      unit2InvincibleTradeoff = undefined;
+    }
 
-      // 스킬 사용 체크
-      for (const skill of skills1) {
-        const cooldownEnds = skill1Cooldowns.get(skill.id) || 0;
-        if (time < cooldownEnds) continue;
+    // Unit1 공격
+    if (time >= unit1NextAttack && state1.hp > 0) {
+      unit1Turns++;
 
-        const context = {
-          time,
-          lastHit: !result.isMiss,
-          lastCrit: result.isCrit,
-          turnCount: unit1Turns
-        };
+      // 무적 중 공격 불가 트레이드오프 체크
+      const unit1CannotAttack = time < unit1InvincibleUntil && unit1InvincibleTradeoff?.cannotAttack;
 
-        if (shouldTriggerSkill(skill, state1, state2, context)) {
-          const skillDamage = Math.round(calculateSkillDamage(skill, state1, state2, cfg.damageFormula));
+      // 타겟이 무적 상태인지 확인
+      const targetIsInvincible = time < unit2InvincibleUntil;
 
+      if (unit1CannotAttack) {
+        // 무적 중 공격 불가 (트레이드오프)
+        // 공격 시간만 갱신하고 넘어감
+      } else if (targetIsInvincible) {
+        // 무적 상태면 공격 무효화
+        log.push({
+          time: Math.round(time * 100) / 100,
+          actor: state1.name,
+          action: 'attack',
+          target: state2.name,
+          damage: 0,
+          isMiss: true,
+          remainingHp: state2.hp,
+        });
+      } else {
+        const result = calculateDamage(state1, state2, cfg.damageFormula, cfg.defenseFormula, cfg.armorPenetration);
+
+        if (!result.isMiss) {
           state2.hp = cfg.allowOverkill
-            ? state2.hp - skillDamage
-            : Math.max(0, state2.hp - skillDamage);
+            ? state2.hp - result.damage
+            : Math.max(0, state2.hp - result.damage);
 
-          unit1TotalDamage += skillDamage;
+          unit1TotalDamage += result.damage;
+          unit1Hits++;
+          if (result.isCrit) unit1Crits++;
+        }
 
-          log.push({
-            time: Math.round(time * 100) / 100,
-            actor: state1.name,
-            action: 'skill',
-            target: state2.name,
-            skillName: skill.name,
-            damage: skillDamage,
-            remainingHp: state2.hp,
-          });
+        log.push({
+          time: Math.round(time * 100) / 100,
+          actor: state1.name,
+          action: 'attack',
+          target: state2.name,
+          damage: result.damage,
+          isCrit: result.isCrit,
+          isMiss: result.isMiss,
+          remainingHp: state2.hp,
+        });
 
-          skill1Cooldowns.set(skill.id, time + skill.cooldown);
+        // Unit2 부활 체크
+        if (state2.hp <= 0) {
+          const reviveCheck = checkAndProcessRevive(state2, skills2, skill2Cooldowns, time, unit2ReviveUsed);
+          unit2ReviveUsed = reviveCheck.newReviveUsed;
+        }
+
+        // 스킬 사용 체크 (무적 트레이드오프로 스킬 사용 불가인 경우 스킵)
+        const unit1CannotUseSkills = time < unit1InvincibleUntil && unit1InvincibleTradeoff?.cannotUseSkills;
+        if (!unit1CannotUseSkills) {
+          for (const skill of skills1) {
+            const cooldownEnds = skill1Cooldowns.get(skill.id) || 0;
+            if (time < cooldownEnds) continue;
+
+            const context = {
+              time,
+              lastHit: !result.isMiss,
+              lastCrit: result.isCrit,
+              turnCount: unit1Turns
+            };
+
+            if (shouldTriggerSkill(skill, state1, state2, context)) {
+              processSkill(skill, state1, state2, skill1Cooldowns, true, time);
+
+              // 스킬로 인한 사망 후 부활 체크
+              if (state2.hp <= 0) {
+                const reviveCheck = checkAndProcessRevive(state2, skills2, skill2Cooldowns, time, unit2ReviveUsed);
+                unit2ReviveUsed = reviveCheck.newReviveUsed;
+              }
+            }
+          }
         }
       }
 
@@ -499,63 +842,83 @@ export function simulateBattleWithSkills(
     }
 
     // Unit2 공격
-    if (state1.hp > 0 && time >= unit2NextAttack) {
+    if (state2.hp > 0 && state1.hp > 0 && time >= unit2NextAttack) {
       unit2Turns++;
-      const result = calculateDamage(state2, state1, cfg.damageFormula, cfg.defenseFormula, cfg.armorPenetration);
 
-      if (!result.isMiss) {
-        state1.hp = cfg.allowOverkill
-          ? state1.hp - result.damage
-          : Math.max(0, state1.hp - result.damage);
+      // Unit2가 무적 상태이고 공격 불가 트레이드오프가 있는지 확인
+      const unit2CannotAttack = time < unit2InvincibleUntil && unit2InvincibleTradeoff?.cannotAttack;
 
-        unit2TotalDamage += result.damage;
-        unit2Hits++;
-        if (result.isCrit) unit2Crits++;
-      }
+      // 타겟이 무적 상태인지 확인
+      const targetIsInvincible = time < unit1InvincibleUntil;
 
-      log.push({
-        time: Math.round(time * 100) / 100,
-        actor: state2.name,
-        action: 'attack',
-        target: state1.name,
-        damage: result.damage,
-        isCrit: result.isCrit,
-        isMiss: result.isMiss,
-        remainingHp: state1.hp,
-      });
+      if (unit2CannotAttack) {
+        // 무적 트레이드오프로 공격 불가 - 공격 스킵
+        unit2NextAttack = time + 1 / state2.speed;
+      } else if (targetIsInvincible) {
+        // 무적 상태면 공격 무효화
+        log.push({
+          time: Math.round(time * 100) / 100,
+          actor: state2.name,
+          action: 'attack',
+          target: state1.name,
+          damage: 0,
+          isMiss: true,
+          remainingHp: state1.hp,
+        });
+      } else {
+        const result = calculateDamage(state2, state1, cfg.damageFormula, cfg.defenseFormula, cfg.armorPenetration);
 
-      // 스킬 사용 체크
-      for (const skill of skills2) {
-        const cooldownEnds = skill2Cooldowns.get(skill.id) || 0;
-        if (time < cooldownEnds) continue;
-
-        const context = {
-          time,
-          lastHit: !result.isMiss,
-          lastCrit: result.isCrit,
-          turnCount: unit2Turns
-        };
-
-        if (shouldTriggerSkill(skill, state2, state1, context)) {
-          const skillDamage = Math.round(calculateSkillDamage(skill, state2, state1, cfg.damageFormula));
-
+        if (!result.isMiss) {
           state1.hp = cfg.allowOverkill
-            ? state1.hp - skillDamage
-            : Math.max(0, state1.hp - skillDamage);
+            ? state1.hp - result.damage
+            : Math.max(0, state1.hp - result.damage);
 
-          unit2TotalDamage += skillDamage;
+          unit2TotalDamage += result.damage;
+          unit2Hits++;
+          if (result.isCrit) unit2Crits++;
+        }
 
-          log.push({
-            time: Math.round(time * 100) / 100,
-            actor: state2.name,
-            action: 'skill',
-            target: state1.name,
-            skillName: skill.name,
-            damage: skillDamage,
-            remainingHp: state1.hp,
-          });
+        log.push({
+          time: Math.round(time * 100) / 100,
+          actor: state2.name,
+          action: 'attack',
+          target: state1.name,
+          damage: result.damage,
+          isCrit: result.isCrit,
+          isMiss: result.isMiss,
+          remainingHp: state1.hp,
+        });
 
-          skill2Cooldowns.set(skill.id, time + skill.cooldown);
+        // Unit1 부활 체크
+        if (state1.hp <= 0) {
+          const reviveCheck = checkAndProcessRevive(state1, skills1, skill1Cooldowns, time, unit1ReviveUsed);
+          unit1ReviveUsed = reviveCheck.newReviveUsed;
+        }
+
+        // 스킬 사용 체크 (무적 트레이드오프로 스킬 사용 불가인 경우 스킵)
+        const unit2CannotUseSkills = time < unit2InvincibleUntil && unit2InvincibleTradeoff?.cannotUseSkills;
+        if (!unit2CannotUseSkills) {
+          for (const skill of skills2) {
+            const cooldownEnds = skill2Cooldowns.get(skill.id) || 0;
+            if (time < cooldownEnds) continue;
+
+            const context = {
+              time,
+              lastHit: !result.isMiss,
+              lastCrit: result.isCrit,
+              turnCount: unit2Turns
+            };
+
+            if (shouldTriggerSkill(skill, state2, state1, context)) {
+              processSkill(skill, state2, state1, skill2Cooldowns, false, time);
+
+              // 스킬로 인한 사망 후 부활 체크
+              if (state1.hp <= 0) {
+                const reviveCheck = checkAndProcessRevive(state1, skills1, skill1Cooldowns, time, unit1ReviveUsed);
+                unit1ReviveUsed = reviveCheck.newReviveUsed;
+              }
+            }
+          }
         }
       }
 
@@ -862,7 +1225,9 @@ export function runTeamMonteCarloSimulation(
   team1: UnitStats[],
   team2: UnitStats[],
   runs: number = 1000,
-  config: Partial<import('./types').TeamBattleConfig> = {}
+  config: Partial<import('./types').TeamBattleConfig> = {},
+  team1Skills?: Map<string, Skill[]>,
+  team2Skills?: Map<string, Skill[]>
 ): {
   totalRuns: number;
   team1Wins: number;
@@ -882,7 +1247,9 @@ export function runTeamMonteCarloSimulation(
   let totalTeam2Survivors = 0;
 
   for (let i = 0; i < runs; i++) {
-    const result = simulateTeamBattle(team1, team2, config);
+    const result = (team1Skills || team2Skills)
+      ? simulateTeamBattleWithSkills(team1, team2, team1Skills || new Map(), team2Skills || new Map(), config)
+      : simulateTeamBattle(team1, team2, config);
 
     if (result.winner === 'team1') team1Wins++;
     else if (result.winner === 'team2') team2Wins++;
@@ -903,5 +1270,435 @@ export function runTeamMonteCarloSimulation(
     avgDuration: totalDuration / runs,
     avgTeam1Survivors: totalTeam1Survivors / runs,
     avgTeam2Survivors: totalTeam2Survivors / runs,
+  };
+}
+
+/**
+ * 스킬이 있는 팀 전투 시뮬레이션 (부활/무적/힐/범위 스킬 지원)
+ */
+export function simulateTeamBattleWithSkills(
+  team1: UnitStats[],
+  team2: UnitStats[],
+  team1Skills: Map<string, Skill[]>,  // unitId -> skills[]
+  team2Skills: Map<string, Skill[]>,
+  config: Partial<import('./types').TeamBattleConfig> = {}
+): import('./types').TeamBattleResult {
+  const cfg: import('./types').TeamBattleConfig = {
+    maxDuration: 300,
+    timeStep: 0.1,
+    damageFormula: 'simple',
+    defenseFormula: 'subtractive',
+    allowOverkill: false,
+    teamSize: Math.max(team1.length, team2.length),
+    targetingMode: 'random',
+    allowSynergies: false,
+    ...config,
+  };
+
+  // 유닛 상태 초기화
+  interface UnitState extends UnitStats {
+    currentHp: number;
+    nextAttackTime: number;
+    team: 'team1' | 'team2';
+    damageDealt: number;
+    damageTaken: number;
+    kills: number;
+    alive: boolean;
+    invincibleUntil: number;
+    reviveUsed: boolean;
+    skillCooldowns: Map<string, number>;
+    activeHoTs: ActiveHoT[];
+  }
+
+  const createUnitState = (u: UnitStats, team: 'team1' | 'team2'): UnitState => ({
+    ...u,
+    currentHp: u.maxHp,
+    nextAttackTime: 1 / u.speed,
+    team,
+    damageDealt: 0,
+    damageTaken: 0,
+    kills: 0,
+    alive: true,
+    invincibleUntil: 0,
+    reviveUsed: false,
+    skillCooldowns: new Map(),
+    activeHoTs: [],
+  });
+
+  const team1States: UnitState[] = team1.map(u => createUnitState(u, 'team1'));
+  const team2States: UnitState[] = team2.map(u => createUnitState(u, 'team2'));
+
+  // 타겟 선택 함수
+  const selectTarget = (
+    enemies: UnitState[],
+    mode: import('./types').TeamBattleConfig['targetingMode']
+  ): UnitState | null => {
+    const aliveEnemies = enemies.filter(e => e.alive);
+    if (aliveEnemies.length === 0) return null;
+
+    switch (mode) {
+      case 'lowest_hp':
+        return aliveEnemies.reduce((min, e) => e.currentHp < min.currentHp ? e : min);
+      case 'highest_atk':
+        return aliveEnemies.reduce((max, e) => e.atk > max.atk ? e : max);
+      case 'focused':
+        return aliveEnemies[0];
+      case 'random':
+      default:
+        return aliveEnemies[Math.floor(Math.random() * aliveEnemies.length)];
+    }
+  };
+
+  // AoE 대상 선택 함수
+  const selectAoeTargets = (
+    units: UnitState[],
+    targetCount: number | undefined,
+    targetMode: Skill['aoeTargetMode']
+  ): UnitState[] => {
+    const aliveUnits = units.filter(u => u.alive);
+    if (targetCount === undefined || targetCount >= aliveUnits.length) {
+      return aliveUnits;
+    }
+
+    let sorted: UnitState[];
+    switch (targetMode) {
+      case 'lowest_hp':
+        sorted = [...aliveUnits].sort((a, b) => a.currentHp - b.currentHp);
+        break;
+      case 'highest_hp':
+        sorted = [...aliveUnits].sort((a, b) => b.currentHp - a.currentHp);
+        break;
+      case 'random':
+      default:
+        sorted = [...aliveUnits].sort(() => Math.random() - 0.5);
+        break;
+    }
+    return sorted.slice(0, targetCount);
+  };
+
+  // 부활 체크 함수
+  const checkRevive = (unit: UnitState, skills: Skill[], time: number): boolean => {
+    if (unit.reviveUsed || unit.currentHp > 0) return false;
+
+    for (const skill of skills) {
+      if (skill.skillType !== 'revive') continue;
+
+      const cooldownEnds = unit.skillCooldowns.get(skill.id) || 0;
+      if (time < cooldownEnds) continue;
+
+      if (skill.trigger?.chance && Math.random() > skill.trigger.chance) continue;
+
+      unit.currentHp = Math.round(unit.maxHp * (skill.reviveHpPercent || 0.3));
+      unit.alive = true;
+      unit.reviveUsed = true;
+      unit.skillCooldowns.set(skill.id, time + skill.cooldown);
+      return true;
+    }
+    return false;
+  };
+
+  // 스킬 처리 함수
+  const processUnitSkills = (
+    attacker: UnitState,
+    enemies: UnitState[],
+    allies: UnitState[],
+    skills: Skill[],
+    time: number
+  ): void => {
+    if (time < attacker.invincibleUntil) return; // 무적 중 스킬 사용 불가
+
+    for (const skill of skills) {
+      const cooldownEnds = attacker.skillCooldowns.get(skill.id) || 0;
+      if (time < cooldownEnds) continue;
+
+      // 트리거 조건 확인
+      if (skill.trigger) {
+        const { type, value = 0, chance = 1 } = skill.trigger;
+        if (Math.random() > chance) continue;
+
+        switch (type) {
+          case 'hp_below':
+            if ((attacker.currentHp / attacker.maxHp) > value) continue;
+            break;
+          case 'hp_above':
+            if ((attacker.currentHp / attacker.maxHp) < value) continue;
+            break;
+          case 'always':
+            break;
+          default:
+            continue;
+        }
+      }
+
+      const skillType = skill.skillType || 'damage';
+
+      switch (skillType) {
+        case 'damage': {
+          const target = selectTarget(enemies, cfg.targetingMode);
+          if (!target || time < target.invincibleUntil) break;
+
+          const baseDamage = skill.damageType === 'flat'
+            ? skill.damage
+            : attacker.atk * skill.damage;
+          const finalDamage = Math.max(1, Math.round(baseDamage - target.def));
+
+          target.currentHp = Math.max(0, target.currentHp - finalDamage);
+          target.damageTaken += finalDamage;
+          attacker.damageDealt += finalDamage;
+
+          if (target.currentHp <= 0) {
+            target.alive = false;
+            attacker.kills++;
+            const targetSkills = target.team === 'team1'
+              ? team1Skills.get(target.id) || []
+              : team2Skills.get(target.id) || [];
+            checkRevive(target, targetSkills, time);
+          }
+          break;
+        }
+
+        case 'aoe_damage': {
+          const targets = selectAoeTargets(enemies, skill.aoeTargetCount, skill.aoeTargetMode);
+          for (const target of targets) {
+            if (time < target.invincibleUntil) continue;
+
+            const baseDamage = skill.damageType === 'flat'
+              ? skill.damage
+              : attacker.atk * skill.damage;
+            const finalDamage = Math.max(1, Math.round(baseDamage - target.def));
+
+            target.currentHp = Math.max(0, target.currentHp - finalDamage);
+            target.damageTaken += finalDamage;
+            attacker.damageDealt += finalDamage;
+
+            if (target.currentHp <= 0) {
+              target.alive = false;
+              attacker.kills++;
+              const targetSkills = target.team === 'team1'
+                ? team1Skills.get(target.id) || []
+                : team2Skills.get(target.id) || [];
+              checkRevive(target, targetSkills, time);
+            }
+          }
+          break;
+        }
+
+        case 'heal': {
+          const healAmount = skill.healType === 'percent'
+            ? Math.round(attacker.maxHp * (skill.healAmount || 0))
+            : Math.round(skill.healAmount || 0);
+          attacker.currentHp = Math.min(attacker.maxHp, attacker.currentHp + healAmount);
+          break;
+        }
+
+        case 'aoe_heal': {
+          const healTargets = selectAoeTargets(allies, skill.aoeTargetCount, skill.aoeTargetMode);
+          const healAmount = skill.healType === 'percent'
+            ? (skill.healAmount || 0)
+            : (skill.healAmount || 0);
+
+          for (const target of healTargets) {
+            const heal = skill.healType === 'percent'
+              ? Math.round(target.maxHp * healAmount)
+              : Math.round(healAmount);
+            target.currentHp = Math.min(target.maxHp, target.currentHp + heal);
+          }
+          break;
+        }
+
+        case 'hot': {
+          const newHoT: ActiveHoT = {
+            skillId: skill.id,
+            skillName: skill.name,
+            endTime: time + (skill.hotDuration || 5),
+            nextTickTime: time + (skill.hotTickInterval || 1),
+            tickInterval: skill.hotTickInterval || 1,
+            healAmount: skill.hotAmount || 0,
+            healType: skill.hotType || 'flat',
+            casterMaxHp: attacker.maxHp,
+          };
+          attacker.activeHoTs.push(newHoT);
+          break;
+        }
+
+        case 'invincible': {
+          attacker.invincibleUntil = time + (skill.invincibleDuration || 0);
+          break;
+        }
+      }
+
+      attacker.skillCooldowns.set(skill.id, time + skill.cooldown);
+    }
+  };
+
+  // HoT 처리 함수
+  const processHoTs = (unit: UnitState, time: number): void => {
+    const remainingHots: ActiveHoT[] = [];
+
+    for (const hot of unit.activeHoTs) {
+      if (time >= hot.endTime) continue;
+
+      if (time >= hot.nextTickTime) {
+        const healAmount = hot.healType === 'percent'
+          ? Math.round(hot.casterMaxHp * hot.healAmount)
+          : Math.round(hot.healAmount);
+        unit.currentHp = Math.min(unit.maxHp, unit.currentHp + healAmount);
+        hot.nextTickTime = time + hot.tickInterval;
+      }
+      remainingHots.push(hot);
+    }
+
+    unit.activeHoTs = remainingHots;
+  };
+
+  // 시뮬레이션 루프
+  let time = 0;
+  let team1TotalDamage = 0;
+  let team2TotalDamage = 0;
+
+  while (time < cfg.maxDuration) {
+    time += cfg.timeStep;
+
+    // HoT 처리
+    for (const unit of [...team1States, ...team2States]) {
+      if (unit.alive) processHoTs(unit, time);
+    }
+
+    const team1Alive = team1States.filter(u => u.alive);
+    const team2Alive = team2States.filter(u => u.alive);
+
+    if (team1Alive.length === 0 || team2Alive.length === 0) break;
+
+    // Team1 공격 및 스킬
+    for (const attacker of team1Alive) {
+      if (time >= attacker.nextAttackTime) {
+        // 스킬 처리
+        const skills = team1Skills.get(attacker.id) || [];
+        processUnitSkills(attacker, team2States, team1States, skills, time);
+
+        // 무적 중 공격 불가
+        if (time < attacker.invincibleUntil) {
+          attacker.nextAttackTime = time + 1 / attacker.speed;
+          continue;
+        }
+
+        const target = selectTarget(team2States, cfg.targetingMode);
+        if (!target) break;
+
+        // 대상 무적 체크
+        if (time < target.invincibleUntil) {
+          attacker.nextAttackTime = time + 1 / attacker.speed;
+          continue;
+        }
+
+        const result = calculateDamage(attacker, target, cfg.damageFormula, cfg.defenseFormula, cfg.armorPenetration);
+
+        if (!result.isMiss) {
+          target.currentHp = Math.max(0, target.currentHp - result.damage);
+          target.damageTaken += result.damage;
+          attacker.damageDealt += result.damage;
+          team1TotalDamage += result.damage;
+
+          if (target.currentHp <= 0) {
+            target.alive = false;
+            attacker.kills++;
+            const targetSkills = team2Skills.get(target.id) || [];
+            checkRevive(target, targetSkills, time);
+          }
+        }
+
+        attacker.nextAttackTime = time + 1 / attacker.speed;
+      }
+    }
+
+    // Team2 공격 및 스킬
+    for (const attacker of team2Alive.filter(u => u.alive)) {
+      if (time >= attacker.nextAttackTime) {
+        // 스킬 처리
+        const skills = team2Skills.get(attacker.id) || [];
+        processUnitSkills(attacker, team1States, team2States, skills, time);
+
+        // 무적 중 공격 불가
+        if (time < attacker.invincibleUntil) {
+          attacker.nextAttackTime = time + 1 / attacker.speed;
+          continue;
+        }
+
+        const target = selectTarget(team1States, cfg.targetingMode);
+        if (!target) break;
+
+        // 대상 무적 체크
+        if (time < target.invincibleUntil) {
+          attacker.nextAttackTime = time + 1 / attacker.speed;
+          continue;
+        }
+
+        const result = calculateDamage(attacker, target, cfg.damageFormula, cfg.defenseFormula, cfg.armorPenetration);
+
+        if (!result.isMiss) {
+          target.currentHp = Math.max(0, target.currentHp - result.damage);
+          target.damageTaken += result.damage;
+          attacker.damageDealt += result.damage;
+          team2TotalDamage += result.damage;
+
+          if (target.currentHp <= 0) {
+            target.alive = false;
+            attacker.kills++;
+            const targetSkills = team1Skills.get(target.id) || [];
+            checkRevive(target, targetSkills, time);
+          }
+        }
+
+        attacker.nextAttackTime = time + 1 / attacker.speed;
+      }
+    }
+  }
+
+  // 결과 집계
+  const team1Survivors = team1States.filter(u => u.alive).length;
+  const team2Survivors = team2States.filter(u => u.alive).length;
+
+  let winner: import('./types').TeamBattleResult['winner'];
+  if (team1Survivors === 0 && team2Survivors === 0) {
+    winner = 'draw';
+  } else if (team1Survivors === 0) {
+    winner = 'team2';
+  } else if (team2Survivors === 0) {
+    winner = 'team1';
+  } else {
+    if (team1Survivors === team2Survivors) {
+      const team1HpRatio = team1States.reduce((sum, u) => sum + (u.alive ? u.currentHp / u.maxHp : 0), 0);
+      const team2HpRatio = team2States.reduce((sum, u) => sum + (u.alive ? u.currentHp / u.maxHp : 0), 0);
+      winner = team1HpRatio > team2HpRatio ? 'team1' : team2HpRatio > team1HpRatio ? 'team2' : 'draw';
+    } else {
+      winner = team1Survivors > team2Survivors ? 'team1' : 'team2';
+    }
+  }
+
+  return {
+    winner,
+    duration: Math.round(time * 100) / 100,
+    team1Survivors,
+    team2Survivors,
+    team1TotalDamage,
+    team2TotalDamage,
+    unitResults: [
+      ...team1States.map(u => ({
+        unit: { id: u.id, name: u.name, hp: u.hp, maxHp: u.maxHp, atk: u.atk, def: u.def, speed: u.speed },
+        team: 'team1' as const,
+        survived: u.alive,
+        damageDealt: u.damageDealt,
+        damageTaken: u.damageTaken,
+        kills: u.kills,
+      })),
+      ...team2States.map(u => ({
+        unit: { id: u.id, name: u.name, hp: u.hp, maxHp: u.maxHp, atk: u.atk, def: u.def, speed: u.speed },
+        team: 'team2' as const,
+        survived: u.alive,
+        damageDealt: u.damageDealt,
+        damageTaken: u.damageTaken,
+        kills: u.kills,
+      })),
+    ],
   };
 }

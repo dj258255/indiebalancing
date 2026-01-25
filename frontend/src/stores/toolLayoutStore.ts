@@ -5,7 +5,7 @@ import { persist } from 'zustand/middleware';
 export type PanelToolId = 'formulaHelper' | 'balanceValidator' | 'difficultyCurve' | 'simulation';
 
 // 사이드바 도구
-export type SidebarToolId = 'calculator' | 'comparison' | 'chart' | 'presetComparison' | 'imbalanceDetector' | 'goalSolver' | 'balanceAnalysis';
+export type SidebarToolId = 'calculator' | 'comparison' | 'chart' | 'presetComparison' | 'imbalanceDetector' | 'goalSolver' | 'balanceAnalysis' | 'economy' | 'dpsVariance' | 'curveFitting';
 
 // 모든 도구
 export type AllToolId = PanelToolId | SidebarToolId;
@@ -81,6 +81,9 @@ const DEFAULT_LOCATIONS: Record<AllToolId, ToolLocation> = {
   imbalanceDetector: 'sidebar',
   goalSolver: 'sidebar',
   balanceAnalysis: 'sidebar',
+  economy: 'sidebar',
+  dpsVariance: 'sidebar',
+  curveFitting: 'sidebar',
 };
 
 // 하단 도구 기본 위치 - 빈 객체면 가운데 정렬
@@ -95,6 +98,9 @@ const DEFAULT_SIDEBAR_ORDER: AllToolId[] = [
   'imbalanceDetector',
   'goalSolver',
   'balanceAnalysis',
+  'economy',
+  'dpsVariance',
+  'curveFitting',
 ];
 
 export const useToolLayoutStore = create<ToolLayoutState>()(
@@ -223,7 +229,7 @@ export const useToolLayoutStore = create<ToolLayoutState>()(
       },
     }),
     {
-      name: 'tool-layout-storage',
+      name: 'tool-layout',
       partialize: (state) => ({
         toolLocations: state.toolLocations,
         bottomToolPositions: state.bottomToolPositions,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, BarChart3, HelpCircle, FunctionSquare, Shield, TrendingUp, Swords } from 'lucide-react';
+import { X, BarChart3, HelpCircle, FunctionSquare, Shield, TrendingUp, Swords, Coins, BarChart2, PenTool } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
   Calculator,
@@ -14,6 +14,9 @@ import {
   BalanceValidator,
   DifficultyCurve,
   SimulationPanel,
+  EconomyPanel,
+  DPSVariancePanel,
+  CurveFittingPanel,
 } from '@/components/panels';
 import { PresetComparisonModal } from '@/components/modals';
 import type { DraggableState } from '@/hooks';
@@ -47,6 +50,9 @@ interface FloatingPanelsProps {
     imbalance: PanelState;
     goal: PanelState;
     balance: PanelState;
+    economy: PanelState;
+    dpsVariance: PanelState;
+    curveFitting: PanelState;
     // 하단에서 이동해온 패널 도구들
     formulaHelper: PanelState;
     balanceValidator: PanelState;
@@ -336,6 +342,96 @@ export default function FloatingPanels({
             onClose={() => panels.balance.setShow(false)}
           />
           <ResizeHandles panelId="balance" />
+        </div>
+      )}
+
+      {/* Economy Panel */}
+      {panels.economy.show && (
+        <div
+          className="fixed flex flex-col rounded-xl overflow-hidden"
+          style={getPanelStyle('economy')}
+          onMouseDown={() => bringToFront('economy')}
+        >
+          <div
+            className="flex items-center gap-2 px-3 py-2 cursor-move select-none shrink-0"
+            style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-primary)' }}
+            onMouseDown={createDragHandler('economy')}
+          >
+            <Coins className="w-4 h-4" style={{ color: '#f59e0b' }} />
+            <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+              {t('economy.title')}
+            </span>
+            <button
+              className="ml-auto p-1 rounded hover:bg-[var(--bg-hover)] transition-colors"
+              onClick={() => panels.economy.setShow(false)}
+            >
+              <X className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+            </button>
+          </div>
+          <div className="flex-1 overflow-auto">
+            <EconomyPanel />
+          </div>
+          <ResizeHandles panelId="economy" />
+        </div>
+      )}
+
+      {/* DPS Variance Panel */}
+      {panels.dpsVariance.show && (
+        <div
+          className="fixed flex flex-col rounded-xl overflow-hidden"
+          style={getPanelStyle('dpsVariance')}
+          onMouseDown={() => bringToFront('dpsVariance')}
+        >
+          <div
+            className="flex items-center gap-2 px-3 py-2 cursor-move select-none shrink-0"
+            style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-primary)' }}
+            onMouseDown={createDragHandler('dpsVariance')}
+          >
+            <BarChart2 className="w-4 h-4" style={{ color: '#f97316' }} />
+            <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+              {t('dpsVariance.title')}
+            </span>
+            <button
+              className="ml-auto p-1 rounded hover:bg-[var(--bg-hover)] transition-colors"
+              onClick={() => panels.dpsVariance.setShow(false)}
+            >
+              <X className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+            </button>
+          </div>
+          <div className="flex-1 overflow-auto">
+            <DPSVariancePanel onClose={() => panels.dpsVariance.setShow(false)} />
+          </div>
+          <ResizeHandles panelId="dpsVariance" />
+        </div>
+      )}
+
+      {/* Curve Fitting Panel */}
+      {panels.curveFitting.show && (
+        <div
+          className="fixed flex flex-col rounded-xl overflow-hidden"
+          style={getPanelStyle('curveFitting')}
+          onMouseDown={() => bringToFront('curveFitting')}
+        >
+          <div
+            className="flex items-center gap-2 px-3 py-2 cursor-move select-none shrink-0"
+            style={{ background: 'var(--bg-secondary)', borderBottom: '1px solid var(--border-primary)' }}
+            onMouseDown={createDragHandler('curveFitting')}
+          >
+            <PenTool className="w-4 h-4" style={{ color: '#6366f1' }} />
+            <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+              {t('curveFitting.title')}
+            </span>
+            <button
+              className="ml-auto p-1 rounded hover:bg-[var(--bg-hover)] transition-colors"
+              onClick={() => panels.curveFitting.setShow(false)}
+            >
+              <X className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+            </button>
+          </div>
+          <div className="flex-1 overflow-auto">
+            <CurveFittingPanel onClose={() => panels.curveFitting.setShow(false)} />
+          </div>
+          <ResizeHandles panelId="curveFitting" />
         </div>
       )}
 

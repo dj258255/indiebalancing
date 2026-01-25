@@ -27,6 +27,9 @@ import {
   Shield,
   Swords,
   Copy,
+  Coins,
+  BarChart2,
+  PenTool,
 } from 'lucide-react';
 import { useProjectStore } from '@/stores/projectStore';
 import { useToolLayoutStore, AllToolId } from '@/stores/toolLayoutStore';
@@ -50,6 +53,9 @@ interface SidebarProps {
   onShowImbalanceDetector?: () => void;
   onShowGoalSolver?: () => void;
   onShowBalanceAnalysis?: () => void;
+  onShowEconomy?: () => void;
+  onShowDpsVariance?: () => void;
+  onShowCurveFitting?: () => void;
   onShowSettings?: () => void;
   onShowExportModal?: () => void;
   onShowImportModal?: () => void;
@@ -72,6 +78,9 @@ export default function Sidebar({
   onShowImbalanceDetector,
   onShowGoalSolver,
   onShowBalanceAnalysis,
+  onShowEconomy,
+  onShowDpsVariance,
+  onShowCurveFitting,
   onShowSettings,
   onShowExportModal,
   onShowImportModal,
@@ -585,6 +594,9 @@ export default function Sidebar({
               imbalanceDetector: { icon: AlertTriangle, color: '#eab308', labelKey: 'sidebar.imbalanceDetector', onClick: onShowImbalanceDetector },
               goalSolver: { icon: Target, color: '#14b8a6', labelKey: 'sidebar.goalSolver', onClick: onShowGoalSolver },
               balanceAnalysis: { icon: TrendingUp, color: '#ec4899', labelKey: 'sidebar.balanceAnalysis', onClick: onShowBalanceAnalysis },
+              economy: { icon: Coins, color: '#f59e0b', labelKey: 'sidebar.economy', onClick: onShowEconomy },
+              dpsVariance: { icon: BarChart2, color: '#f97316', labelKey: 'sidebar.dpsVariance', onClick: onShowDpsVariance },
+              curveFitting: { icon: PenTool, color: '#6366f1', labelKey: 'sidebar.curveFitting', onClick: onShowCurveFitting },
               // 패널 도구 (하단에서 이동해온 경우)
               formulaHelper: { icon: FunctionSquare, color: '#3b82f6', labelKey: 'bottomTabs.formulaHelper', onClick: onToggleFormulaHelper },
               balanceValidator: { icon: Shield, color: '#22c55e', labelKey: 'bottomTabs.balanceValidator', onClick: onToggleBalanceValidator },

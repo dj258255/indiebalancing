@@ -25,6 +25,55 @@ export interface Skill {
   damageType: 'flat' | 'multiplier';  // 고정 데미지 or ATK 배율
   cooldown: number;         // 쿨다운 (초)
   trigger?: SkillTrigger;   // 발동 조건
+  skillType?: SkillType;    // 스킬 타입 (데미지, 힐, HoT, 무적, 부활)
+  healAmount?: number;      // 힐량 (flat 또는 maxHp %)
+  healType?: 'flat' | 'percent'; // 힐 타입
+  invincibleDuration?: number;  // 무적 지속 시간 (초)
+  invincibleTradeoff?: InvincibleTradeoff; // 무적 트레이드오프 설정
+  reviveHpPercent?: number;     // 부활 시 HP 비율 (0-1)
+  // HoT (Heal Over Time) 설정
+  hotDuration?: number;     // HoT 지속 시간 (초)
+  hotTickInterval?: number; // HoT 틱 간격 (초, 기본 1)
+  hotAmount?: number;       // 틱당 힐량 (flat 또는 maxHp %)
+  hotType?: 'flat' | 'percent'; // HoT 힐 타입
+  // AoE (범위) 설정
+  aoeTargetCount?: number;  // 범위 스킬 대상 수 (기본: 전체)
+  aoeTargetMode?: 'all' | 'random' | 'lowest_hp' | 'highest_hp'; // 범위 대상 선택 방식
+}
+
+// 스킬 타입
+export type SkillType =
+  | 'damage'     // 데미지 스킬
+  | 'heal'       // 즉시 힐 스킬
+  | 'hot'        // Heal Over Time (지속 힐)
+  | 'invincible' // 무적 스킬
+  | 'revive'     // 부활 스킬
+  | 'aoe_damage' // 범위 데미지 스킬
+  | 'aoe_heal';  // 범위 힐 스킬
+
+// 무적 트레이드오프 설정
+export interface InvincibleTradeoff {
+  cannotAttack?: boolean;      // 무적 중 공격 불가
+  cannotUseSkills?: boolean;   // 무적 중 스킬 사용 불가
+  reducedSpeedPercent?: number; // 무적 중 속도 감소 (0-1)
+  afterDebuff?: {              // 무적 해제 후 디버프
+    stat: keyof UnitStats;
+    value: number;
+    isPercent: boolean;
+    duration: number;          // 디버프 지속 시간 (초)
+  };
+}
+
+// 활성 HoT 효과 (전투 중 추적용)
+export interface ActiveHoT {
+  skillId: string;
+  skillName: string;
+  endTime: number;        // HoT 종료 시간
+  nextTickTime: number;   // 다음 틱 시간
+  tickInterval: number;   // 틱 간격
+  healAmount: number;     // 틱당 힐량
+  healType: 'flat' | 'percent';
+  casterMaxHp: number;    // 캐스터의 maxHp (percent 계산용)
 }
 
 // 스킬 발동 조건
@@ -91,9 +140,10 @@ export interface ArmorPenetrationConfig {
 export interface BattleLogEntry {
   time: number;
   actor: string;
-  action: 'attack' | 'skill' | 'buff' | 'debuff' | 'heal' | 'death';
+  action: 'attack' | 'skill' | 'buff' | 'debuff' | 'heal' | 'hot_tick' | 'hot_end' | 'death' | 'invincible' | 'invincible_end' | 'revive';
   target?: string;
   damage?: number;
+  healAmount?: number;
   isCrit?: boolean;
   isMiss?: boolean;
   skillName?: string;
@@ -172,6 +222,32 @@ export interface SimulationResult {
 
   // 샘플 전투 로그 (분석용)
   sampleBattles: BattleResult[];
+
+  // 치명타 통계
+  critStats: {
+    unit1: {
+      totalCrits: number;       // 총 크리티컬 횟수
+      totalHits: number;        // 총 공격 횟수
+      avgCritRate: number;      // 평균 크리티컬 발동률
+      critDamageTotal: number;  // 크리티컬로 입힌 총 데미지
+      reversalsByByCrit: number; // 크리티컬로 역전한 횟수
+    };
+    unit2: {
+      totalCrits: number;
+      totalHits: number;
+      avgCritRate: number;
+      critDamageTotal: number;
+      reversalsByByCrit: number;
+    };
+  };
+
+  // 역전 분석
+  reversalAnalysis: {
+    unit1Reversals: number;  // unit1이 역전승한 횟수
+    unit2Reversals: number;  // unit2가 역전승한 횟수
+    critCausedReversals: number;  // 크리티컬로 인한 역전 횟수
+    closeMatches: number;    // 박빙 승부 횟수 (HP 10% 이내 차이)
+  };
 }
 
 // 팀 전투 설정

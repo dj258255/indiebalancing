@@ -14,6 +14,9 @@ import {
   BalanceValidator,
   DifficultyCurve,
   SimulationPanel,
+  EconomyPanel,
+  DPSVariancePanel,
+  CurveFittingPanel,
 } from '@/components/panels';
 import { PresetComparisonModal } from '@/components/modals';
 import { ToolPanelRenderer } from '@/components/layouts';
@@ -67,6 +70,9 @@ interface ToolPanelsProps {
     imbalance: PanelState;
     goal: PanelState;
     balance: PanelState;
+    economy: PanelState;
+    dpsVariance: PanelState;
+    curveFitting: PanelState;
     formulaHelper: PanelState;
     balanceValidator: PanelState;
     difficultyCurve: PanelState;
@@ -311,6 +317,71 @@ export default function ToolPanels({
           onClose={() => panels.balance.setShow(false)}
           showHelp={balanceAnalysisHelp}
           setShowHelp={setBalanceAnalysisHelp}
+        />
+      </ToolPanelRenderer>
+
+      {/* Economy */}
+      <ToolPanelRenderer
+        toolId="economy"
+        panelId="economy"
+        show={panels.economy.show}
+        onClose={() => panels.economy.setShow(false)}
+        title={t('sidebar.economy')}
+        icon={TOOL_CONFIGS.economy.icon}
+        color={TOOL_CONFIGS.economy.color}
+        panelState={panelStates.economy}
+        onBringToFront={() => bringToFront('economy')}
+        onDragStart={createDragHandler('economy')}
+        onResizeE={createResizeHandler('economy', 'e')}
+        onResizeS={createResizeHandler('economy', 's')}
+        onResizeSE={createResizeHandler('economy', 'se')}
+        defaultIndex={TOOL_CONFIGS.economy.defaultIndex}
+      >
+        <EconomyPanel />
+      </ToolPanelRenderer>
+
+      {/* DPS Variance */}
+      <ToolPanelRenderer
+        toolId="dpsVariance"
+        panelId="dpsVariance"
+        show={panels.dpsVariance.show}
+        onClose={() => panels.dpsVariance.setShow(false)}
+        title={t('sidebar.dpsVariance')}
+        icon={TOOL_CONFIGS.dpsVariance.icon}
+        color={TOOL_CONFIGS.dpsVariance.color}
+        panelState={panelStates.dpsVariance}
+        onBringToFront={() => bringToFront('dpsVariance')}
+        onDragStart={createDragHandler('dpsVariance')}
+        onResizeE={createResizeHandler('dpsVariance', 'e')}
+        onResizeS={createResizeHandler('dpsVariance', 's')}
+        onResizeSE={createResizeHandler('dpsVariance', 'se')}
+        defaultIndex={TOOL_CONFIGS.dpsVariance.defaultIndex}
+      >
+        <DPSVariancePanel
+          onClose={() => panels.dpsVariance.setShow(false)}
+          isPanel
+        />
+      </ToolPanelRenderer>
+
+      {/* Curve Fitting */}
+      <ToolPanelRenderer
+        toolId="curveFitting"
+        panelId="curveFitting"
+        show={panels.curveFitting.show}
+        onClose={() => panels.curveFitting.setShow(false)}
+        title={t('sidebar.curveFitting')}
+        icon={TOOL_CONFIGS.curveFitting.icon}
+        color={TOOL_CONFIGS.curveFitting.color}
+        panelState={panelStates.curveFitting}
+        onBringToFront={() => bringToFront('curveFitting')}
+        onDragStart={createDragHandler('curveFitting')}
+        onResizeE={createResizeHandler('curveFitting', 'e')}
+        onResizeS={createResizeHandler('curveFitting', 's')}
+        onResizeSE={createResizeHandler('curveFitting', 'se')}
+        defaultIndex={TOOL_CONFIGS.curveFitting.defaultIndex}
+      >
+        <CurveFittingPanel
+          onClose={() => panels.curveFitting.setShow(false)}
         />
       </ToolPanelRenderer>
 

@@ -9,6 +9,9 @@ import {
   FunctionSquare,
   Shield,
   Swords,
+  Coins,
+  BarChart2,
+  PenTool,
 } from 'lucide-react';
 import type { AllToolId } from '@/stores/toolLayoutStore';
 
@@ -61,6 +64,24 @@ export const TOOL_CONFIGS: Record<AllToolId, ToolConfig> = {
     color: '#ec4899',
     titleKey: 'sidebar.balanceAnalysis',
     defaultIndex: 6,
+  },
+  economy: {
+    icon: Coins,
+    color: '#f59e0b',
+    titleKey: 'sidebar.economy',
+    defaultIndex: 7,
+  },
+  dpsVariance: {
+    icon: BarChart2,
+    color: '#f97316',
+    titleKey: 'sidebar.dpsVariance',
+    defaultIndex: 8,
+  },
+  curveFitting: {
+    icon: PenTool,
+    color: '#6366f1',
+    titleKey: 'sidebar.curveFitting',
+    defaultIndex: 9,
   },
   formulaHelper: {
     icon: FunctionSquare,

@@ -1,373 +1,23 @@
 'use client';
 
-import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
-import { X, Play, Settings, BarChart3, Clock, Swords, Heart, Shield, Zap, ChevronDown, ChevronUp, RefreshCw, HelpCircle, FileSpreadsheet, User, Grid3X3 } from 'lucide-react';
+import { useState, useCallback, useMemo } from 'react';
+import { X, Play, Settings, BarChart3, Clock, Swords, Heart, Shield, Zap, ChevronDown, ChevronUp, RefreshCw, User, Grid3X3, Download, TrendingUp } from 'lucide-react';
 import { useProjectStore } from '@/stores/projectStore';
-import type { UnitStats, SimulationResult, BattleConfig, DefenseFormulaType, ArmorPenetrationConfig } from '@/lib/simulation/types';
+import type { UnitStats, SimulationResult, BattleConfig, DefenseFormulaType, ArmorPenetrationConfig, TeamBattleConfig, Skill } from '@/lib/simulation/types';
 import { runMonteCarloSimulationAsync } from '@/lib/simulation/monteCarloSimulator';
+import { runTeamMonteCarloSimulation } from '@/lib/simulation/battleEngine';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useTranslations } from 'next-intl';
 
-const PANEL_COLOR = '#ef4444'; // 빨간색 (전투시뮬레이션 테마)
+// 분리된 컴포넌트들
+import { StatInput, UnitPicker, TeamUnitModal, Histogram, HpTimelineGraph, ConfidenceBar, SkillEditor } from './simulation/components';
+import { PANEL_COLOR } from './simulation/constants';
 
-// 셀 선택 가능한 스탯 입력 컴포넌트
-function StatInput({
-  icon: Icon,
-  label,
-  value,
-  onChange,
-  onCellSelect,
-  color = 'var(--text-tertiary)'
-}: {
-  icon: React.ElementType;
-  label: string;
-  value: number;
-  onChange: (value: number) => void;
-  onCellSelect: () => void;
-  color?: string;
-}) {
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <div
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <label className="flex items-center gap-1 text-xs mb-1" style={{ color }}>
-        <Icon className="w-3 h-3" /> {label}
-      </label>
-      <div className="relative">
-        <input
-          type="number"
-          value={value}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full px-2 py-1 pr-7 rounded text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-          style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-        />
-        {isHovered && (
-          <button
-            onClick={onCellSelect}
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors hover:bg-[var(--bg-tertiary)]"
-            title="셀에서 값 가져오기"
-          >
-            <Grid3X3 className="w-3.5 h-3.5" style={{ color: 'var(--text-tertiary)' }} />
-          </button>
-        )}
-      </div>
-    </div>
-  );
-}
-
-// 커스텀 유닛 선택 드롭다운
-function UnitPicker({
-  units,
-  onSelect,
-  color,
-  buttonText
-}: {
-  units: UnitStats[];
-  onSelect: (unit: UnitStats) => void;
-  color: string;
-  buttonText: string;
-}) {
-  const [isOpen, setIsOpen] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(e.target as Node)) {
-        setIsOpen(false);
-      }
-    };
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isOpen]);
-
-  if (units.length === 0) return null;
-
-  return (
-    <div className="relative shrink-0" ref={dropdownRef}>
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        onMouseEnter={() => setShowTooltip(true)}
-        onMouseLeave={() => setShowTooltip(false)}
-        className="flex items-center gap-1 px-1.5 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105 whitespace-nowrap"
-        style={{
-          background: `${color}10`,
-          color: color,
-          border: `1.5px solid ${color}`,
-          boxShadow: `0 1px 3px ${color}20`
-        }}
-      >
-        <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" />
-        <ChevronDown className={`w-3 h-3 shrink-0 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-
-      {/* 커스텀 툴팁 */}
-      {showTooltip && !isOpen && (
-        <div
-          className="absolute right-0 bottom-full mb-1.5 px-2 py-1 rounded text-xs whitespace-nowrap z-50 pointer-events-none animate-fadeIn"
-          style={{
-            background: 'var(--bg-secondary)',
-            color: 'var(--text-primary)',
-            border: '1px solid var(--border-primary)',
-            boxShadow: '0 2px 8px rgba(0,0,0,0.15)'
-          }}
-        >
-          {buttonText}
-          <div
-            className="absolute right-3 top-full w-0 h-0"
-            style={{
-              borderLeft: '5px solid transparent',
-              borderRight: '5px solid transparent',
-              borderTop: '5px solid var(--border-primary)'
-            }}
-          />
-        </div>
-      )}
-
-      {isOpen && (
-        <div
-          className="absolute right-0 top-full mt-1 w-56 rounded-lg shadow-xl overflow-hidden z-50 animate-slideDown"
-          style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-primary)'
-          }}
-        >
-          <div className="px-3 py-2 border-b" style={{ borderColor: 'var(--border-primary)', background: 'var(--bg-tertiary)' }}>
-            <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
-              {buttonText}
-            </div>
-          </div>
-          <div className="max-h-48 overflow-y-auto">
-            {units.map((unit, index) => (
-              <button
-                key={unit.id}
-                onClick={() => {
-                  onSelect(unit);
-                  setIsOpen(false);
-                }}
-                className="w-full px-3 py-2 flex items-center gap-3 hover:bg-[var(--bg-tertiary)] transition-colors text-left"
-              >
-                <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold"
-                  style={{ background: `${color}20`, color: color }}
-                >
-                  {index + 1}
-                </div>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
-                    {unit.name}
-                  </div>
-                  <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                    <span className="flex items-center gap-0.5">
-                      <Heart className="w-2.5 h-2.5" style={{ color: '#ef4444' }} />
-                      {unit.maxHp}
-                    </span>
-                    <span className="flex items-center gap-0.5">
-                      <Swords className="w-2.5 h-2.5" style={{ color: '#f59e0b' }} />
-                      {unit.atk}
-                    </span>
-                    <span className="flex items-center gap-0.5">
-                      <Shield className="w-2.5 h-2.5" style={{ color: '#3b82f6' }} />
-                      {unit.def}
-                    </span>
-                  </div>
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
-  );
-}
 
 interface SimulationPanelProps {
   onClose: () => void;
   showHelp?: boolean;
   setShowHelp?: (value: boolean) => void;
-}
-
-// 히스토그램 컴포넌트 (인터랙티브 툴팁 포함)
-function Histogram({ data, label, color, unit = '', rangeLabels }: {
-  data: number[];
-  label: string;
-  color: string;
-  unit?: string;
-  rangeLabels?: { min: number; max: number };
-}) {
-  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
-  const [tooltipPosition, setTooltipPosition] = useState({ x: 0, y: 0 });
-  const containerRef = useRef<HTMLDivElement>(null);
-
-  if (!data || data.length === 0) {
-    return (
-      <div className="space-y-2">
-        <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</div>
-        <div className="h-20 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
-          <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>데이터 없음</span>
-        </div>
-      </div>
-    );
-  }
-
-  const max = Math.max(...data);
-  const total = data.reduce((a, b) => a + b, 0);
-
-  const handleMouseMove = (e: React.MouseEvent, index: number) => {
-    if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      setTooltipPosition({
-        x: e.clientX - rect.left,
-        y: e.clientY - rect.top
-      });
-    }
-    setHoveredIndex(index);
-  };
-
-  // 범위 레이블 계산
-  const getRangeLabel = (index: number) => {
-    if (!rangeLabels) return `구간 ${index + 1}`;
-    const step = (rangeLabels.max - rangeLabels.min) / data.length;
-    const start = rangeLabels.min + step * index;
-    const end = start + step;
-    return `${start.toFixed(1)}${unit} ~ ${end.toFixed(1)}${unit}`;
-  };
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-center justify-between">
-        <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</div>
-        {hoveredIndex !== null && (
-          <div className="text-xs px-2 py-0.5 rounded" style={{ background: `${color}20`, color }}>
-            {data[hoveredIndex].toLocaleString()}회 ({((data[hoveredIndex] / total) * 100).toFixed(1)}%)
-          </div>
-        )}
-      </div>
-      <div
-        ref={containerRef}
-        className="relative flex items-end gap-px h-20 p-1 rounded-lg"
-        style={{ background: 'var(--bg-primary)' }}
-        onMouseLeave={() => setHoveredIndex(null)}
-      >
-        {data.map((value, i) => (
-          <div
-            key={i}
-            className="flex-1 rounded-t transition-all cursor-pointer relative group"
-            style={{
-              height: max > 0 ? `${(value / max) * 100}%` : '0%',
-              background: color,
-              opacity: hoveredIndex === i ? 1 : 0.7,
-              minHeight: value > 0 ? '2px' : '0',
-              transform: hoveredIndex === i ? 'scaleY(1.05)' : 'scaleY(1)',
-              transformOrigin: 'bottom'
-            }}
-            onMouseMove={(e) => handleMouseMove(e, i)}
-            onMouseEnter={() => setHoveredIndex(i)}
-          />
-        ))}
-
-        {/* 툴팁 */}
-        {hoveredIndex !== null && (
-          <div
-            className="absolute z-50 px-2 py-1.5 rounded-lg text-xs pointer-events-none whitespace-nowrap"
-            style={{
-              left: Math.min(tooltipPosition.x, (containerRef.current?.clientWidth || 200) - 120),
-              top: Math.max(tooltipPosition.y - 50, 0),
-              background: 'var(--bg-secondary)',
-              border: '1px solid var(--border-primary)',
-              boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-            }}
-          >
-            <div className="font-medium" style={{ color }}>{getRangeLabel(hoveredIndex)}</div>
-            <div style={{ color: 'var(--text-secondary)' }}>
-              {data[hoveredIndex].toLocaleString()}회 ({((data[hoveredIndex] / total) * 100).toFixed(1)}%)
-            </div>
-          </div>
-        )}
-      </div>
-      {/* X축 레이블 */}
-      {rangeLabels && (
-        <div className="flex justify-between text-xs" style={{ color: 'var(--text-tertiary)' }}>
-          <span>{rangeLabels.min.toFixed(1)}{unit}</span>
-          <span>{rangeLabels.max.toFixed(1)}{unit}</span>
-        </div>
-      )}
-    </div>
-  );
-}
-
-// 신뢰구간 표시 (개선된 버전)
-function ConfidenceBar({ winRate, confidence, color, wins, total }: {
-  winRate: number;
-  confidence: { lower: number; upper: number };
-  color: string;
-  wins?: number;
-  total?: number;
-}) {
-  const [isHovered, setIsHovered] = useState(false);
-
-  return (
-    <div
-      className="relative"
-      onMouseEnter={() => setIsHovered(true)}
-      onMouseLeave={() => setIsHovered(false)}
-    >
-      <div className="relative h-8 rounded-lg overflow-hidden cursor-pointer" style={{ background: 'var(--bg-primary)' }}>
-        {/* 신뢰구간 범위 */}
-        <div
-          className="absolute h-full transition-opacity"
-          style={{
-            left: `${confidence.lower * 100}%`,
-            width: `${(confidence.upper - confidence.lower) * 100}%`,
-            background: `${color}30`,
-            opacity: isHovered ? 1 : 0.5
-          }}
-        />
-        {/* 실제 승률 바 */}
-        <div
-          className="absolute h-full transition-all"
-          style={{
-            width: `${winRate * 100}%`,
-            background: `linear-gradient(90deg, ${color}90, ${color})`,
-            boxShadow: isHovered ? `0 0 10px ${color}50` : 'none'
-          }}
-        />
-        {/* 승률 텍스트 */}
-        <div
-          className="absolute inset-0 flex items-center justify-center text-sm font-bold transition-transform"
-          style={{
-            color: 'var(--text-primary)',
-            textShadow: '0 0 4px var(--bg-primary), 0 0 4px var(--bg-primary), 0 0 8px var(--bg-primary)',
-            transform: isHovered ? 'scale(1.1)' : 'scale(1)'
-          }}
-        >
-          {(winRate * 100).toFixed(1)}%
-        </div>
-      </div>
-
-      {/* 호버 시 상세 정보 */}
-      {isHovered && wins !== undefined && total !== undefined && (
-        <div
-          className="absolute left-1/2 -translate-x-1/2 top-full mt-2 px-3 py-2 rounded-lg text-xs z-50 whitespace-nowrap"
-          style={{
-            background: 'var(--bg-secondary)',
-            border: '1px solid var(--border-primary)',
-            boxShadow: '0 4px 12px rgba(0,0,0,0.15)'
-          }}
-        >
-          <div className="font-medium mb-1" style={{ color }}>{wins.toLocaleString()}승 / {total.toLocaleString()}전</div>
-          <div style={{ color: 'var(--text-tertiary)' }}>
-            95% 신뢰구간: {(confidence.lower * 100).toFixed(1)}% ~ {(confidence.upper * 100).toFixed(1)}%
-          </div>
-        </div>
-      )}
-    </div>
-  );
 }
 
 export default function SimulationPanel({ onClose, showHelp = false, setShowHelp }: SimulationPanelProps) {
@@ -400,6 +50,10 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
   // 상태 - 직접 편집 가능한 유닛 스탯
   const [unit1Stats, setUnit1Stats] = useState<UnitStats>({ ...defaultStats, id: 'unit1', name: '유닛 A' });
   const [unit2Stats, setUnit2Stats] = useState<UnitStats>({ ...defaultStats, id: 'unit2', name: '유닛 B' });
+  const [unit1Skills, setUnit1Skills] = useState<Skill[]>([]);
+  const [unit2Skills, setUnit2Skills] = useState<Skill[]>([]);
+  const [showUnit1Skills, setShowUnit1Skills] = useState(false);
+  const [showUnit2Skills, setShowUnit2Skills] = useState(false);
   const [runs, setRuns] = useState(10000);
   const [damageFormula, setDamageFormula] = useState<BattleConfig['damageFormula']>('simple');
   const [defenseFormula, setDefenseFormula] = useState<DefenseFormulaType>('subtractive');
@@ -415,6 +69,32 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
   const [showSettings, setShowSettings] = useState(false);
   const [showDetailedStats, setShowDetailedStats] = useState(false);
   const [selectedBattleIndex, setSelectedBattleIndex] = useState(0);
+
+  // 전투 모드 (1v1 vs Team)
+  const [battleMode, setBattleMode] = useState<'1v1' | 'team'>('1v1');
+
+  // 팀 전투 상태
+  const [team1Units, setTeam1Units] = useState<UnitStats[]>([]);
+  const [team2Units, setTeam2Units] = useState<UnitStats[]>([]);
+  const [targetingMode, setTargetingMode] = useState<TeamBattleConfig['targetingMode']>('random');
+  const [teamResult, setTeamResult] = useState<{
+    totalRuns: number;
+    team1Wins: number;
+    team2Wins: number;
+    draws: number;
+    team1WinRate: number;
+    team2WinRate: number;
+    avgDuration: number;
+    avgTeam1Survivors: number;
+    avgTeam2Survivors: number;
+  } | null>(null);
+
+  // 팀 유닛 편집 모달 상태
+  const [teamUnitModal, setTeamUnitModal] = useState<{
+    isOpen: boolean;
+    teamNumber: 1 | 2;
+    editUnit: UnitStats | null;
+  }>({ isOpen: false, teamNumber: 1, editUnit: null });
 
   // 컬럼 매핑 상태
   const [columnMapping, setColumnMapping] = useState<{
@@ -522,6 +202,105 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
     }
   };
 
+  // 결과 내보내기
+  const exportResults = useCallback((format: 'json' | 'csv') => {
+    if (!result) return;
+
+    const timestamp = new Date().toISOString().split('T')[0];
+    const filename = `simulation_${unit1Stats.name}_vs_${unit2Stats.name}_${timestamp}`;
+
+    if (format === 'json') {
+      const exportData = {
+        meta: {
+          exportedAt: new Date().toISOString(),
+          unit1: unit1Stats,
+          unit2: unit2Stats,
+          config: {
+            runs,
+            maxDuration,
+            damageFormula,
+            defenseFormula,
+            armorPenetration: useArmorPen ? armorPen : undefined,
+          }
+        },
+        summary: {
+          totalRuns: result.totalRuns,
+          unit1Wins: result.unit1Wins,
+          unit2Wins: result.unit2Wins,
+          draws: result.draws,
+          unit1WinRate: result.unit1WinRate,
+          unit2WinRate: result.unit2WinRate,
+        },
+        statistics: {
+          avgDuration: result.avgDuration,
+          minDuration: result.minDuration,
+          maxDuration: result.maxDuration,
+          unit1: {
+            avgDamage: result.unit1AvgDamage,
+            avgDps: result.unit1AvgDps,
+            avgSurvivalHp: result.unit1AvgSurvivalHp,
+            ttkStats: result.ttkStats?.unit1,
+          },
+          unit2: {
+            avgDamage: result.unit2AvgDamage,
+            avgDps: result.unit2AvgDps,
+            avgSurvivalHp: result.unit2AvgSurvivalHp,
+            ttkStats: result.ttkStats?.unit2,
+          },
+        },
+        critStats: result.critStats,
+        reversalAnalysis: result.reversalAnalysis,
+        winRateConfidence: result.winRateConfidence,
+        theoreticalDps: result.theoreticalDps,
+      };
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${filename}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } else {
+      // CSV 형식
+      const rows = [
+        ['Metric', 'Unit 1', 'Unit 2', 'Notes'],
+        ['Name', unit1Stats.name, unit2Stats.name, ''],
+        ['Total Runs', result.totalRuns.toString(), '', ''],
+        ['Wins', result.unit1Wins.toString(), result.unit2Wins.toString(), `Draws: ${result.draws}`],
+        ['Win Rate', `${(result.unit1WinRate * 100).toFixed(2)}%`, `${(result.unit2WinRate * 100).toFixed(2)}%`, ''],
+        ['Avg Duration', `${result.avgDuration.toFixed(2)}s`, '', `Range: ${result.minDuration.toFixed(1)}-${result.maxDuration.toFixed(1)}s`],
+        ['Avg Damage', result.unit1AvgDamage.toFixed(0), result.unit2AvgDamage.toFixed(0), ''],
+        ['Avg DPS', result.unit1AvgDps.toFixed(2), result.unit2AvgDps.toFixed(2), ''],
+        ['Avg Survival HP', result.unit1AvgSurvivalHp.toFixed(0), result.unit2AvgSurvivalHp.toFixed(0), 'When winning'],
+      ];
+
+      if (result.ttkStats) {
+        rows.push(['TTK Avg', `${result.ttkStats.unit1.avg.toFixed(2)}s`, `${result.ttkStats.unit2.avg.toFixed(2)}s`, 'Time to Kill']);
+      }
+
+      if (result.critStats) {
+        rows.push(['Total Crits', result.critStats.unit1.totalCrits.toString(), result.critStats.unit2.totalCrits.toString(), '']);
+        rows.push(['Actual Crit Rate', `${(result.critStats.unit1.avgCritRate * 100).toFixed(2)}%`, `${(result.critStats.unit2.avgCritRate * 100).toFixed(2)}%`, '']);
+      }
+
+      if (result.reversalAnalysis) {
+        rows.push(['Reversals', result.reversalAnalysis.unit1Reversals.toString(), result.reversalAnalysis.unit2Reversals.toString(), '']);
+        rows.push(['Crit Reversals', result.reversalAnalysis.critCausedReversals.toString(), '', 'Total']);
+        rows.push(['Close Matches', result.reversalAnalysis.closeMatches.toString(), '', 'HP <= 10%']);
+      }
+
+      const csvContent = rows.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${filename}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+  }, [result, unit1Stats, unit2Stats, runs, maxDuration, damageFormula, defenseFormula, useArmorPen, armorPen]);
+
   // 시뮬레이션 실행
   const runSimulation = useCallback(async () => {
     // 유효성 검사
@@ -537,8 +316,8 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
       const simulationResult = await runMonteCarloSimulationAsync(
         unit1Stats,
         unit2Stats,
-        [],
-        [],
+        unit1Skills,
+        unit2Skills,
         {
           runs,
           config: {
@@ -561,7 +340,96 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
       setIsRunning(false);
       setProgress(100);
     }
-  }, [unit1Stats, unit2Stats, runs, maxDuration, damageFormula, defenseFormula, useArmorPen, armorPen]);
+  }, [unit1Stats, unit2Stats, unit1Skills, unit2Skills, runs, maxDuration, damageFormula, defenseFormula, useArmorPen, armorPen]);
+
+  // 팀 전투 시뮬레이션 실행
+  const runTeamSimulation = useCallback(() => {
+    if (team1Units.length === 0 || team2Units.length === 0) return;
+
+    setIsRunning(true);
+    setProgress(0);
+    setTeamResult(null);
+
+    // setTimeout으로 UI 업데이트 허용
+    setTimeout(() => {
+      try {
+        const teamSimResult = runTeamMonteCarloSimulation(
+          team1Units,
+          team2Units,
+          runs,
+          {
+            maxDuration,
+            timeStep: 0.1,
+            damageFormula,
+            defenseFormula,
+            armorPenetration: useArmorPen ? armorPen : undefined,
+            teamSize: Math.max(team1Units.length, team2Units.length),
+            targetingMode,
+          }
+        );
+
+        setTeamResult(teamSimResult);
+      } catch (error) {
+        console.error('Team simulation failed:', error);
+      } finally {
+        setIsRunning(false);
+        setProgress(100);
+      }
+    }, 10);
+  }, [team1Units, team2Units, runs, maxDuration, damageFormula, defenseFormula, useArmorPen, armorPen, targetingMode]);
+
+  // 팀에 유닛 추가
+  const addToTeam = (team: 1 | 2, unit: UnitStats) => {
+    if (team === 1) {
+      if (!team1Units.find(u => u.id === unit.id)) {
+        setTeam1Units(prev => [...prev, unit]);
+      }
+    } else {
+      if (!team2Units.find(u => u.id === unit.id)) {
+        setTeam2Units(prev => [...prev, unit]);
+      }
+    }
+  };
+
+  // 팀에서 유닛 제거
+  const removeFromTeam = (team: 1 | 2, unitId: string) => {
+    if (team === 1) {
+      setTeam1Units(prev => prev.filter(u => u.id !== unitId));
+    } else {
+      setTeam2Units(prev => prev.filter(u => u.id !== unitId));
+    }
+  };
+
+  // 팀 유닛 업데이트 (편집)
+  const updateTeamUnit = (team: 1 | 2, unit: UnitStats) => {
+    if (team === 1) {
+      setTeam1Units(prev => {
+        const existingIndex = prev.findIndex(u => u.id === unit.id);
+        if (existingIndex >= 0) {
+          // 기존 유닛 업데이트
+          const updated = [...prev];
+          updated[existingIndex] = unit;
+          return updated;
+        } else {
+          // 새 유닛 추가
+          return [...prev, unit];
+        }
+      });
+    } else {
+      setTeam2Units(prev => {
+        const existingIndex = prev.findIndex(u => u.id === unit.id);
+        if (existingIndex >= 0) {
+          // 기존 유닛 업데이트
+          const updated = [...prev];
+          updated[existingIndex] = unit;
+          return updated;
+        } else {
+          // 새 유닛 추가
+          return [...prev, unit];
+        }
+      });
+    }
+  };
 
   return (
     <div className="flex flex-col h-full">
@@ -601,6 +469,38 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
             </div>
           </div>
         )}
+
+        {/* 모드 선택 탭 */}
+        <div className="flex gap-1 p-1 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+          <button
+            onClick={() => setBattleMode('1v1')}
+            className="flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            style={{
+              background: battleMode === '1v1' ? 'var(--bg-primary)' : 'transparent',
+              color: battleMode === '1v1' ? 'var(--accent)' : 'var(--text-tertiary)',
+              boxShadow: battleMode === '1v1' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+            }}
+          >
+            <User className="w-4 h-4" />
+            {t('mode1v1')}
+          </button>
+          <button
+            onClick={() => setBattleMode('team')}
+            className="flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2"
+            style={{
+              background: battleMode === 'team' ? 'var(--bg-primary)' : 'transparent',
+              color: battleMode === 'team' ? 'var(--accent)' : 'var(--text-tertiary)',
+              boxShadow: battleMode === 'team' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
+            }}
+          >
+            <Grid3X3 className="w-4 h-4" />
+            {t('modeTeam')}
+          </button>
+        </div>
+
+        {/* 1v1 모드 UI */}
+        {battleMode === '1v1' && (
+          <>
         {/* 유닛 스탯 입력 - 반응형 레이아웃 */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
           {/* 유닛 A */}
@@ -667,6 +567,33 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                 color="#8b5cf6"
               />
             </div>
+            {/* 스킬 섹션 */}
+            <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border-primary)' }}>
+              <button
+                onClick={() => setShowUnit1Skills(!showUnit1Skills)}
+                className="w-full flex items-center justify-between text-xs font-medium transition-colors"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                <span className="flex items-center gap-2">
+                  {t('skills')}
+                  {unit1Skills.length > 0 && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: 'var(--primary-blue)20', color: 'var(--primary-blue)' }}>
+                      {unit1Skills.length}
+                    </span>
+                  )}
+                </span>
+                {showUnit1Skills ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+              {showUnit1Skills && (
+                <div className="mt-2">
+                  <SkillEditor
+                    skills={unit1Skills}
+                    onSkillsChange={setUnit1Skills}
+                    color="var(--primary-blue)"
+                  />
+                </div>
+              )}
+            </div>
           </div>
 
           {/* 유닛 B */}
@@ -732,6 +659,33 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                 })}
                 color="#8b5cf6"
               />
+            </div>
+            {/* 스킬 섹션 */}
+            <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border-primary)' }}>
+              <button
+                onClick={() => setShowUnit2Skills(!showUnit2Skills)}
+                className="w-full flex items-center justify-between text-xs font-medium transition-colors"
+                style={{ color: 'var(--text-secondary)' }}
+              >
+                <span className="flex items-center gap-2">
+                  {t('skills')}
+                  {unit2Skills.length > 0 && (
+                    <span className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: 'var(--primary-red)20', color: 'var(--primary-red)' }}>
+                      {unit2Skills.length}
+                    </span>
+                  )}
+                </span>
+                {showUnit2Skills ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </button>
+              {showUnit2Skills && (
+                <div className="mt-2">
+                  <SkillEditor
+                    skills={unit2Skills}
+                    onSkillsChange={setUnit2Skills}
+                    color="var(--primary-red)"
+                  />
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -1244,6 +1198,20 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                   </select>
                 </div>
 
+                {/* HP 타임라인 그래프 */}
+                {result.sampleBattles[selectedBattleIndex]?.log && (
+                  <div className="pt-2">
+                    <div className="text-xs mb-2 font-medium" style={{ color: 'var(--text-secondary)' }}>{t('hpTimeline')}</div>
+                    <HpTimelineGraph
+                      log={result.sampleBattles[selectedBattleIndex].log}
+                      unit1Name={unit1Stats.name}
+                      unit2Name={unit2Stats.name}
+                      unit1MaxHp={unit1Stats.maxHp}
+                      unit2MaxHp={unit2Stats.maxHp}
+                    />
+                  </div>
+                )}
+
                 <div className="max-h-48 overflow-y-auto space-y-1">
                   {result.sampleBattles[selectedBattleIndex]?.log.map((entry, i) => (
                     <div
@@ -1307,11 +1275,111 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                 </div>
               </div>
             )}
+
+            {/* 치명타/역전 분석 */}
+            {result.critStats && result.reversalAnalysis && (
+              <div className="p-4 rounded-xl space-y-4" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="w-4 h-4" style={{ color: '#f59e0b' }} />
+                  <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('critAnalysis')}</span>
+                </div>
+
+                {/* 치명타 통계 */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                    <div className="text-xs font-medium mb-2" style={{ color: 'var(--primary-blue)' }}>{unit1Stats.name}</div>
+                    <div className="space-y-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                      <div className="flex justify-between">
+                        <span>{t('totalCrits')}</span>
+                        <span className="font-medium" style={{ color: '#f59e0b' }}>{result.critStats.unit1.totalCrits.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>{t('totalHits')}</span>
+                        <span>{result.critStats.unit1.totalHits.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>{t('actualCritRate')}</span>
+                        <span className="font-medium" style={{ color: result.critStats.unit1.avgCritRate > (unit1Stats.critRate || 0) ? '#22c55e' : 'var(--text-secondary)' }}>
+                          {(result.critStats.unit1.avgCritRate * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                    <div className="text-xs font-medium mb-2" style={{ color: 'var(--primary-red)' }}>{unit2Stats.name}</div>
+                    <div className="space-y-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                      <div className="flex justify-between">
+                        <span>{t('totalCrits')}</span>
+                        <span className="font-medium" style={{ color: '#f59e0b' }}>{result.critStats.unit2.totalCrits.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>{t('totalHits')}</span>
+                        <span>{result.critStats.unit2.totalHits.toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>{t('actualCritRate')}</span>
+                        <span className="font-medium" style={{ color: result.critStats.unit2.avgCritRate > (unit2Stats.critRate || 0) ? '#22c55e' : 'var(--text-secondary)' }}>
+                          {(result.critStats.unit2.avgCritRate * 100).toFixed(1)}%
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 역전 분석 */}
+                <div className="pt-3 border-t" style={{ borderColor: 'var(--border-primary)' }}>
+                  <div className="text-xs font-medium mb-3" style={{ color: 'var(--text-secondary)' }}>{t('reversalAnalysis')}</div>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                    <div className="p-2 rounded-lg text-center" style={{ background: 'var(--bg-primary)' }}>
+                      <div className="text-lg font-bold" style={{ color: 'var(--primary-blue)' }}>{result.reversalAnalysis.unit1Reversals}</div>
+                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{unit1Stats.name} {t('reversalWins')}</div>
+                    </div>
+                    <div className="p-2 rounded-lg text-center" style={{ background: 'var(--bg-primary)' }}>
+                      <div className="text-lg font-bold" style={{ color: 'var(--primary-red)' }}>{result.reversalAnalysis.unit2Reversals}</div>
+                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{unit2Stats.name} {t('reversalWins')}</div>
+                    </div>
+                    <div className="p-2 rounded-lg text-center" style={{ background: 'var(--bg-primary)' }}>
+                      <div className="text-lg font-bold" style={{ color: '#f59e0b' }}>{result.reversalAnalysis.critCausedReversals}</div>
+                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('critReversals')}</div>
+                    </div>
+                    <div className="p-2 rounded-lg text-center" style={{ background: 'var(--bg-primary)' }}>
+                      <div className="text-lg font-bold" style={{ color: '#8b5cf6' }}>{result.reversalAnalysis.closeMatches}</div>
+                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('closeMatches')}</div>
+                    </div>
+                  </div>
+                  {(result.reversalAnalysis.unit1Reversals > 0 || result.reversalAnalysis.unit2Reversals > 0) && (
+                    <div className="mt-2 text-xs text-center" style={{ color: 'var(--text-tertiary)' }}>
+                      {t('reversalRate')}: {(((result.reversalAnalysis.unit1Reversals + result.reversalAnalysis.unit2Reversals) / result.totalRuns) * 100).toFixed(1)}%
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 결과 내보내기 */}
+            <div className="flex gap-2">
+              <button
+                onClick={() => exportResults('json')}
+                className="flex-1 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors hover:opacity-80"
+                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
+              >
+                <Download className="w-4 h-4" />
+                {t('exportJson')}
+              </button>
+              <button
+                onClick={() => exportResults('csv')}
+                className="flex-1 py-2 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors hover:opacity-80"
+                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
+              >
+                <Download className="w-4 h-4" />
+                {t('exportCsv')}
+              </button>
+            </div>
           </div>
         )}
 
-        {/* 유닛이 없을 때 안내 */}
-        {units.length === 0 && (
+        {/* 유닛이 없을 때 안내 (1v1 모드) */}
+        {battleMode === '1v1' && units.length === 0 && (
           <div className="text-center py-8">
             <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
               {t('noUnitData')}
@@ -1321,7 +1389,314 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
             </div>
           </div>
         )}
+          </>
+        )}
+
+        {/* 팀 전투 모드 UI */}
+        {battleMode === 'team' && (
+          <>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              {/* Team 1 */}
+              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)', border: '2px solid var(--primary-blue)' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-medium" style={{ color: 'var(--primary-blue)' }}>Team 1</div>
+                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--primary-blue)20', color: 'var(--primary-blue)' }}>
+                      {team1Units.length}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setTeamUnitModal({ isOpen: true, teamNumber: 1, editUnit: null })}
+                      className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105"
+                      style={{ background: 'var(--primary-blue)15', color: 'var(--primary-blue)', border: '1.5px solid var(--primary-blue)' }}
+                    >
+                      <User className="w-3 h-3" />
+                      {t('newUnit')}
+                    </button>
+                    {units.length > 0 && (
+                      <UnitPicker
+                        units={units.filter(u => !team1Units.find(t => t.id === u.id))}
+                        onSelect={(unit) => addToTeam(1, { ...unit, id: `team1_${Date.now()}_${unit.id}` })}
+                        color="var(--primary-blue)"
+                        buttonText={t('loadFromSheet')}
+                      />
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {team1Units.map((unit, i) => (
+                    <div
+                      key={unit.id}
+                      className="flex items-center justify-between p-2 rounded-lg cursor-pointer hover:ring-1 hover:ring-[var(--primary-blue)] transition-all"
+                      style={{ background: 'var(--bg-primary)' }}
+                      onClick={() => setTeamUnitModal({ isOpen: true, teamNumber: 1, editUnit: unit })}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded flex items-center justify-center text-xs font-bold" style={{ background: 'var(--primary-blue)20', color: 'var(--primary-blue)' }}>
+                          {i + 1}
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{unit.name}</div>
+                          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                            <span>HP:{unit.maxHp}</span>
+                            <span>ATK:{unit.atk}</span>
+                            <span>DEF:{unit.def}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); removeFromTeam(1, unit.id); }}
+                        className="p-1 rounded hover:bg-[var(--bg-tertiary)] transition-colors"
+                      >
+                        <X className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+                      </button>
+                    </div>
+                  ))}
+                  {team1Units.length === 0 && (
+                    <div className="text-center py-4 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                      {t('clickNewUnitOrSheet')}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Team 2 */}
+              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)', border: '2px solid var(--primary-red)' }}>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <div className="text-sm font-medium" style={{ color: 'var(--primary-red)' }}>Team 2</div>
+                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--primary-red)20', color: 'var(--primary-red)' }}>
+                      {team2Units.length}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => setTeamUnitModal({ isOpen: true, teamNumber: 2, editUnit: null })}
+                      className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105"
+                      style={{ background: 'var(--primary-red)15', color: 'var(--primary-red)', border: '1.5px solid var(--primary-red)' }}
+                    >
+                      <User className="w-3 h-3" />
+                      {t('newUnit')}
+                    </button>
+                    {units.length > 0 && (
+                      <UnitPicker
+                        units={units.filter(u => !team2Units.find(t => t.id === u.id))}
+                        onSelect={(unit) => addToTeam(2, { ...unit, id: `team2_${Date.now()}_${unit.id}` })}
+                        color="var(--primary-red)"
+                        buttonText={t('loadFromSheet')}
+                      />
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-2 max-h-48 overflow-y-auto">
+                  {team2Units.map((unit, i) => (
+                    <div
+                      key={unit.id}
+                      className="flex items-center justify-between p-2 rounded-lg cursor-pointer hover:ring-1 hover:ring-[var(--primary-red)] transition-all"
+                      style={{ background: 'var(--bg-primary)' }}
+                      onClick={() => setTeamUnitModal({ isOpen: true, teamNumber: 2, editUnit: unit })}
+                    >
+                      <div className="flex items-center gap-2">
+                        <div className="w-6 h-6 rounded flex items-center justify-center text-xs font-bold" style={{ background: 'var(--primary-red)20', color: 'var(--primary-red)' }}>
+                          {i + 1}
+                        </div>
+                        <div>
+                          <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{unit.name}</div>
+                          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                            <span>HP:{unit.maxHp}</span>
+                            <span>ATK:{unit.atk}</span>
+                            <span>DEF:{unit.def}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); removeFromTeam(2, unit.id); }}
+                        className="p-1 rounded hover:bg-[var(--bg-tertiary)] transition-colors"
+                      >
+                        <X className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+                      </button>
+                    </div>
+                  ))}
+                  {team2Units.length === 0 && (
+                    <div className="text-center py-4 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                      {t('clickNewUnitOrSheet')}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* 타겟팅 모드 선택 */}
+            <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+              <label className="block text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>{t('targetingMode')}</label>
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                {(['random', 'lowest_hp', 'highest_atk', 'focused'] as const).map(mode => (
+                  <button
+                    key={mode}
+                    onClick={() => setTargetingMode(mode)}
+                    className="px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+                    style={{
+                      background: targetingMode === mode ? 'var(--accent)' : 'var(--bg-primary)',
+                      color: targetingMode === mode ? 'white' : 'var(--text-secondary)',
+                    }}
+                  >
+                    {t(`targeting.${mode}`)}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* 팀 전투 실행 버튼 */}
+            <div className="flex gap-2">
+              <button
+                onClick={runTeamSimulation}
+                disabled={team1Units.length === 0 || team2Units.length === 0 || isRunning}
+                className="flex-1 py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+                style={{
+                  background: isRunning ? 'var(--bg-tertiary)' : 'var(--accent)',
+                  color: isRunning ? 'var(--text-secondary)' : 'white'
+                }}
+              >
+                {isRunning ? (
+                  <>
+                    <RefreshCw className="w-4 h-4 animate-spin" />
+                    {t('running')}
+                  </>
+                ) : (
+                  <>
+                    <Play className="w-4 h-4" />
+                    {t('runTeamSimulation')}
+                  </>
+                )}
+              </button>
+              <select
+                value={runs}
+                onChange={(e) => setRuns(Number(e.target.value))}
+                disabled={isRunning}
+                className="px-3 py-2.5 rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
+                style={{
+                  background: 'var(--bg-tertiary)',
+                  border: '1px solid var(--border-primary)',
+                  color: 'var(--text-primary)'
+                }}
+              >
+                <option value={100}>100</option>
+                <option value={500}>500</option>
+                <option value={1000}>1K</option>
+                <option value={5000}>5K</option>
+              </select>
+            </div>
+
+            {/* 팀 전투 결과 */}
+            {teamResult && (
+              <div className="space-y-4">
+                {/* 승률 */}
+                <div className="p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('teamWinRate')}</div>
+                    <div className="text-xs px-2 py-1 rounded-full" style={{ background: 'var(--bg-primary)', color: 'var(--text-tertiary)' }}>
+                      {teamResult.totalRuns.toLocaleString()}전
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div>
+                      <div className="flex items-center justify-between text-xs mb-2">
+                        <span className="font-medium" style={{ color: 'var(--primary-blue)' }}>Team 1 ({team1Units.length}명)</span>
+                        <span className="px-2 py-0.5 rounded" style={{ background: 'var(--primary-blue)15', color: 'var(--primary-blue)' }}>
+                          {teamResult.team1Wins.toLocaleString()}승
+                        </span>
+                      </div>
+                      <div className="relative h-8 rounded-lg overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
+                        <div
+                          className="absolute h-full transition-all"
+                          style={{
+                            width: `${teamResult.team1WinRate * 100}%`,
+                            background: 'var(--primary-blue)'
+                          }}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center text-sm font-bold" style={{ color: 'var(--text-primary)', textShadow: '0 0 4px var(--bg-primary)' }}>
+                          {(teamResult.team1WinRate * 100).toFixed(1)}%
+                        </div>
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex items-center justify-between text-xs mb-2">
+                        <span className="font-medium" style={{ color: 'var(--primary-red)' }}>Team 2 ({team2Units.length}명)</span>
+                        <span className="px-2 py-0.5 rounded" style={{ background: 'var(--primary-red)15', color: 'var(--primary-red)' }}>
+                          {teamResult.team2Wins.toLocaleString()}승
+                        </span>
+                      </div>
+                      <div className="relative h-8 rounded-lg overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
+                        <div
+                          className="absolute h-full transition-all"
+                          style={{
+                            width: `${teamResult.team2WinRate * 100}%`,
+                            background: 'var(--primary-red)'
+                          }}
+                        />
+                        <div className="absolute inset-0 flex items-center justify-center text-sm font-bold" style={{ color: 'var(--text-primary)', textShadow: '0 0 4px var(--bg-primary)' }}>
+                          {(teamResult.team2WinRate * 100).toFixed(1)}%
+                        </div>
+                      </div>
+                    </div>
+
+                    {teamResult.draws > 0 && (
+                      <div className="flex items-center justify-center gap-2 pt-2 border-t" style={{ borderColor: 'var(--border-primary)' }}>
+                        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                          {t('draw')}: {teamResult.draws.toLocaleString()} ({((teamResult.draws / teamResult.totalRuns) * 100).toFixed(1)}%)
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* 통계 */}
+                <div className="grid grid-cols-3 gap-2">
+                  <div className="p-3 rounded-xl text-center" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+                    <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('avgBattleTime')}</div>
+                    <div className="text-xl font-bold" style={{ color: 'var(--accent)' }}>
+                      {teamResult.avgDuration.toFixed(1)}s
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-xl text-center" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+                    <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('avgSurvivors')} (T1)</div>
+                    <div className="text-xl font-bold" style={{ color: 'var(--primary-blue)' }}>
+                      {teamResult.avgTeam1Survivors.toFixed(1)}
+                    </div>
+                  </div>
+                  <div className="p-3 rounded-xl text-center" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+                    <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('avgSurvivors')} (T2)</div>
+                    <div className="text-xl font-bold" style={{ color: 'var(--primary-red)' }}>
+                      {teamResult.avgTeam2Survivors.toFixed(1)}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 유닛이 없을 때 안내 (팀 모드) - 직접 추가 가능하므로 숨김 */}
+          </>
+        )}
       </div>
+
+      {/* 팀 유닛 편집 모달 */}
+      <TeamUnitModal
+        isOpen={teamUnitModal.isOpen}
+        onClose={() => setTeamUnitModal({ isOpen: false, teamNumber: 1, editUnit: null })}
+        onSave={(unit) => updateTeamUnit(teamUnitModal.teamNumber, unit)}
+        unit={teamUnitModal.editUnit}
+        teamNumber={teamUnitModal.teamNumber}
+        units={units}
+        onLoadFromSheet={(unit) => {
+          setTeamUnitModal(prev => ({
+            ...prev,
+            editUnit: { ...unit, id: `team${prev.teamNumber}_${Date.now()}` }
+          }));
+        }}
+      />
     </div>
   );
 }

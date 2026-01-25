@@ -75,6 +75,9 @@ const PANEL_CONFIG = {
   imbalance: { x: 390, y: 136, width: 400, height: 480, zIndex: 30, color: '#eab308' },
   goal: { x: 420, y: 166, width: 380, height: 450, zIndex: 30, color: '#14b8a6' },
   balance: { x: 450, y: 196, width: 420, height: 500, zIndex: 30, color: '#ec4899' },
+  economy: { x: 480, y: 226, width: 400, height: 520, zIndex: 30, color: '#f59e0b' },
+  dpsVariance: { x: 510, y: 256, width: 420, height: 550, zIndex: 30, color: '#f97316' },
+  curveFitting: { x: 540, y: 286, width: 500, height: 600, zIndex: 30, color: '#6366f1' },
   // 하단 패널 도구들 (사이드바로 이동했을 때 플로팅 패널로 표시)
   formulaHelper: { x: 280, y: 56, width: 400, height: 500, zIndex: 30, color: '#3b82f6' },
   balanceValidator: { x: 310, y: 86, width: 420, height: 520, zIndex: 30, color: '#22c55e' },
@@ -120,7 +123,7 @@ export default function Home() {
     createDragHandler,
     createResizeHandler,
   } = usePanelManager({
-    panels: ['calculator', 'comparison', 'chart', 'preset', 'imbalance', 'goal', 'balance', 'formulaHelper', 'balanceValidator', 'difficultyCurve', 'simulation'],
+    panels: ['calculator', 'comparison', 'chart', 'preset', 'imbalance', 'goal', 'balance', 'economy', 'dpsVariance', 'curveFitting', 'formulaHelper', 'balanceValidator', 'difficultyCurve', 'simulation'],
     initialStates: Object.fromEntries(
       Object.entries(PANEL_CONFIG).map(([key, config]) => [
         key,
@@ -151,6 +154,9 @@ export default function Home() {
   const [showImbalanceDetector, setShowImbalanceDetector] = useState(false);
   const [showGoalSolver, setShowGoalSolver] = useState(false);
   const [showBalanceAnalysis, setShowBalanceAnalysis] = useState(false);
+  const [showEconomy, setShowEconomy] = useState(false);
+  const [showDpsVariance, setShowDpsVariance] = useState(false);
+  const [showCurveFitting, setShowCurveFitting] = useState(false);
 
   // Bottom panel state
   const [showFormulaHelper, setShowFormulaHelper] = useState(false);
@@ -345,6 +351,9 @@ export default function Home() {
     onShowImbalanceDetector: () => setShowImbalanceDetector(!showImbalanceDetector),
     onShowGoalSolver: () => setShowGoalSolver(!showGoalSolver),
     onShowBalanceAnalysis: () => setShowBalanceAnalysis(!showBalanceAnalysis),
+    onShowEconomy: () => setShowEconomy(!showEconomy),
+    onShowDpsVariance: () => setShowDpsVariance(!showDpsVariance),
+    onShowCurveFitting: () => setShowCurveFitting(!showCurveFitting),
     onShowSettings: () => setShowSettings(true),
     onShowExportModal: () => setShowExportModal(true),
     onShowImportModal: () => setShowImportModal(true),
@@ -498,6 +507,9 @@ export default function Home() {
           imbalance: { show: showImbalanceDetector, setShow: setShowImbalanceDetector },
           goal: { show: showGoalSolver, setShow: setShowGoalSolver },
           balance: { show: showBalanceAnalysis, setShow: setShowBalanceAnalysis },
+          economy: { show: showEconomy, setShow: setShowEconomy },
+          dpsVariance: { show: showDpsVariance, setShow: setShowDpsVariance },
+          curveFitting: { show: showCurveFitting, setShow: setShowCurveFitting },
           formulaHelper: { show: showFormulaHelper, setShow: setShowFormulaHelper },
           balanceValidator: { show: showBalanceValidator, setShow: setShowBalanceValidator },
           difficultyCurve: { show: showDifficultyCurve, setShow: setShowDifficultyCurve },
@@ -568,6 +580,19 @@ export default function Home() {
         onShowBalanceAnalysis={() => {
           setShowBalanceAnalysis(!showBalanceAnalysis);
           if (!showBalanceAnalysis) bringToFront('balance');
+        }}
+        onShowEconomy={() => {
+          console.log('Economy clicked, current showEconomy:', showEconomy);
+          setShowEconomy(!showEconomy);
+          if (!showEconomy) bringToFront('economy');
+        }}
+        onShowDpsVariance={() => {
+          setShowDpsVariance(!showDpsVariance);
+          if (!showDpsVariance) bringToFront('dpsVariance');
+        }}
+        onShowCurveFitting={() => {
+          setShowCurveFitting(!showCurveFitting);
+          if (!showCurveFitting) bringToFront('curveFitting');
         }}
         isModalOpen={isModalOpen}
       />

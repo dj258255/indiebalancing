@@ -192,7 +192,7 @@ export default function ReferencesModal({ onClose }: ReferencesModalProps) {
         {
           title: t('economy.faucetSinkTitle'),
           description: t('economy.faucetSinkDesc'),
-          url: 'https://medium.com/1kxnetwork/sinks-faucets-lessons-on-designing-effective-virtual-game-economies-c8daf6b88d05',
+          url: 'https://machinations.io/articles/what-is-game-economy-inflation-how-to-foresee-it-and-how-to-overcome-it-in-your-game-design',
           guidelines: [
             { label: t('economy.faucetSinkRatio'), value: t('economy.faucetSinkRatioValue'), status: 'good' },
             { label: t('economy.faucetSinkInflation'), value: t('economy.faucetSinkInflationValue'), status: 'info' },
@@ -459,6 +459,7 @@ export default function ReferencesModal({ onClose }: ReferencesModalProps) {
               <li>• <strong>{t('features.formulas')}</strong>: {t('features.formulasDesc')}</li>
               <li>• <strong>{t('features.calculator')}</strong>: {t('features.calculatorDesc')}</li>
               <li>• <strong>{t('features.visualization')}</strong>: {t('features.visualizationDesc')}</li>
+              <li>• <strong>{t('features.segmentedCurve')}</strong>: {t('features.segmentedCurveDesc')}</li>
             </ul>
           </div>
 
@@ -471,6 +472,8 @@ export default function ReferencesModal({ onClose }: ReferencesModalProps) {
               <li>• <strong>{t('simulation.defFormulas')}</strong>: {t('simulation.defFormulasDesc')}</li>
               <li>• <strong>{t('simulation.armorPen')}</strong>: {t('simulation.armorPenDesc')}</li>
               <li>• <strong>{t('simulation.teamBattle')}</strong>: {t('simulation.teamBattleDesc')}</li>
+              <li>• <strong>{t('simulation.hotSkill')}</strong>: {t('simulation.hotSkillDesc')}</li>
+              <li>• <strong>{t('simulation.invincibleTradeoff')}</strong>: {t('simulation.invincibleTradeoffDesc')}</li>
             </ul>
           </div>
 
@@ -507,8 +510,8 @@ export default function ReferencesModal({ onClose }: ReferencesModalProps) {
                 <div className="font-medium mb-1" style={{ color: 'var(--primary-blue)' }}>{t('sources.formulaHelper')}</div>
                 <ul className="space-y-0.5" style={{ color: 'var(--text-secondary)' }}>
                   <li>• {t('sources.damageFormula')}: <a href="https://rpg.fandom.com/wiki/Damage_Formula" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>RPG Fandom Wiki</a></li>
-                  <li>• {t('sources.ttkDps')}: <a href="https://tgbp.fandom.com/wiki/Time_to_kill" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>TGBP Wiki</a></li>
-                  <li>• {t('sources.ehp')}: <a href="http://www.strategyzero.com/blog/2011/league-of-legends-what-is-effective-health/" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Strategy Zero</a></li>
+                  <li>• {t('sources.ttkDps')}: <a href="https://gamebalancing.wordpress.com/2015/03/14/fire-rate-dps-and-ttk/" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Game Balance Dissected</a></li>
+                  <li>• {t('sources.ehp')}: <a href="https://pathofbuilding.net/dps-and-ehp-guide-and-damage-calculations/" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Path of Building Guide</a></li>
                 </ul>
               </div>
 
@@ -555,8 +558,8 @@ export default function ReferencesModal({ onClose }: ReferencesModalProps) {
               <div>
                 <div className="font-medium mb-1" style={{ color: 'var(--primary-yellow)' }}>{t('sources.imbalanceDetection')}</div>
                 <ul className="space-y-0.5" style={{ color: 'var(--text-secondary)' }}>
-                  <li>• {t('sources.outlierDetection')}: {t('sources.outlierNote')}</li>
-                  <li>• {t('sources.varianceAnalysis')}: {t('sources.varianceNote')}</li>
+                  <li>• {t('sources.outlierDetection')}: <a href="https://www.geeksforgeeks.org/machine-learning/z-score-for-outlier-detection-python/" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>GeeksforGeeks - Z-Score Method</a></li>
+                  <li>• {t('sources.varianceAnalysis')}: <a href="https://www.machinelearningplus.com/machine-learning/how-to-detect-outliers-with-z-score/" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Machine Learning Plus</a></li>
                   <li>• {t('sources.powerCreep')}: <a href="https://gamebalanceconcepts.wordpress.com/2010/08/11/level-4-the-tao-of-game-balance/" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Game Balance Concepts - Tao of Balance</a></li>
                 </ul>
               </div>
@@ -580,6 +583,27 @@ export default function ReferencesModal({ onClose }: ReferencesModalProps) {
                   <li>• {t('sources.simultaneousAction')}: <a href="https://en.wikipedia.org/wiki/Simultaneous_action_selection" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Wikipedia - Simultaneous Action Selection</a></li>
                   <li>• {t('sources.monteCarloMethod')}: <a href="https://en.wikipedia.org/wiki/Monte_Carlo_method" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Wikipedia - Monte Carlo Method</a></li>
                   <li>• {t('sources.wilsonScore')}: <a href="https://en.wikipedia.org/wiki/Binomial_proportion_confidence_interval#Wilson_score_interval" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Wikipedia - Wilson Score Interval</a></li>
+                </ul>
+              </div>
+
+              {/* 게임 경제 설계 */}
+              <div>
+                <div className="font-medium mb-1" style={{ color: 'var(--warning)' }}>{t('sources.economyDesign')}</div>
+                <ul className="space-y-0.5" style={{ color: 'var(--text-secondary)' }}>
+                  <li>• {t('sources.faucetSink')}: <a href="https://machinations.io/articles/what-is-game-economy-inflation-how-to-foresee-it-and-how-to-overcome-it-in-your-game-design" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Machinations.io - Game Inflation</a></li>
+                  <li>• {t('sources.goldSink')}: <a href="https://en.wikipedia.org/wiki/Gold_sink" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Wikipedia - Gold Sink</a></li>
+                  <li>• {t('sources.economyPrinciples')}: <a href="https://departmentofplay.net/the-principles-of-building-a-game-economy/" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Department of Play</a></li>
+                  <li>• {t('sources.valueChains')}: <a href="https://lostgarden.com/2021/12/12/value-chains/" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Lost Garden - Value Chains</a></li>
+                </ul>
+              </div>
+
+              {/* 곡선 피팅 및 수식화 */}
+              <div>
+                <div className="font-medium mb-1" style={{ color: 'var(--success)' }}>{t('sources.curveFitting')}</div>
+                <ul className="space-y-0.5" style={{ color: 'var(--text-secondary)' }}>
+                  <li>• {t('sources.regressionMethods')}: <a href="https://en.wikipedia.org/wiki/Regression_analysis" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Wikipedia - Regression Analysis</a></li>
+                  <li>• {t('sources.leastSquares')}: <a href="https://en.wikipedia.org/wiki/Least_squares" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Wikipedia - Least Squares</a></li>
+                  <li>• {t('sources.rSquared')}: <a href="https://en.wikipedia.org/wiki/Coefficient_of_determination" target="_blank" rel="noopener noreferrer" className="underline hover:opacity-70" style={{ color: 'var(--accent)' }}>Wikipedia - R-squared</a></li>
                 </ul>
               </div>
             </div>

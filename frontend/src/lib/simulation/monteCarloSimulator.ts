@@ -96,6 +96,16 @@ export function runMonteCarloSimulation(
   const unit2TTKs: number[] = [];
   const sampleBattles: BattleResult[] = [];
 
+  // 치명타 및 역전 통계
+  let unit1TotalCrits = 0;
+  let unit1TotalHits = 0;
+  let unit2TotalCrits = 0;
+  let unit2TotalHits = 0;
+  let unit1Reversals = 0;  // unit1이 열세에서 역전승
+  let unit2Reversals = 0;  // unit2가 열세에서 역전승
+  let critCausedReversals = 0;
+  let closeMatches = 0;
+
   // 시뮬레이션 실행
   for (let i = 0; i < runs; i++) {
     const result = simulateBattle(unit1, unit2, skills1, skills2, config);
@@ -117,6 +127,37 @@ export function runMonteCarloSimulation(
     durations.push(result.duration);
     unit1Damages.push(result.unit1TotalDamage);
     unit2Damages.push(result.unit2TotalDamage);
+
+    // 치명타 통계 수집
+    unit1TotalCrits += result.unit1Crits;
+    unit1TotalHits += result.unit1Hits;
+    unit2TotalCrits += result.unit2Crits;
+    unit2TotalHits += result.unit2Hits;
+
+    // 역전 분석: 이론적 DPS가 낮은 쪽이 이겼는지 확인
+    const unit1TheoreticalDps = unit1.atk * unit1.speed * (1 + (unit1.critRate || 0) * ((unit1.critDamage || 1.5) - 1));
+    const unit2TheoreticalDps = unit2.atk * unit2.speed * (1 + (unit2.critRate || 0) * ((unit2.critDamage || 1.5) - 1));
+    const unit1Expected = unit1TheoreticalDps > unit2TheoreticalDps;
+
+    if (result.winner === 'unit1' && !unit1Expected) {
+      unit1Reversals++;
+      // 크리티컬 비율이 높으면 크리티컬로 인한 역전
+      if (result.unit1Crits > result.unit1Hits * (unit1.critRate || 0) * 1.5) {
+        critCausedReversals++;
+      }
+    } else if (result.winner === 'unit2' && unit1Expected) {
+      unit2Reversals++;
+      if (result.unit2Crits > result.unit2Hits * (unit2.critRate || 0) * 1.5) {
+        critCausedReversals++;
+      }
+    }
+
+    // 박빙 승부 (남은 HP가 maxHp의 10% 이하)
+    if (result.winner === 'unit1' && result.unit1FinalHp <= unit1.maxHp * 0.1) {
+      closeMatches++;
+    } else if (result.winner === 'unit2' && result.unit2FinalHp <= unit2.maxHp * 0.1) {
+      closeMatches++;
+    }
 
     // 샘플 저장
     if (saveSampleBattles && sampleBattles.length < saveSampleBattles) {
@@ -208,6 +249,30 @@ export function runMonteCarloSimulation(
     },
 
     sampleBattles,
+
+    critStats: {
+      unit1: {
+        totalCrits: unit1TotalCrits,
+        totalHits: unit1TotalHits,
+        avgCritRate: unit1TotalHits > 0 ? unit1TotalCrits / unit1TotalHits : 0,
+        critDamageTotal: 0,
+        reversalsByByCrit: 0,
+      },
+      unit2: {
+        totalCrits: unit2TotalCrits,
+        totalHits: unit2TotalHits,
+        avgCritRate: unit2TotalHits > 0 ? unit2TotalCrits / unit2TotalHits : 0,
+        critDamageTotal: 0,
+        reversalsByByCrit: 0,
+      },
+    },
+
+    reversalAnalysis: {
+      unit1Reversals,
+      unit2Reversals,
+      critCausedReversals,
+      closeMatches,
+    },
   };
 }
 
@@ -241,6 +306,21 @@ export async function runMonteCarloSimulationAsync(
   const unit2TTKs: number[] = [];
   const sampleBattles: BattleResult[] = [];
 
+  // 치명타 및 역전 통계
+  let unit1TotalCrits = 0;
+  let unit1TotalHits = 0;
+  let unit2TotalCrits = 0;
+  let unit2TotalHits = 0;
+  let unit1Reversals = 0;
+  let unit2Reversals = 0;
+  let critCausedReversals = 0;
+  let closeMatches = 0;
+
+  // 이론적 DPS 미리 계산
+  const unit1TheoreticalDps = unit1.atk * unit1.speed * (1 + (unit1.critRate || 0) * ((unit1.critDamage || 1.5) - 1));
+  const unit2TheoreticalDps = unit2.atk * unit2.speed * (1 + (unit2.critRate || 0) * ((unit2.critDamage || 1.5) - 1));
+  const unit1Expected = unit1TheoreticalDps > unit2TheoreticalDps;
+
   for (let chunk = 0; chunk < chunks; chunk++) {
     const start = chunk * chunkSize;
     const end = Math.min(start + chunkSize, runs);
@@ -264,6 +344,32 @@ export async function runMonteCarloSimulationAsync(
       durations.push(result.duration);
       unit1Damages.push(result.unit1TotalDamage);
       unit2Damages.push(result.unit2TotalDamage);
+
+      // 치명타 통계 수집
+      unit1TotalCrits += result.unit1Crits;
+      unit1TotalHits += result.unit1Hits;
+      unit2TotalCrits += result.unit2Crits;
+      unit2TotalHits += result.unit2Hits;
+
+      // 역전 분석
+      if (result.winner === 'unit1' && !unit1Expected) {
+        unit1Reversals++;
+        if (result.unit1Crits > result.unit1Hits * (unit1.critRate || 0) * 1.5) {
+          critCausedReversals++;
+        }
+      } else if (result.winner === 'unit2' && unit1Expected) {
+        unit2Reversals++;
+        if (result.unit2Crits > result.unit2Hits * (unit2.critRate || 0) * 1.5) {
+          critCausedReversals++;
+        }
+      }
+
+      // 박빙 승부
+      if (result.winner === 'unit1' && result.unit1FinalHp <= unit1.maxHp * 0.1) {
+        closeMatches++;
+      } else if (result.winner === 'unit2' && result.unit2FinalHp <= unit2.maxHp * 0.1) {
+        closeMatches++;
+      }
 
       if (opts.saveSampleBattles && sampleBattles.length < opts.saveSampleBattles) {
         sampleBattles.push(result);
@@ -355,5 +461,29 @@ export async function runMonteCarloSimulationAsync(
     },
 
     sampleBattles,
+
+    critStats: {
+      unit1: {
+        totalCrits: unit1TotalCrits,
+        totalHits: unit1TotalHits,
+        avgCritRate: unit1TotalHits > 0 ? unit1TotalCrits / unit1TotalHits : 0,
+        critDamageTotal: 0,
+        reversalsByByCrit: 0,
+      },
+      unit2: {
+        totalCrits: unit2TotalCrits,
+        totalHits: unit2TotalHits,
+        avgCritRate: unit2TotalHits > 0 ? unit2TotalCrits / unit2TotalHits : 0,
+        critDamageTotal: 0,
+        reversalsByByCrit: 0,
+      },
+    },
+
+    reversalAnalysis: {
+      unit1Reversals,
+      unit2Reversals,
+      critCausedReversals,
+      closeMatches,
+    },
   };
 }
