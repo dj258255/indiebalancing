@@ -17,11 +17,13 @@ import {
 interface DPSVariancePanelProps {
   onClose: () => void;
   isPanel?: boolean;
+  showHelp?: boolean;
+  setShowHelp?: (value: boolean) => void;
 }
 
 type SimMode = 'dps' | 'ttk' | 'compare';
 
-export default function DPSVariancePanel({ onClose, isPanel }: DPSVariancePanelProps) {
+export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHelp }: DPSVariancePanelProps) {
   const t = useTranslations('dpsVariance');
   const tCommon = useTranslations('common');
 
@@ -232,15 +234,42 @@ export default function DPSVariancePanel({ onClose, isPanel }: DPSVariancePanelP
       'flex flex-col h-full',
       isPanel ? 'bg-transparent' : 'bg-[var(--bg-primary)]'
     )}>
-      {/* Header */}
-      <div className="flex items-center justify-between p-3 border-b border-[var(--border-primary)]">
-        <div className="flex items-center gap-2">
-          <BarChart2 className="w-5 h-5 text-orange-500" />
-          <h3 className="font-semibold text-[var(--text-primary)]">{t('title')}</h3>
-        </div>
-      </div>
-
       <div className="flex-1 overflow-y-auto p-3 space-y-4">
+        {/* Help Content */}
+        {showHelp && (
+          <div className="p-3 rounded-lg animate-slideDown" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+            <div className="space-y-3">
+              <div className="flex items-start gap-2">
+                <div className="w-5 h-5 rounded flex items-center justify-center shrink-0 mt-0.5" style={{ background: '#f9731620' }}>
+                  <BarChart2 className="w-3 h-3" style={{ color: '#f97316' }} />
+                </div>
+                <div>
+                  <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{t('helpTitle')}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{t('helpDesc')}</p>
+                </div>
+              </div>
+              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #f59e0b' }}>
+                <span className="font-medium text-sm" style={{ color: '#f59e0b' }}>{t('helpDiffTitle')}</span>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpDiff')}</p>
+              </div>
+              <div className="space-y-2">
+                <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #3b82f6' }}>
+                  <span className="font-medium text-sm" style={{ color: '#3b82f6' }}>{t('mode.dps')}</span>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpDps')}</p>
+                </div>
+                <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #22c55e' }}>
+                  <span className="font-medium text-sm" style={{ color: '#22c55e' }}>{t('mode.ttk')}</span>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpTtk')}</p>
+                </div>
+                <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #8b5cf6' }}>
+                  <span className="font-medium text-sm" style={{ color: '#8b5cf6' }}>{t('mode.compare')}</span>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpCompare')}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Mode Selector */}
         <div className="flex gap-1 p-1 bg-[var(--bg-secondary)] rounded-lg">
           {(['dps', 'ttk', 'compare'] as SimMode[]).map(m => (

@@ -554,45 +554,84 @@ export default function Home() {
           },
         }}
         onShowCalculator={() => {
-          setShowCalculator(!showCalculator);
-          if (!showCalculator) bringToFront('calculator');
+          if (showCalculator) {
+            setShowCalculator(false);
+          } else {
+            setShowCalculator(true);
+            bringToFront('calculator');
+          }
         }}
         onShowComparison={() => {
-          setShowComparison(!showComparison);
-          if (!showComparison) bringToFront('comparison');
+          if (showComparison) {
+            setShowComparison(false);
+          } else {
+            setShowComparison(true);
+            bringToFront('comparison');
+          }
         }}
         onShowChart={() => {
-          setShowChart(!showChart);
-          if (!showChart) bringToFront('chart');
+          if (showChart) {
+            setShowChart(false);
+          } else {
+            setShowChart(true);
+            bringToFront('chart');
+          }
         }}
         onShowPresetComparison={() => {
-          setShowPresetComparison(!showPresetComparison);
-          if (!showPresetComparison) bringToFront('preset');
+          if (showPresetComparison) {
+            setShowPresetComparison(false);
+          } else {
+            setShowPresetComparison(true);
+            bringToFront('preset');
+          }
         }}
         onShowImbalanceDetector={() => {
-          setShowImbalanceDetector(!showImbalanceDetector);
-          if (!showImbalanceDetector) bringToFront('imbalance');
+          if (showImbalanceDetector) {
+            setShowImbalanceDetector(false);
+          } else {
+            setShowImbalanceDetector(true);
+            bringToFront('imbalance');
+          }
         }}
         onShowGoalSolver={() => {
-          setShowGoalSolver(!showGoalSolver);
-          if (!showGoalSolver) bringToFront('goal');
+          if (showGoalSolver) {
+            setShowGoalSolver(false);
+          } else {
+            setShowGoalSolver(true);
+            bringToFront('goal');
+          }
         }}
         onShowBalanceAnalysis={() => {
-          setShowBalanceAnalysis(!showBalanceAnalysis);
-          if (!showBalanceAnalysis) bringToFront('balance');
+          if (showBalanceAnalysis) {
+            setShowBalanceAnalysis(false);
+          } else {
+            setShowBalanceAnalysis(true);
+            bringToFront('balance');
+          }
         }}
         onShowEconomy={() => {
-          console.log('Economy clicked, current showEconomy:', showEconomy);
-          setShowEconomy(!showEconomy);
-          if (!showEconomy) bringToFront('economy');
+          if (showEconomy) {
+            setShowEconomy(false);
+          } else {
+            setShowEconomy(true);
+            bringToFront('economy');
+          }
         }}
         onShowDpsVariance={() => {
-          setShowDpsVariance(!showDpsVariance);
-          if (!showDpsVariance) bringToFront('dpsVariance');
+          if (showDpsVariance) {
+            setShowDpsVariance(false);
+          } else {
+            setShowDpsVariance(true);
+            bringToFront('dpsVariance');
+          }
         }}
         onShowCurveFitting={() => {
-          setShowCurveFitting(!showCurveFitting);
-          if (!showCurveFitting) bringToFront('curveFitting');
+          if (showCurveFitting) {
+            setShowCurveFitting(false);
+          } else {
+            setShowCurveFitting(true);
+            bringToFront('curveFitting');
+          }
         }}
         isModalOpen={isModalOpen}
       />

@@ -2,7 +2,7 @@
 
 import React, { useState, useRef, useCallback, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { Trash2, MousePointer, PenTool, Copy, Check, Download, RotateCcw } from 'lucide-react';
+import { Trash2, MousePointer, PenTool, Copy, Check, Download, RotateCcw, TrendingUp } from 'lucide-react';
 import { useTheme } from '@/contexts/ThemeContext';
 import {
   Point,
@@ -20,6 +20,8 @@ import {
 
 interface CurveFittingPanelProps {
   onClose?: () => void;
+  showHelp?: boolean;
+  setShowHelp?: (value: boolean) => void;
 }
 
 type DrawMode = 'point' | 'draw';
@@ -45,7 +47,7 @@ const CURVE_NAMES: Record<CurveType, string> = {
   sigmoid: 'Sigmoid'
 };
 
-export default function CurveFittingPanel({ onClose }: CurveFittingPanelProps) {
+export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: CurveFittingPanelProps) {
   const t = useTranslations('curveFitting');
   const { theme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -61,6 +63,11 @@ export default function CurveFittingPanel({ onClose }: CurveFittingPanelProps) {
   // Canvas coordinate system
   const [xRange, setXRange] = useState({ min: 0, max: 100 });
   const [yRange, setYRange] = useState({ min: 0, max: 100 });
+
+  // Resizable panel
+  const [resultsPanelWidth, setResultsPanelWidth] = useState(320);
+  const [isResizing, setIsResizing] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
 
   // Convert canvas coords to data coords
   const canvasToData = useCallback((canvasX: number, canvasY: number, canvas: HTMLCanvasElement): Point => {
@@ -322,8 +329,78 @@ export default function CurveFittingPanel({ onClose }: CurveFittingPanelProps) {
     setPoints(prev => prev.slice(0, -1));
   };
 
+  // Resize handlers
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsResizing(true);
+  }, []);
+
+  const handleResizeMove = useCallback((e: MouseEvent) => {
+    if (!isResizing || !containerRef.current) return;
+
+    const containerRect = containerRef.current.getBoundingClientRect();
+    const newWidth = containerRect.right - e.clientX;
+
+    // Clamp between 200px and 50% of container width
+    const minWidth = 200;
+    const maxWidth = containerRect.width * 0.5;
+    setResultsPanelWidth(Math.max(minWidth, Math.min(maxWidth, newWidth)));
+  }, [isResizing]);
+
+  const handleResizeEnd = useCallback(() => {
+    setIsResizing(false);
+  }, []);
+
+  // Add/remove resize event listeners
+  useEffect(() => {
+    if (isResizing) {
+      document.addEventListener('mousemove', handleResizeMove);
+      document.addEventListener('mouseup', handleResizeEnd);
+      document.body.style.cursor = 'col-resize';
+      document.body.style.userSelect = 'none';
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleResizeMove);
+      document.removeEventListener('mouseup', handleResizeEnd);
+      document.body.style.cursor = '';
+      document.body.style.userSelect = '';
+    };
+  }, [isResizing, handleResizeMove, handleResizeEnd]);
+
   return (
     <div className="h-full flex flex-col overflow-hidden" style={{ background: 'var(--bg-secondary)', color: 'var(--text-primary)' }}>
+      {/* Help Content */}
+      {showHelp && (
+        <div className="mx-3 mt-3 mb-2 p-3 rounded-lg animate-slideDown" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+          <div className="space-y-3">
+            <div className="flex items-start gap-2">
+              <div className="w-5 h-5 rounded flex items-center justify-center shrink-0 mt-0.5" style={{ background: '#6366f120' }}>
+                <TrendingUp className="w-3 h-3" style={{ color: '#6366f1' }} />
+              </div>
+              <div>
+                <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{t('helpTitle')}</p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{t('helpDesc')}</p>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #3b82f6' }}>
+                <span className="font-medium text-sm" style={{ color: '#3b82f6' }}>{t('helpStep1Title')}</span>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpStep1')}</p>
+              </div>
+              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #22c55e' }}>
+                <span className="font-medium text-sm" style={{ color: '#22c55e' }}>{t('helpStep2Title')}</span>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpStep2')}</p>
+              </div>
+              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #8b5cf6' }}>
+                <span className="font-medium text-sm" style={{ color: '#8b5cf6' }}>{t('helpStep3Title')}</span>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpStep3')}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Toolbar */}
       <div className="p-3 border-b flex items-center gap-2 flex-wrap" style={{ borderColor: 'var(--border-primary)' }}>
         <div className="flex items-center gap-1 rounded-lg p-1" style={{ background: 'var(--bg-tertiary)' }}>
@@ -386,9 +463,9 @@ export default function CurveFittingPanel({ onClose }: CurveFittingPanelProps) {
       </div>
 
       {/* Canvas and Results */}
-      <div className="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <div ref={containerRef} className="flex-1 flex flex-col lg:flex-row overflow-y-auto lg:overflow-hidden min-h-0">
         {/* Canvas */}
-        <div className="flex-1 p-3 min-h-[250px]">
+        <div className="flex-1 p-3 min-h-[300px] shrink-0 lg:shrink lg:min-h-0">
           <canvas
             ref={canvasRef}
             className="w-full h-full cursor-crosshair rounded-lg"
@@ -400,8 +477,30 @@ export default function CurveFittingPanel({ onClose }: CurveFittingPanelProps) {
           />
         </div>
 
+        {/* Resize Handle - desktop only */}
+        <div
+          className="hidden lg:flex items-center justify-center cursor-col-resize hover:bg-[var(--bg-hover)] transition-colors group"
+          style={{ width: '6px' }}
+          onMouseDown={handleResizeStart}
+        >
+          <div
+            className="w-1 h-12 rounded-full transition-colors"
+            style={{
+              background: isResizing ? 'var(--primary-blue)' : 'var(--border-primary)',
+            }}
+          />
+        </div>
+
         {/* Results Panel */}
-        <div className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l flex flex-col overflow-hidden" style={{ borderColor: 'var(--border-primary)' }}>
+        <div
+          className="w-full lg:w-auto border-t lg:border-t-0 flex flex-col overflow-hidden shrink-0"
+          style={{
+            borderColor: 'var(--border-primary)',
+          }}
+        >
+          <div
+            className="flex flex-col overflow-hidden h-full"
+            style={{ width: resultsPanelWidth, minWidth: '200px' }}>
           {/* Fit Results */}
           <div className="flex-1 overflow-y-auto p-3">
             <div className="flex items-center justify-between mb-2">
@@ -486,6 +585,7 @@ export default function CurveFittingPanel({ onClose }: CurveFittingPanelProps) {
               </button>
             </div>
           )}
+          </div>
         </div>
       </div>
 

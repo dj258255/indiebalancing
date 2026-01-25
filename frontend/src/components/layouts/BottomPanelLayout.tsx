@@ -222,6 +222,7 @@ export default function BottomPanelLayout({
       <div
         className={cn("fixed bottom-0 z-30 hidden md:flex flex-col overflow-hidden", className)}
         style={panelStyle}
+        onMouseDown={() => bringToolToFront(panelId as AllToolId)}
       >
         {/* Resize handles */}
         <div

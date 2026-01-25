@@ -101,6 +101,9 @@ export default function ToolPanels({
   const [balanceValidatorHelp, setBalanceValidatorHelp] = useState(false);
   const [difficultyCurveHelp, setDifficultyCurveHelp] = useState(false);
   const [simulationHelp, setSimulationHelp] = useState(false);
+  const [economyHelp, setEconomyHelp] = useState(false);
+  const [dpsVarianceHelp, setDpsVarianceHelp] = useState(false);
+  const [curveFittingHelp, setCurveFittingHelp] = useState(false);
 
   return (
     <>
@@ -329,6 +332,13 @@ export default function ToolPanels({
         title={t('sidebar.economy')}
         icon={TOOL_CONFIGS.economy.icon}
         color={TOOL_CONFIGS.economy.color}
+        headerExtra={
+          <HelpButton
+            showHelp={economyHelp}
+            setShowHelp={setEconomyHelp}
+            color={TOOL_CONFIGS.economy.color}
+          />
+        }
         panelState={panelStates.economy}
         onBringToFront={() => bringToFront('economy')}
         onDragStart={createDragHandler('economy')}
@@ -337,7 +347,10 @@ export default function ToolPanels({
         onResizeSE={createResizeHandler('economy', 'se')}
         defaultIndex={TOOL_CONFIGS.economy.defaultIndex}
       >
-        <EconomyPanel />
+        <EconomyPanel
+          showHelp={economyHelp}
+          setShowHelp={setEconomyHelp}
+        />
       </ToolPanelRenderer>
 
       {/* DPS Variance */}
@@ -349,6 +362,13 @@ export default function ToolPanels({
         title={t('sidebar.dpsVariance')}
         icon={TOOL_CONFIGS.dpsVariance.icon}
         color={TOOL_CONFIGS.dpsVariance.color}
+        headerExtra={
+          <HelpButton
+            showHelp={dpsVarianceHelp}
+            setShowHelp={setDpsVarianceHelp}
+            color={TOOL_CONFIGS.dpsVariance.color}
+          />
+        }
         panelState={panelStates.dpsVariance}
         onBringToFront={() => bringToFront('dpsVariance')}
         onDragStart={createDragHandler('dpsVariance')}
@@ -360,6 +380,8 @@ export default function ToolPanels({
         <DPSVariancePanel
           onClose={() => panels.dpsVariance.setShow(false)}
           isPanel
+          showHelp={dpsVarianceHelp}
+          setShowHelp={setDpsVarianceHelp}
         />
       </ToolPanelRenderer>
 
@@ -372,6 +394,13 @@ export default function ToolPanels({
         title={t('sidebar.curveFitting')}
         icon={TOOL_CONFIGS.curveFitting.icon}
         color={TOOL_CONFIGS.curveFitting.color}
+        headerExtra={
+          <HelpButton
+            showHelp={curveFittingHelp}
+            setShowHelp={setCurveFittingHelp}
+            color={TOOL_CONFIGS.curveFitting.color}
+          />
+        }
         panelState={panelStates.curveFitting}
         onBringToFront={() => bringToFront('curveFitting')}
         onDragStart={createDragHandler('curveFitting')}
@@ -382,6 +411,8 @@ export default function ToolPanels({
       >
         <CurveFittingPanel
           onClose={() => panels.curveFitting.setShow(false)}
+          showHelp={curveFittingHelp}
+          setShowHelp={setCurveFittingHelp}
         />
       </ToolPanelRenderer>
 

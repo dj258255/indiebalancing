@@ -23,7 +23,12 @@ import {
   type EconomyResult
 } from '@/lib/economySimulator';
 
-export default function EconomyPanel() {
+interface EconomyPanelProps {
+  showHelp?: boolean;
+  setShowHelp?: (value: boolean) => void;
+}
+
+export default function EconomyPanel({ showHelp, setShowHelp }: EconomyPanelProps) {
   const t = useTranslations('economy');
 
   // State
@@ -113,8 +118,41 @@ export default function EconomyPanel() {
 
   return (
     <div className="h-full flex flex-col overflow-hidden" style={{ background: 'var(--bg-secondary)' }}>
-      {/* Header Summary */}
-      <div className="p-4 border-b" style={{ borderColor: 'var(--border-primary)' }}>
+      {/* Scrollable Content Wrapper */}
+      <div className="flex-1 flex flex-col overflow-y-auto lg:overflow-hidden">
+        {/* Help Content */}
+        {showHelp && (
+          <div className="mx-4 mt-4 mb-2 p-3 rounded-lg animate-slideDown shrink-0" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+            <div className="space-y-3">
+              <div className="flex items-start gap-2">
+                <div className="w-5 h-5 rounded flex items-center justify-center shrink-0 mt-0.5" style={{ background: '#f59e0b20' }}>
+                  <Coins className="w-3 h-3" style={{ color: '#f59e0b' }} />
+                </div>
+                <div>
+                  <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{t('helpTitle')}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{t('helpDesc')}</p>
+                </div>
+              </div>
+              <div className="space-y-2">
+                <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #22c55e' }}>
+                  <span className="font-medium text-sm" style={{ color: '#22c55e' }}>{t('faucets')}</span>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpFaucet')}</p>
+                </div>
+                <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #ef4444' }}>
+                  <span className="font-medium text-sm" style={{ color: '#ef4444' }}>{t('sinks')}</span>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpSink')}</p>
+                </div>
+                <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #f59e0b' }}>
+                  <span className="font-medium text-sm" style={{ color: '#f59e0b' }}>{t('helpBalanceTitle')}</span>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpBalance')}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Header Summary */}
+        <div className="p-4 border-b shrink-0" style={{ borderColor: 'var(--border-primary)' }}>
         <div className="grid grid-cols-4 gap-3">
           {/* Faucet 총량 */}
           <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
@@ -189,10 +227,10 @@ export default function EconomyPanel() {
         )}
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 flex overflow-hidden">
-        {/* Left: Input Panel */}
-        <div className="w-80 border-r flex flex-col" style={{ borderColor: 'var(--border-primary)' }}>
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
+          {/* Left: Input Panel */}
+          <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r flex flex-col shrink-0 lg:shrink" style={{ borderColor: 'var(--border-primary)' }}>
           {/* Tabs */}
           <div className="flex border-b" style={{ borderColor: 'var(--border-primary)' }}>
             {(['faucets', 'sinks', 'config'] as const).map(tab => (
@@ -572,6 +610,7 @@ export default function EconomyPanel() {
             </div>
           </div>
         </div>
+      </div>
       </div>
     </div>
   );
