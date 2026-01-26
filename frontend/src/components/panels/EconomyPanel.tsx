@@ -1,13 +1,14 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import {
   Coins, Plus, Trash2, TrendingUp, TrendingDown,
   AlertTriangle, CheckCircle, RefreshCw, Download,
   ArrowUpCircle, ArrowDownCircle, Settings, Info,
-  Maximize2, X
+  Maximize2, X, Grid3X3
 } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, BarChart, Bar, Cell, PieChart, Pie, Legend
@@ -23,6 +24,8 @@ import {
   type EconomyConfig,
   type EconomyResult
 } from '@/lib/economySimulator';
+import { useProjectStore } from '@/stores/projectStore';
+import { Tooltip as TooltipUI } from '@/components/ui/Tooltip';
 
 interface EconomyPanelProps {
   showHelp?: boolean;
@@ -121,7 +124,7 @@ export default function EconomyPanel({ showHelp, setShowHelp }: EconomyPanelProp
   return (
     <div className="h-full flex flex-col overflow-hidden" style={{ background: 'var(--bg-secondary)' }}>
       {/* Scrollable Content Wrapper */}
-      <div className="flex-1 flex flex-col overflow-y-auto lg:overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-y-auto overflow-x-hidden">
         {/* Help Content */}
         {showHelp && (
           <div className="mx-4 mt-4 mb-2 p-3 rounded-lg animate-slideDown shrink-0" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
@@ -229,10 +232,10 @@ export default function EconomyPanel({ showHelp, setShowHelp }: EconomyPanelProp
         )}
       </div>
 
-        {/* Main Content */}
-        <div className="flex-1 flex flex-col lg:flex-row overflow-hidden min-h-0">
-          {/* Left: Input Panel */}
-          <div className="w-full lg:w-80 border-b lg:border-b-0 lg:border-r flex flex-col shrink-0 lg:shrink" style={{ borderColor: 'var(--border-primary)' }}>
+        {/* Main Content - Vertical Layout */}
+        <div className="flex-1 flex flex-col overflow-y-auto min-h-0">
+          {/* Top: Input Panel */}
+          <div className="border-b shrink-0" style={{ borderColor: 'var(--border-primary)' }}>
           {/* Tabs */}
           <div className="flex border-b" style={{ borderColor: 'var(--border-primary)' }}>
             {(['faucets', 'sinks', 'config'] as const).map(tab => (
@@ -254,13 +257,13 @@ export default function EconomyPanel({ showHelp, setShowHelp }: EconomyPanelProp
           </div>
 
           {/* Tab Content */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2">
+          <div className="p-3">
             {activeTab === 'faucets' && (
-              <>
+              <div className="flex flex-wrap gap-2">
                 {faucets.map(faucet => (
                   <div
                     key={faucet.id}
-                    className="p-3 rounded-lg space-y-2"
+                    className="p-3 rounded-lg space-y-2 w-full sm:w-auto sm:min-w-[240px] sm:flex-1 sm:max-w-[300px]"
                     style={{ background: 'var(--bg-tertiary)', border: '1px solid #22c55e30' }}
                   >
                     <div className="flex items-center justify-between">
@@ -279,47 +282,37 @@ export default function EconomyPanel({ showHelp, setShowHelp }: EconomyPanelProp
                       </button>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{t('ratePerHour')}</label>
-                        <input
-                          type="number"
-                          value={faucet.ratePerHour}
-                          onChange={(e) => updateFaucet(faucet.id, { ratePerHour: Number(e.target.value) })}
-                          className="w-full px-2 py-1 rounded text-xs"
-                          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{t('playerPercent')}</label>
-                        <input
-                          type="number"
-                          value={faucet.playerPercentage * 100}
-                          onChange={(e) => updateFaucet(faucet.id, { playerPercentage: Number(e.target.value) / 100 })}
-                          className="w-full px-2 py-1 rounded text-xs"
-                          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                          min={0}
-                          max={100}
-                        />
-                      </div>
+                      <InputFieldWithCell
+                        label={t('ratePerHour')}
+                        value={faucet.ratePerHour}
+                        onChange={(v) => updateFaucet(faucet.id, { ratePerHour: v })}
+                      />
+                      <InputFieldWithCell
+                        label={t('playerPercent')}
+                        value={faucet.playerPercentage * 100}
+                        onChange={(v) => updateFaucet(faucet.id, { playerPercentage: v / 100 })}
+                        min={0}
+                        max={100}
+                      />
                     </div>
                   </div>
                 ))}
                 <button
                   onClick={addFaucet}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-xs transition-colors w-full sm:w-auto sm:min-w-[120px]"
                   style={{ background: '#22c55e20', color: '#22c55e', border: '1px dashed #22c55e40' }}
                 >
                   <Plus className="w-3 h-3" /> {t('addFaucet')}
                 </button>
-              </>
+              </div>
             )}
 
             {activeTab === 'sinks' && (
-              <>
+              <div className="flex flex-wrap gap-2">
                 {sinks.map(sink => (
                   <div
                     key={sink.id}
-                    className="p-3 rounded-lg space-y-2"
+                    className="p-3 rounded-lg space-y-2 w-full sm:w-auto sm:min-w-[280px] sm:flex-1 sm:max-w-[340px]"
                     style={{ background: 'var(--bg-tertiary)', border: '1px solid #ef444430' }}
                   >
                     <div className="flex items-center justify-between">
@@ -338,111 +331,93 @@ export default function EconomyPanel({ showHelp, setShowHelp }: EconomyPanelProp
                       </button>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{t('costPerUse')}</label>
-                        <input
-                          type="number"
-                          value={sink.costPerUse}
-                          onChange={(e) => updateSink(sink.id, { costPerUse: Number(e.target.value) })}
-                          className="w-full px-2 py-1 rounded text-xs"
-                          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{t('usesPerHour')}</label>
-                        <input
-                          type="number"
-                          value={sink.usesPerHour}
-                          onChange={(e) => updateSink(sink.id, { usesPerHour: Number(e.target.value) })}
-                          className="w-full px-2 py-1 rounded text-xs"
-                          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                          step={0.1}
-                        />
-                      </div>
-                      <div>
-                        <label className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{t('playerPercent')}</label>
-                        <input
-                          type="number"
-                          value={sink.playerPercentage * 100}
-                          onChange={(e) => updateSink(sink.id, { playerPercentage: Number(e.target.value) / 100 })}
-                          className="w-full px-2 py-1 rounded text-xs"
-                          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                          min={0}
-                          max={100}
-                        />
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          checked={sink.isRequired}
-                          onChange={(e) => updateSink(sink.id, { isRequired: e.target.checked })}
-                          className="rounded"
-                        />
-                        <label className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{t('required')}</label>
+                      <InputFieldWithCell
+                        label={t('costPerUse')}
+                        value={sink.costPerUse}
+                        onChange={(v) => updateSink(sink.id, { costPerUse: v })}
+                      />
+                      <InputFieldWithCell
+                        label={t('usesPerHour')}
+                        value={sink.usesPerHour}
+                        onChange={(v) => updateSink(sink.id, { usesPerHour: v })}
+                        step={0.1}
+                      />
+                      <InputFieldWithCell
+                        label={t('playerPercent')}
+                        value={sink.playerPercentage * 100}
+                        onChange={(v) => updateSink(sink.id, { playerPercentage: v / 100 })}
+                        min={0}
+                        max={100}
+                      />
+                      <div className="flex flex-col justify-end">
+                        <label className="text-[10px] mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('required')}</label>
+                        <button
+                          onClick={() => updateSink(sink.id, { isRequired: !sink.isRequired })}
+                          className={cn(
+                            "relative w-9 h-5 rounded-full transition-colors duration-200 flex items-center",
+                            sink.isRequired ? "bg-red-500" : "bg-[var(--bg-primary)]"
+                          )}
+                          style={{ border: sink.isRequired ? 'none' : '1px solid var(--border-primary)' }}
+                        >
+                          <span
+                            className={cn(
+                              "absolute w-3.5 h-3.5 rounded-full transition-all duration-200 shadow-sm",
+                              sink.isRequired
+                                ? "left-[18px] bg-white"
+                                : "left-[3px] bg-[var(--text-tertiary)]"
+                            )}
+                          />
+                        </button>
                       </div>
                     </div>
                   </div>
                 ))}
                 <button
                   onClick={addSink}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs transition-colors"
+                  className="flex items-center justify-center gap-2 px-4 py-3 rounded-lg text-xs transition-colors w-full sm:w-auto sm:min-w-[120px]"
                   style={{ background: '#ef444420', color: '#ef4444', border: '1px dashed #ef444440' }}
                 >
                   <Plus className="w-3 h-3" /> {t('addSink')}
                 </button>
-              </>
+              </div>
             )}
 
             {activeTab === 'config' && (
-              <div className="space-y-3">
-                <div>
-                  <label className="text-xs mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('currencyName')}</label>
-                  <input
-                    type="text"
+              <div className="flex flex-wrap gap-3 items-end">
+                <div className="w-full sm:w-auto sm:min-w-[180px]">
+                  <ConfigInputField
+                    label={t('currencyName')}
                     value={config.currencyName}
-                    onChange={(e) => setConfig({ ...config, currencyName: e.target.value })}
-                    className="w-full px-3 py-2 rounded-lg text-sm"
-                    style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
+                    onChange={(v) => setConfig({ ...config, currencyName: String(v) })}
+                    type="text"
                   />
                 </div>
-                <div>
-                  <label className="text-xs mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('playerCount')}</label>
-                  <input
-                    type="number"
+                <div className="w-full sm:w-auto sm:min-w-[140px]">
+                  <ConfigInputField
+                    label={t('playerCount')}
                     value={config.playerCount}
-                    onChange={(e) => setConfig({ ...config, playerCount: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg text-sm"
-                    style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
+                    onChange={(v) => setConfig({ ...config, playerCount: Number(v) })}
                   />
                 </div>
-                <div>
-                  <label className="text-xs mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('initialSupply')}</label>
-                  <input
-                    type="number"
+                <div className="w-full sm:w-auto sm:min-w-[140px]">
+                  <ConfigInputField
+                    label={t('initialSupply')}
                     value={config.initialSupply}
-                    onChange={(e) => setConfig({ ...config, initialSupply: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg text-sm"
-                    style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
+                    onChange={(v) => setConfig({ ...config, initialSupply: Number(v) })}
                   />
                 </div>
-                <div>
-                  <label className="text-xs mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('simulationDays')}</label>
-                  <input
-                    type="number"
+                <div className="w-full sm:w-auto sm:min-w-[120px]">
+                  <ConfigInputField
+                    label={t('simulationDays')}
                     value={config.simulationDays}
-                    onChange={(e) => setConfig({ ...config, simulationDays: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-lg text-sm"
-                    style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
+                    onChange={(v) => setConfig({ ...config, simulationDays: Number(v) })}
                   />
                 </div>
-                <div>
-                  <label className="text-xs mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('targetInflation')} (%)</label>
-                  <input
-                    type="number"
+                <div className="w-full sm:w-auto sm:min-w-[140px]">
+                  <ConfigInputField
+                    label={`${t('targetInflation')} (%)`}
                     value={config.targetInflationRate * 100}
-                    onChange={(e) => setConfig({ ...config, targetInflationRate: Number(e.target.value) / 100 })}
-                    className="w-full px-3 py-2 rounded-lg text-sm"
-                    style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
+                    onChange={(v) => setConfig({ ...config, targetInflationRate: Number(v) / 100 })}
                     step={0.1}
                   />
                 </div>
@@ -453,7 +428,7 @@ export default function EconomyPanel({ showHelp, setShowHelp }: EconomyPanelProp
                     setSinks(DEFAULT_SINKS);
                     setConfig(DEFAULT_CONFIG);
                   }}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs"
+                  className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs h-[38px]"
                   style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
                 >
                   <RefreshCw className="w-3 h-3" /> {t('resetDefaults')}
@@ -461,7 +436,7 @@ export default function EconomyPanel({ showHelp, setShowHelp }: EconomyPanelProp
 
                 <button
                   onClick={handleExport}
-                  className="w-full flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs"
+                  className="flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-xs h-[38px]"
                   style={{ background: 'var(--primary-blue)', color: 'white' }}
                 >
                   <Download className="w-3 h-3" /> {t('exportResults')}
@@ -471,8 +446,8 @@ export default function EconomyPanel({ showHelp, setShowHelp }: EconomyPanelProp
           </div>
         </div>
 
-        {/* Right: Charts and Analysis */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+        {/* Bottom: Charts and Analysis */}
+        <div className="p-4 space-y-4">
           {/* 통화량 변화 그래프 */}
           <div className="p-4 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
             <div className="flex items-center justify-between mb-3">
@@ -684,6 +659,183 @@ export default function EconomyPanel({ showHelp, setShowHelp }: EconomyPanelProp
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+// 셀 선택 기능이 있는 입력 필드 컴포넌트
+function InputFieldWithCell({
+  label,
+  value,
+  onChange,
+  step = 1,
+  min,
+  max,
+  className = '',
+  inputClassName = '',
+  labelClassName = '',
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  step?: number;
+  min?: number;
+  max?: number;
+  className?: string;
+  inputClassName?: string;
+  labelClassName?: string;
+}) {
+  const t = useTranslations('economy');
+  const [inputValue, setInputValue] = useState(String(value));
+  const [isHovered, setIsHovered] = useState(false);
+  const { startCellSelection, cellSelectionMode } = useProjectStore();
+
+  useEffect(() => {
+    setInputValue(String(value));
+  }, [value]);
+
+  const handleCellSelect = () => {
+    startCellSelection(label, (cellValue) => {
+      setInputValue(String(cellValue));
+      onChange(cellValue);
+    });
+  };
+
+  return (
+    <div className={className}>
+      <label className={`text-[10px] ${labelClassName}`} style={{ color: 'var(--text-tertiary)' }}>{label}</label>
+      <div
+        className="relative"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <input
+          type="text"
+          inputMode="decimal"
+          value={inputValue}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            if (newValue === '' || /^-?\d*\.?\d*$/.test(newValue)) {
+              setInputValue(newValue);
+              const num = parseFloat(newValue);
+              if (!isNaN(num)) {
+                onChange(num);
+              }
+            }
+          }}
+          onBlur={() => {
+            const num = parseFloat(inputValue);
+            if (isNaN(num) || inputValue === '') {
+              setInputValue(String(min ?? 0));
+              onChange(min ?? 0);
+            } else {
+              setInputValue(String(num));
+            }
+          }}
+          className={`w-full px-2 py-1 pr-7 rounded text-xs ${inputClassName}`}
+          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
+        />
+        {isHovered && !cellSelectionMode.active && (
+          <TooltipUI content={t('selectFromCell')} position="top">
+            <button
+              onClick={handleCellSelect}
+              className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors hover:bg-[var(--bg-hover)]"
+            >
+              <Grid3X3 className="w-3.5 h-3.5" style={{ color: 'var(--text-tertiary)' }} />
+            </button>
+          </TooltipUI>
+        )}
+      </div>
+    </div>
+  );
+}
+
+// Config 입력 필드 (더 큰 사이즈)
+function ConfigInputField({
+  label,
+  value,
+  onChange,
+  step = 1,
+  min,
+  max,
+  type = 'number',
+}: {
+  label: string;
+  value: number | string;
+  onChange: (v: number | string) => void;
+  step?: number;
+  min?: number;
+  max?: number;
+  type?: 'number' | 'text';
+}) {
+  const t = useTranslations('economy');
+  const [inputValue, setInputValue] = useState(String(value));
+  const [isHovered, setIsHovered] = useState(false);
+  const { startCellSelection, cellSelectionMode } = useProjectStore();
+
+  useEffect(() => {
+    setInputValue(String(value));
+  }, [value]);
+
+  const handleCellSelect = () => {
+    startCellSelection(label, (cellValue) => {
+      setInputValue(String(cellValue));
+      onChange(type === 'text' ? String(cellValue) : cellValue);
+    });
+  };
+
+  const isNumeric = type === 'number';
+
+  return (
+    <div>
+      <label className="text-xs mb-1 block" style={{ color: 'var(--text-secondary)' }}>{label}</label>
+      <div
+        className="relative"
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
+      >
+        <input
+          type="text"
+          inputMode={isNumeric ? "decimal" : "text"}
+          value={inputValue}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            if (!isNumeric) {
+              setInputValue(newValue);
+              onChange(newValue);
+            } else if (newValue === '' || /^-?\d*\.?\d*$/.test(newValue)) {
+              setInputValue(newValue);
+              const num = parseFloat(newValue);
+              if (!isNaN(num)) {
+                onChange(num);
+              }
+            }
+          }}
+          onBlur={() => {
+            if (isNumeric) {
+              const num = parseFloat(inputValue);
+              if (isNaN(num) || inputValue === '') {
+                setInputValue(String(min ?? 0));
+                onChange(min ?? 0);
+              } else {
+                setInputValue(String(num));
+              }
+            }
+          }}
+          className="w-full px-3 py-2 pr-9 rounded-lg text-sm"
+          style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
+        />
+        {isHovered && !cellSelectionMode.active && isNumeric && (
+          <TooltipUI content={t('selectFromCell')} position="top">
+            <button
+              onClick={handleCellSelect}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded transition-colors hover:bg-[var(--bg-hover)]"
+            >
+              <Grid3X3 className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+            </button>
+          </TooltipUI>
+        )}
+      </div>
     </div>
   );
 }

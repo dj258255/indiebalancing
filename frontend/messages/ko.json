@@ -931,7 +931,8 @@
     "recommendations": "균형 제안",
     "inflationRate": "인플레이션율",
     "daysToDouble": "2배 도달",
-    "faucetSinkRatio": "생성/소모 비율"
+    "faucetSinkRatio": "생성/소모 비율",
+    "selectFromCell": "셀에서 값 선택"
   },
   "references": {
     "title": "참고 자료 및 권장 수치 가이드",

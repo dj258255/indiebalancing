@@ -930,7 +930,8 @@
     "recommendations": "Recommendations",
     "inflationRate": "Inflation Rate",
     "daysToDouble": "Days to Double",
-    "faucetSinkRatio": "Faucet/Sink Ratio"
+    "faucetSinkRatio": "Faucet/Sink Ratio",
+    "selectFromCell": "Select from cell"
   },
   "references": {
     "title": "Reference Guide & Recommended Values",
