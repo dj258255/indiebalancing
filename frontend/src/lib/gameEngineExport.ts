@@ -3,7 +3,62 @@
  * 시트 데이터를 게임 엔진에서 사용할 수 있는 형식으로 변환
  */
 
-import type { Sheet, Column, Row, CellValue } from '@/types';
+import type { Sheet, Column, CellValue, Project } from '@/types';
+import { evaluateFormula } from '@/lib/formulaEngine';
+
+/**
+ * 시트의 모든 행에 대해 수식을 평가하여 계산된 값을 반환
+ */
+function computeSheetValues(sheet: Sheet, project?: Project): Record<string, CellValue>[] {
+  const result: Record<string, CellValue>[] = [];
+
+  for (let rowIndex = 0; rowIndex < sheet.rows.length; rowIndex++) {
+    const row = sheet.rows[rowIndex];
+    const computedRow: Record<string, CellValue> = { ...row.cells };
+
+    for (const column of sheet.columns) {
+      const rawValue = row.cells[column.id];
+
+      // 셀 자체에 수식이 있는 경우
+      if (typeof rawValue === 'string' && rawValue.startsWith('=')) {
+        const evalResult = evaluateFormula(rawValue, {
+          sheets: project?.sheets || [],
+          currentSheet: sheet,
+          currentRow: computedRow,
+          currentRowIndex: rowIndex,
+          allRows: result,
+        });
+        computedRow[column.id] = evalResult.error ? null : evalResult.value;
+        continue;
+      }
+
+      // 셀에 직접 값이 있으면 그 값 사용
+      if (rawValue !== null && rawValue !== undefined) {
+        computedRow[column.id] = rawValue;
+        continue;
+      }
+
+      // 셀이 비어있고 컬럼이 formula 타입이면 컬럼 수식 사용
+      if (column.type === 'formula' && column.formula) {
+        const evalResult = evaluateFormula(column.formula, {
+          sheets: project?.sheets || [],
+          currentSheet: sheet,
+          currentRow: computedRow,
+          currentRowIndex: rowIndex,
+          allRows: result,
+        });
+        computedRow[column.id] = evalResult.error ? null : evalResult.value;
+        continue;
+      }
+
+      computedRow[column.id] = rawValue;
+    }
+
+    result.push(computedRow);
+  }
+
+  return result;
+}
 
 // Export 형식
 export type ExportFormat =
@@ -57,6 +112,16 @@ function toCamelCase(str: string): string {
   return pascal.charAt(0).toLowerCase() + pascal.slice(1);
 }
 
+// 컬럼의 내보내기용 필드명 가져오기 (exportName이 있으면 사용, 없으면 name을 camelCase로 변환)
+function getExportFieldName(column: Column, caseType: 'camel' | 'pascal' = 'camel'): string {
+  if (column.exportName) {
+    // exportName이 있으면 그대로 사용 (사용자가 이미 적절한 형식으로 입력했다고 가정)
+    return column.exportName;
+  }
+  // exportName이 없으면 컬럼명을 변환
+  return caseType === 'pascal' ? toPascalCase(column.name) : toCamelCase(column.name);
+}
+
 // 값 포맷팅 (C#)
 function formatCSharpValue(value: CellValue, type: string): string {
   if (value === null || value === undefined) {
@@ -81,17 +146,22 @@ function formatCSharpValue(value: CellValue, type: string): string {
 /**
  * Unity ScriptableObject 코드 생성
  */
-export function generateUnityScriptableObject(sheet: Sheet, className?: string): string {
-  const name = className || toPascalCase(sheet.name) + 'Data';
-  const itemName = name.replace(/Data$/, 'Item');
+export function generateUnityScriptableObject(sheet: Sheet, className?: string, project?: Project): string {
+  // 입력값을 PascalCase로 변환 (첫 글자 대문자)
+  const rawName = className || toPascalCase(sheet.name);
+  const baseName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+  // Data 접미사가 없으면 추가
+  const name = baseName.endsWith('Data') ? baseName : baseName + 'Data';
+  const itemName = baseName.endsWith('Data') ? baseName.replace(/Data$/, 'Item') : baseName + 'Item';
 
-  // 타입 추론을 위한 샘플 행
-  const sampleRow = sheet.rows[0];
+  // 수식 계산된 값 가져오기
+  const computedRows = computeSheetValues(sheet, project);
+  const sampleRow = computedRows[0];
 
   // 컬럼 정보 수집
   const fields = sheet.columns.map(col => ({
-    name: toCamelCase(col.name),
-    type: toCSharpType(col, sampleRow?.cells[col.id]),
+    name: getExportFieldName(col, 'camel'),
+    type: toCSharpType(col, sampleRow?.[col.id]),
     originalName: col.name,
     colId: col.id,
   }));
@@ -135,16 +205,18 @@ public class ${itemName}
 /**
  * Unity용 JSON 생성
  */
-export function generateUnityJson(sheet: Sheet): string {
-  const sampleRow = sheet.rows[0];
+export function generateUnityJson(sheet: Sheet, project?: Project): string {
+  // 수식 계산된 값 가져오기
+  const computedRows = computeSheetValues(sheet, project);
+  const sampleRow = computedRows[0];
 
-  const items = sheet.rows.map(row => {
+  const items = computedRows.map(computedRow => {
     const item: Record<string, unknown> = {};
 
     for (const col of sheet.columns) {
-      const fieldName = toCamelCase(col.name);
-      const type = toCSharpType(col, sampleRow?.cells[col.id]);
-      const rawValue = row.cells[col.id];
+      const fieldName = getExportFieldName(col, 'camel');
+      const type = toCSharpType(col, sampleRow?.[col.id]);
+      const rawValue = computedRow[col.id];
 
       // 타입에 맞게 변환
       let convertedValue: number | boolean | string;
@@ -170,9 +242,11 @@ export function generateUnityJson(sheet: Sheet): string {
 /**
  * Unreal DataTable 헤더 생성
  */
-export function generateUnrealDataTable(sheet: Sheet, structName?: string): string {
+export function generateUnrealDataTable(sheet: Sheet, structName?: string, project?: Project): string {
   const name = structName || `F${toPascalCase(sheet.name)}Row`;
-  const sampleRow = sheet.rows[0];
+  // 수식 계산된 값 가져오기
+  const computedRows = computeSheetValues(sheet, project);
+  const sampleRow = computedRows[0];
 
   let code = `#pragma once
 
@@ -190,8 +264,8 @@ public:
 
   // 필드 정의
   for (const col of sheet.columns) {
-    const fieldName = toPascalCase(col.name);
-    const type = toUnrealType(col, sampleRow?.cells[col.id]);
+    const fieldName = getExportFieldName(col, 'pascal');
+    const type = toUnrealType(col, sampleRow?.[col.id]);
 
     code += `    UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Data")
     ${type} ${fieldName};
@@ -203,7 +277,7 @@ public:
 
 /*
  * CSV 데이터 (Content/Data 폴더에 저장):
- * 첫 행: Name,${sheet.columns.map(c => toPascalCase(c.name)).join(',')}
+ * 첫 행: Name,${sheet.columns.map(c => getExportFieldName(c, 'pascal')).join(',')}
  */
 `;
 
@@ -213,19 +287,22 @@ public:
 /**
  * Unreal용 CSV 생성
  */
-export function generateUnrealCsv(sheet: Sheet): string {
+export function generateUnrealCsv(sheet: Sheet, project?: Project): string {
+  // 수식 계산된 값 가져오기
+  const computedRows = computeSheetValues(sheet, project);
+
   // 헤더
-  const headers = ['Name', ...sheet.columns.map(c => toPascalCase(c.name))];
+  const headers = ['Name', ...sheet.columns.map(c => getExportFieldName(c, 'pascal'))];
   let csv = headers.join(',') + '\n';
 
   // 데이터 행
-  for (let i = 0; i < sheet.rows.length; i++) {
-    const row = sheet.rows[i];
+  for (let i = 0; i < computedRows.length; i++) {
+    const computedRow = computedRows[i];
     const rowName = `Row_${i + 1}`;
 
     const values = [rowName];
     for (const col of sheet.columns) {
-      let value = row.cells[col.id];
+      let value = computedRow[col.id];
       if (value === null || value === undefined) value = '';
       // CSV 이스케이프
       const strValue = String(value);
@@ -245,8 +322,10 @@ export function generateUnrealCsv(sheet: Sheet): string {
 /**
  * Godot Resource 생성
  */
-export function generateGodotResource(sheet: Sheet, className?: string): string {
-  const name = className || toPascalCase(sheet.name) + 'Data';
+export function generateGodotResource(sheet: Sheet, className?: string, project?: Project): string {
+  const rawName = className || toPascalCase(sheet.name);
+  const baseName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
+  const name = baseName.endsWith('Data') ? baseName : baseName + 'Data';
 
   let code = `# ${name}.gd
 class_name ${name}
@@ -254,17 +333,18 @@ extends Resource
 
 `;
 
-  // 항목 클래스
-  const sampleRow = sheet.rows[0];
+  // 수식 계산된 값 가져오기
+  const computedRows = computeSheetValues(sheet, project);
+  const sampleRow = computedRows[0];
 
   code += `class Item:
 `;
 
   for (const col of sheet.columns) {
-    const fieldName = toCamelCase(col.name).replace(/^_/, '');
+    const fieldName = getExportFieldName(col, 'camel').replace(/^_/, '');
     let type = 'String';
 
-    const sample = sampleRow?.cells[col.id];
+    const sample = sampleRow?.[col.id];
     if (typeof sample === 'number') {
       type = Number.isInteger(sample) ? 'int' : 'float';
     } else if (typeof sample === 'boolean') {
@@ -295,7 +375,7 @@ static func load_from_json(path: String) -> ${name}:
 `;
 
   for (const col of sheet.columns) {
-    const fieldName = toCamelCase(col.name).replace(/^_/, '');
+    const fieldName = getExportFieldName(col, 'camel').replace(/^_/, '');
     code += `\t\titem.${fieldName} = item_data["${fieldName}"]\n`;
   }
 
@@ -312,22 +392,25 @@ static func load_from_json(path: String) -> ${name}:
 export function exportForGameEngine(
   sheet: Sheet,
   format: ExportFormat,
-  options: { className?: string } = {}
+  options: { className?: string; project?: Project } = {}
 ): { filename: string; content: string; type: string }[] {
-  const { className } = options;
-  const baseName = className || toPascalCase(sheet.name);
+  const { className, project } = options;
+  // 우선순위: 옵션으로 전달된 className > 시트의 exportClassName > 시트명 변환
+  const rawName = className || sheet.exportClassName || toPascalCase(sheet.name);
+  // PascalCase로 변환 (첫 글자 대문자)
+  const baseName = rawName.charAt(0).toUpperCase() + rawName.slice(1);
 
   switch (format) {
     case 'unity_scriptable':
       return [
         {
           filename: `${baseName}Data.cs`,
-          content: generateUnityScriptableObject(sheet, className),
+          content: generateUnityScriptableObject(sheet, className, project),
           type: 'text/plain',
         },
         {
           filename: `${baseName}Data.json`,
-          content: generateUnityJson(sheet),
+          content: generateUnityJson(sheet, project),
           type: 'application/json',
         },
       ];
@@ -336,7 +419,7 @@ export function exportForGameEngine(
       return [
         {
           filename: `${baseName}.json`,
-          content: generateUnityJson(sheet),
+          content: generateUnityJson(sheet, project),
           type: 'application/json',
         },
       ];
@@ -345,12 +428,12 @@ export function exportForGameEngine(
       return [
         {
           filename: `F${baseName}Row.h`,
-          content: generateUnrealDataTable(sheet, `F${baseName}Row`),
+          content: generateUnrealDataTable(sheet, `F${baseName}Row`, project),
           type: 'text/plain',
         },
         {
           filename: `${baseName}.csv`,
-          content: generateUnrealCsv(sheet),
+          content: generateUnrealCsv(sheet, project),
           type: 'text/csv',
         },
       ];
@@ -359,7 +442,7 @@ export function exportForGameEngine(
       return [
         {
           filename: `F${baseName}Row.h`,
-          content: generateUnrealDataTable(sheet, `F${baseName}Row`),
+          content: generateUnrealDataTable(sheet, `F${baseName}Row`, project),
           type: 'text/plain',
         },
       ];
@@ -368,12 +451,12 @@ export function exportForGameEngine(
       return [
         {
           filename: `${baseName}Data.gd`,
-          content: generateGodotResource(sheet, className),
+          content: generateGodotResource(sheet, className, project),
           type: 'text/plain',
         },
         {
           filename: `${baseName}.json`,
-          content: generateUnityJson(sheet), // JSON 형식 공유
+          content: generateUnityJson(sheet, project), // JSON 형식 공유
           type: 'application/json',
         },
       ];

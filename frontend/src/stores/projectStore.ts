@@ -43,16 +43,19 @@ interface ProjectState {
   createProject: (name: string, description?: string) => string;
   updateProject: (id: string, updates: Partial<Pick<Project, 'name' | 'description'>>) => void;
   deleteProject: (id: string) => void;
+  duplicateProject: (id: string) => string;
+  reorderProjects: (fromIndex: number, toIndex: number) => void;
   setCurrentProject: (id: string | null) => void;
   loadProjects: (projects: Project[]) => void;
 
   // 시트 액션
-  createSheet: (projectId: string, name: string) => string;
-  updateSheet: (projectId: string, sheetId: string, updates: Partial<Pick<Sheet, 'name'>>) => void;
+  createSheet: (projectId: string, name: string, exportClassName?: string) => string;
+  updateSheet: (projectId: string, sheetId: string, updates: Partial<Pick<Sheet, 'name' | 'exportClassName'>>) => void;
   deleteSheet: (projectId: string, sheetId: string) => void;
   setCurrentSheet: (id: string | null) => void;
   duplicateSheet: (projectId: string, sheetId: string) => string;
   reorderSheets: (projectId: string, fromIndex: number, toIndex: number) => void;
+  moveSheetToProject: (fromProjectId: string, toProjectId: string, sheetId: string) => void;
   openSheetTab: (sheetId: string) => void;
   closeSheetTab: (sheetId: string) => void;
   reorderOpenTabs: (fromIndex: number, toIndex: number) => void;
@@ -146,6 +149,111 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }));
   },
 
+  duplicateProject: (id) => {
+    const project = get().projects.find((p) => p.id === id);
+    if (!project) return '';
+
+    const newProjectId = uuidv4();
+    const now = Date.now();
+
+    // 시트를 복제하면서 컬럼 ID와 행 ID 모두 새로 생성
+    const newSheets: Sheet[] = project.sheets.map((sheet) => {
+      const newSheetId = uuidv4();
+
+      // 컬럼 ID 매핑 생성 (기존 ID -> 새 ID)
+      const columnIdMap: Record<string, string> = {};
+      const newColumns = sheet.columns.map((col) => {
+        const newColId = uuidv4();
+        columnIdMap[col.id] = newColId;
+        return { ...col, id: newColId };
+      });
+
+      // 행 복제 (셀 데이터의 키도 새 컬럼 ID로 업데이트)
+      const newRows = sheet.rows.map((row) => {
+        const newCells: Record<string, CellValue> = {};
+        const newCellStyles: Record<string, CellStyle> = {};
+        const newCellMemos: Record<string, string> = {};
+
+        Object.entries(row.cells).forEach(([oldColId, value]) => {
+          const newColId = columnIdMap[oldColId];
+          if (newColId) {
+            newCells[newColId] = value;
+          }
+        });
+
+        if (row.cellStyles) {
+          Object.entries(row.cellStyles).forEach(([oldColId, style]) => {
+            const newColId = columnIdMap[oldColId];
+            if (newColId) {
+              newCellStyles[newColId] = style;
+            }
+          });
+        }
+
+        if (row.cellMemos) {
+          Object.entries(row.cellMemos).forEach(([oldColId, memo]) => {
+            const newColId = columnIdMap[oldColId];
+            if (newColId) {
+              newCellMemos[newColId] = memo;
+            }
+          });
+        }
+
+        return {
+          ...row,
+          id: uuidv4(),
+          cells: newCells,
+          cellStyles: Object.keys(newCellStyles).length > 0 ? newCellStyles : undefined,
+          cellMemos: Object.keys(newCellMemos).length > 0 ? newCellMemos : undefined,
+        };
+      });
+
+      // 스티커 복제
+      const newStickers = (sheet.stickers || []).map((sticker) => ({
+        ...sticker,
+        id: uuidv4(),
+        createdAt: now,
+      }));
+
+      return {
+        ...sheet,
+        id: newSheetId,
+        columns: newColumns,
+        rows: newRows,
+        stickers: newStickers,
+        createdAt: now,
+        updatedAt: now,
+      };
+    });
+
+    const newProject: Project = {
+      id: newProjectId,
+      name: `${project.name} (복사본)`,
+      description: project.description,
+      createdAt: now,
+      updatedAt: now,
+      sheets: newSheets,
+    };
+
+    set((state) => ({
+      projects: [...state.projects, newProject],
+      currentProjectId: newProjectId,
+      currentSheetId: newSheets.length > 0 ? newSheets[0].id : null,
+      openSheetTabs: newSheets.length > 0 ? [newSheets[0].id] : [],
+    }));
+
+    return newProjectId;
+  },
+
+  reorderProjects: (fromIndex, toIndex) => {
+    set((state) => {
+      const projects = [...state.projects];
+      const [removed] = projects.splice(fromIndex, 1);
+      projects.splice(toIndex, 0, removed);
+      return { projects };
+    });
+  },
+
   setCurrentProject: (id) => {
     set({ currentProjectId: id, currentSheetId: null });
   },
@@ -155,17 +263,15 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   },
 
   // 시트 액션
-  createSheet: (projectId, name) => {
+  createSheet: (projectId, name, exportClassName) => {
     const id = uuidv4();
     const now = Date.now();
     const newSheet: Sheet = {
       id,
       name,
-      columns: [
-        { id: uuidv4(), name: 'ID', type: 'general' as ColumnType, width: 80 },
-        { id: uuidv4(), name: '이름', type: 'general' as ColumnType, width: 150 },
-      ],
+      columns: [],
       rows: [],
+      exportClassName: exportClassName || undefined,
       createdAt: now,
       updatedAt: now,
     };
@@ -202,20 +308,6 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   deleteSheet: (projectId, sheetId) => {
     const now = Date.now();
-    const project = get().projects.find((p) => p.id === projectId);
-
-    // 마지막 시트를 삭제하는 경우 새 빈 시트 생성
-    const isLastSheet = project?.sheets.length === 1;
-    const newSheetId = isLastSheet ? uuidv4() : null;
-    const newSheet: Sheet | null = isLastSheet ? {
-      id: newSheetId!,
-      name: '시트 1',
-      columns: [],
-      rows: [],
-      stickers: [],
-      createdAt: now,
-      updatedAt: now,
-    } : null;
 
     set((state) => {
       const newOpenTabs = state.openSheetTabs.filter((id) => id !== sheetId);
@@ -224,18 +316,14 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
           p.id === projectId
             ? {
                 ...p,
-                sheets: isLastSheet && newSheet
-                  ? [newSheet]
-                  : p.sheets.filter((s) => s.id !== sheetId),
+                sheets: p.sheets.filter((s) => s.id !== sheetId),
                 updatedAt: now,
               }
             : p
         ),
-        openSheetTabs: isLastSheet && newSheetId
-          ? [...newOpenTabs, newSheetId]
-          : newOpenTabs,
+        openSheetTabs: newOpenTabs,
         currentSheetId: state.currentSheetId === sheetId
-          ? (isLastSheet ? newSheetId : (newOpenTabs.length > 0 ? newOpenTabs[newOpenTabs.length - 1] : null))
+          ? (newOpenTabs.length > 0 ? newOpenTabs[newOpenTabs.length - 1] : null)
           : state.currentSheetId,
       };
     });
@@ -346,6 +434,42 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
         return { ...p, sheets, updatedAt: now };
       }),
     }));
+  },
+
+  moveSheetToProject: (fromProjectId, toProjectId, sheetId) => {
+    const now = Date.now();
+    const state = get();
+    const fromProject = state.projects.find((p) => p.id === fromProjectId);
+    const sheet = fromProject?.sheets.find((s) => s.id === sheetId);
+    if (!sheet) return;
+
+    set((state) => {
+      const newOpenTabs = state.openSheetTabs.filter((id) => id !== sheetId);
+      return {
+        projects: state.projects.map((p) => {
+          if (p.id === fromProjectId) {
+            // 원본 프로젝트에서 시트 제거
+            return {
+              ...p,
+              sheets: p.sheets.filter((s) => s.id !== sheetId),
+              updatedAt: now,
+            };
+          }
+          if (p.id === toProjectId) {
+            // 대상 프로젝트에 시트 추가
+            return {
+              ...p,
+              sheets: [...p.sheets, { ...sheet, updatedAt: now }],
+              updatedAt: now,
+            };
+          }
+          return p;
+        }),
+        currentProjectId: toProjectId,
+        currentSheetId: sheetId,
+        openSheetTabs: [...newOpenTabs, sheetId],
+      };
+    });
   },
 
   // 컬럼 액션

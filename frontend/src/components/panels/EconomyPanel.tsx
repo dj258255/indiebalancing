@@ -5,7 +5,8 @@ import { useTranslations } from 'next-intl';
 import {
   Coins, Plus, Trash2, TrendingUp, TrendingDown,
   AlertTriangle, CheckCircle, RefreshCw, Download,
-  ArrowUpCircle, ArrowDownCircle, Settings, Info
+  ArrowUpCircle, ArrowDownCircle, Settings, Info,
+  Maximize2, X
 } from 'lucide-react';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
@@ -36,6 +37,7 @@ export default function EconomyPanel({ showHelp, setShowHelp }: EconomyPanelProp
   const [sinks, setSinks] = useState<Sink[]>(DEFAULT_SINKS);
   const [config, setConfig] = useState<EconomyConfig>(DEFAULT_CONFIG);
   const [activeTab, setActiveTab] = useState<'faucets' | 'sinks' | 'config'>('faucets');
+  const [fullscreenChart, setFullscreenChart] = useState(false);
 
   // 시뮬레이션 결과
   const result = useMemo(() => {
@@ -473,9 +475,18 @@ export default function EconomyPanel({ showHelp, setShowHelp }: EconomyPanelProp
         <div className="flex-1 overflow-y-auto p-4 space-y-4">
           {/* 통화량 변화 그래프 */}
           <div className="p-4 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-            <h3 className="text-sm font-medium mb-3" style={{ color: 'var(--text-primary)' }}>
-              {t('supplyOverTime')} ({config.simulationDays}{t('days')})
-            </h3>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
+                {t('supplyOverTime')} ({config.simulationDays}{t('days')})
+              </h3>
+              <button
+                onClick={() => setFullscreenChart(true)}
+                className="p-1.5 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
+                title="전체화면"
+              >
+                <Maximize2 className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+              </button>
+            </div>
             <div className="h-48">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={result.supplyOverTime}>
@@ -612,6 +623,67 @@ export default function EconomyPanel({ showHelp, setShowHelp }: EconomyPanelProp
         </div>
       </div>
       </div>
+
+      {/* Fullscreen Chart Modal */}
+      {fullscreenChart && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4"
+          style={{ background: 'rgba(0, 0, 0, 0.8)' }}
+          onClick={() => setFullscreenChart(false)}
+        >
+          <div
+            className="w-full h-full max-w-6xl max-h-[90vh] rounded-xl p-6 flex flex-col"
+            style={{ background: 'var(--bg-primary)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {t('supplyOverTime')} ({config.simulationDays}{t('days')})
+              </h2>
+              <button
+                onClick={() => setFullscreenChart(false)}
+                className="p-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
+              >
+                <X className="w-5 h-5" style={{ color: 'var(--text-tertiary)' }} />
+              </button>
+            </div>
+            <div className="flex-1 min-h-0">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={result.supplyOverTime}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
+                  <XAxis
+                    dataKey="day"
+                    tick={{ fill: 'var(--text-tertiary)', fontSize: 12 }}
+                    axisLine={{ stroke: 'var(--border-primary)' }}
+                  />
+                  <YAxis
+                    tick={{ fill: 'var(--text-tertiary)', fontSize: 12 }}
+                    axisLine={{ stroke: 'var(--border-primary)' }}
+                    tickFormatter={(v) => formatNumber(v)}
+                  />
+                  <Tooltip
+                    contentStyle={{
+                      background: 'var(--bg-primary)',
+                      border: '1px solid var(--border-primary)',
+                      borderRadius: '8px',
+                      fontSize: '14px'
+                    }}
+                    formatter={(value: number) => [formatNumber(value), t('supply')]}
+                    labelFormatter={(day) => `Day ${day}`}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey="supply"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

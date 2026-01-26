@@ -31,11 +31,15 @@
     "exportCsv": "CSV 내보내기",
     "exportCsvDesc": "현재 시트만 · 계산된 값",
     "selectSheetFirst": "시트를 먼저 선택하세요",
+    "noSheetsAvailable": "사용 가능한 시트가 없습니다",
+    "selectSheet": "시트 선택",
     "importJson": "JSON 가져오기",
     "importJsonDesc": "프로젝트 추가 · 기존 데이터 유지",
     "importCsv": "CSV 가져오기",
     "importCsvDesc": "새 시트로 추가",
     "selectProjectFirst": "프로젝트를 먼저 선택하세요",
+    "noProjects": "프로젝트가 없습니다",
+    "project": "프로젝트",
     "panelTools": "패널 도구",
     "dropHere": "하단에서 드래그해서 추가"
   },
@@ -54,13 +58,20 @@
     "duplicate": "복제",
     "rowCount": "{count}개 행",
     "colCount": "{count}개 열",
-    "selectCellFor": "{field}에 사용할 셀을 선택하세요"
+    "selectCellFor": "{field}에 사용할 셀을 선택하세요",
+    "moveConfirm": "\"{sheetName}\" 시트를 \"{projectName}\" 프로젝트로 이동하시겠습니까?",
+    "sheets": "시트",
+    "className": "클래스명",
+    "editClassName": "클래스명 편집",
+    "exportClassName": "내보내기 클래스명"
   },
   "project": {
     "noProject": "프로젝트가 없습니다",
     "createProject": "새 프로젝트를 만들어 시작하세요",
     "deleteProject": "프로젝트 삭제",
     "renameProject": "프로젝트 이름 변경",
+    "rename": "이름 변경",
+    "duplicate": "복제",
     "projectName": "프로젝트 이름",
     "projectDescription": "프로젝트 설명",
     "deleteConfirm": "\"{name}\" 프로젝트를 삭제하시겠습니까?",
@@ -88,7 +99,11 @@
     "redo": "다시 실행",
     "memo": "메모",
     "help": "도움말",
-    "change": "변경"
+    "change": "변경",
+    "fullscreen": "전체화면",
+    "selectAll": "전체 선택",
+    "deselectAll": "전체 해제",
+    "optional": "선택"
   },
   "contextMenu": {
     "cut": "잘라내기",
@@ -134,6 +149,7 @@
     "undoHistory": "실행 취소 히스토리",
     "redoHistory": "다시 실행 히스토리",
     "noHistory": "히스토리 없음",
+    "clearHistory": "기록 전체 삭제",
     "historyType": {
       "cell": "셀 수정",
       "row": "행 변경",
@@ -352,7 +368,10 @@
     "maxValue": "최댓값",
     "none": "없음",
     "required": "필수 입력",
-    "lock": "열 잠금 (편집 방지)"
+    "lock": "열 잠금 (편집 방지)",
+    "exportName": "Export 필드명",
+    "exportNamePlaceholder": "예: attackPower, maxHp",
+    "exportNameHelp": "게임 엔진 내보내기 시 사용할 영문 필드명입니다. 비워두면 열 이름을 자동 변환합니다."
   },
   "formula": {
     "functions": "함수",
@@ -401,6 +420,7 @@
   "templateSelector": {
     "title": "새 시트 만들기",
     "subtitle": "장르와 카테고리로 필터링하여 적합한 템플릿을 선택하세요",
+    "targetProject": "대상 프로젝트",
     "gameGenre": "게임 장르",
     "search": "검색...",
     "activeFilters": "활성 필터:",
@@ -528,11 +548,30 @@
   },
   "export": {
     "codeGeneration": "코드 생성",
-    "codeGenerationDesc": "C#, GDScript 등 게임 엔진용 코드로 변환"
+    "codeGenerationDesc": "C#, GDScript 등 게임 엔진용 코드로 변환",
+    "basicExport": "기본 내보내기",
+    "gameEngine": "게임 엔진",
+    "selectFormatPrompt": "내보내기 형식을 선택하세요",
+    "selectFormatDesc": "왼쪽에서 형식을 선택하고 생성하기를 클릭하세요",
+    "allProjects": "모든 프로젝트",
+    "sheetsSelected": "{count}개 시트 선택됨",
+    "generate": "생성하기",
+    "dataToExport": "내보낼 데이터",
+    "allProjectsSelected": "모든 프로젝트 ({count}개)",
+    "selectSheets": "시트를 선택하세요",
+    "selectFormat": "형식 선택",
+    "selectData": "데이터 선택",
+    "options": "옵션"
   },
   "import": {
     "codeImport": "코드 가져오기",
-    "codeImportDesc": "게임 엔진 코드에서 데이터 추출"
+    "codeImportDesc": "게임 엔진 코드에서 데이터 추출",
+    "basicImport": "기본 가져오기",
+    "selectFormatPrompt": "가져오기 형식을 선택하세요",
+    "selectFormatDesc": "왼쪽에서 형식을 선택하면 파일 업로드가 가능합니다",
+    "selectProject": "프로젝트 선택",
+    "uploadFile": "파일 업로드",
+    "useFileName": "파일 이름 사용"
   },
   "formulaPreset": {
     "title": "수식 프리셋",
@@ -1581,7 +1620,8 @@
     "title": "게임 엔진 Export",
     "subtitle": "Unity, Unreal, Godot 형식으로 내보내기",
     "sheetToExport": "내보낼 시트",
-    "className": "클래스명 (선택)",
+    "className": "클래스명",
+    "classNameHint": "영문/숫자/밑줄만 사용 가능 (예: CharacterStats)",
     "filesGenerated": "생성될 파일 ({count}개)",
     "downloadAll": "모두 다운로드",
     "copy": "복사",
@@ -1836,7 +1876,8 @@
     "maxTTK": "최대 TTK",
     "ttkDistribution": "TTK 분포",
     "comparisonResults": "비교 결과",
-    "description": "Monte Carlo 시뮬레이션을 통해 DPS 분산을 분석합니다. 크리티컬 확률, 피해 편차 등 확률적 요소가 실제 전투에서 어떤 분포를 만드는지 확인할 수 있습니다."
+    "description": "Monte Carlo 시뮬레이션을 통해 DPS 분산을 분석합니다. 크리티컬 확률, 피해 편차 등 확률적 요소가 실제 전투에서 어떤 분포를 만드는지 확인할 수 있습니다.",
+    "selectFromCell": "셀에서 값 가져오기"
   },
   "curveFitting": {
     "title": "곡선 피팅",
@@ -1848,6 +1889,23 @@
     "helpStep2": "피팅된 곡선 목록에서 원하는 곡선을 선택합니다",
     "helpStep3Title": "3. 코드 복사",
     "helpStep3": "선택한 곡선의 수식을 TypeScript/C#/Python 코드로 복사합니다",
+    "helpCurvesTitle": "곡선 유형 설명",
+    "curves": {
+      "linear": "Linear (선형)",
+      "linearDesc": "y = ax + b. 일정한 비율로 증가/감소. 레벨당 고정 스탯 증가, 거리에 비례하는 데미지 감소 등.",
+      "quadratic": "Quadratic (2차)",
+      "quadraticDesc": "y = ax² + bx + c. 가속도가 붙는 성장. 초반 완만 → 후반 급격한 상승. 경험치 요구량, 후반 강화 비용 등.",
+      "cubic": "Cubic (3차)",
+      "cubicDesc": "y = ax³ + bx² + cx + d. S자형 곡선 표현 가능. 초반 느림 → 중반 급성장 → 후반 완화.",
+      "power": "Power (거듭제곱)",
+      "powerDesc": "y = ax^b. 지수에 따라 성장률 조절. b<1이면 수확체감, b>1이면 가속 성장. RPG 데미지 공식에 자주 사용.",
+      "exponential": "Exponential (지수)",
+      "exponentialDesc": "y = a·e^(bx). 폭발적인 성장/감소. 복리 효과, 인플레이션, 쿨다운 감소율 등.",
+      "logarithmic": "Logarithmic (로그)",
+      "logarithmicDesc": "y = a·ln(x) + b. 초반 급성장 → 후반 완화 (수확체감). 업그레이드 효율, 스킬 숙련도 등.",
+      "sigmoid": "Sigmoid (S자)",
+      "sigmoidDesc": "y = L/(1+e^(-k(x-x₀))). 최소~최대값 사이의 부드러운 전환. 확률 곡선, 난이도 스케일링, 레벨 제한 스탯 등."
+    },
     "pointMode": "포인트",
     "drawMode": "드로우",
     "undo": "실행 취소",
@@ -1860,6 +1918,8 @@
     "bestFit": "최적 피팅",
     "formulaCode": "수식 코드",
     "copyCode": "코드 복사",
-    "copied": "복사됨!"
+    "copied": "복사됨!",
+    "history": "기록",
+    "clearHistory": "기록 전체 삭제"
   }
 }

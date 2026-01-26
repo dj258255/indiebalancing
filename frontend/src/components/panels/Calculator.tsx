@@ -12,7 +12,7 @@ import { Tooltip } from '@/components/ui/Tooltip';
 function getRowDisplayName(rowId: string, currentSheet: { name: string; rows: { id: string }[] } | undefined, t: any): string {
   if (!currentSheet) return t('sheet.rows');
   const rowIndex = currentSheet.rows.findIndex(r => r.id === rowId);
-  return `${currentSheet.name} - ${rowIndex + 1}${t('sheet.rows')}`;
+  return `${currentSheet.name} - ${t('comparison.rowNum', { num: rowIndex + 1 })}`;
 }
 
 interface CalculatorProps {

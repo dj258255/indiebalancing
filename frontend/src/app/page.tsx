@@ -12,12 +12,7 @@ import {
   stopAutoSave,
   startAutoBackup,
   stopAutoBackup,
-  exportToJSON,
-  importFromJSON,
-  exportSheetToCSV,
-  importSheetFromCSV,
 } from '@/lib/storage';
-import { downloadFile } from '@/lib/utils';
 
 // Layout components
 import { Sidebar, SheetTabs } from '@/components/layout';
@@ -29,8 +24,6 @@ import { SheetTable, StickerLayer } from '@/components/sheet';
 import {
   SettingsModal,
   ReferencesModal,
-  GameEngineExportModal,
-  GameEngineImportModal,
   OnboardingGuide,
   useOnboardingStatus,
   ExportModal,
@@ -140,8 +133,6 @@ export default function Home() {
   // Modal state
   const [showSettings, setShowSettings] = useState(false);
   const [showReferences, setShowReferences] = useState(false);
-  const [showGameEngineExport, setShowGameEngineExport] = useState(false);
-  const [showGameEngineImport, setShowGameEngineImport] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [showImportModal, setShowImportModal] = useState(false);
   const { showOnboarding, setShowOnboarding } = useOnboardingStatus();
@@ -170,7 +161,7 @@ export default function Home() {
   // Derived state
   const currentProject = projects.find((p) => p.id === currentProjectId) || null;
   const currentSheet = currentProject?.sheets.find((s) => s.id === currentSheetId) || null;
-  const isModalOpen = showOnboarding || showReferences || showGameEngineExport || showGameEngineImport;
+  const isModalOpen = showOnboarding || showReferences || showExportModal || showImportModal;
 
   // Initial data load
   useEffect(() => {
@@ -244,100 +235,6 @@ export default function Home() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showHistoryPanel]);
 
-  // Export handlers
-  const handleExportJSON = () => {
-    const json = exportToJSON(projects);
-    downloadFile(json, `indiebalancing-${new Date().toISOString().slice(0, 10)}.json`);
-  };
-
-  const handleExportCSV = () => {
-    if (!currentSheet) {
-      alert(t('alert.exportSelectSheet'));
-      return;
-    }
-    const csv = exportSheetToCSV(currentSheet);
-    const projectName = currentProject?.name || 'project';
-    downloadFile(csv, `${projectName}-${currentSheet.name}.csv`, 'text/csv');
-  };
-
-  // Import handlers
-  const handleImportJSON = () => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.json';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-
-      try {
-        const text = await file.text();
-        const imported = importFromJSON(text);
-        setProjects([...projects, ...imported]);
-        await saveAllProjects([...projects, ...imported]);
-        alert(t('project.importSuccess', { count: imported.length }));
-      } catch {
-        alert(t('project.importFailed'));
-      }
-    };
-    input.click();
-  };
-
-  const handleImportCSV = () => {
-    if (!currentProjectId) {
-      alert(t('alert.importSelectProject'));
-      return;
-    }
-
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = '.csv';
-    input.onchange = async (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (!file) return;
-
-      try {
-        const text = await file.text();
-        const { columns, rows } = importSheetFromCSV(text);
-
-        if (columns.length === 0) {
-          alert(t('project.csvImportEmpty'));
-          return;
-        }
-
-        // 새 시트 생성
-        const sheetName = file.name.replace(/\.csv$/i, '');
-        const sheetId = createSheet(currentProjectId, sheetName);
-
-        // 컬럼 추가
-        const columnIdMap = new Map<string, string>();
-        columns.forEach((col, idx) => {
-          const colId = addColumn(currentProjectId, sheetId, {
-            name: col.name,
-            type: col.type,
-            width: col.name.length > 10 ? 150 : 100,
-          });
-          columnIdMap.set(`col_${idx}`, colId);
-        });
-
-        // 행 추가
-        for (const rowData of rows) {
-          const rowId = addRow(currentProjectId, sheetId);
-          for (const [tempId, value] of Object.entries(rowData.cells)) {
-            const colId = columnIdMap.get(tempId);
-            if (colId && value !== undefined) {
-              updateCell(currentProjectId, sheetId, rowId, colId, value as string | number | null);
-            }
-          }
-        }
-
-        alert(t('project.csvImportSuccess', { name: sheetName, cols: columns.length, rows: rows.length }));
-      } catch {
-        alert(t('project.importFailed'));
-      }
-    };
-    input.click();
-  };
-
   // Sidebar callbacks
   const sidebarCallbacks = {
     onShowChart: () => setShowChart(!showChart),
@@ -346,8 +243,6 @@ export default function Home() {
     onShowComparison: () => setShowComparison(!showComparison),
     onShowReferences: () => setShowReferences(true),
     onShowPresetComparison: () => setShowPresetComparison(!showPresetComparison),
-    onShowGameEngineExport: () => setShowGameEngineExport(true),
-    onShowGameEngineImport: () => setShowGameEngineImport(true),
     onShowImbalanceDetector: () => setShowImbalanceDetector(!showImbalanceDetector),
     onShowGoalSolver: () => setShowGoalSolver(!showGoalSolver),
     onShowBalanceAnalysis: () => setShowBalanceAnalysis(!showBalanceAnalysis),
@@ -417,14 +312,6 @@ export default function Home() {
             setShowPresetComparison(true);
             setShowMobileSidebar(false);
           },
-          onShowGameEngineExport: () => {
-            setShowGameEngineExport(true);
-            setShowMobileSidebar(false);
-          },
-          onShowGameEngineImport: () => {
-            setShowGameEngineImport(true);
-            setShowMobileSidebar(false);
-          },
         }}
       />
 
@@ -472,25 +359,11 @@ export default function Home() {
       {showOnboarding && <OnboardingGuide onClose={() => setShowOnboarding(false)} />}
       <SettingsModal isOpen={showSettings} onClose={() => setShowSettings(false)} />
       {showReferences && <ReferencesModal onClose={() => setShowReferences(false)} />}
-      {showGameEngineExport && <GameEngineExportModal onClose={() => setShowGameEngineExport(false)} />}
-      {showGameEngineImport && <GameEngineImportModal onClose={() => setShowGameEngineImport(false)} />}
       {showExportModal && (
-        <ExportModal
-          onClose={() => setShowExportModal(false)}
-          onExportJSON={handleExportJSON}
-          onExportCSV={handleExportCSV}
-          onExportCode={() => setShowGameEngineExport(true)}
-          hasCurrentSheet={!!currentSheet}
-        />
+        <ExportModal onClose={() => setShowExportModal(false)} />
       )}
       {showImportModal && (
-        <ImportModal
-          onClose={() => setShowImportModal(false)}
-          onImportJSON={handleImportJSON}
-          onImportCSV={handleImportCSV}
-          onImportCode={() => setShowGameEngineImport(true)}
-          hasCurrentProject={!!currentProjectId}
-        />
+        <ImportModal onClose={() => setShowImportModal(false)} />
       )}
 
       {/* Tool Panels (Desktop) - 위치에 따라 자동으로 적절한 레이아웃 적용 */}

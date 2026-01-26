@@ -31,11 +31,15 @@
     "exportCsv": "Export CSV",
     "exportCsvDesc": "Current sheet only",
     "selectSheetFirst": "Select a sheet first",
+    "noSheetsAvailable": "No sheets available",
+    "selectSheet": "Select sheet",
     "importJson": "Import JSON",
     "importJsonDesc": "Add projects, keep existing data",
     "importCsv": "Import CSV",
     "importCsvDesc": "Add as new sheet",
     "selectProjectFirst": "Select a project first",
+    "noProjects": "No projects",
+    "project": "Project",
     "panelTools": "Panel Tools",
     "dropHere": "Drag from bottom to add"
   },
@@ -53,13 +57,20 @@
     "rename": "Rename",
     "rowCount": "{count} rows",
     "colCount": "{count} columns",
-    "selectCellFor": "Select a cell for {field}"
+    "selectCellFor": "Select a cell for {field}",
+    "sheets": "sheets",
+    "moveConfirm": "Move \"{sheetName}\" sheet to \"{projectName}\" project?",
+    "className": "Class Name",
+    "editClassName": "Edit Class Name",
+    "exportClassName": "Export Class Name"
   },
   "project": {
     "noProject": "No projects",
     "createProject": "Create a new project to get started",
     "deleteProject": "Delete Project",
     "renameProject": "Rename Project",
+    "rename": "Rename",
+    "duplicate": "Duplicate",
     "projectName": "Project Name",
     "projectDescription": "Project Description",
     "deleteConfirm": "Delete project \"{name}\"?",
@@ -87,7 +98,11 @@
     "redo": "Redo",
     "memo": "Memo",
     "help": "Help",
-    "change": "Change"
+    "change": "Change",
+    "fullscreen": "Fullscreen",
+    "selectAll": "Select All",
+    "deselectAll": "Deselect All",
+    "optional": "optional"
   },
   "contextMenu": {
     "cut": "Cut",
@@ -133,6 +148,7 @@
     "undoHistory": "Undo History",
     "redoHistory": "Redo History",
     "noHistory": "No history",
+    "clearHistory": "Clear All History",
     "historyType": {
       "cell": "Cell Edit",
       "row": "Row Change",
@@ -351,7 +367,10 @@
     "maxValue": "Max Value",
     "none": "None",
     "required": "Required",
-    "lock": "Lock Column (Prevent Editing)"
+    "lock": "Lock Column (Prevent Editing)",
+    "exportName": "Export Field Name",
+    "exportNamePlaceholder": "e.g., attackPower, maxHp",
+    "exportNameHelp": "English field name used when exporting to game engines. Leave empty to auto-convert column name."
   },
   "formula": {
     "functions": "Functions",
@@ -400,6 +419,7 @@
   "templateSelector": {
     "title": "Create New Sheet",
     "subtitle": "Filter by genre and category to find the right template",
+    "targetProject": "Target Project",
     "gameGenre": "Game Genre",
     "search": "Search...",
     "activeFilters": "Active filters:",
@@ -527,11 +547,30 @@
   },
   "export": {
     "codeGeneration": "Code Generation",
-    "codeGenerationDesc": "Convert to game engine code (C#, GDScript, etc.)"
+    "codeGenerationDesc": "Convert to game engine code (C#, GDScript, etc.)",
+    "basicExport": "Basic Export",
+    "gameEngine": "Game Engine",
+    "selectFormatPrompt": "Select export format",
+    "selectFormatDesc": "Select a format on the left and click Generate",
+    "allProjects": "All Projects",
+    "sheetsSelected": "{count} sheets selected",
+    "generate": "Generate",
+    "dataToExport": "Data to Export",
+    "allProjectsSelected": "All projects ({count})",
+    "selectSheets": "Select sheets",
+    "selectFormat": "Select Format",
+    "selectData": "Select Data",
+    "options": "Options"
   },
   "import": {
     "codeImport": "Import Code",
-    "codeImportDesc": "Extract data from game engine code"
+    "codeImportDesc": "Extract data from game engine code",
+    "basicImport": "Basic Import",
+    "selectFormatPrompt": "Select import format",
+    "selectFormatDesc": "Select a format on the left to upload file",
+    "selectProject": "Select Project",
+    "uploadFile": "Upload File",
+    "useFileName": "Use file name"
   },
   "formulaPreset": {
     "title": "Formula Presets",
@@ -1577,7 +1616,8 @@
     "title": "Game Engine Export",
     "subtitle": "Export to Unity, Unreal, Godot formats",
     "sheetToExport": "Sheet to Export",
-    "className": "Class Name (optional)",
+    "className": "Class Name",
+    "classNameHint": "Use letters, numbers, underscores only (e.g., CharacterStats)",
     "filesGenerated": "Files to Generate ({count})",
     "downloadAll": "Download All",
     "copy": "Copy",
@@ -1832,7 +1872,8 @@
     "maxTTK": "Max TTK",
     "ttkDistribution": "TTK Distribution",
     "comparisonResults": "Comparison Results",
-    "description": "Analyze DPS variance using Monte Carlo simulation. See how probabilistic factors like crit rate and damage variance affect actual combat distribution."
+    "description": "Analyze DPS variance using Monte Carlo simulation. See how probabilistic factors like crit rate and damage variance affect actual combat distribution.",
+    "selectFromCell": "Get value from cell"
   },
   "curveFitting": {
     "title": "Curve Fitting",
@@ -1844,6 +1885,23 @@
     "helpStep2": "Choose the desired curve from the fitted curves list",
     "helpStep3Title": "3. Copy Code",
     "helpStep3": "Copy the formula as TypeScript/C#/Python code",
+    "helpCurvesTitle": "Curve Types",
+    "curves": {
+      "linear": "Linear",
+      "linearDesc": "y = ax + b. Constant rate of increase/decrease. Fixed stat gain per level, distance-based damage falloff, etc.",
+      "quadratic": "Quadratic",
+      "quadraticDesc": "y = ax² + bx + c. Accelerating growth. Slow early → steep late. XP requirements, late-game upgrade costs, etc.",
+      "cubic": "Cubic",
+      "cubicDesc": "y = ax³ + bx² + cx + d. Can represent S-curves. Slow start → rapid mid-growth → gradual late-game.",
+      "power": "Power",
+      "powerDesc": "y = ax^b. Growth rate controlled by exponent. b<1 for diminishing returns, b>1 for accelerating growth. Common in RPG damage formulas.",
+      "exponential": "Exponential",
+      "exponentialDesc": "y = a·e^(bx). Explosive growth/decay. Compound effects, inflation, cooldown reduction rates, etc.",
+      "logarithmic": "Logarithmic",
+      "logarithmicDesc": "y = a·ln(x) + b. Fast early growth → slow late (diminishing returns). Upgrade efficiency, skill mastery, etc.",
+      "sigmoid": "Sigmoid",
+      "sigmoidDesc": "y = L/(1+e^(-k(x-x₀))). Smooth transition between min and max values. Probability curves, difficulty scaling, level-capped stats, etc."
+    },
     "pointMode": "Point",
     "drawMode": "Draw",
     "undo": "Undo",
@@ -1856,6 +1914,8 @@
     "bestFit": "Best Fit",
     "formulaCode": "Formula Code",
     "copyCode": "Copy Code",
-    "copied": "Copied!"
+    "copied": "Copied!",
+    "history": "History",
+    "clearHistory": "Clear All History"
   }
 }

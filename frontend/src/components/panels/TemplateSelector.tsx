@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Search, FileSpreadsheet, Check, Filter, Link2 } from 'lucide-react';
+import { X, Search, FileSpreadsheet, Check, Filter, Link2, ChevronDown } from 'lucide-react';
 import {
   sheetTemplates,
   templateCategories,
@@ -26,6 +26,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
   const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<SheetTemplate | null>(null);
+  const [targetProjectId, setTargetProjectId] = useState(projectId);
 
   const { projects, loadProjects } = useProjectStore();
 
@@ -66,7 +67,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
 
     // 프로젝트에 시트 추가
     const updatedProjects = projects.map((p) => {
-      if (p.id === projectId) {
+      if (p.id === targetProjectId) {
         return {
           ...p,
           sheets: [...p.sheets, newSheet],
@@ -101,7 +102,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
     };
 
     const updatedProjects = projects.map((p) => {
-      if (p.id === projectId) {
+      if (p.id === targetProjectId) {
         return {
           ...p,
           sheets: [...p.sheets, newSheet],
@@ -161,10 +162,120 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
 
         {/* 필터 영역 */}
         <div
-          className="px-6 py-3 border-b space-y-3"
+          className="px-6 py-4 border-b space-y-4"
           style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}
         >
-          {/* 장르 선택 */}
+          {/* 첫 번째 줄: 프로젝트 선택 + 검색 */}
+          <div className="flex items-center gap-4">
+            {/* 프로젝트 선택 */}
+            <div className="flex items-center gap-2">
+              <label className="text-sm font-medium whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
+                {t('templateSelector.targetProject')}
+              </label>
+              <div className="relative">
+                <select
+                  value={targetProjectId}
+                  onChange={(e) => setTargetProjectId(e.target.value)}
+                  className="appearance-none pl-3 pr-8 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 cursor-pointer min-w-[140px]"
+                  style={{
+                    background: 'var(--bg-primary)',
+                    borderColor: 'var(--border-primary)',
+                    color: 'var(--text-primary)',
+                    // @ts-expect-error CSS custom property
+                    '--tw-ring-color': 'var(--accent)',
+                  }}
+                >
+                  {projects.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.name}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown
+                  className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                  style={{ color: 'var(--text-tertiary)' }}
+                />
+              </div>
+            </div>
+
+            {/* 구분선 */}
+            <div className="h-6 w-px" style={{ background: 'var(--border-secondary)' }} />
+
+            {/* 검색 */}
+            <div className="relative flex-1 max-w-xs">
+              <input
+                type="text"
+                placeholder={t('templateSelector.search')}
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-4 pr-10 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2"
+                style={{
+                  background: 'var(--bg-primary)',
+                  borderColor: 'var(--border-primary)',
+                  color: 'var(--text-primary)',
+                  // @ts-expect-error CSS custom property
+                  '--tw-ring-color': 'var(--accent)',
+                }}
+              />
+              <Search
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+                style={{ color: 'var(--text-tertiary)' }}
+              />
+            </div>
+
+            {/* 활성 필터 */}
+            <div className="flex items-center gap-2 ml-auto">
+              {(selectedGenre || selectedCategory || searchQuery) ? (
+                <>
+                  {selectedGenre && (
+                    <span
+                      className="px-2.5 py-1 text-xs rounded-full font-medium"
+                      style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
+                    >
+                      {(() => {
+                        const genre = gameGenres.find((g) => g.id === selectedGenre);
+                        return genre?.nameKey ? t(genre.nameKey) : genre?.name;
+                      })()}
+                    </span>
+                  )}
+                  {selectedCategory && (
+                    <span
+                      className="px-2.5 py-1 text-xs rounded-full font-medium"
+                      style={{ background: 'var(--primary-purple-light)', color: 'var(--primary-purple)' }}
+                    >
+                      {(() => {
+                        const cat = templateCategories.find((c) => c.id === selectedCategory);
+                        return cat?.nameKey ? t(cat.nameKey) : cat?.name;
+                      })()}
+                    </span>
+                  )}
+                  {searchQuery && (
+                    <span
+                      className="px-2.5 py-1 text-xs rounded-full font-medium"
+                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                    >
+                      &quot;{searchQuery}&quot;
+                    </span>
+                  )}
+                  <button
+                    onClick={clearFilters}
+                    className="text-xs underline transition-colors ml-1"
+                    style={{ color: 'var(--text-tertiary)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+                  >
+                    {t('templateSelector.reset')}
+                  </button>
+                </>
+              ) : (
+                <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                  {t('templateSelector.activeFilters')} {t('templateSelector.none')}
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* 두 번째 줄: 장르 필터 */}
           <div>
             <div className="flex items-center gap-2 mb-2">
               <Filter className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
@@ -177,7 +288,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                 <button
                   key={genre.id}
                   onClick={() => setSelectedGenre(selectedGenre === genre.id ? null : genre.id)}
-                  className="px-3 py-1.5 text-sm rounded-full border transition-colors"
+                  className="px-3 py-1.5 text-sm rounded-full border transition-all"
                   style={{
                     background: selectedGenre === genre.id ? 'var(--accent)' : 'var(--bg-primary)',
                     color: selectedGenre === genre.id ? 'white' : 'var(--text-secondary)',
@@ -188,86 +299,6 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                   {genre.nameKey ? t(genre.nameKey) : genre.name}
                 </button>
               ))}
-            </div>
-          </div>
-
-          {/* 검색 + 활성 필터 (한 줄로) */}
-          <div className="flex items-center gap-3">
-            {/* 검색 */}
-            <div className="relative flex-shrink-0" style={{ width: '240px' }}>
-              <div
-                className="absolute left-0 top-0 bottom-0 w-9 flex items-center justify-center pointer-events-none rounded-l-lg"
-                style={{ background: 'var(--bg-tertiary)' }}
-              >
-                <Search className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
-              </div>
-              <input
-                type="text"
-                placeholder={t('templateSelector.search')}
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-11 pr-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2"
-                style={{
-                  background: 'var(--bg-primary)',
-                  borderColor: 'var(--border-primary)',
-                  color: 'var(--text-primary)',
-                  // @ts-expect-error CSS custom property
-                  '--tw-ring-color': 'var(--accent)',
-                }}
-              />
-            </div>
-
-            {/* 활성 필터 표시 - 항상 표시 */}
-            <div className="flex items-center gap-2 flex-1 min-h-[32px]">
-              <span className="text-xs flex-shrink-0" style={{ color: 'var(--text-tertiary)' }}>
-                {t('templateSelector.activeFilters')}
-              </span>
-              {selectedGenre && (
-                <span
-                  className="px-2 py-0.5 text-xs rounded-full"
-                  style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
-                >
-                  {(() => {
-                    const genre = gameGenres.find((g) => g.id === selectedGenre);
-                    return genre?.nameKey ? t(genre.nameKey) : genre?.name;
-                  })()}
-                </span>
-              )}
-              {selectedCategory && (
-                <span
-                  className="px-2 py-0.5 text-xs rounded-full"
-                  style={{ background: 'var(--primary-purple-light)', color: 'var(--primary-purple)' }}
-                >
-                  {(() => {
-                    const cat = templateCategories.find((c) => c.id === selectedCategory);
-                    return cat?.nameKey ? t(cat.nameKey) : cat?.name;
-                  })()}
-                </span>
-              )}
-              {searchQuery && (
-                <span
-                  className="px-2 py-0.5 text-xs rounded-full"
-                  style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
-                >
-                  &quot;{searchQuery}&quot;
-                </span>
-              )}
-              {!selectedGenre && !selectedCategory && !searchQuery && (
-                <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                  {t('templateSelector.none')}
-                </span>
-              )}
-              {(selectedGenre || selectedCategory || searchQuery) && (
-                <button
-                  onClick={clearFilters}
-                  className="text-xs underline transition-colors ml-1"
-                  style={{ color: 'var(--text-tertiary)' }}
-                  onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
-                  onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-tertiary)')}
-                >
-                  {t('templateSelector.reset')}
-                </button>
-              )}
             </div>
           </div>
         </div>

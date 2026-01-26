@@ -155,8 +155,7 @@ export function Tooltip({ content, children, position = 'top', delay = 200, clas
       onMouseLeave={hideTooltip}
       onFocus={showTooltip}
       onBlur={hideTooltip}
-      className={`inline-flex ${className}`}
-      style={{ display: 'contents' }}
+      className={`inline-flex items-center ${className}`}
     >
       {children}
       {tooltipElement}

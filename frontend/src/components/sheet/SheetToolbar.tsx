@@ -21,6 +21,7 @@ import {
   ChevronDown,
   History,
   StickyNote,
+  X,
 } from 'lucide-react';
 import { useSheetUIStore } from '@/stores/sheetUIStore';
 import { useHistoryStore } from '@/stores/historyStore';
@@ -127,7 +128,7 @@ export default function SheetToolbar({
     currentCellStyle,
     updateCurrentCellStyle,
   } = useSheetUIStore();
-  const { canUndo, canRedo, getHistory } = useHistoryStore();
+  const { canUndo, canRedo, getHistory, deleteEntry, clear } = useHistoryStore();
   const { past, future } = getHistory();
 
   // 히스토리 드롭다운 상태
@@ -270,64 +271,111 @@ export default function SheetToolbar({
 
         {showHistory && (past.length > 0 || future.length > 0) && (
           <div
-            className="absolute top-full left-0 mt-1 min-w-[200px] max-h-[300px] overflow-y-auto rounded-lg shadow-lg border z-50"
+            className="absolute top-full left-0 mt-1 min-w-[220px] rounded-lg shadow-lg border z-50 overflow-hidden"
             style={{
               background: 'var(--bg-primary)',
               borderColor: 'var(--border-primary)',
             }}
           >
-            {/* Undo 히스토리 */}
-            {past.length > 0 && (
-              <div className="p-2 border-b" style={{ borderColor: 'var(--border-primary)' }}>
-                <div
-                  className="text-xs font-medium mb-1 px-2"
-                  style={{ color: 'var(--text-tertiary)' }}
-                >
-                  {t('toolbar.undoHistory')} ({past.length})
-                </div>
-                {[...past].reverse().slice(0, 10).map((item, index) => (
+            <div className="max-h-[280px] overflow-y-auto">
+              {/* Undo 히스토리 */}
+              {past.length > 0 && (
+                <div className="p-2 border-b" style={{ borderColor: 'var(--border-primary)' }}>
                   <div
-                    key={`undo-${index}`}
-                    className="px-2 py-1.5 text-xs rounded hover:bg-[var(--bg-hover)] cursor-default flex items-center gap-2"
-                    style={{ color: 'var(--text-secondary)' }}
+                    className="text-xs font-medium mb-1 px-2"
+                    style={{ color: 'var(--text-tertiary)' }}
                   >
-                    <Undo2 className="w-3 h-3 flex-shrink-0" style={{ color: 'var(--text-tertiary)' }} />
-                    <span className="truncate">
-                      {item.label} - {new Date(item.timestamp).toLocaleTimeString()}
-                    </span>
+                    {t('toolbar.undoHistory')} ({past.length})
                   </div>
-                ))}
-              </div>
-            )}
-
-            {/* Redo 히스토리 */}
-            {future.length > 0 && (
-              <div className="p-2">
-                <div
-                  className="text-xs font-medium mb-1 px-2"
-                  style={{ color: 'var(--text-tertiary)' }}
-                >
-                  {t('toolbar.redoHistory')} ({future.length})
+                  {[...past].reverse().slice(0, 10).map((item, index) => {
+                    const actualIndex = past.length - 1 - index;
+                    const isCurrentState = actualIndex === past.length - 1;
+                    return (
+                      <div
+                        key={`undo-${index}`}
+                        className="px-2 py-1.5 text-xs rounded hover:bg-[var(--bg-hover)] cursor-default flex items-center gap-2 group"
+                        style={{ color: 'var(--text-secondary)' }}
+                      >
+                        <Undo2 className="w-3 h-3 flex-shrink-0" style={{ color: 'var(--text-tertiary)' }} />
+                        <span className="truncate flex-1">
+                          {t.has(item.label) ? t(item.label) : item.label} - {new Date(item.timestamp).toLocaleTimeString()}
+                        </span>
+                        {!isCurrentState && (
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteEntry('past', actualIndex);
+                            }}
+                            className="p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-[var(--bg-tertiary)] transition-opacity"
+                            style={{ color: 'var(--text-tertiary)' }}
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
                 </div>
-                {[...future].slice(0, 10).map((item, index) => (
-                  <div
-                    key={`redo-${index}`}
-                    className="px-2 py-1.5 text-xs rounded hover:bg-[var(--bg-hover)] cursor-default flex items-center gap-2"
-                    style={{ color: 'var(--text-secondary)' }}
-                  >
-                    <Redo2 className="w-3 h-3 flex-shrink-0" style={{ color: 'var(--text-tertiary)' }} />
-                    <span className="truncate">
-                      {item.label} - {new Date(item.timestamp).toLocaleTimeString()}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            )}
+              )}
 
-            {/* 히스토리 없음 */}
-            {past.length === 0 && future.length === 0 && (
-              <div className="p-4 text-xs text-center" style={{ color: 'var(--text-tertiary)' }}>
-                {t('toolbar.noHistory')}
+              {/* Redo 히스토리 */}
+              {future.length > 0 && (
+                <div className="p-2">
+                  <div
+                    className="text-xs font-medium mb-1 px-2"
+                    style={{ color: 'var(--text-tertiary)' }}
+                  >
+                    {t('toolbar.redoHistory')} ({future.length})
+                  </div>
+                  {[...future].slice(0, 10).map((item, index) => (
+                    <div
+                      key={`redo-${index}`}
+                      className="px-2 py-1.5 text-xs rounded hover:bg-[var(--bg-hover)] cursor-default flex items-center gap-2 group"
+                      style={{ color: 'var(--text-secondary)' }}
+                    >
+                      <Redo2 className="w-3 h-3 flex-shrink-0" style={{ color: 'var(--text-tertiary)' }} />
+                      <span className="truncate flex-1">
+                        {t.has(item.label) ? t(item.label) : item.label} - {new Date(item.timestamp).toLocaleTimeString()}
+                      </span>
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          deleteEntry('future', index);
+                        }}
+                        className="p-0.5 rounded opacity-0 group-hover:opacity-100 hover:bg-[var(--bg-tertiary)] transition-opacity"
+                        style={{ color: 'var(--text-tertiary)' }}
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* 히스토리 없음 */}
+              {past.length === 0 && future.length === 0 && (
+                <div className="p-4 text-xs text-center" style={{ color: 'var(--text-tertiary)' }}>
+                  {t('toolbar.noHistory')}
+                </div>
+              )}
+            </div>
+
+            {/* 전체 삭제 버튼 */}
+            {(past.length > 1 || future.length > 0) && (
+              <div
+                className="border-t px-3 py-1.5"
+                style={{ borderColor: 'var(--border-primary)' }}
+              >
+                <button
+                  className="w-full text-xs py-1 rounded hover:bg-[var(--bg-hover)] transition-colors"
+                  style={{ color: 'var(--status-error)' }}
+                  onClick={() => {
+                    clear();
+                    setShowHistory(false);
+                  }}
+                >
+                  {t('toolbar.clearHistory')}
+                </button>
               </div>
             )}
           </div>

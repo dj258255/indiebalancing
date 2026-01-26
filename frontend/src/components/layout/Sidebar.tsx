@@ -30,6 +30,8 @@ import {
   Coins,
   BarChart2,
   PenTool,
+  Plus,
+  Code,
 } from 'lucide-react';
 import { useProjectStore } from '@/stores/projectStore';
 import { useToolLayoutStore, AllToolId } from '@/stores/toolLayoutStore';
@@ -48,8 +50,6 @@ interface SidebarProps {
   onShowComparison: () => void;
   onShowReferences: () => void;
   onShowPresetComparison?: () => void;
-  onShowGameEngineExport?: () => void;
-  onShowGameEngineImport?: () => void;
   onShowImbalanceDetector?: () => void;
   onShowGoalSolver?: () => void;
   onShowBalanceAnalysis?: () => void;
@@ -73,8 +73,6 @@ export default function Sidebar({
   onShowComparison,
   onShowReferences,
   onShowPresetComparison,
-  onShowGameEngineExport,
-  onShowGameEngineImport,
   onShowImbalanceDetector,
   onShowGoalSolver,
   onShowBalanceAnalysis,
@@ -98,13 +96,17 @@ export default function Sidebar({
     setCurrentSheet,
     createProject,
     deleteProject,
+    duplicateProject,
+    reorderProjects,
     updateProject,
+    createSheet,
     updateSheet,
     deleteSheet,
     selectedRows,
     clearSelectedRows,
     reorderSheets,
     duplicateSheet,
+    moveSheetToProject,
   } = useProjectStore();
 
   const {
@@ -148,8 +150,14 @@ export default function Sidebar({
 
   // 시트 드래그 앤 드롭 상태
   const [draggedSheetIndex, setDraggedSheetIndex] = useState<number | null>(null);
+  const [draggedSheetId, setDraggedSheetId] = useState<string | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const [dragProjectId, setDragProjectId] = useState<string | null>(null);
+  const [dragOverProjectId, setDragOverProjectId] = useState<string | null>(null);
+
+  // 프로젝트 드래그 앤 드롭 상태
+  const [draggedProjectIndex, setDraggedProjectIndex] = useState<number | null>(null);
+  const [dragOverProjectIndex, setDragOverProjectIndex] = useState<number | null>(null);
 
   // 시트 컨텍스트 메뉴 상태
   const [sheetContextMenu, setSheetContextMenu] = useState<{
@@ -158,8 +166,22 @@ export default function Sidebar({
     projectId: string;
     sheetId: string;
     sheetName: string;
+    exportClassName?: string;
   } | null>(null);
   const sheetContextMenuRef = useRef<HTMLDivElement>(null);
+
+  // 클래스명 편집 상태
+  const [editingClassNameSheetId, setEditingClassNameSheetId] = useState<string | null>(null);
+  const [editClassName, setEditClassName] = useState('');
+
+  // 프로젝트 컨텍스트 메뉴 상태
+  const [projectContextMenu, setProjectContextMenu] = useState<{
+    x: number;
+    y: number;
+    projectId: string;
+    projectName: string;
+  } | null>(null);
+  const projectContextMenuRef = useRef<HTMLDivElement>(null);
 
   // 도구 섹션 리사이즈 상태
   const [isResizingToolsSection, setIsResizingToolsSection] = useState(false);
@@ -187,6 +209,20 @@ export default function Sidebar({
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [sheetContextMenu]);
+
+  // 프로젝트 컨텍스트 메뉴 외부 클릭 시 닫기
+  useEffect(() => {
+    if (!projectContextMenu) return;
+
+    const handleClickOutside = (e: MouseEvent) => {
+      if (projectContextMenuRef.current && !projectContextMenuRef.current.contains(e.target as Node)) {
+        setProjectContextMenu(null);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [projectContextMenu]);
 
   useEffect(() => {
     if (!isResizingToolsSection) return;
@@ -341,16 +377,82 @@ export default function Sidebar({
             <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{t('project.createProject')}</p>
           </div>
         ) : (
-          <div className="space-y-0.5">
-            {projects.map((project) => (
-              <div key={project.id}>
+          <div className="space-y-1.5">
+            {projects.map((project, projectIndex) => (
+              <div
+                key={project.id}
+                draggable={editingProjectId !== project.id}
+                onDragStart={(e) => {
+                  if (editingProjectId === project.id) return;
+                  e.dataTransfer.setData('application/x-project-index', String(projectIndex));
+                  e.dataTransfer.effectAllowed = 'move';
+                  setDraggedProjectIndex(projectIndex);
+                }}
+                onDragEnd={() => {
+                  setDraggedProjectIndex(null);
+                  setDragOverProjectIndex(null);
+                  setDragOverProjectId(null);
+                }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  // 프로젝트 드래그 중일 때만 프로젝트 순서 변경
+                  if (draggedProjectIndex !== null) {
+                    setDragOverProjectIndex(projectIndex);
+                  }
+                  // 시트 드래그 중일 때 다른 프로젝트로 이동
+                  if (draggedSheetId && dragProjectId !== project.id) {
+                    setDragOverProjectId(project.id);
+                  }
+                }}
+                onDragLeave={() => {
+                  setDragOverProjectIndex(null);
+                  setDragOverProjectId(null);
+                }}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  // 프로젝트 순서 변경
+                  if (draggedProjectIndex !== null && draggedProjectIndex !== projectIndex) {
+                    reorderProjects(draggedProjectIndex, projectIndex);
+                  }
+                  // 시트를 다른 프로젝트로 이동
+                  if (draggedSheetId && dragProjectId && dragProjectId !== project.id) {
+                    const fromProject = projects.find(p => p.id === dragProjectId);
+                    const sheet = fromProject?.sheets.find(s => s.id === draggedSheetId);
+                    if (sheet && confirm(t('sheet.moveConfirm', { sheetName: sheet.name, projectName: project.name }))) {
+                      moveSheetToProject(dragProjectId, project.id, draggedSheetId);
+                    }
+                  }
+                  setDraggedProjectIndex(null);
+                  setDragOverProjectIndex(null);
+                  setDraggedSheetIndex(null);
+                  setDraggedSheetId(null);
+                  setDragProjectId(null);
+                  setDragOverProjectId(null);
+                }}
+              >
                 <div
                   className={cn(
-                    'flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer group transition-colors'
+                    'flex items-center gap-2 px-2 py-2 rounded-lg cursor-pointer group transition-colors border',
+                    dragOverProjectIndex === projectIndex && 'ring-2 ring-blue-400',
+                    dragOverProjectId === project.id && 'ring-2 ring-green-400 bg-green-50 dark:bg-green-900/20'
                   )}
                   style={{
-                    background: currentProjectId === project.id ? 'var(--accent-light)' : 'transparent',
+                    background: dragOverProjectId === project.id
+                      ? undefined
+                      : currentProjectId === project.id ? 'var(--accent-light)' : 'transparent',
                     color: currentProjectId === project.id ? 'var(--accent)' : 'var(--text-secondary)',
+                    borderColor: currentProjectId === project.id ? 'var(--accent)' : 'var(--border-primary)',
+                    opacity: draggedProjectIndex === projectIndex ? 0.5 : 1,
+                  }}
+                  onContextMenu={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setProjectContextMenu({
+                      x: e.clientX,
+                      y: e.clientY,
+                      projectId: project.id,
+                      projectName: project.name,
+                    });
                   }}
                 >
                   <button
@@ -382,42 +484,15 @@ export default function Sidebar({
                       autoFocus
                     />
                   ) : (
-                    <>
-                      <span
-                        onClick={() => {
-                          setCurrentProject(project.id);
-                          if (!expandedProjects.has(project.id)) toggleProject(project.id);
-                        }}
-                        className="flex-1 text-sm font-medium truncate"
-                      >
-                        {project.name}
-                      </span>
-                      <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleStartEdit(project.id, project.name);
-                          }}
-                          className="p-1 rounded transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-                          style={{ color: 'var(--text-tertiary)' }}
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          onClick={async (e) => {
-                            e.stopPropagation();
-                            if (confirm(t('project.deleteConfirm', { name: project.name }))) {
-                              deleteProject(project.id);
-                              await deleteProjectFromDB(project.id);
-                            }
-                          }}
-                          className="p-1 rounded transition-colors hover:text-red-500"
-                          style={{ color: 'var(--text-tertiary)' }}
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </>
+                    <span
+                      onClick={() => {
+                        setCurrentProject(project.id);
+                        if (!expandedProjects.has(project.id)) toggleProject(project.id);
+                      }}
+                      className="flex-1 text-sm font-medium truncate"
+                    >
+                      {project.name}
+                    </span>
                   )}
                 </div>
 
@@ -430,13 +505,17 @@ export default function Sidebar({
                         onDragStart={(e) => {
                           if (editingSheetId === sheet.id) return;
                           setDraggedSheetIndex(index);
+                          setDraggedSheetId(sheet.id);
                           setDragProjectId(project.id);
+                          e.dataTransfer.setData('application/x-sheet-id', sheet.id);
                           e.dataTransfer.effectAllowed = 'move';
                         }}
                         onDragEnd={() => {
                           setDraggedSheetIndex(null);
+                          setDraggedSheetId(null);
                           setDragOverIndex(null);
                           setDragProjectId(null);
+                          setDragOverProjectId(null);
                         }}
                         onDragOver={(e) => {
                           e.preventDefault();
@@ -449,10 +528,12 @@ export default function Sidebar({
                         }}
                         onDrop={(e) => {
                           e.preventDefault();
+                          e.stopPropagation();
                           if (draggedSheetIndex !== null && dragProjectId === project.id && draggedSheetIndex !== index) {
                             reorderSheets(project.id, draggedSheetIndex, index);
                           }
                           setDraggedSheetIndex(null);
+                          setDraggedSheetId(null);
                           setDragOverIndex(null);
                           setDragProjectId(null);
                         }}
@@ -471,6 +552,7 @@ export default function Sidebar({
                             projectId: project.id,
                             sheetId: sheet.id,
                             sheetName: sheet.name,
+                            exportClassName: sheet.exportClassName,
                           });
                         }}
                         className={cn(
@@ -522,7 +604,12 @@ export default function Sidebar({
                             autoFocus
                           />
                         ) : (
-                          <span className="truncate flex-1">{sheet.name}</span>
+                          <span className="truncate flex-1">
+                            {sheet.name}
+                            {sheet.exportClassName && (
+                              <span style={{ color: 'var(--text-tertiary)' }}> | {sheet.exportClassName}</span>
+                            )}
+                          </span>
                         )}
                       </div>
                     ))}
@@ -763,6 +850,20 @@ export default function Sidebar({
           </button>
           <button
             onClick={() => {
+              setEditingClassNameSheetId(sheetContextMenu.sheetId);
+              setEditClassName(sheetContextMenu.exportClassName || '');
+              setSheetContextMenu(null);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
+            style={{ color: 'var(--text-primary)' }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <Code className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+            {t('sheet.editClassName')}
+          </button>
+          <button
+            onClick={() => {
               duplicateSheet(sheetContextMenu.projectId, sheetContextMenu.sheetId);
               setSheetContextMenu(null);
             }}
@@ -781,6 +882,151 @@ export default function Sidebar({
                 deleteSheet(sheetContextMenu.projectId, sheetContextMenu.sheetId);
               }
               setSheetContextMenu(null);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
+            style={{ color: 'var(--danger)' }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <Trash2 className="w-4 h-4" />
+            {t('common.delete')}
+          </button>
+        </div>
+      )}
+
+      {/* 클래스명 편집 모달 */}
+      {editingClassNameSheetId && (
+        <div className="fixed inset-0 modal-overlay flex items-center justify-center z-[9999]">
+          <div
+            className="w-80 p-4 rounded-xl shadow-2xl"
+            style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }}
+          >
+            <h3 className="text-sm font-semibold mb-3" style={{ color: 'var(--text-primary)' }}>
+              {t('sheet.editClassName')}
+            </h3>
+            <input
+              type="text"
+              value={editClassName}
+              onChange={(e) => setEditClassName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && editClassName.trim()) {
+                  const sheet = projects.flatMap(p => p.sheets).find(s => s.id === editingClassNameSheetId);
+                  const project = projects.find(p => p.sheets.some(s => s.id === editingClassNameSheetId));
+                  if (project) {
+                    updateSheet(project.id, editingClassNameSheetId, { exportClassName: editClassName.trim() || undefined });
+                  }
+                  setEditingClassNameSheetId(null);
+                  setEditClassName('');
+                }
+                if (e.key === 'Escape') {
+                  setEditingClassNameSheetId(null);
+                  setEditClassName('');
+                }
+              }}
+              placeholder="CharacterStats"
+              className="w-full px-3 py-2 rounded-lg text-sm focus:outline-none mb-2"
+              style={{
+                background: 'var(--bg-secondary)',
+                border: '1px solid var(--border-primary)',
+                color: 'var(--text-primary)'
+              }}
+              autoFocus
+            />
+            <p className="text-xs mb-3" style={{ color: 'var(--text-tertiary)' }}>
+              {t('gameEngineExport.classNameHint')}
+            </p>
+            <div className="flex gap-2 justify-end">
+              <button
+                onClick={() => {
+                  setEditingClassNameSheetId(null);
+                  setEditClassName('');
+                }}
+                className="px-3 py-1.5 text-sm rounded-lg"
+                style={{ color: 'var(--text-secondary)', background: 'var(--bg-tertiary)' }}
+              >
+                {t('common.cancel')}
+              </button>
+              <button
+                onClick={() => {
+                  const project = projects.find(p => p.sheets.some(s => s.id === editingClassNameSheetId));
+                  if (project) {
+                    updateSheet(project.id, editingClassNameSheetId, { exportClassName: editClassName.trim() || undefined });
+                  }
+                  setEditingClassNameSheetId(null);
+                  setEditClassName('');
+                }}
+                className="px-3 py-1.5 text-sm rounded-lg"
+                style={{ background: 'var(--primary-blue)', color: 'white' }}
+              >
+                {t('common.save')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 프로젝트 컨텍스트 메뉴 */}
+      {projectContextMenu && (
+        <div
+          ref={projectContextMenuRef}
+          className="fixed z-50 min-w-[140px] py-1 rounded-lg shadow-lg border"
+          style={{
+            left: projectContextMenu.x,
+            top: projectContextMenu.y,
+            background: 'var(--bg-primary)',
+            borderColor: 'var(--border-primary)',
+          }}
+        >
+          <button
+            onClick={() => {
+              createSheet(projectContextMenu.projectId, t('sheet.newSheet'));
+              // 프로젝트 펼치기
+              setExpandedProjects((prev) => new Set([...prev, projectContextMenu.projectId]));
+              setProjectContextMenu(null);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
+            style={{ color: 'var(--text-primary)' }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <Plus className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+            {t('sheet.newSheet')}
+          </button>
+          <div className="my-1 border-t" style={{ borderColor: 'var(--border-primary)' }} />
+          <button
+            onClick={() => {
+              handleStartEdit(projectContextMenu.projectId, projectContextMenu.projectName);
+              setProjectContextMenu(null);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
+            style={{ color: 'var(--text-primary)' }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <Edit2 className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+            {t('project.rename')}
+          </button>
+          <button
+            onClick={() => {
+              duplicateProject(projectContextMenu.projectId);
+              setProjectContextMenu(null);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
+            style={{ color: 'var(--text-primary)' }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <Copy className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+            {t('project.duplicate')}
+          </button>
+          <div className="my-1 border-t" style={{ borderColor: 'var(--border-primary)' }} />
+          <button
+            onClick={async () => {
+              if (confirm(t('project.deleteConfirm', { name: projectContextMenu.projectName }))) {
+                deleteProject(projectContextMenu.projectId);
+                await deleteProjectFromDB(projectContextMenu.projectId);
+              }
+              setProjectContextMenu(null);
             }}
             className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
             style={{ color: 'var(--danger)' }}

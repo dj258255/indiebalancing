@@ -33,6 +33,7 @@ export default function SheetTabs({ project }: SheetTabsProps) {
   const [editName, setEditName] = useState('');
   const [showNewSheet, setShowNewSheet] = useState(false);
   const [newSheetName, setNewSheetName] = useState('');
+  const [newSheetClassName, setNewSheetClassName] = useState('');
   const [showTemplateSelector, setShowTemplateSelector] = useState(false);
 
   // 탭 너비 상태
@@ -124,8 +125,9 @@ export default function SheetTabs({ project }: SheetTabsProps) {
 
   const handleCreateSheet = () => {
     if (newSheetName.trim()) {
-      createSheet(project.id, newSheetName.trim());
+      createSheet(project.id, newSheetName.trim(), newSheetClassName.trim() || undefined);
       setNewSheetName('');
+      setNewSheetClassName('');
       setShowNewSheet(false);
     }
   };
@@ -331,6 +333,7 @@ export default function SheetTabs({ project }: SheetTabsProps) {
                 if (e.key === 'Escape') {
                   setShowNewSheet(false);
                   setNewSheetName('');
+                  setNewSheetClassName('');
                 }
               }}
               placeholder={t('table.sheetName')}
@@ -341,6 +344,26 @@ export default function SheetTabs({ project }: SheetTabsProps) {
                 color: 'var(--text-primary)'
               }}
               autoFocus
+            />
+            <input
+              type="text"
+              value={newSheetClassName}
+              onChange={(e) => setNewSheetClassName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleCreateSheet();
+                if (e.key === 'Escape') {
+                  setShowNewSheet(false);
+                  setNewSheetName('');
+                  setNewSheetClassName('');
+                }
+              }}
+              placeholder={t('sheet.className')}
+              className="w-24 px-2 py-1 text-sm border rounded"
+              style={{
+                background: 'var(--bg-primary)',
+                borderColor: 'var(--border-primary)',
+                color: 'var(--text-tertiary)'
+              }}
             />
             <button
               onClick={handleCreateSheet}
@@ -353,6 +376,7 @@ export default function SheetTabs({ project }: SheetTabsProps) {
               onClick={() => {
                 setShowNewSheet(false);
                 setNewSheetName('');
+                setNewSheetClassName('');
               }}
               className="px-2 py-1 text-sm rounded transition-colors"
               style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}

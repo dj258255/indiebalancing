@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-import { X, Check, HelpCircle, Lock } from 'lucide-react';
+import { X, Check, HelpCircle, Lock, Globe } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import FormulaAutocomplete from './FormulaAutocomplete';
 import type { Column, ColumnType, DataType, ValidationConfig } from '@/types';
@@ -14,7 +14,8 @@ interface ColumnModalProps {
     type: ColumnType;
     formula?: string;
     validation?: ValidationConfig;
-    locked?: boolean
+    locked?: boolean;
+    exportName?: string;
   }) => void;
   onClose: () => void;
   mode: 'add' | 'edit';
@@ -38,6 +39,7 @@ export default function ColumnModal({
   const [maxValue, setMaxValue] = useState(column?.validation?.max?.toString() || '');
   const [required, setRequired] = useState(column?.validation?.required || false);
   const [locked, setLocked] = useState(column?.locked || false);
+  const [exportName, setExportName] = useState(column?.exportName || '');
   const inputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
 
@@ -61,12 +63,18 @@ export default function ColumnModal({
       type: ColumnType;
       formula?: string;
       validation?: ValidationConfig;
-      locked?: boolean
+      locked?: boolean;
+      exportName?: string;
     } = {
       name: name.trim(),
       type,
       locked,
     };
+
+    // Export Name 설정 (빈 문자열이면 undefined로)
+    if (exportName.trim()) {
+      data.exportName = exportName.trim();
+    }
 
     if (type === 'formula') {
       data.formula = formula.startsWith('=') ? formula : `=${formula}`;
@@ -125,6 +133,32 @@ export default function ColumnModal({
                 color: 'var(--text-primary)'
               }}
             />
+          </div>
+
+          <div>
+            <label className="flex items-center gap-1.5 text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+              <Globe className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+              {t('column.exportName')}
+              <span className="text-xs font-normal" style={{ color: 'var(--text-tertiary)' }}>
+                ({t('common.optional')})
+              </span>
+            </label>
+            <input
+              type="text"
+              value={exportName}
+              onChange={(e) => setExportName(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSave()}
+              placeholder={t('column.exportNamePlaceholder')}
+              className="w-full px-3 py-2 border rounded-lg text-sm font-mono"
+              style={{
+                background: 'var(--bg-primary)',
+                borderColor: 'var(--border-primary)',
+                color: 'var(--text-primary)'
+              }}
+            />
+            <p className="text-xs mt-1.5" style={{ color: 'var(--text-tertiary)' }}>
+              {t('column.exportNameHelp')}
+            </p>
           </div>
 
           <div>

@@ -64,7 +64,11 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
   const [showAddColumn, setShowAddColumn] = useState(false);
   const [showAutocomplete, setShowAutocomplete] = useState(false);
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
+  const [resizingRow, setResizingRow] = useState<string | null>(null);
+  const [resizingHeader, setResizingHeader] = useState(false);
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
+  const [rowHeights, setRowHeights] = useState<Record<string, number>>({});
+  const [headerHeight, setHeaderHeight] = useState(36); // 기본 헤더 높이
   const [editingColumn, setEditingColumn] = useState<Column | null>(null);
   const [selectedCell, setSelectedCell] = useState<{ rowId: string; columnId: string } | null>(null);
   const [selectedCells, setSelectedCells] = useState<{ rowId: string; columnId: string }[]>([]);
@@ -153,6 +157,15 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     setColumnWidths(widths);
   }, [sheet.columns]);
 
+  // 행 높이 초기화
+  useEffect(() => {
+    const heights: Record<string, number> = {};
+    sheet.rows.forEach((row) => {
+      heights[row.id] = row.height || 36; // 기본 행 높이 36px
+    });
+    setRowHeights(heights);
+  }, [sheet.rows]);
+
   // 테이블 전체 너비 계산
   const tableWidth = useMemo(() => {
     const rowNumberWidth = columnWidths['rowNumber'] || 80;
@@ -193,6 +206,62 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
   }, [columnWidths, projectId, sheet.id, updateColumn]);
+
+  // 행 리사이즈 핸들러
+  const handleRowResizeStart = useCallback((rowId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setResizingRow(rowId);
+
+    const startY = e.clientY;
+    const startHeight = rowHeights[rowId] || 36;
+    let finalHeight = startHeight;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const diff = moveEvent.clientY - startY;
+      finalHeight = Math.max(24, Math.min(200, startHeight + diff)); // 최소 24px, 최대 200px
+      setRowHeights((prev) => ({ ...prev, [rowId]: finalHeight }));
+    };
+
+    const handleMouseUp = () => {
+      setResizingRow(null);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+
+      // 행 높이를 store에 저장
+      setTimeout(() => {
+        updateRow(projectId, sheet.id, rowId, { height: finalHeight });
+      }, 0);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [rowHeights, projectId, sheet.id, updateRow]);
+
+  // 헤더 높이 조절 핸들러
+  const handleHeaderResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setResizingHeader(true);
+
+    const startY = e.clientY;
+    const startHeight = headerHeight;
+
+    const handleMouseMove = (moveEvent: MouseEvent) => {
+      const diff = moveEvent.clientY - startY;
+      const newHeight = Math.max(28, Math.min(100, startHeight + diff)); // 최소 28px, 최대 100px
+      setHeaderHeight(newHeight);
+    };
+
+    const handleMouseUp = () => {
+      setResizingHeader(false);
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', handleMouseUp);
+  }, [headerHeight]);
 
   const currentProject = projects.find((p) => p.id === projectId);
 
@@ -1515,7 +1584,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
         accessorFn: (row) => getCellValue(row, col),
         header: () => (
           <div
-            className="flex items-center justify-center gap-1 h-full overflow-hidden cursor-pointer select-none"
+            className="flex flex-col items-center justify-center cursor-pointer select-none w-full"
             onClick={() => {
               // 해당 컬럼의 모든 셀 선택
               const allCellsInColumn = sheet.rows.map(row => ({
@@ -1533,15 +1602,35 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
               setColumnContextMenu({ x: e.clientX, y: e.clientY, column: col });
             }}
           >
-            {col.locked && (
-              <Lock className="w-3 h-3 shrink-0" style={{ color: 'var(--warning)' }} />
-            )}
-            <span className="font-medium truncate">{col.name}</span>
-            {col.type === 'formula' && (
-              <span className="text-xs shrink-0" style={{ color: 'var(--text-tertiary)' }}>ƒ</span>
-            )}
-            {col.validation && (
-              <span title={t('table.validationSet')} className="shrink-0"><CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--primary-green)' }} /></span>
+            <div className="flex items-center gap-1">
+              {col.locked && (
+                <Lock className="w-3 h-3 shrink-0" style={{ color: 'var(--warning)' }} />
+              )}
+              <span className="font-medium truncate">{col.name}</span>
+              {col.type === 'formula' && (
+                <span className="text-xs shrink-0" style={{ color: 'var(--text-tertiary)' }}>ƒ</span>
+              )}
+              {col.validation && (
+                <span title={t('table.validationSet')} className="shrink-0"><CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--primary-green)' }} /></span>
+              )}
+            </div>
+            {col.exportName && (
+              <>
+                <div
+                  className="w-full my-0.5 mx-2"
+                  style={{
+                    height: '1px',
+                    background: 'var(--border-primary)'
+                  }}
+                />
+                <span
+                  className="text-[10px] font-mono truncate max-w-full"
+                  style={{ color: 'var(--text-tertiary)' }}
+                  title={`Export: ${col.exportName}`}
+                >
+                  {col.exportName}
+                </span>
+              </>
             )}
           </div>
         ),
@@ -2347,9 +2436,9 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
             transformOrigin: 'left top',
           }}
         >
-          <thead className="sticky top-0 z-10" style={{ background: 'var(--bg-tertiary)' }}>
+          <thead className={cn("sticky top-0 z-10", resizingHeader && "select-none")} style={{ background: 'var(--bg-tertiary)' }}>
             {table.getHeaderGroups().map((headerGroup) => (
-              <tr key={headerGroup.id}>
+              <tr key={headerGroup.id} style={{ height: headerHeight }}>
                 {headerGroup.headers.map((header) => {
                   const isRowNumber = header.id === 'rowNumber';
                   const isActions = header.id === 'actions';
@@ -2360,13 +2449,14 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                     <th
                       key={header.id}
                       className={cn(
-                        "px-3 py-2 text-xs font-bold uppercase tracking-wide relative",
+                        "px-3 py-1.5 text-xs font-bold uppercase tracking-wide relative",
                         isActions && "px-1",
                         isRowNumber ? "text-center" : "text-left"
                       )}
                       style={{
                         width,
                         minWidth: isActions ? 36 : 60,
+                        height: headerHeight,
                         color: isSelectedColumn ? 'var(--row-col-highlight-text)' : 'var(--text-secondary)',
                         background: isSelectedColumn ? 'var(--row-col-highlight)' : undefined,
                         fontWeight: isSelectedColumn ? 700 : undefined,
@@ -2379,6 +2469,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                       {header.isPlaceholder
                         ? null
                         : flexRender(header.column.columnDef.header, header.getContext())}
+                      {/* 열 너비 조절 핸들 */}
                       {!isActions && (
                         <div
                           className={cn(
@@ -2386,6 +2477,16 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                             resizingColumn === header.id ? 'bg-[var(--accent)]' : 'hover:bg-[var(--accent)]'
                           )}
                           onMouseDown={(e) => handleResizeStart(header.id, e)}
+                        />
+                      )}
+                      {/* 헤더 높이 조절 핸들 - 행 번호 셀에만 표시 */}
+                      {isRowNumber && (
+                        <div
+                          className={cn(
+                            'absolute left-0 right-0 bottom-0 h-1 cursor-row-resize transition-colors',
+                            resizingHeader ? 'bg-[var(--accent)]' : 'hover:bg-[var(--accent)]'
+                          )}
+                          onMouseDown={handleHeaderResizeStart}
                         />
                       )}
                     </th>
@@ -2406,46 +2507,63 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                 </td>
               </tr>
             ) : (
-              table.getRowModel().rows.map((row) => (
-                <tr
-                  key={row.id}
-                  className="transition-colors"
-                  style={{ background: 'var(--bg-primary)' }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
-                  onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-primary)'}
-                >
-                  {row.getVisibleCells().map((cell) => {
-                    const isRowNumber = cell.column.id === 'rowNumber';
-                    const isActions = cell.column.id === 'actions';
-                    const width = isActions ? 36 : (columnWidths[cell.column.id] || (isRowNumber ? 80 : 150));
-                    // 선택된 셀의 행인지 확인 (행 번호 하이라이트용)
-                    const isSelectedRow = isRowNumber && selectedCell?.rowId === row.original.id;
-                    return (
-                      <td
-                        key={cell.id}
-                        className={cn(
-                          "text-[15px]",
-                          isActions && "px-1",
-                          isRowNumber && "text-center"
-                        )}
-                        style={{
-                          width,
-                          minWidth: isActions ? 36 : 60,
-                          background: isSelectedRow ? 'var(--row-col-highlight)' : undefined,
-                          color: isSelectedRow ? 'var(--row-col-highlight-text)' : undefined,
-                          fontWeight: isSelectedRow ? 700 : undefined,
-                          borderBottom: '1px solid var(--border-primary)',
-                          borderRight: isSelectedRow
-                            ? '2px solid var(--row-col-highlight-border)'
-                            : '1px solid var(--border-primary)'
-                        }}
-                      >
-                        {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                      </td>
-                    );
-                  })}
-                </tr>
-              ))
+              table.getRowModel().rows.map((row) => {
+                const rowHeight = rowHeights[row.original.id] || 36;
+                return (
+                  <tr
+                    key={row.id}
+                    className={cn("transition-colors", resizingRow && "select-none")}
+                    style={{
+                      background: 'var(--bg-primary)',
+                      height: rowHeight,
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-secondary)'}
+                    onMouseLeave={(e) => e.currentTarget.style.background = 'var(--bg-primary)'}
+                  >
+                    {row.getVisibleCells().map((cell) => {
+                      const isRowNumber = cell.column.id === 'rowNumber';
+                      const isActions = cell.column.id === 'actions';
+                      const width = isActions ? 36 : (columnWidths[cell.column.id] || (isRowNumber ? 80 : 150));
+                      // 선택된 셀의 행인지 확인 (행 번호 하이라이트용)
+                      const isSelectedRow = isRowNumber && selectedCell?.rowId === row.original.id;
+                      return (
+                        <td
+                          key={cell.id}
+                          className={cn(
+                            "text-[15px] relative",
+                            isActions && "px-1",
+                            isRowNumber && "text-center"
+                          )}
+                          style={{
+                            width,
+                            minWidth: isActions ? 36 : 60,
+                            height: rowHeight,
+                            background: isSelectedRow ? 'var(--row-col-highlight)' : undefined,
+                            color: isSelectedRow ? 'var(--row-col-highlight-text)' : undefined,
+                            fontWeight: isSelectedRow ? 700 : undefined,
+                            borderBottom: '1px solid var(--border-primary)',
+                            borderRight: isSelectedRow
+                              ? '2px solid var(--row-col-highlight-border)'
+                              : '1px solid var(--border-primary)'
+                          }}
+                        >
+                          {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                          {/* 행 높이 조절 핸들 - 행 번호 셀에만 표시 */}
+                          {isRowNumber && (
+                            <div
+                              className={cn(
+                                'absolute left-0 right-0 bottom-0 h-1 cursor-row-resize transition-colors',
+                                resizingRow === row.original.id ? 'bg-[var(--accent)]' : 'hover:bg-[var(--accent)]'
+                              )}
+                              onMouseDown={(e) => handleRowResizeStart(row.original.id, e)}
+                            />
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
@@ -2553,6 +2671,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
               width: 120,
               validation: data.validation,
               locked: data.locked,
+              exportName: data.exportName,
             });
           }}
           onClose={() => setShowAddColumn(false)}
@@ -2572,6 +2691,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
               formula: data.type === 'formula' ? data.formula : undefined,
               validation: data.validation,
               locked: data.locked,
+              exportName: data.exportName,
             });
           }}
           onClose={() => setEditingColumn(null)}

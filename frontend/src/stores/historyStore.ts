@@ -22,6 +22,7 @@ interface HistoryState {
   redo: () => Project[] | null;              // 다시 실행
   clear: () => void;                         // 히스토리 초기화
   jumpTo: (index: number) => Project[] | null; // 특정 시점으로 이동
+  deleteEntry: (type: 'past' | 'future', index: number) => void; // 개별 항목 삭제
 
   // 상태 확인
   canUndo: () => boolean;
@@ -141,6 +142,28 @@ export const useHistoryStore = create<HistoryState>((set, get) => ({
 
   clear: () => {
     set({ past: [], future: [], currentIndex: -1 });
+  },
+
+  deleteEntry: (type, index) => {
+    set((state) => {
+      if (type === 'past') {
+        // Don't delete if it would leave no history or if it's the current state
+        if (state.past.length <= 1 || index === state.past.length - 1) return state;
+        const newPast = state.past.filter((_, i) => i !== index);
+        return {
+          past: newPast,
+          future: state.future,
+          currentIndex: newPast.length - 1,
+        };
+      } else {
+        const newFuture = state.future.filter((_, i) => i !== index);
+        return {
+          past: state.past,
+          future: newFuture,
+          currentIndex: state.currentIndex,
+        };
+      }
+    });
   },
 
   canUndo: () => {

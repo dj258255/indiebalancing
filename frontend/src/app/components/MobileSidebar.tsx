@@ -9,8 +9,6 @@ interface SidebarCallbacks {
   onShowComparison: () => void;
   onShowReferences: () => void;
   onShowPresetComparison: () => void;
-  onShowGameEngineExport: () => void;
-  onShowGameEngineImport: () => void;
 }
 
 interface MobileSidebarProps {

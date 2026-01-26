@@ -28,6 +28,7 @@ export interface Sheet {
   columns: Column[];
   rows: Row[];
   stickers?: Sticker[];  // 스티커 목록
+  exportClassName?: string;  // 게임 엔진 내보내기 시 사용할 클래스명 (영문)
   createdAt: number;
   updatedAt: number;
 }
@@ -55,6 +56,7 @@ export interface Column {
   formula?: string;         // type이 'formula'일 때
   validation?: ValidationConfig;  // 유효성 검사 설정
   locked?: boolean;         // 잠금 여부
+  exportName?: string;      // 게임 엔진 내보내기 시 사용할 영문 필드명
 }
 
 // 행 타입
@@ -64,6 +66,7 @@ export interface Row {
   cellStyles?: Record<string, CellStyle>;  // 셀별 스타일 (columnId -> CellStyle)
   cellMemos?: Record<string, string>;       // 셀별 메모 (columnId -> memo text)
   locked?: boolean;  // 행 잠금 여부
+  height?: number;   // 행 높이 (px)
 }
 
 // 셀 값 타입
