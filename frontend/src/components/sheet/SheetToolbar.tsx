@@ -48,56 +48,60 @@ interface TooltipProps {
 
 function Tooltip({ children, label, shortcut }: TooltipProps) {
   const [show, setShow] = useState(false);
-  const [position, setPosition] = useState({ x: 0, y: 0 });
   const triggerRef = useRef<HTMLDivElement>(null);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleMouseEnter = () => {
-    timeoutRef.current = setTimeout(() => {
-      if (triggerRef.current) {
-        const rect = triggerRef.current.getBoundingClientRect();
-        setPosition({ x: rect.left + rect.width / 2, y: rect.bottom + 4 });
-        setShow(true);
-      }
-    }, 400); // 400ms 딜레이
-  };
-
-  const handleMouseLeave = () => {
-    if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+  // 위치를 렌더링 시 계산
+  const getPosition = () => {
+    if (triggerRef.current) {
+      const rect = triggerRef.current.getBoundingClientRect();
+      return { x: rect.left + rect.width / 2, y: rect.bottom + 6 };
     }
-    setShow(false);
+    return { x: 0, y: 0 };
   };
+
+  const position = show ? getPosition() : { x: 0, y: 0 };
 
   return (
     <div
       ref={triggerRef}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onMouseEnter={() => setShow(true)}
+      onMouseLeave={() => setShow(false)}
       className="relative inline-flex"
     >
       {children}
       {show && (
         <div
-          className="fixed z-[100] px-2 py-1 rounded shadow-lg text-xs whitespace-nowrap pointer-events-none"
+          className="fixed z-[100] px-2.5 py-1.5 rounded-lg shadow-lg text-xs whitespace-nowrap pointer-events-none"
           style={{
             left: position.x,
             top: position.y,
             transform: 'translateX(-50%)',
-            background: 'var(--bg-tertiary)',
+            background: 'var(--bg-primary)',
             border: '1px solid var(--border-primary)',
             color: 'var(--text-primary)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
           }}
         >
-          <span>{label}</span>
-          {shortcut && (
-            <span
-              className="ml-2 px-1 py-0.5 rounded text-[10px]"
-              style={{ background: 'var(--bg-hover)', color: 'var(--text-tertiary)' }}
-            >
-              {shortcut}
-            </span>
-          )}
+          {/* 위쪽 화살표 */}
+          <div
+            className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rotate-45"
+            style={{
+              background: 'var(--bg-primary)',
+              borderLeft: '1px solid var(--border-primary)',
+              borderTop: '1px solid var(--border-primary)',
+            }}
+          />
+          <div className="relative flex items-center gap-2">
+            <span className="font-medium">{label}</span>
+            {shortcut && (
+              <span
+                className="px-1.5 py-0.5 rounded text-[10px] font-medium"
+                style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}
+              >
+                {shortcut}
+              </span>
+            )}
+          </div>
         </div>
       )}
     </div>
@@ -135,11 +139,18 @@ export default function SheetToolbar({
   const [showHistory, setShowHistory] = useState(false);
   const historyRef = useRef<HTMLDivElement>(null);
 
+  // 회전 드롭다운 상태
+  const [showRotation, setShowRotation] = useState(false);
+  const rotationRef = useRef<HTMLDivElement>(null);
+
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (historyRef.current && !historyRef.current.contains(event.target as Node)) {
         setShowHistory(false);
+      }
+      if (rotationRef.current && !rotationRef.current.contains(event.target as Node)) {
+        setShowRotation(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
@@ -548,31 +559,47 @@ export default function SheetToolbar({
       <Divider />
 
       {/* 텍스트 회전 */}
-      <Tooltip label={t('toolbar.textRotation')}>
-        <div className="relative">
-          <select
-            value={currentCellStyle.textRotation || 0}
-            onChange={(e) => handleRotationChange(Number(e.target.value))}
+      <div className="relative" ref={rotationRef}>
+        <Tooltip label={t('toolbar.textRotation')}>
+          <button
+            onClick={() => setShowRotation(!showRotation)}
             disabled={disabled}
-            className="appearance-none pl-2 pr-6 py-1 text-xs rounded border cursor-pointer"
+            className={`${buttonClass} ${hoverClass} flex items-center gap-1 px-2`}
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            <span className="text-xs font-medium" style={{ minWidth: '24px' }}>
+              {currentCellStyle.textRotation || 0}°
+            </span>
+            <RotateCcw className="w-3.5 h-3.5" />
+          </button>
+        </Tooltip>
+        {showRotation && (
+          <div
+            className="absolute top-full left-0 mt-1 py-1 rounded-lg shadow-lg z-50 min-w-[80px]"
             style={{
               background: 'var(--bg-primary)',
-              borderColor: 'var(--border-primary)',
-              color: 'var(--text-primary)',
+              border: '1px solid var(--border-primary)',
             }}
           >
             {TEXT_ROTATIONS.map((rot) => (
-              <option key={rot.value} value={rot.value}>
+              <button
+                key={rot.value}
+                onClick={() => {
+                  handleRotationChange(rot.value);
+                  setShowRotation(false);
+                }}
+                className="w-full px-3 py-1.5 text-xs text-left transition-colors hover:bg-[var(--bg-hover)]"
+                style={{
+                  color: currentCellStyle.textRotation === rot.value ? 'var(--primary-blue)' : 'var(--text-primary)',
+                  fontWeight: currentCellStyle.textRotation === rot.value ? 600 : 400,
+                }}
+              >
                 {rot.label}
-              </option>
+              </button>
             ))}
-          </select>
-          <RotateCcw
-            className="absolute right-1.5 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none"
-            style={{ color: 'var(--text-tertiary)' }}
-          />
-        </div>
-      </Tooltip>
+          </div>
+        )}
+      </div>
 
       <Divider />
 
@@ -581,7 +608,11 @@ export default function SheetToolbar({
         <button
           onClick={onAddMemo}
           className={`${buttonClass} ${hoverClass} flex items-center gap-1`}
-          style={{ background: '#fef08a', color: '#92400e' }}
+          style={{
+            background: 'var(--warning-light, rgba(251, 191, 36, 0.15))',
+            color: 'var(--warning, #f59e0b)',
+            border: '1px solid var(--warning, #f59e0b)',
+          }}
         >
           <StickyNote className="w-4 h-4" />
         </button>
