@@ -454,10 +454,10 @@ input[type="checkbox"]:checked::after {
 
 /* Glass Panel Base */
 .glass-panel {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.96);
   backdrop-filter: blur(20px);
   -webkit-backdrop-filter: blur(20px);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid rgba(0, 0, 0, 0.08);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.08),
     0 0 0 1px rgba(255, 255, 255, 0.1) inset;
@@ -465,7 +465,7 @@ input[type="checkbox"]:checked::after {
 }
 
 .dark .glass-panel {
-  background: rgba(30, 41, 59, 0.75);
+  background: rgba(30, 41, 59, 0.96);
   border: 1px solid rgba(255, 255, 255, 0.08);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.3),
@@ -490,26 +490,26 @@ input[type="checkbox"]:checked::after {
 
 /* Glass Card - 패널 내부 카드 */
 .glass-card {
-  background: rgba(255, 255, 255, 0.5);
+  background: rgba(255, 255, 255, 0.92);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  border: 1px solid rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba(0, 0, 0, 0.06);
   border-radius: 16px;
   transition: all 0.2s ease;
 }
 
 .glass-card:hover {
-  background: rgba(255, 255, 255, 0.7);
+  background: rgba(255, 255, 255, 0.96);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 .dark .glass-card {
-  background: rgba(51, 65, 85, 0.5);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(51, 65, 85, 0.92);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
 .dark .glass-card:hover {
-  background: rgba(51, 65, 85, 0.7);
+  background: rgba(51, 65, 85, 0.96);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
 }
 
@@ -671,19 +671,27 @@ input[type="checkbox"]:checked::after {
 /* Glass Select */
 .glass-select {
   @apply appearance-none cursor-pointer;
-  background: rgba(255, 255, 255, 0.6) !important;
-  border: 1px solid rgba(0, 0, 0, 0.08) !important;
-  border-radius: 12px !important;
+  background: rgba(255, 255, 255, 0.96) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(0, 0, 0, 0.1) !important;
+  border-radius: 8px !important;
   padding-right: 2.5rem !important;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
   background-repeat: no-repeat !important;
   background-position: right 0.75rem center !important;
+  color: var(--text-primary) !important;
 }
 
 .dark .glass-select {
-  background-color: rgba(51, 65, 85, 0.6) !important;
-  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background: rgba(30, 41, 59, 0.96) !important;
+  backdrop-filter: blur(8px) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1) !important;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+}
+
+.glass-select option {
+  background: var(--bg-primary) !important;
+  color: var(--text-primary) !important;
 }
 
 /* Glass Stat Card */

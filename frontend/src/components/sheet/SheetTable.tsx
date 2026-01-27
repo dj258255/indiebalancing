@@ -2425,8 +2425,9 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
               }}
             >
               <span
-                className="truncate block"
+                className="truncate flex-1 min-w-0"
                 style={{
+                  display: 'block',
                   fontWeight: cellStyle?.bold ? 700 : undefined,
                   fontStyle: cellStyle?.italic ? 'italic' : undefined,
                   textDecoration: [
@@ -2435,7 +2436,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                   ].filter(Boolean).join(' ') || undefined,
                   fontSize: `${cellStyle?.fontSize || DEFAULT_CELL_STYLE.fontSize}px`,
                   color: cellStyle?.fontColor || undefined,
-                  textAlign: cellStyle?.hAlign || undefined,
+                  textAlign: cellStyle?.hAlign,
                   transform: cellStyle?.textRotation ? `rotate(${cellStyle.textRotation}deg)` : undefined,
                 }}
               >

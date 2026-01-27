@@ -220,10 +220,21 @@ export default function EconomyPanel({ showHelp, setShowHelp, onClose }: Economy
                     <GlassInputField label={t('costPerUse')} value={sink.costPerUse} onChange={(v) => updateSink(sink.id, { costPerUse: v })} />
                     <GlassInputField label={t('usesPerHour')} value={sink.usesPerHour} onChange={(v) => updateSink(sink.id, { usesPerHour: v })} step={0.1} />
                     <GlassInputField label={t('playerPercent')} value={sink.playerPercentage * 100} onChange={(v) => updateSink(sink.id, { playerPercentage: v / 100 })} min={0} max={100} />
-                    <div className="flex flex-col justify-end">
+                    <div className="flex flex-col">
                       <label className="text-[10px] mb-1 font-medium" style={{ color: 'var(--text-tertiary)' }}>{t('required')}</label>
-                      <button onClick={() => updateSink(sink.id, { isRequired: !sink.isRequired })} className={cn("relative w-9 h-5 rounded-full transition-colors duration-200", sink.isRequired ? "bg-red-500" : "bg-[var(--bg-tertiary)]")} style={{ border: sink.isRequired ? 'none' : '1px solid var(--border-primary)' }}>
-                        <span className={cn("absolute w-3.5 h-3.5 rounded-full transition-all duration-200 shadow-sm", sink.isRequired ? "left-[18px] bg-white" : "left-[3px] bg-[var(--text-tertiary)]")} />
+                      <button
+                        onClick={() => updateSink(sink.id, { isRequired: !sink.isRequired })}
+                        className="flex items-center gap-2 px-2 py-1.5 rounded text-xs transition-colors"
+                        style={{
+                          background: sink.isRequired ? 'rgba(239, 68, 68, 0.15)' : 'var(--bg-secondary)',
+                          border: `1px solid ${sink.isRequired ? 'rgba(239, 68, 68, 0.4)' : 'var(--border-primary)'}`,
+                          color: sink.isRequired ? '#ef4444' : 'var(--text-tertiary)'
+                        }}
+                      >
+                        <div className={cn("w-7 h-4 rounded-full relative transition-colors duration-200", sink.isRequired ? "bg-red-500" : "bg-[var(--bg-tertiary)]")} style={{ border: sink.isRequired ? 'none' : '1px solid var(--border-secondary)' }}>
+                          <span className={cn("absolute top-0.5 w-3 h-3 rounded-full transition-all duration-200 shadow-sm", sink.isRequired ? "left-[14px] bg-white" : "left-0.5 bg-[var(--text-tertiary)]")} />
+                        </div>
+                        <span>{sink.isRequired ? 'ON' : 'OFF'}</span>
                       </button>
                     </div>
                   </div>
