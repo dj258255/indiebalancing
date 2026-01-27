@@ -102,10 +102,11 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
   const fillPreviewCellsSet = useMemo(() => new Set(fillPreviewCells.map(c => cellKey(c.rowId, c.columnId))), [fillPreviewCells]);
   const fillStartCellRef = useRef<{ rowId: string; columnId: string } | null>(null);
 
-  // 셀 이동 드래그 상태
+  // 셀 이동/복사 드래그 상태
   const [isMoveDragging, setIsMoveDragging] = useState(false);
   const [moveTargetCell, setMoveTargetCell] = useState<{ rowId: string; columnId: string } | null>(null);
   const moveStartCellRef = useRef<{ rowId: string; columnId: string; value: CellValue } | null>(null);
+  const [isCopyMode, setIsCopyMode] = useState(false); // Ctrl 키 누르면 복사 모드
 
   // 클립보드 데이터 (복사된 셀 정보)
   const [clipboardData, setClipboardData] = useState<{
@@ -117,6 +118,10 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
   const [isCheckboxDragging, setIsCheckboxDragging] = useState(false);
   const checkboxDragModeRef = useRef<'select' | 'deselect' | null>(null); // 선택 모드인지 해제 모드인지
   const lastDragRowIndexRef = useRef<number | null>(null); // 마지막으로 처리한 행 인덱스 (빠른 드래그 시 건너뛴 행 처리용)
+
+  // 외부 드래그 선택 (테이블 밖에서 시작) 상태
+  const [isExternalDragging, setIsExternalDragging] = useState(false);
+  const externalDragStartRef = useRef<{ x: number; y: number } | null>(null)
 
   // 컨텍스트 메뉴 상태
   const [contextMenu, setContextMenu] = useState<{
@@ -1210,6 +1215,260 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     return () => window.removeEventListener('mousemove', handleGlobalMouseMove);
   }, [sheet.rows, sheet.columns, handleCellMouseEnterThrottled]);
 
+  // 외부 드래그 선택용 ref (React 렌더링 우회)
+  const externalDragBoxRef = useRef<HTMLDivElement | null>(null);
+  const pendingExternalSelectionRef = useRef<{ rowId: string; columnId: string }[]>([]);
+  const lastMousePosRef = useRef<{ x: number; y: number } | null>(null);
+  const rafIdRef = useRef<number | null>(null);
+
+  // 열/행 범위 캐싱 (매 프레임 재계산 방지)
+  const colBoundsRef = useRef<{ colId: string; start: number; end: number }[]>([]);
+  const rowBoundsRef = useRef<{ rowId: string; start: number; end: number }[]>([]);
+
+  // 외부 드래그 선택: 테이블 컨테이너 빈 영역에서 시작
+  const handleContainerMouseDown = useCallback((e: React.MouseEvent) => {
+    // 테이블 셀이나 헤더 위에서 클릭하면 무시 (기존 로직 유지)
+    const target = e.target as HTMLElement;
+    // 테이블 내부 요소 클릭 감지 (셀, 버튼, 입력 등)
+    if (
+      target.closest('[data-cell-id]') ||
+      target.closest('button') ||
+      target.closest('input') ||
+      target.closest('th') ||
+      target.closest('td') ||
+      target.closest('[role="row"]') ||
+      target.closest('[role="columnheader"]')
+    ) {
+      return;
+    }
+
+    // 드래그 임계값용 시작점 저장
+    const containerRect = tableContainerRef.current?.getBoundingClientRect();
+    if (!containerRect) return;
+
+    const startX = e.clientX - containerRect.left;
+    const startY = e.clientY - containerRect.top;
+
+    externalDragStartRef.current = { x: startX, y: startY };
+    lastMousePosRef.current = { x: startX, y: startY };
+
+    // 열/행 범위 미리 계산 (드래그 중 재계산 방지)
+    const rowNumberWidth = columnWidths['rowNumber'] || 80;
+    let accWidth = rowNumberWidth;
+    const colBounds = sheet.columns.map(col => {
+      const colWidth = columnWidths[col.id] || 150;
+      const bounds = { colId: col.id, start: accWidth, end: accWidth + colWidth };
+      accWidth += colWidth;
+      return bounds;
+    });
+    colBoundsRef.current = colBounds;
+
+    let accHeight = headerHeight;
+    const rowBounds = sheet.rows.map(row => {
+      const rowH = rowHeights[row.id] || 36;
+      const bounds = { rowId: row.id, start: accHeight, end: accHeight + rowH };
+      accHeight += rowH;
+      return bounds;
+    });
+    rowBoundsRef.current = rowBounds;
+
+    // 기존 선택 해제 (DOM 직접)
+    const container = tableContainerRef.current;
+    if (container) {
+      container.querySelectorAll('[data-cell-selected="true"], [data-cell-multi-selected="true"]').forEach(el => {
+        el.removeAttribute('data-cell-selected');
+        el.removeAttribute('data-cell-multi-selected');
+        (el as HTMLElement).style.background = '';
+        (el as HTMLElement).style.outline = '';
+      });
+    }
+
+    // 드래그 시작 - 선택은 processFrame에서 박스 기반으로 처리
+    pendingExternalSelectionRef.current = [];
+    setFormulaBarValue('');
+    setIsExternalDragging(true);
+    setSelectedCell(null);
+    setSelectedCells([]);
+  }, [sheet.columns, sheet.rows, columnWidths, rowHeights, headerHeight]);
+
+  // 외부 드래그 선택: RAF 기반 고성능 처리
+  useEffect(() => {
+    if (!isExternalDragging) return;
+
+    const container = tableContainerRef.current;
+    const selectionBoxEl = externalDragBoxRef.current;
+    if (!container) return;
+
+    // RAF 루프: 마지막 마우스 위치만 처리
+    const processFrame = () => {
+      if (!lastMousePosRef.current || !externalDragStartRef.current) return;
+
+      const { x: currentX, y: currentY } = lastMousePosRef.current;
+      const { x: startX, y: startY } = externalDragStartRef.current;
+
+      // 드래그 임계값 체크 (10px 미만이면 무시)
+      const distance = Math.sqrt(Math.pow(currentX - startX, 2) + Math.pow(currentY - startY, 2));
+      if (distance < 10) {
+        rafIdRef.current = requestAnimationFrame(processFrame);
+        return;
+      }
+
+      // 선택 박스 DOM 직접 업데이트
+      if (selectionBoxEl) {
+        const left = Math.min(startX, currentX);
+        const top = Math.min(startY, currentY);
+        const width = Math.abs(currentX - startX);
+        const height = Math.abs(currentY - startY);
+
+        selectionBoxEl.style.display = 'block';
+        selectionBoxEl.style.left = `${left}px`;
+        selectionBoxEl.style.top = `${top}px`;
+        selectionBoxEl.style.width = `${width}px`;
+        selectionBoxEl.style.height = `${height}px`;
+      }
+
+      // 스크롤 고려한 실제 좌표 (오픈소스 방식: 순수 박스-셀 교차 체크)
+      const scrollLeft = container.scrollLeft;
+      const scrollTop = container.scrollTop;
+      const boxLeft = Math.min(startX, currentX) + scrollLeft;
+      const boxRight = Math.max(startX, currentX) + scrollLeft;
+      const boxTop = Math.min(startY, currentY) + scrollTop;
+      const boxBottom = Math.max(startY, currentY) + scrollTop;
+
+      // 이전 셀 하이라이트 제거
+      container.querySelectorAll('[data-cell-selected="true"], [data-cell-multi-selected="true"]').forEach(el => {
+        el.removeAttribute('data-cell-selected');
+        el.removeAttribute('data-cell-multi-selected');
+        (el as HTMLElement).style.background = '';
+        (el as HTMLElement).style.outline = '';
+      });
+
+      // 마우스 커서 위치의 셀 찾기 (primary 셀로 설정)
+      const cursorX = currentX + scrollLeft;
+      const cursorY = currentY + scrollTop;
+      let cursorCell: { rowId: string; columnId: string } | null = null;
+
+      for (const rowBound of rowBoundsRef.current) {
+        if (cursorY >= rowBound.start && cursorY < rowBound.end) {
+          for (const colBound of colBoundsRef.current) {
+            if (cursorX >= colBound.start && cursorX < colBound.end) {
+              cursorCell = { rowId: rowBound.rowId, columnId: colBound.colId };
+              break;
+            }
+          }
+          break;
+        }
+      }
+
+      // 박스와 교차하는 모든 셀 찾기 (오픈소스 패턴)
+      const newSelection: { rowId: string; columnId: string }[] = [];
+
+      rowBoundsRef.current.forEach(({ rowId, start: rowStart, end: rowEnd }) => {
+        // 셀과 박스가 교차하는지 체크 (AABB 충돌 검사)
+        if (rowEnd <= boxTop || rowStart >= boxBottom) return;
+
+        colBoundsRef.current.forEach(({ colId, start: colStart, end: colEnd }) => {
+          if (colEnd <= boxLeft || colStart >= boxRight) return;
+
+          newSelection.push({ rowId, columnId: colId });
+
+          // DOM 직접 하이라이트 (커서 위치는 primary 스타일)
+          const cellEl = container.querySelector(`[data-cell-id="${rowId}:${colId}"]`) as HTMLElement;
+          if (cellEl) {
+            const isCursorCell = cursorCell && cursorCell.rowId === rowId && cursorCell.columnId === colId;
+            if (isCursorCell) {
+              cellEl.setAttribute('data-cell-selected', 'true');
+              cellEl.style.background = 'var(--primary-blue-light)';
+              cellEl.style.outline = '2px solid var(--primary-blue)';
+            } else {
+              cellEl.setAttribute('data-cell-multi-selected', 'true');
+              cellEl.style.background = 'var(--primary-blue-light)';
+              cellEl.style.outline = '1px solid var(--primary-blue)';
+            }
+          }
+        });
+      });
+
+      pendingExternalSelectionRef.current = newSelection;
+      rafIdRef.current = requestAnimationFrame(processFrame);
+    };
+
+    // 마우스 이동: 좌표만 저장 (RAF에서 처리)
+    const handleMouseMove = (e: MouseEvent) => {
+      const containerRect = container.getBoundingClientRect();
+      lastMousePosRef.current = {
+        x: e.clientX - containerRect.left,
+        y: e.clientY - containerRect.top,
+      };
+    };
+
+    // 드래그 종료: React 상태 동기화
+    const handleMouseUp = (e: MouseEvent) => {
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+        rafIdRef.current = null;
+      }
+
+      // 선택 박스 숨기기
+      if (selectionBoxEl) {
+        selectionBoxEl.style.display = 'none';
+      }
+
+      // 마우스 커서 위치의 셀 찾기 (primary 셀로 설정)
+      const containerRect = container.getBoundingClientRect();
+      const cursorX = e.clientX - containerRect.left + container.scrollLeft;
+      const cursorY = e.clientY - containerRect.top + container.scrollTop;
+      let cursorCell: { rowId: string; columnId: string } | null = null;
+
+      for (const rowBound of rowBoundsRef.current) {
+        if (cursorY >= rowBound.start && cursorY < rowBound.end) {
+          for (const colBound of colBoundsRef.current) {
+            if (cursorX >= colBound.start && cursorX < colBound.end) {
+              cursorCell = { rowId: rowBound.rowId, columnId: colBound.colId };
+              break;
+            }
+          }
+          break;
+        }
+      }
+
+      // React 상태로 동기화 (커서 위치 셀이 primary)
+      const finalSelection = pendingExternalSelectionRef.current;
+      if (finalSelection.length > 0) {
+        setSelectedCells(finalSelection);
+        // 커서가 선택 범위 안에 있으면 그 셀을 primary로, 아니면 첫 번째 셀
+        const primaryCell = cursorCell && finalSelection.some(
+          s => s.rowId === cursorCell!.rowId && s.columnId === cursorCell!.columnId
+        ) ? cursorCell : finalSelection[0];
+        setSelectedCell(primaryCell);
+
+        // 수식바 값 업데이트
+        const row = sheet.rows.find(r => r.id === primaryCell.rowId);
+        const rawValue = row?.cells[primaryCell.columnId];
+        setFormulaBarValue(rawValue?.toString() || '');
+      }
+
+      setIsExternalDragging(false);
+      externalDragStartRef.current = null;
+      lastMousePosRef.current = null;
+      pendingExternalSelectionRef.current = [];
+    };
+
+    // RAF 루프 시작
+    rafIdRef.current = requestAnimationFrame(processFrame);
+
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('mouseup', handleMouseUp);
+
+    return () => {
+      if (rafIdRef.current) {
+        cancelAnimationFrame(rafIdRef.current);
+      }
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isExternalDragging, sheet.rows]);
+
   // 수식 내 행 참조 조정 (PREV, ROW 등)
   const adjustFormulaForRow = useCallback((formula: string, sourceRowIdx: number, targetRowIdx: number): string => {
     // PREV() 함수는 그대로 유지 (상대 참조)
@@ -1404,44 +1663,74 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     setMoveTargetCell({ rowId, columnId });
   }, [isMoveDragging, sheet.rows, sheet.columns]);
 
-  // 셀 이동 드래그 완료
-  const handleMoveDragEnd = useCallback(() => {
+  // 셀 이동/복사 드래그 완료
+  const handleMoveDragEnd = useCallback((ctrlKey: boolean = false) => {
     if (!isMoveDragging || !moveStartCellRef.current) {
       setIsMoveDragging(false);
       setMoveTargetCell(null);
+      setIsCopyMode(false);
       moveStartCellRef.current = null;
       return;
     }
 
     if (moveTargetCell) {
+      // 드래그해서 다른 셀로 이동한 경우
       const startCell = moveStartCellRef.current;
 
-      // 시작 셀의 값을 대상 셀로 이동
+      // 시작 셀의 값을 대상 셀로 복사/이동
       updateCell(projectId, sheet.id, moveTargetCell.rowId, moveTargetCell.columnId, startCell.value);
 
-      // 시작 셀은 빈 값으로
-      updateCell(projectId, sheet.id, startCell.rowId, startCell.columnId, '');
+      // Ctrl 키가 눌리지 않았으면 시작 셀을 빈 값으로 (이동)
+      // Ctrl 키가 눌렸으면 시작 셀 유지 (복사)
+      if (!ctrlKey && !isCopyMode) {
+        updateCell(projectId, sheet.id, startCell.rowId, startCell.columnId, '');
+      }
 
-      // 이동된 셀 선택
+      // 대상 셀 선택
       setSelectedCell({ rowId: moveTargetCell.rowId, columnId: moveTargetCell.columnId });
       setSelectedCells([{ rowId: moveTargetCell.rowId, columnId: moveTargetCell.columnId }]);
+    } else {
+      // 드래그 없이 같은 셀에서 마우스업 (단순 클릭) → 선택 해제
+      setSelectedCell(null);
+      setSelectedCells([]);
+      setFormulaBarValue('');
     }
 
     setIsMoveDragging(false);
     setMoveTargetCell(null);
+    setIsCopyMode(false);
     moveStartCellRef.current = null;
-  }, [isMoveDragging, moveTargetCell, projectId, sheet.id, updateCell]);
+  }, [isMoveDragging, moveTargetCell, isCopyMode, projectId, sheet.id, updateCell]);
 
-  // 이동 드래그 전역 이벤트
+  // 이동/복사 드래그 전역 이벤트 (Ctrl 키 감지)
   useEffect(() => {
-    const handleMouseUp = () => {
+    const handleMouseUp = (e: MouseEvent) => {
       if (isMoveDragging) {
-        handleMoveDragEnd();
+        handleMoveDragEnd(e.ctrlKey || e.metaKey); // Mac은 metaKey (Cmd)
+      }
+    };
+
+    // Ctrl 키 상태 변화 감지 (드래그 중 Ctrl 눌렀다 떼면 모드 변경)
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (isMoveDragging && (e.key === 'Control' || e.key === 'Meta')) {
+        setIsCopyMode(true);
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (isMoveDragging && (e.key === 'Control' || e.key === 'Meta')) {
+        setIsCopyMode(false);
       }
     };
 
     window.addEventListener('mouseup', handleMouseUp);
-    return () => window.removeEventListener('mouseup', handleMouseUp);
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
   }, [isMoveDragging, handleMoveDragEnd]);
 
   // 전역 키보드 이벤트 (복사, 붙여넣기, 삭제, F2)
@@ -2031,18 +2320,13 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                 // 더블클릭 중이면 무시 (더블클릭은 onDoubleClick에서 처리)
                 if (e.detail >= 2) return;
 
-                // 단일 셀 선택 상태에서 같은 셀을 다시 클릭하면 선택 해제
-                if (isSelected && !editingCell && selectedCells.length === 1) {
-                  setSelectedCell(null);
-                  setSelectedCells([]);
-                  setFormulaBarValue('');
+                // 선택된 셀에서 다시 마우스다운하면 이동 드래그 시작
+                if (isSelected && !editingCell) {
+                  handleMoveStart(row.original.id, col.id, e);
                   return;
                 }
 
-                // 선택된 셀에서 다시 마우스다운하면 이동 드래그 시작 (다중 선택 시)
-                if (isSelected && !editingCell && selectedCells.length > 1) {
-                  handleMoveStart(row.original.id, col.id, e);
-                } else if (!isSelected) {
+                if (!isSelected) {
                   handleCellMouseDown(row.original.id, col.id, e);
                 }
               }}
@@ -2078,7 +2362,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
               onContextMenu={(e) => handleContextMenu(e, row.original.id, col.id)}
               className={`px-2 py-1 min-h-[32px] relative group overflow-hidden select-none flex ${
                 cellStyle?.vAlign === 'top' ? 'items-start' : cellStyle?.vAlign === 'bottom' ? 'items-end' : 'items-center'
-              } ${isSelected && !editingCell ? 'cursor-move' : 'cursor-cell'} ${isMoveSource ? 'opacity-50' : ''}`}
+              } ${isSelected && !editingCell ? 'cursor-move' : 'cursor-cell'} ${isMoveSource && !isCopyMode ? 'opacity-50' : ''}`}
               style={{
                 background: isMoveTarget
                   ? 'var(--accent-light)'
@@ -2089,7 +2373,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                       : getCellBackground(),
                 color: typeof value === 'string' && value.startsWith('#ERR') ? 'var(--error)' : 'var(--text-primary)',
                 outline: isMoveTarget
-                  ? '2px solid var(--accent)'
+                  ? isCopyMode ? '2px dashed var(--accent)' : '2px solid var(--accent)'
                   : isFillPreview
                     ? '2px dashed var(--primary-green)'
                     : isSelected
@@ -2653,7 +2937,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
         {/* 테이블 컨테이너 - 가로 스크롤바는 숨김 */}
         <div
           ref={tableContainerRef}
-          className={cn("flex-1 rounded-tl-lg border-t border-l border-b-0 hide-scrollbar", resizingColumn && "select-none")}
+          className={cn("flex-1 rounded-tl-lg border-t border-l border-b-0 hide-scrollbar relative", resizingColumn && "select-none")}
           style={{
             overflowY: 'scroll',
             overflowX: 'scroll',
@@ -2661,13 +2945,26 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
             borderColor: 'var(--border-primary)'
           }}
           onScroll={handleTableScroll}
-          onMouseDown={() => {
+          onMouseDown={(e) => {
             // 테이블 내 클릭 시 모든 컨텍스트 메뉴 닫기
             setContextMenu(null);
             setColumnContextMenu(null);
             setRowContextMenu(null);
+            // 외부 드래그 선택 시작
+            handleContainerMouseDown(e);
           }}
         >
+          {/* 외부 드래그 선택 박스 (DOM 직접 조작용) */}
+          <div
+            ref={externalDragBoxRef}
+            className="absolute pointer-events-none z-20"
+            style={{
+              display: 'none',
+              background: 'var(--primary-blue-light)',
+              border: '1px solid var(--primary-blue)',
+              opacity: 0.5,
+            }}
+          />
         <table
           className="border-collapse table-fixed"
           style={{
