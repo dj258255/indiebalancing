@@ -13,6 +13,7 @@ import {
 import { useProjectStore } from '@/stores/projectStore';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
+import { useEscapeKey } from '@/hooks';
 
 interface TemplateSelectorProps {
   projectId: string;
@@ -27,6 +28,9 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTemplate, setSelectedTemplate] = useState<SheetTemplate | null>(null);
   const [targetProjectId, setTargetProjectId] = useState(projectId);
+
+  // ESC 키로 모달 닫기
+  useEscapeKey(onClose);
 
   const { projects, loadProjects } = useProjectStore();
 
@@ -283,12 +287,12 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                 {t('templateSelector.gameGenre')}
               </span>
             </div>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-wrap gap-2 min-h-[36px] max-h-[72px] overflow-y-auto">
               {gameGenres.map((genre) => (
                 <button
                   key={genre.id}
                   onClick={() => setSelectedGenre(selectedGenre === genre.id ? null : genre.id)}
-                  className="px-3 py-1.5 text-sm rounded-full border transition-all"
+                  className="px-3 py-1.5 text-sm rounded-full border transition-all min-w-[60px] text-center"
                   style={{
                     background: selectedGenre === genre.id ? 'var(--accent)' : 'var(--bg-primary)',
                     color: selectedGenre === genre.id ? 'white' : 'var(--text-secondary)',
@@ -352,27 +356,30 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                   ).length
                 : getTemplatesByCategory(cat.id).length;
 
-              if (count === 0 && selectedGenre) return null;
-
-              const isSelected = selectedCategory === cat.id;
+              const isDisabled = count === 0 && !!selectedGenre;
+              const isSelected = selectedCategory === cat.id && !isDisabled;
 
               return (
                 <button
                   key={cat.id}
-                  onClick={() =>
-                    setSelectedCategory(selectedCategory === cat.id ? null : cat.id)
-                  }
+                  onClick={() => {
+                    if (isDisabled) return;
+                    setSelectedCategory(selectedCategory === cat.id ? null : cat.id);
+                  }}
                   className="w-full text-left px-3 py-2 rounded-lg text-sm mb-1 flex items-center gap-2 transition-colors"
                   style={{
                     background: isSelected ? 'var(--accent-light)' : 'transparent',
-                    color: isSelected ? 'var(--accent)' : 'var(--text-secondary)',
+                    color: isDisabled ? 'var(--text-tertiary)' : isSelected ? 'var(--accent)' : 'var(--text-secondary)',
+                    opacity: isDisabled ? 0.5 : 1,
+                    cursor: isDisabled ? 'not-allowed' : 'pointer',
                   }}
                   onMouseEnter={(e) => {
-                    if (!isSelected) e.currentTarget.style.background = 'var(--bg-hover)';
+                    if (!isSelected && !isDisabled) e.currentTarget.style.background = 'var(--bg-hover)';
                   }}
                   onMouseLeave={(e) => {
                     if (!isSelected) e.currentTarget.style.background = 'transparent';
                   }}
+                  disabled={isDisabled}
                 >
                   <span>{cat.icon}</span>
                   <span className="flex-1 truncate">{cat.nameKey ? t(cat.nameKey) : cat.name}</span>

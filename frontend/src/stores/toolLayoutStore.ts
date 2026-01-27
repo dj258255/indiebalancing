@@ -29,6 +29,9 @@ interface ToolLayoutState {
   // 하단 도구 z-index 순서 (마지막이 가장 위)
   bottomToolZOrder: AllToolId[];
 
+  // 고정된 도구들 (상단에 우선 표시)
+  pinnedTools: AllToolId[];
+
   // 사이드바 너비 (px)
   sidebarWidth: number;
 
@@ -42,7 +45,8 @@ interface ToolLayoutState {
   setToolsSectionHeight: (height: number) => void;
 
   // 도구 위치 변경 (sidebar <-> bottom)
-  moveToolToLocation: (toolId: AllToolId, location: ToolLocation, xPosition?: number) => void;
+  // insertIndex: 하단으로 이동할 때 특정 위치에 삽입 (선택적)
+  moveToolToLocation: (toolId: AllToolId, location: ToolLocation, insertIndex?: number) => void;
 
   // 하단 도구의 X 좌표 업데이트
   updateBottomToolPosition: (toolId: AllToolId, x: number) => void;
@@ -53,10 +57,22 @@ interface ToolLayoutState {
   // 사이드바 도구 순서 변경
   reorderSidebarTools: (fromIndex: number, toIndex: number) => void;
 
+  // 하단 도구 순서 변경
+  reorderBottomTools: (fromIndex: number, toIndex: number) => void;
+
+  // 하단 도구 순서 배열
+  bottomToolOrder: AllToolId[];
+
+  // 도구 고정/해제
+  togglePinTool: (toolId: AllToolId) => void;
+
+  // 도구 고정 여부 확인
+  isPinned: (toolId: AllToolId) => boolean;
+
   // 하단에 있는 도구 목록 가져오기
   getBottomTools: () => AllToolId[];
 
-  // 사이드바에 있는 도구 목록 가져오기
+  // 사이드바에 있는 도구 목록 가져오기 (고정된 도구 우선)
   getSidebarTools: () => AllToolId[];
 
   // 도구의 z-index 가져오기
@@ -103,13 +119,23 @@ const DEFAULT_SIDEBAR_ORDER: AllToolId[] = [
   'curveFitting',
 ];
 
+// 하단 도구 기본 순서
+const DEFAULT_BOTTOM_ORDER: AllToolId[] = [
+  'formulaHelper',
+  'balanceValidator',
+  'difficultyCurve',
+  'simulation',
+];
+
 export const useToolLayoutStore = create<ToolLayoutState>()(
   persist(
     (set, get) => ({
       toolLocations: { ...DEFAULT_LOCATIONS },
       bottomToolPositions: { ...DEFAULT_BOTTOM_POSITIONS },
       sidebarToolOrder: [...DEFAULT_SIDEBAR_ORDER],
+      bottomToolOrder: [...DEFAULT_BOTTOM_ORDER],
       bottomToolZOrder: ['formulaHelper', 'balanceValidator', 'difficultyCurve', 'simulation'] as AllToolId[],
+      pinnedTools: [] as AllToolId[],
       sidebarWidth: 256, // 기본값 256px (w-64)
       toolsSectionHeight: 200, // 기본값 200px
 
@@ -125,23 +151,27 @@ export const useToolLayoutStore = create<ToolLayoutState>()(
         set({ toolsSectionHeight: clampedHeight });
       },
 
-      moveToolToLocation: (toolId, location, xPosition) => {
-        const { toolLocations, bottomToolPositions, sidebarToolOrder, bottomToolZOrder } = get();
+      moveToolToLocation: (toolId, location, insertIndex) => {
+        const { toolLocations, bottomToolPositions, sidebarToolOrder, bottomToolOrder, bottomToolZOrder } = get();
         const currentLocation = toolLocations[toolId];
 
         if (currentLocation === location) return;
 
         const newToolLocations = { ...toolLocations, [toolId]: location };
         let newSidebarOrder = [...sidebarToolOrder];
+        let newBottomOrder = [...bottomToolOrder];
         let newBottomPositions = { ...bottomToolPositions };
         let newZOrder = [...bottomToolZOrder];
 
         if (location === 'bottom') {
           // 사이드바에서 하단으로 이동
           newSidebarOrder = newSidebarOrder.filter(id => id !== toolId);
-          // X 위치가 지정된 경우에만 설정 (없으면 가운데 정렬에 합류)
-          if (xPosition !== undefined) {
-            newBottomPositions[toolId] = { x: xPosition };
+          // 하단 순서에 추가 (특정 위치 또는 맨 뒤)
+          newBottomOrder = newBottomOrder.filter(id => id !== toolId);
+          if (insertIndex !== undefined && insertIndex >= 0) {
+            newBottomOrder.splice(insertIndex, 0, toolId);
+          } else {
+            newBottomOrder.push(toolId);
           }
           // z-order에 추가 (맨 위로)
           newZOrder = newZOrder.filter(id => id !== toolId);
@@ -149,7 +179,12 @@ export const useToolLayoutStore = create<ToolLayoutState>()(
         } else {
           // 하단에서 사이드바로 이동
           delete newBottomPositions[toolId];
-          if (!newSidebarOrder.includes(toolId)) {
+          newBottomOrder = newBottomOrder.filter(id => id !== toolId);
+          // 사이드바 순서에서 기존 위치 제거 후 새 위치에 삽입
+          newSidebarOrder = newSidebarOrder.filter(id => id !== toolId);
+          if (insertIndex !== undefined && insertIndex >= 0) {
+            newSidebarOrder.splice(insertIndex, 0, toolId);
+          } else {
             newSidebarOrder.push(toolId);
           }
           // z-order에서 제거
@@ -160,6 +195,7 @@ export const useToolLayoutStore = create<ToolLayoutState>()(
           toolLocations: newToolLocations,
           bottomToolPositions: newBottomPositions,
           sidebarToolOrder: newSidebarOrder,
+          bottomToolOrder: newBottomOrder,
           bottomToolZOrder: newZOrder,
         });
       },
@@ -193,22 +229,56 @@ export const useToolLayoutStore = create<ToolLayoutState>()(
         set({ sidebarToolOrder: newOrder });
       },
 
+      reorderBottomTools: (fromIndex, toIndex) => {
+        const { bottomToolOrder } = get();
+        const newOrder = [...bottomToolOrder];
+        const [moved] = newOrder.splice(fromIndex, 1);
+        newOrder.splice(toIndex, 0, moved);
+        set({ bottomToolOrder: newOrder });
+      },
+
+      togglePinTool: (toolId) => {
+        const { pinnedTools } = get();
+        const isPinned = pinnedTools.includes(toolId);
+        if (isPinned) {
+          set({ pinnedTools: pinnedTools.filter(id => id !== toolId) });
+        } else {
+          set({ pinnedTools: [...pinnedTools, toolId] });
+        }
+      },
+
+      isPinned: (toolId) => {
+        const { pinnedTools } = get();
+        return pinnedTools.includes(toolId);
+      },
+
       getBottomTools: () => {
-        const { toolLocations } = get();
-        return (Object.keys(toolLocations) as AllToolId[]).filter(
-          id => toolLocations[id] === 'bottom'
+        const { toolLocations, bottomToolOrder } = get();
+        // bottomToolOrder 순서대로 반환, order에 없는 것은 뒤에 추가
+        const orderedTools = bottomToolOrder.filter(id => toolLocations[id] === 'bottom');
+        const allBottomTools = (Object.keys(toolLocations) as AllToolId[]).filter(
+          id => toolLocations[id] === 'bottom' && !orderedTools.includes(id)
         );
+        return [...orderedTools, ...allBottomTools];
       },
 
       getSidebarTools: () => {
-        const { toolLocations, sidebarToolOrder } = get();
+        const { toolLocations, sidebarToolOrder, pinnedTools } = get();
         // sidebarToolOrder에 있고 location이 sidebar인 것 반환
         const orderedTools = sidebarToolOrder.filter(id => toolLocations[id] === 'sidebar');
         // sidebarToolOrder에 없지만 location이 sidebar인 도구도 추가 (마이그레이션 대응)
         const allSidebarTools = (Object.keys(toolLocations) as AllToolId[]).filter(
           id => toolLocations[id] === 'sidebar' && !orderedTools.includes(id)
         );
-        return [...orderedTools, ...allSidebarTools];
+        const tools = [...orderedTools, ...allSidebarTools];
+        // 고정된 도구를 맨 앞으로 정렬
+        return tools.sort((a, b) => {
+          const aPinned = pinnedTools.includes(a);
+          const bPinned = pinnedTools.includes(b);
+          if (aPinned && !bPinned) return -1;
+          if (!aPinned && bPinned) return 1;
+          return 0;
+        });
       },
 
       getToolZIndex: (toolId) => {
@@ -222,7 +292,9 @@ export const useToolLayoutStore = create<ToolLayoutState>()(
           toolLocations: { ...DEFAULT_LOCATIONS },
           bottomToolPositions: { ...DEFAULT_BOTTOM_POSITIONS },
           sidebarToolOrder: [...DEFAULT_SIDEBAR_ORDER],
+          bottomToolOrder: [...DEFAULT_BOTTOM_ORDER],
           bottomToolZOrder: ['formulaHelper', 'balanceValidator', 'difficultyCurve', 'simulation'] as AllToolId[],
+          pinnedTools: [] as AllToolId[],
           sidebarWidth: 256,
           toolsSectionHeight: 200,
         });
@@ -234,7 +306,9 @@ export const useToolLayoutStore = create<ToolLayoutState>()(
         toolLocations: state.toolLocations,
         bottomToolPositions: state.bottomToolPositions,
         sidebarToolOrder: state.sidebarToolOrder,
+        bottomToolOrder: state.bottomToolOrder,
         bottomToolZOrder: state.bottomToolZOrder,
+        pinnedTools: state.pinnedTools,
         sidebarWidth: state.sidebarWidth,
         toolsSectionHeight: state.toolsSectionHeight,
       }),

@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { useEscapeKey } from '@/hooks';
 import {
   ChevronRight,
   ChevronLeft,
@@ -204,6 +205,9 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
 
+  // ESC 키로 닫기
+  useEscapeKey(onClose);
+
   // Get translated data
   const GUIDELINES_DATA = getGuidelinesData(t);
   const TUTORIAL_STEPS = getTutorialSteps(t);
@@ -259,7 +263,11 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
               {TUTORIAL_STEPS.map((_, index) => (
                 <button
                   key={index}
-                  onClick={() => setCurrentStep(index)}
+                  onClick={() => {
+                    setCurrentStep(index);
+                    // 클릭한 스텝을 읽음으로 표시
+                    setCompletedSteps((prev) => new Set([...prev, index]));
+                  }}
                   className="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center transition-colors shrink-0"
                   style={{
                     background: index === currentStep

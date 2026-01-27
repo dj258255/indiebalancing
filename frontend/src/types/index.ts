@@ -57,6 +57,7 @@ export interface Column {
   validation?: ValidationConfig;  // 유효성 검사 설정
   locked?: boolean;         // 잠금 여부
   exportName?: string;      // 게임 엔진 내보내기 시 사용할 영문 필드명
+  exportExcluded?: boolean; // 내보내기 제외 여부
 }
 
 // 행 타입

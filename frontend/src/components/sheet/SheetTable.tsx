@@ -7,7 +7,7 @@ import {
   flexRender,
   type ColumnDef,
 } from '@tanstack/react-table';
-import { Plus, Trash2, Edit3, Wand2, CheckCircle2, Lock, Unlock, AlertTriangle, Check, X } from 'lucide-react';
+import { Plus, Trash2, Edit3, Wand2, CheckCircle2, Lock, Unlock, AlertTriangle, Check, X, StickyNote, EyeOff } from 'lucide-react';
 import { useProjectStore, type SelectedRowData } from '@/stores/projectStore';
 import { useHistoryStore } from '@/stores/historyStore';
 import { evaluateFormula } from '@/lib/formulaEngine';
@@ -21,6 +21,8 @@ import CellContextMenu from './CellContextMenu';
 import ColumnContextMenu from './ColumnContextMenu';
 import RowContextMenu from './RowContextMenu';
 import SheetToolbar from './SheetToolbar';
+import { ConfirmDialog } from '@/components/ui';
+import DeleteRowDialog from '@/components/ui/DeleteRowDialog';
 import { useSheetUIStore, DEFAULT_CELL_STYLE } from '@/stores/sheetUIStore';
 import { useTranslations } from 'next-intl';
 
@@ -146,6 +148,29 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     rowId: string;
     columnId: string;
     memo: string;
+  } | null>(null);
+
+  // 삭제 확인 다이얼로그 상태
+  const [deleteColumnConfirm, setDeleteColumnConfirm] = useState<{
+    columnId: string;
+    columnName: string;
+  } | null>(null);
+
+  // 행 삭제 확인 다이얼로그 상태
+  const [deleteRowConfirm, setDeleteRowConfirm] = useState<{
+    rowId: string;
+    rowIndex: number;
+    hasValue: boolean;
+  } | null>(null);
+
+  // 리사이즈 컨텍스트 메뉴 상태
+  const [resizeContextMenu, setResizeContextMenu] = useState<{
+    x: number;
+    y: number;
+    type: 'column' | 'row' | 'header';
+    columnId?: string;
+    rowId?: string;
+    rowIndex?: number;
   } | null>(null);
 
   // 컬럼 너비 초기화
@@ -908,7 +933,18 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
       rowIds.add(contextMenu.rowId);
     }
 
-    // 각 행 삭제
+    // 단일 행이면 확인 다이얼로그 표시
+    if (rowIds.size === 1) {
+      const rowId = [...rowIds][0];
+      const rowIndex = sheet.rows.findIndex(r => r.id === rowId);
+      const row = sheet.rows.find(r => r.id === rowId);
+      const hasValue = row ? Object.values(row.cells).some(v => v !== null && v !== undefined && v !== '') : false;
+      setDeleteRowConfirm({ rowId, rowIndex, hasValue });
+      setContextMenu(null);
+      return;
+    }
+
+    // 다중 행은 바로 삭제
     rowIds.forEach(rowId => {
       deleteRow(projectId, sheet.id, rowId);
     });
@@ -916,7 +952,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     setSelectedCells([]);
     setSelectedCell(null);
     setContextMenu(null);
-  }, [selectedCells, contextMenu, projectId, sheet.id, deleteRow]);
+  }, [selectedCells, contextMenu, projectId, sheet.id, deleteRow, sheet.rows]);
 
   // 열 삭제
   const deleteSelectedColumn = useCallback(() => {
@@ -954,6 +990,28 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     [sheet.rows, sheet.columns]
   );
 
+  // x-spreadsheet 패턴: 다른 셀 클릭 시 먼저 현재 편집 중인 값 저장
+  const commitCurrentEditingCell = useCallback(() => {
+    if (!editingCell || !inputRef.current) return;
+
+    const value = inputRef.current.value;
+    const cellToSave = { ...editingCell };
+
+    let finalValue: CellValue = value;
+    if (!value.startsWith('=')) {
+      const num = parseFloat(value);
+      if (!isNaN(num) && value.trim() !== '') {
+        finalValue = num;
+      }
+    }
+
+    pushState(projects, '셀 편집');
+    updateCell(projectId, sheet.id, cellToSave.rowId, cellToSave.columnId, finalValue);
+    setEditingCell(null);
+    setEditValue('');
+    setShowAutocomplete(false);
+  }, [editingCell, pushState, projects, updateCell, projectId, sheet.id]);
+
   // 드래그 시작
   const handleCellMouseDown = useCallback(
     (rowId: string, columnId: string, e: React.MouseEvent) => {
@@ -962,6 +1020,11 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
 
       // 왼쪽 마우스 버튼만
       if (e.button !== 0) return;
+
+      // x-spreadsheet 패턴: 먼저 현재 편집 중인 셀의 값을 저장 (editor.clear())
+      if (editingCell && (editingCell.rowId !== rowId || editingCell.columnId !== columnId)) {
+        commitCurrentEditingCell();
+      }
 
       // 이미 선택된 셀을 다시 클릭하면 선택 해제
       const isCurrentlySelected = selectedCell?.rowId === rowId && selectedCell?.columnId === columnId;
@@ -983,7 +1046,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
       const rawValue = row?.cells[columnId];
       setFormulaBarValue(rawValue?.toString() || '');
     },
-    [sheet.rows, selectedCell, selectedCells.length]
+    [sheet.rows, selectedCell, selectedCells.length, editingCell, commitCurrentEditingCell]
   );
 
   // 드래그 중 선택 상태 ref (React 렌더링 우회)
@@ -1068,6 +1131,84 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     window.addEventListener('mouseup', handleMouseUp);
     return () => window.removeEventListener('mouseup', handleMouseUp);
   }, [sheet.rows]);
+
+  // 시트 밖에서도 드래그 연동 (전역 mousemove)
+  useEffect(() => {
+    const handleGlobalMouseMove = (e: MouseEvent) => {
+      if (!isDraggingRef.current || !dragStartCellRef.current) return;
+      if (!tableContainerRef.current) return;
+
+      const container = tableContainerRef.current;
+      const rect = container.getBoundingClientRect();
+
+      // 마우스가 테이블 컨테이너 밖에 있을 때만 처리
+      const isOutside =
+        e.clientX < rect.left ||
+        e.clientX > rect.right ||
+        e.clientY < rect.top ||
+        e.clientY > rect.bottom;
+
+      if (!isOutside) return; // 안쪽에 있으면 기존 onMouseEnter가 처리
+
+      // 모든 행/열 ID
+      const allRowIds = sheet.rows.map(r => r.id);
+      const allColIds = sheet.columns.map(c => c.id);
+
+      if (allRowIds.length === 0 || allColIds.length === 0) return;
+
+      // 마우스 X 위치에서 열 찾기 (rowHeader 너비 고려)
+      const rowHeaderWidth = 48; // 체크박스 + 행번호
+      let targetColIdx = 0;
+      let accumulatedX = rect.left + rowHeaderWidth;
+
+      for (let i = 0; i < allColIds.length; i++) {
+        const col = sheet.columns[i];
+        const colWidth = col.width || 120;
+        if (e.clientX < accumulatedX + colWidth) {
+          targetColIdx = i;
+          break;
+        }
+        accumulatedX += colWidth;
+        if (i === allColIds.length - 1) {
+          targetColIdx = i; // 마지막 열
+        }
+      }
+
+      // 왼쪽 밖이면 첫 열, 오른쪽 밖이면 마지막 열
+      if (e.clientX < rect.left) {
+        targetColIdx = 0;
+      } else if (e.clientX > rect.right) {
+        targetColIdx = allColIds.length - 1;
+      }
+
+      // 마우스 Y 위치에서 행 찾기 (헤더 높이 고려)
+      const headerHeight = 40;
+      const rowHeight = 36;
+      let targetRowIdx = 0;
+
+      if (e.clientY < rect.top + headerHeight) {
+        targetRowIdx = 0; // 위쪽 밖이면 첫 행
+      } else if (e.clientY > rect.bottom) {
+        targetRowIdx = allRowIds.length - 1; // 아래쪽 밖이면 마지막 행
+      } else {
+        // 스크롤 위치 고려
+        const scrollTop = container.scrollTop;
+        const relativeY = e.clientY - rect.top - headerHeight + scrollTop;
+        targetRowIdx = Math.floor(relativeY / rowHeight);
+        targetRowIdx = Math.max(0, Math.min(allRowIds.length - 1, targetRowIdx));
+      }
+
+      const targetRowId = allRowIds[targetRowIdx];
+      const targetColId = allColIds[targetColIdx];
+
+      if (targetRowId && targetColId) {
+        handleCellMouseEnterThrottled(targetRowId, targetColId);
+      }
+    };
+
+    window.addEventListener('mousemove', handleGlobalMouseMove);
+    return () => window.removeEventListener('mousemove', handleGlobalMouseMove);
+  }, [sheet.rows, sheet.columns, handleCellMouseEnterThrottled]);
 
   // 수식 내 행 참조 조정 (PREV, ROW 등)
   const adjustFormulaForRow = useCallback((formula: string, sourceRowIdx: number, targetRowIdx: number): string => {
@@ -1333,6 +1474,28 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
           pasteToSelectedCells();
         }
       }
+      // Ctrl/Cmd + A: 전체 선택/해제 토글
+      else if ((e.ctrlKey || e.metaKey) && e.key === 'a') {
+        e.preventDefault();
+        const allCellsCount = sheet.rows.length * sheet.columns.length;
+        const allCellsSelected = allCellsCount > 0 && selectedCells.length === allCellsCount;
+
+        if (allCellsSelected) {
+          // 이미 전체 선택 상태면 해제
+          setSelectedCells([]);
+          setSelectedCell(null);
+        } else {
+          // 모든 셀 선택
+          const allCells = sheet.rows.flatMap(row =>
+            sheet.columns.map(col => ({ rowId: row.id, columnId: col.id }))
+          );
+          setSelectedCells(allCells);
+          // 첫 번째 셀을 선택 (포커스용)
+          if (sheet.rows.length > 0 && sheet.columns.length > 0) {
+            setSelectedCell({ rowId: sheet.rows[0].id, columnId: sheet.columns[0].id });
+          }
+        }
+      }
       // Delete 또는 Backspace: 선택된 셀 내용 삭제
       else if (e.key === 'Delete' || e.key === 'Backspace') {
         if (selectedCells.length > 0) {
@@ -1469,23 +1632,55 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
         header: () => {
           const allSelected = sheet.rows.length > 0 && sheet.rows.every(r => isRowSelected(r.id));
           const someSelected = sheet.rows.some(r => isRowSelected(r.id));
+          // 모든 셀이 선택되었는지 확인
+          const allCellsCount = sheet.rows.length * sheet.columns.length;
+          const allCellsSelected = allCellsCount > 0 && selectedCells.length === allCellsCount;
           return (
-            <button
-              onClick={handleSelectAll}
-              className="w-full h-full flex items-center justify-center cursor-pointer hover:bg-[var(--bg-hover)] transition-colors rounded"
-              title={allSelected ? t('table.deselectAll') : t('table.selectAll')}
-            >
-              <div
-                className="w-4 h-4 rounded border flex items-center justify-center transition-colors"
-                style={{
-                  background: allSelected ? 'var(--primary-blue)' : someSelected ? 'var(--primary-blue-light)' : 'transparent',
-                  borderColor: allSelected || someSelected ? 'var(--primary-blue)' : 'var(--border-secondary)',
-                }}
+            <div className="w-full h-full flex items-center">
+              {/* 왼쪽: 체크박스 (행 전체 선택/해제) */}
+              <button
+                onClick={handleSelectAll}
+                className="flex-1 h-full flex items-center justify-center cursor-pointer hover:bg-[var(--bg-hover)] transition-colors rounded-l"
+                title={allSelected ? t('table.deselectAll') : t('table.selectAll')}
               >
-                {allSelected && <Check className="w-2.5 h-2.5 text-white" />}
-                {!allSelected && someSelected && <div className="w-2 h-0.5 rounded" style={{ background: 'var(--primary-blue)' }} />}
-              </div>
-            </button>
+                <div
+                  className="w-4 h-4 rounded border flex items-center justify-center transition-colors"
+                  style={{
+                    background: allSelected ? 'var(--primary-blue)' : someSelected ? 'var(--primary-blue-light)' : 'transparent',
+                    borderColor: allSelected || someSelected ? 'var(--primary-blue)' : 'var(--border-secondary)',
+                  }}
+                >
+                  {allSelected && <Check className="w-2.5 h-2.5 text-white" />}
+                  {!allSelected && someSelected && <div className="w-2 h-0.5 rounded" style={{ background: 'var(--primary-blue)' }} />}
+                </div>
+              </button>
+              {/* 구분선 */}
+              <div className="w-px h-4" style={{ background: 'var(--border-primary)' }} />
+              {/* 오른쪽: 전체 셀 선택 */}
+              <button
+                onClick={() => {
+                  if (allCellsSelected) {
+                    // 전체 해제
+                    setSelectedCells([]);
+                    setSelectedCell(null);
+                  } else {
+                    // 전체 셀 선택
+                    const allCells = sheet.rows.flatMap(row =>
+                      sheet.columns.map(col => ({ rowId: row.id, columnId: col.id }))
+                    );
+                    setSelectedCells(allCells);
+                    if (allCells.length > 0) {
+                      setSelectedCell(allCells[0]);
+                    }
+                  }
+                }}
+                className="flex-1 h-full flex items-center justify-center cursor-pointer hover:bg-[var(--bg-hover)] transition-colors rounded-r"
+                title={allCellsSelected ? t('common.deselectAll') : t('common.selectAll')}
+                style={{ color: allCellsSelected ? 'var(--primary-blue)' : 'var(--text-tertiary)' }}
+              >
+                <span className="text-[10px] font-medium">ALL</span>
+              </button>
+            </div>
           );
         },
         cell: ({ row }) => {
@@ -1586,14 +1781,25 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
           <div
             className="flex flex-col items-center justify-center cursor-pointer select-none w-full"
             onClick={() => {
-              // 해당 컬럼의 모든 셀 선택
+              // 해당 컬럼의 모든 셀
               const allCellsInColumn = sheet.rows.map(row => ({
                 rowId: row.id,
                 columnId: col.id
               }));
-              setSelectedCells(allCellsInColumn);
-              if (allCellsInColumn.length > 0) {
-                setSelectedCell(allCellsInColumn[0]);
+
+              // 이미 해당 컬럼이 전체 선택되어 있으면 해제
+              const isColumnFullySelected = allCellsInColumn.every(cell =>
+                selectedCells.some(sc => sc.rowId === cell.rowId && sc.columnId === cell.columnId)
+              ) && selectedCells.length === allCellsInColumn.length;
+
+              if (isColumnFullySelected) {
+                setSelectedCells([]);
+                setSelectedCell(null);
+              } else {
+                setSelectedCells(allCellsInColumn);
+                if (allCellsInColumn.length > 0) {
+                  setSelectedCell(allCellsInColumn[0]);
+                }
               }
             }}
             onContextMenu={(e) => {
@@ -1612,6 +1818,9 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
               )}
               {col.validation && (
                 <span title={t('table.validationSet')} className="shrink-0"><CheckCircle2 className="w-3.5 h-3.5" style={{ color: 'var(--primary-green)' }} /></span>
+              )}
+              {col.exportExcluded && (
+                <span title={t('table.exportExcluded')} className="shrink-0"><EyeOff className="w-3 h-3" style={{ color: 'var(--text-tertiary)' }} /></span>
               )}
             </div>
             {col.exportName && (
@@ -1648,13 +1857,19 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
           // 컬럼 기본 수식을 사용하는지
           const usesColumnFormula = isFormulaColumn && !hasCellOverride;
 
+          // 셀 스타일 가져오기 (편집 모드에서도 사용)
+          const cellStyle = row.original.cellStyles?.[col.id];
+          const cellFontSize = cellStyle?.fontSize || DEFAULT_CELL_STYLE.fontSize;
+
           if (isEditing) {
             // 현재 입력값 기반으로 수식 여부 체크 (ref에서 직접)
             const currentInputValue = inputRef.current?.value ?? editValue;
             const isFormulaInput = currentInputValue.startsWith('=');
 
             return (
-              <div className="relative">
+              <div className={`absolute inset-0 flex px-1 py-0.5 ${
+                cellStyle?.vAlign === 'top' ? 'items-start' : cellStyle?.vAlign === 'bottom' ? 'items-end' : 'items-center'
+              }`}>
                 <input
                   ref={inputRef}
                   key={`edit-${row.original.id}-${col.id}`}
@@ -1683,11 +1898,28 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                     setFormulaBarValue(val);
                   }}
                   onBlur={(e) => {
-                    const target = e.target as HTMLInputElement;
+                    // 값과 셀 정보를 즉시 캡처 (stale closure 방지)
+                    const value = e.currentTarget.value;
+                    const cellToSave = { rowId: row.original.id, columnId: col.id };
                     // 약간의 딜레이로 자동완성 클릭 가능하게
                     setTimeout(() => {
                       if (!showAutocomplete) {
-                        finishEditing(target.value);
+                        // finishEditing 대신 직접 저장 (캡처된 셀 정보 사용)
+                        let finalValue: CellValue = value;
+                        if (!value.startsWith('=')) {
+                          const num = parseFloat(value);
+                          if (!isNaN(num) && value.trim() !== '') {
+                            finalValue = num;
+                          }
+                        }
+                        pushState(projects, '셀 편집');
+                        updateCell(projectId, sheet.id, cellToSave.rowId, cellToSave.columnId, finalValue);
+                        // editingCell이 여전히 이 셀이면 초기화
+                        setEditingCell((prev) =>
+                          prev?.rowId === cellToSave.rowId && prev?.columnId === cellToSave.columnId ? null : prev
+                        );
+                        setEditValue('');
+                        setShowAutocomplete(false);
                       }
                     }, 150);
                   }}
@@ -1714,11 +1946,13 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                     }
                   }}
                   autoFocus
-                  className="w-full px-2 py-1 border rounded outline-none"
+                  className="w-full px-1.5 py-0.5 border rounded outline-none box-border"
                   style={{
                     background: isFormulaInput ? 'var(--primary-purple-light)' : 'var(--bg-primary)',
                     borderColor: isFormulaInput ? 'var(--primary-purple)' : 'var(--accent)',
-                    color: 'var(--text-primary)'
+                    color: 'var(--text-primary)',
+                    fontSize: `${cellFontSize}px`,
+                    textAlign: cellStyle?.hAlign || 'left',
                   }}
                   placeholder={isFormulaColumn ? t('table.defaultFormula', { formula: col.formula || t('table.noFormula') }) : ''}
                 />
@@ -1758,9 +1992,6 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
 
           // 잠금 상태 확인
           const isLocked = col.locked || row.original.locked;
-
-          // 셀 스타일 가져오기
-          const cellStyle = row.original.cellStyles?.[col.id];
 
           // 메모 확인
           const cellMemo = row.original.cellMemos?.[col.id];
@@ -1845,9 +2076,9 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                 startEditing(row.original.id, col.id);
               }}
               onContextMenu={(e) => handleContextMenu(e, row.original.id, col.id)}
-              className={`px-2 py-1 min-h-[32px] relative group overflow-hidden select-none ${
-                isSelected && !editingCell ? 'cursor-move' : 'cursor-cell'
-              } ${isMoveSource ? 'opacity-50' : ''}`}
+              className={`px-2 py-1 min-h-[32px] relative group overflow-hidden select-none flex ${
+                cellStyle?.vAlign === 'top' ? 'items-start' : cellStyle?.vAlign === 'bottom' ? 'items-end' : 'items-center'
+              } ${isSelected && !editingCell ? 'cursor-move' : 'cursor-cell'} ${isMoveSource ? 'opacity-50' : ''}`}
               style={{
                 background: isMoveTarget
                   ? 'var(--accent-light)'
@@ -1957,17 +2188,21 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     cols.push({
       id: 'actions',
       header: '',
-      cell: ({ row }) => (
-        <button
-          onClick={() => deleteRow(projectId, sheet.id, row.original.id)}
-          className="p-1 transition-colors"
-          style={{ color: 'var(--text-tertiary)' }}
-          onMouseEnter={(e) => e.currentTarget.style.color = 'var(--error)'}
-          onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
-        >
-          <Trash2 className="w-3.5 h-3.5" />
-        </button>
-      ),
+      cell: ({ row }) => {
+        const rowIndex = sheet.rows.findIndex(r => r.id === row.original.id);
+        const hasValue = Object.values(row.original.cells).some(v => v !== null && v !== undefined && v !== '');
+        return (
+          <button
+            onClick={() => setDeleteRowConfirm({ rowId: row.original.id, rowIndex, hasValue })}
+            className="p-1 transition-colors"
+            style={{ color: 'var(--text-tertiary)' }}
+            onMouseEnter={(e) => e.currentTarget.style.color = 'var(--error)'}
+            onMouseLeave={(e) => e.currentTarget.style.color = 'var(--text-tertiary)'}
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        );
+      },
       size: 36,
     });
 
@@ -2426,6 +2661,12 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
             borderColor: 'var(--border-primary)'
           }}
           onScroll={handleTableScroll}
+          onMouseDown={() => {
+            // 테이블 내 클릭 시 모든 컨텍스트 메뉴 닫기
+            setContextMenu(null);
+            setColumnContextMenu(null);
+            setRowContextMenu(null);
+          }}
         >
         <table
           className="border-collapse table-fixed"
@@ -2469,24 +2710,62 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                       {header.isPlaceholder
                         ? null
                         : flexRender(header.column.columnDef.header, header.getContext())}
-                      {/* 열 너비 조절 핸들 */}
+                      {/* 열 너비 조절 핸들 - 클릭 영역 확장 */}
                       {!isActions && (
                         <div
                           className={cn(
-                            'absolute right-0 top-0 bottom-0 w-1 cursor-col-resize transition-colors',
+                            'absolute top-0 bottom-0 cursor-col-resize transition-colors',
                             resizingColumn === header.id ? 'bg-[var(--accent)]' : 'hover:bg-[var(--accent)]'
                           )}
+                          style={{
+                            right: -3,
+                            width: 7,
+                          }}
                           onMouseDown={(e) => handleResizeStart(header.id, e)}
+                          onContextMenu={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            const column = sheet.columns.find(c => c.id === header.id);
+                            if (column) {
+                              setResizeContextMenu({
+                                x: e.clientX,
+                                y: e.clientY,
+                                type: 'column',
+                                columnId: header.id,
+                              });
+                            }
+                          }}
                         />
                       )}
-                      {/* 헤더 높이 조절 핸들 - 행 번호 셀에만 표시 */}
-                      {isRowNumber && (
+                      {/* 헤더 높이 조절 핸들 - 모든 헤더 셀 하단에 표시 */}
+                      {!isActions && (
                         <div
                           className={cn(
-                            'absolute left-0 right-0 bottom-0 h-1 cursor-row-resize transition-colors',
+                            'absolute left-0 right-0 cursor-row-resize transition-colors z-10',
                             resizingHeader ? 'bg-[var(--accent)]' : 'hover:bg-[var(--accent)]'
                           )}
+                          style={{
+                            bottom: -3,
+                            height: 7,
+                          }}
                           onMouseDown={handleHeaderResizeStart}
+                          onContextMenu={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            // 열 헤더면 열 컨텍스트 메뉴, 행 번호면 리사이즈 메뉴
+                            if (!isRowNumber) {
+                              const column = sheet.columns.find(c => c.id === header.id);
+                              if (column) {
+                                setColumnContextMenu({ x: e.clientX, y: e.clientY, column });
+                              }
+                            } else {
+                              setResizeContextMenu({
+                                x: e.clientX,
+                                y: e.clientY,
+                                type: 'header',
+                              });
+                            }
+                          }}
                         />
                       )}
                     </th>
@@ -2530,7 +2809,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                         <td
                           key={cell.id}
                           className={cn(
-                            "text-[15px] relative",
+                            "text-[14px] relative",
                             isActions && "px-1",
                             isRowNumber && "text-center"
                           )}
@@ -2548,14 +2827,82 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                           }}
                         >
                           {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                          {/* 행 높이 조절 핸들 - 행 번호 셀에만 표시 */}
+                          {/* 열 너비 조절 핸들 - 데이터 셀 오른쪽 경계 (좁은 영역으로 셀 클릭 방해 최소화) */}
+                          {!isActions && !isRowNumber && (
+                            <div
+                              className={cn(
+                                'absolute top-0 bottom-0 cursor-col-resize transition-colors z-10 opacity-0 hover:opacity-100',
+                                resizingColumn === cell.column.id ? 'opacity-100 bg-[var(--accent)]' : 'hover:bg-[var(--accent)]'
+                              )}
+                              style={{
+                                right: -2,
+                                width: 5,
+                              }}
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                                handleResizeStart(cell.column.id, e);
+                              }}
+                              onContextMenu={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setResizeContextMenu({
+                                  x: e.clientX,
+                                  y: e.clientY,
+                                  type: 'column',
+                                  columnId: cell.column.id,
+                                });
+                              }}
+                            />
+                          )}
+                          {/* 행 번호 셀 오른쪽 경계 - 열 너비 조절 및 컨텍스트 메뉴 */}
                           {isRowNumber && (
                             <div
                               className={cn(
-                                'absolute left-0 right-0 bottom-0 h-1 cursor-row-resize transition-colors',
+                                'absolute top-0 bottom-0 cursor-col-resize transition-colors z-10 opacity-0 hover:opacity-100',
+                                resizingColumn === 'rowNumber' ? 'opacity-100 bg-[var(--accent)]' : 'hover:bg-[var(--accent)]'
+                              )}
+                              style={{
+                                right: -2,
+                                width: 5,
+                              }}
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                                handleResizeStart('rowNumber', e);
+                              }}
+                              onContextMenu={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                // 행 컨텍스트 메뉴 열기
+                                setRowContextMenu({ x: e.clientX, y: e.clientY, row: row.original, rowIndex: row.index });
+                              }}
+                            />
+                          )}
+                          {/* 행 높이 조절 핸들 - 모든 셀 하단 경계 */}
+                          {!isActions && (
+                            <div
+                              className={cn(
+                                'absolute left-0 right-0 cursor-row-resize transition-colors z-10',
                                 resizingRow === row.original.id ? 'bg-[var(--accent)]' : 'hover:bg-[var(--accent)]'
                               )}
-                              onMouseDown={(e) => handleRowResizeStart(row.original.id, e)}
+                              style={{
+                                bottom: -3,
+                                height: 7,
+                              }}
+                              onMouseDown={(e) => {
+                                e.stopPropagation();
+                                handleRowResizeStart(row.original.id, e);
+                              }}
+                              onContextMenu={(e) => {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                setResizeContextMenu({
+                                  x: e.clientX,
+                                  y: e.clientY,
+                                  type: 'row',
+                                  rowId: row.original.id,
+                                  rowIndex: row.index,
+                                });
+                              }}
                             />
                           )}
                         </td>
@@ -2753,19 +3100,33 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
           y={columnContextMenu.y}
           columnName={columnContextMenu.column.name}
           isLocked={columnContextMenu.column.locked || false}
+          isExportExcluded={columnContextMenu.column.exportExcluded || false}
           onClose={() => setColumnContextMenu(null)}
           onToggleLock={() => {
             updateColumn(projectId, sheet.id, columnContextMenu.column.id, {
               locked: !columnContextMenu.column.locked
             });
           }}
+          onToggleExportExclude={() => {
+            updateColumn(projectId, sheet.id, columnContextMenu.column.id, {
+              exportExcluded: !columnContextMenu.column.exportExcluded
+            });
+          }}
           onEdit={() => {
             setEditingColumn(columnContextMenu.column);
           }}
           onDelete={() => {
-            if (confirm(t('table.confirmDeleteColumn', { name: columnContextMenu.column.name }))) {
-              deleteColumn(projectId, sheet.id, columnContextMenu.column.id);
-            }
+            setDeleteColumnConfirm({
+              columnId: columnContextMenu.column.id,
+              columnName: columnContextMenu.column.name,
+            });
+          }}
+          onClearValues={() => {
+            // 해당 열의 모든 행의 값을 지움
+            sheet.rows.forEach(row => {
+              updateCell(projectId, sheet.id, row.id, columnContextMenu.column.id, null);
+            });
+            setColumnContextMenu(null);
           }}
           onInsertLeft={() => {
             const colIdx = sheet.columns.findIndex(c => c.id === columnContextMenu.column.id);
@@ -2798,7 +3159,15 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
             });
           }}
           onDelete={() => {
-            deleteRow(projectId, sheet.id, rowContextMenu.row.id);
+            const hasValue = Object.values(rowContextMenu.row.cells).some(v => v !== null && v !== undefined && v !== '');
+            setDeleteRowConfirm({ rowId: rowContextMenu.row.id, rowIndex: rowContextMenu.rowIndex, hasValue });
+          }}
+          onClearValues={() => {
+            // 해당 행의 모든 셀 값을 지움
+            sheet.columns.forEach(col => {
+              updateCell(projectId, sheet.id, rowContextMenu.row.id, col.id, null);
+            });
+            setRowContextMenu(null);
           }}
           onInsertAbove={() => {
             insertRow(projectId, sheet.id, rowContextMenu.rowIndex);
@@ -2809,16 +3178,156 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
         />
       )}
 
-      {/* 메모 모달 */}
+      {/* 리사이즈 컨텍스트 메뉴 */}
+      {resizeContextMenu && (
+        <div
+          className="fixed z-[9999] min-w-[160px] py-1 rounded-lg shadow-lg border"
+          style={{
+            left: resizeContextMenu.x,
+            top: resizeContextMenu.y,
+            background: 'var(--bg-primary)',
+            borderColor: 'var(--border-primary)',
+          }}
+          onClick={(e) => e.stopPropagation()}
+        >
+          {resizeContextMenu.type === 'column' ? (
+            <>
+              <button
+                onClick={() => {
+                  const colIdx = sheet.columns.findIndex(c => c.id === resizeContextMenu.columnId);
+                  if (colIdx >= 0) {
+                    insertColumn(projectId, sheet.id, { name: t('table.newColumn'), type: 'general' }, colIdx);
+                  }
+                  setResizeContextMenu(null);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left hover:bg-[var(--bg-hover)]"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {t('contextMenu.insertColumnLeft')}
+              </button>
+              <button
+                onClick={() => {
+                  const colIdx = sheet.columns.findIndex(c => c.id === resizeContextMenu.columnId);
+                  if (colIdx >= 0) {
+                    insertColumn(projectId, sheet.id, { name: t('table.newColumn'), type: 'general' }, colIdx + 1);
+                  }
+                  setResizeContextMenu(null);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left hover:bg-[var(--bg-hover)]"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {t('contextMenu.insertColumnRight')}
+              </button>
+              <div className="my-1 border-t" style={{ borderColor: 'var(--border-primary)' }} />
+              <button
+                onClick={() => {
+                  if (resizeContextMenu.columnId) {
+                    setColumnWidths(prev => ({ ...prev, [resizeContextMenu.columnId!]: 150 }));
+                    updateColumn(projectId, sheet.id, resizeContextMenu.columnId, { width: 150 });
+                  }
+                  setResizeContextMenu(null);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left hover:bg-[var(--bg-hover)]"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {t('contextMenu.resetWidth')}
+              </button>
+            </>
+          ) : resizeContextMenu.type === 'row' ? (
+            <>
+              <button
+                onClick={() => {
+                  if (resizeContextMenu.rowIndex !== undefined) {
+                    insertRow(projectId, sheet.id, resizeContextMenu.rowIndex);
+                  }
+                  setResizeContextMenu(null);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left hover:bg-[var(--bg-hover)]"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {t('contextMenu.insertRowAbove')}
+              </button>
+              <button
+                onClick={() => {
+                  if (resizeContextMenu.rowIndex !== undefined) {
+                    insertRow(projectId, sheet.id, resizeContextMenu.rowIndex + 1);
+                  }
+                  setResizeContextMenu(null);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left hover:bg-[var(--bg-hover)]"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {t('contextMenu.insertRowBelow')}
+              </button>
+              <div className="my-1 border-t" style={{ borderColor: 'var(--border-primary)' }} />
+              <button
+                onClick={() => {
+                  if (resizeContextMenu.rowId) {
+                    setRowHeights(prev => ({ ...prev, [resizeContextMenu.rowId!]: 36 }));
+                  }
+                  setResizeContextMenu(null);
+                }}
+                className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left hover:bg-[var(--bg-hover)]"
+                style={{ color: 'var(--text-primary)' }}
+              >
+                {t('contextMenu.resetHeight')}
+              </button>
+            </>
+          ) : (
+            // header type
+            <button
+              onClick={() => {
+                setHeaderHeight(36);
+                setResizeContextMenu(null);
+              }}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left hover:bg-[var(--bg-hover)]"
+              style={{ color: 'var(--text-primary)' }}
+            >
+              {t('contextMenu.resetHeight')}
+            </button>
+          )}
+        </div>
+      )}
+
+      {/* 리사이즈 컨텍스트 메뉴 외부 클릭 시 닫기 */}
+      {resizeContextMenu && (
+        <div
+          className="fixed inset-0 z-[9998]"
+          onClick={() => setResizeContextMenu(null)}
+        />
+      )}
+
+      {/* 메모 모달 - 크기 확대 및 드래그 핸들 추가 */}
       {memoModal && (
         <div className="fixed inset-0 modal-overlay flex items-center justify-center z-[9999] p-2 sm:p-4">
-          <div className="card w-full max-w-md animate-scaleIn">
-            <div className="border-b px-4 sm:px-5 py-3 sm:py-4 flex items-center justify-between" style={{
-              borderColor: 'var(--border-primary)'
-            }}>
-              <h3 className="font-semibold text-sm sm:text-base" style={{ color: 'var(--text-primary)' }}>
-                {memoModal.memo ? t('contextMenu.editMemo') : t('contextMenu.addMemo')}
-              </h3>
+          <div className="card w-full max-w-md animate-scaleIn shadow-xl">
+            {/* 헤더 - 드래그 핸들 + 아이콘 + 닫기버튼 */}
+            <div
+              className="flex items-center justify-between px-4 py-3 cursor-move border-b"
+              style={{ borderColor: 'var(--border-primary)', background: '#fbbf2410' }}
+            >
+              <div className="flex items-center gap-3">
+                {/* 드래그 핸들 */}
+                <div className="flex flex-col gap-0.5 opacity-60">
+                  <div className="flex gap-0.5">
+                    <div className="w-1 h-1 rounded-full" style={{ background: '#fbbf24' }} />
+                    <div className="w-1 h-1 rounded-full" style={{ background: '#fbbf24' }} />
+                  </div>
+                  <div className="flex gap-0.5">
+                    <div className="w-1 h-1 rounded-full" style={{ background: '#fbbf24' }} />
+                    <div className="w-1 h-1 rounded-full" style={{ background: '#fbbf24' }} />
+                  </div>
+                </div>
+                <div
+                  className="w-9 h-9 rounded-lg flex items-center justify-center"
+                  style={{ background: '#fbbf2420' }}
+                >
+                  <StickyNote className="w-4.5 h-4.5" style={{ color: '#fbbf24' }} />
+                </div>
+                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                  {memoModal.memo ? t('contextMenu.editMemo') : t('contextMenu.addMemo')}
+                </span>
+              </div>
               <button
                 onClick={() => setMemoModal(null)}
                 className="p-1.5 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"
@@ -2827,34 +3336,26 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                 <X className="w-5 h-5" />
               </button>
             </div>
-            <div className="p-4 sm:p-5 space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
-                  {t('memo.content')}
-                </label>
-                <textarea
-                  value={memoModal.memo}
-                  onChange={(e) => setMemoModal({ ...memoModal, memo: e.target.value })}
-                  placeholder={t('memo.placeholder')}
-                  rows={4}
-                  className="w-full px-3 py-2 border rounded-lg text-sm resize-none"
-                  style={{
-                    background: 'var(--bg-primary)',
-                    borderColor: 'var(--border-primary)',
-                    color: 'var(--text-primary)'
-                  }}
-                  autoFocus
-                />
-              </div>
+            <div className="px-4 py-4">
+              <textarea
+                value={memoModal.memo}
+                onChange={(e) => setMemoModal({ ...memoModal, memo: e.target.value })}
+                placeholder={t('memo.placeholder')}
+                rows={6}
+                className="w-full px-4 py-3 border rounded-lg text-sm resize-y min-h-[150px] focus:outline-none focus:ring-2 focus:ring-[#fbbf24]/30 focus:border-[#fbbf24]"
+                style={{
+                  background: 'var(--bg-secondary)',
+                  borderColor: 'var(--border-primary)',
+                  color: 'var(--text-primary)'
+                }}
+                autoFocus
+              />
             </div>
-            <div className="border-t px-4 sm:px-5 py-3 sm:py-4 flex justify-end gap-2" style={{
-              borderColor: 'var(--border-primary)'
-            }}>
+            <div className="px-4 pb-4 flex justify-end gap-3">
               <button
                 onClick={() => setMemoModal(null)}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors"
+                className="px-4 py-2 rounded-lg text-sm font-medium transition-colors hover:bg-black/5 dark:hover:bg-white/5"
                 style={{
-                  background: 'var(--bg-tertiary)',
                   color: 'var(--text-secondary)'
                 }}
               >
@@ -2876,10 +3377,10 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                   }
                   setMemoModal(null);
                 }}
-                className="px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-xs sm:text-sm font-medium transition-colors"
+                className="px-5 py-2 rounded-lg text-sm font-medium transition-colors shadow-sm"
                 style={{
-                  background: 'var(--accent)',
-                  color: 'white'
+                  background: '#fbbf24',
+                  color: '#000'
                 }}
               >
                 {t('common.save')}
@@ -2997,6 +3498,50 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
           </div>
         </div>
       )}
+
+      {/* 열 삭제 확인 다이얼로그 */}
+      <ConfirmDialog
+        isOpen={!!deleteColumnConfirm}
+        onClose={() => setDeleteColumnConfirm(null)}
+        onConfirm={() => {
+          if (deleteColumnConfirm) {
+            deleteColumn(projectId, sheet.id, deleteColumnConfirm.columnId);
+          }
+        }}
+        title={t('table.deleteColumn')}
+        message={t('table.confirmDeleteColumn', { name: deleteColumnConfirm?.columnName || '' })}
+        confirmText={t('common.delete')}
+        cancelText={t('common.cancel')}
+        variant="danger"
+      />
+
+      {/* 행 삭제 옵션 다이얼로그 */}
+      <DeleteRowDialog
+        isOpen={!!deleteRowConfirm}
+        onClose={() => setDeleteRowConfirm(null)}
+        onClearValues={() => {
+          if (deleteRowConfirm) {
+            // 행의 모든 셀 값만 지우기
+            pushState(projects, '행 값 초기화');
+            const row = sheet.rows.find(r => r.id === deleteRowConfirm.rowId);
+            if (row) {
+              sheet.columns.forEach(col => {
+                updateCell(projectId, sheet.id, deleteRowConfirm.rowId, col.id, null);
+              });
+            }
+            setSelectedCells([]);
+            setSelectedCell(null);
+          }
+        }}
+        onDeleteRow={() => {
+          if (deleteRowConfirm) {
+            deleteRow(projectId, sheet.id, deleteRowConfirm.rowId);
+            setSelectedCells([]);
+            setSelectedCell(null);
+          }
+        }}
+        rowIndex={deleteRowConfirm?.rowIndex || 0}
+      />
     </div>
   );
 }

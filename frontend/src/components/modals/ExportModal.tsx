@@ -1,7 +1,8 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Download, Code, FileCode, Copy, Check, FileJson, FileType, FileText, Database, FolderOpen, Square, CheckSquare, ChevronRight, Maximize2, Minimize2 } from 'lucide-react';
+import { X, Download, Code, FileCode, Copy, Check, FileJson, FileType, FileText, Database, FolderOpen, Square, CheckSquare, ChevronRight, Maximize2, Minimize2, Settings2, ChevronDown } from 'lucide-react';
+import type { Sheet } from '@/types';
 import { useProjectStore } from '@/stores/projectStore';
 import { exportForGameEngine, EXPORT_FORMATS, type ExportFormat } from '@/lib/gameEngineExport';
 import { exportToJSON, exportSheetToCSV } from '@/lib/storage';
@@ -77,8 +78,10 @@ export default function ExportModal({ onClose }: ExportModalProps) {
   const [selectedSheetIds, setSelectedSheetIds] = useState<string[]>(currentSheetId ? [currentSheetId] : []);
   const [expandedProjectId, setExpandedProjectId] = useState<string | null>(currentProjectId);
   const [classNames, setClassNames] = useState<Record<string, string>>({});  // sheetId -> className
+  const [excludedColumns, setExcludedColumns] = useState<Record<string, Set<string>>>({});  // sheetId -> excluded columnIds
   const [previewFiles, setPreviewFiles] = useState<{ filename: string; content: string; type: string }[]>([]);
   const [expandedFile, setExpandedFile] = useState<string | null>(null);
+  const [showColumnSettings, setShowColumnSettings] = useState<string | null>(null);  // 컬럼 설정 표시할 시트 ID
   const [copiedFile, setCopiedFile] = useState<string | null>(null);
   const [isGenerated, setIsGenerated] = useState(false);
   const [isCodeFullscreen, setIsCodeFullscreen] = useState(false);
@@ -151,6 +154,61 @@ export default function ExportModal({ onClose }: ExportModalProps) {
     setIsGenerated(false);
   };
 
+  // 컬럼 제외 토글
+  const handleColumnToggle = (sheetId: string, columnId: string) => {
+    setExcludedColumns(prev => {
+      const current = prev[sheetId] || new Set();
+      const newSet = new Set(current);
+      if (newSet.has(columnId)) {
+        newSet.delete(columnId);
+      } else {
+        newSet.add(columnId);
+      }
+      return { ...prev, [sheetId]: newSet };
+    });
+    setPreviewFiles([]);
+    setIsGenerated(false);
+  };
+
+  // 컬럼 전체 선택/해제
+  const handleSelectAllColumns = (sheetId: string) => {
+    const sheet = sheets.find(s => s.id === sheetId);
+    if (!sheet) return;
+
+    const excluded = excludedColumns[sheetId] || new Set();
+    const allExcluded = sheet.columns.every(col => excluded.has(col.id));
+
+    if (allExcluded) {
+      // 전체 선택 (제외 해제)
+      setExcludedColumns(prev => ({ ...prev, [sheetId]: new Set() }));
+    } else {
+      // 전체 제외
+      setExcludedColumns(prev => ({
+        ...prev,
+        [sheetId]: new Set(sheet.columns.map(c => c.id))
+      }));
+    }
+    setPreviewFiles([]);
+    setIsGenerated(false);
+  };
+
+  // 시트 데이터에서 제외된 컬럼 필터링
+  const getFilteredSheet = (sheet: Sheet): Sheet => {
+    const excluded = excludedColumns[sheet.id] || new Set();
+    if (excluded.size === 0) return sheet;
+
+    return {
+      ...sheet,
+      columns: sheet.columns.filter(col => !excluded.has(col.id)),
+      rows: sheet.rows.map(row => ({
+        ...row,
+        cells: Object.fromEntries(
+          Object.entries(row.cells).filter(([colId]) => !excluded.has(colId))
+        )
+      }))
+    };
+  };
+
   // 클래스명 변경 (시트별) - 바로 시트에 저장
   const handleClassNameChange = (sheetId: string, value: string) => {
     setClassNames(prev => ({ ...prev, [sheetId]: value }));
@@ -205,15 +263,17 @@ export default function ExportModal({ onClose }: ExportModalProps) {
       }
     } else if (selectedFormat === 'csv') {
       for (const sheet of selectedSheets) {
-        const csv = exportSheetToCSV(sheet);
+        const filteredSheet = getFilteredSheet(sheet);
+        const csv = exportSheetToCSV(filteredSheet);
         const projectName = selectedProject?.name || 'project';
         const filename = `${projectName}-${sheet.name}.csv`;
         files.push({ filename, content: csv, type: 'text/csv' });
       }
     } else {
       for (const sheet of selectedSheets) {
+        const filteredSheet = getFilteredSheet(sheet);
         const sheetClassName = getClassName(sheet);
-        const exportedFiles = exportForGameEngine(sheet, selectedFormat as ExportFormat, {
+        const exportedFiles = exportForGameEngine(filteredSheet, selectedFormat as ExportFormat, {
           className: sheetClassName,
           project: selectedProject
         });
@@ -454,23 +514,100 @@ export default function ExportModal({ onClose }: ExportModalProps) {
                                 <div style={{ background: 'var(--bg-secondary)' }}>
                                   {projectSheets.map(sheet => {
                                     const isSheetSelected = selectedSheetIds.includes(sheet.id) && selectedProjectId === project.id;
+                                    const excluded = excludedColumns[sheet.id] || new Set();
+                                    const excludedCount = excluded.size;
+                                    const isColumnSettingsOpen = showColumnSettings === sheet.id;
                                     return (
-                                      <button
-                                        key={sheet.id}
-                                        onClick={() => handleSheetToggle(sheet.id, project.id)}
-                                        className="w-full pl-12 pr-3 py-1.5 text-left text-sm flex items-center gap-2 hover:bg-[var(--bg-hover)] transition-colors"
-                                        style={{ color: 'var(--text-primary)' }}
-                                      >
-                                        {isSheetSelected ? (
-                                          <CheckSquare className="w-4 h-4 shrink-0" style={{ color: 'var(--primary-blue)' }} />
-                                        ) : (
-                                          <Square className="w-4 h-4 shrink-0" style={{ color: 'var(--text-tertiary)' }} />
+                                      <div key={sheet.id}>
+                                        <div
+                                          className="w-full pl-12 pr-3 py-1.5 text-left text-sm flex items-center gap-2 hover:bg-[var(--bg-hover)] transition-colors"
+                                          style={{ color: 'var(--text-primary)' }}
+                                        >
+                                          <button
+                                            onClick={() => handleSheetToggle(sheet.id, project.id)}
+                                            className="shrink-0"
+                                          >
+                                            {isSheetSelected ? (
+                                              <CheckSquare className="w-4 h-4" style={{ color: 'var(--primary-blue)' }} />
+                                            ) : (
+                                              <Square className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+                                            )}
+                                          </button>
+                                          <span
+                                            className="flex-1 truncate cursor-pointer"
+                                            onClick={() => handleSheetToggle(sheet.id, project.id)}
+                                          >
+                                            {sheet.name}
+                                          </span>
+                                          {/* 컬럼 설정 버튼 */}
+                                          {isSheetSelected && (
+                                            <button
+                                              onClick={(e) => {
+                                                e.stopPropagation();
+                                                setShowColumnSettings(isColumnSettingsOpen ? null : sheet.id);
+                                              }}
+                                              className="p-1 rounded hover:bg-[var(--bg-hover)] transition-colors"
+                                              title={t('export.columnSettings')}
+                                            >
+                                              <Settings2 className="w-3.5 h-3.5" style={{
+                                                color: excludedCount > 0 ? 'var(--warning)' : 'var(--text-tertiary)'
+                                              }} />
+                                            </button>
+                                          )}
+                                          <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                                            {excludedCount > 0 ? (
+                                              <span style={{ color: 'var(--warning)' }}>
+                                                {sheet.columns.length - excludedCount}/{sheet.columns.length}
+                                              </span>
+                                            ) : (
+                                              `${sheet.rows.length}×${sheet.columns.length}`
+                                            )}
+                                          </span>
+                                        </div>
+                                        {/* 컬럼 설정 패널 */}
+                                        {isColumnSettingsOpen && (
+                                          <div
+                                            className="pl-16 pr-3 py-2 space-y-1"
+                                            style={{ background: 'var(--bg-primary)', borderTop: '1px solid var(--border-primary)' }}
+                                          >
+                                            <div className="flex items-center justify-between mb-2">
+                                              <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+                                                {t('export.selectColumns')}
+                                              </span>
+                                              <button
+                                                onClick={() => handleSelectAllColumns(sheet.id)}
+                                                className="text-xs px-2 py-0.5 rounded hover:bg-[var(--bg-hover)]"
+                                                style={{ color: 'var(--text-tertiary)' }}
+                                              >
+                                                {excluded.size === sheet.columns.length ? t('common.selectAll') : t('common.deselectAll')}
+                                              </button>
+                                            </div>
+                                            <div className="max-h-32 overflow-y-auto space-y-0.5">
+                                              {sheet.columns.map(col => {
+                                                const isExcluded = excluded.has(col.id);
+                                                return (
+                                                  <button
+                                                    key={col.id}
+                                                    onClick={() => handleColumnToggle(sheet.id, col.id)}
+                                                    className="w-full flex items-center gap-2 px-2 py-1 rounded text-xs hover:bg-[var(--bg-hover)] transition-colors"
+                                                    style={{ color: isExcluded ? 'var(--text-tertiary)' : 'var(--text-primary)' }}
+                                                  >
+                                                    {isExcluded ? (
+                                                      <Square className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--text-tertiary)' }} />
+                                                    ) : (
+                                                      <CheckSquare className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--primary-blue)' }} />
+                                                    )}
+                                                    <span className={`truncate ${isExcluded ? 'line-through' : ''}`}>{col.name}</span>
+                                                    <span className="ml-auto text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                                                      {col.type}
+                                                    </span>
+                                                  </button>
+                                                );
+                                              })}
+                                            </div>
+                                          </div>
                                         )}
-                                        <span className="flex-1 truncate">{sheet.name}</span>
-                                        <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                                          {sheet.rows.length}×{sheet.columns.length}
-                                        </span>
-                                      </button>
+                                      </div>
                                     );
                                   })}
                                 </div>

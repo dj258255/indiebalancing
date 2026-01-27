@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { HelpCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import {
@@ -105,6 +105,22 @@ export default function ToolPanels({
   const [dpsVarianceHelp, setDpsVarianceHelp] = useState(false);
   const [curveFittingHelp, setCurveFittingHelp] = useState(false);
 
+  // 패널이 닫히면 도움말도 자동으로 닫기
+  useEffect(() => { if (!panels.calculator.show) setCalculatorHelp(false); }, [panels.calculator.show]);
+  useEffect(() => { if (!panels.comparison.show) setComparisonHelp(false); }, [panels.comparison.show]);
+  useEffect(() => { if (!panels.chart.show) setChartHelp(false); }, [panels.chart.show]);
+  useEffect(() => { if (!panels.preset.show) setPresetHelp(false); }, [panels.preset.show]);
+  useEffect(() => { if (!panels.imbalance.show) setImbalanceHelp(false); }, [panels.imbalance.show]);
+  useEffect(() => { if (!panels.goal.show) setGoalHelp(false); }, [panels.goal.show]);
+  useEffect(() => { if (!panels.balance.show) setBalanceAnalysisHelp(false); }, [panels.balance.show]);
+  useEffect(() => { if (!panels.formulaHelper.show) setFormulaHelperHelp(false); }, [panels.formulaHelper.show]);
+  useEffect(() => { if (!panels.balanceValidator.show) setBalanceValidatorHelp(false); }, [panels.balanceValidator.show]);
+  useEffect(() => { if (!panels.difficultyCurve.show) setDifficultyCurveHelp(false); }, [panels.difficultyCurve.show]);
+  useEffect(() => { if (!panels.simulation.show) setSimulationHelp(false); }, [panels.simulation.show]);
+  useEffect(() => { if (!panels.economy.show) setEconomyHelp(false); }, [panels.economy.show]);
+  useEffect(() => { if (!panels.dpsVariance.show) setDpsVarianceHelp(false); }, [panels.dpsVariance.show]);
+  useEffect(() => { if (!panels.curveFitting.show) setCurveFittingHelp(false); }, [panels.curveFitting.show]);
+
   return (
     <>
       {/* Calculator */}
@@ -112,7 +128,7 @@ export default function ToolPanels({
         toolId="calculator"
         panelId="calculator"
         show={panels.calculator.show}
-        onClose={() => panels.calculator.setShow(false)}
+        onClose={() => { panels.calculator.setShow(false); setCalculatorHelp(false); }}
         title={t('sidebar.calculator')}
         icon={TOOL_CONFIGS.calculator.icon}
         color={TOOL_CONFIGS.calculator.color}
@@ -144,7 +160,7 @@ export default function ToolPanels({
         toolId="comparison"
         panelId="comparison"
         show={panels.comparison.show}
-        onClose={() => panels.comparison.setShow(false)}
+        onClose={() => { panels.comparison.setShow(false); setComparisonHelp(false); }}
         title={t('sidebar.comparison')}
         icon={TOOL_CONFIGS.comparison.icon}
         color={TOOL_CONFIGS.comparison.color}
@@ -176,7 +192,7 @@ export default function ToolPanels({
         toolId="chart"
         panelId="chart"
         show={panels.chart.show}
-        onClose={() => panels.chart.setShow(false)}
+        onClose={() => { panels.chart.setShow(false); setChartHelp(false); }}
         title={t('growthCurve.title')}
         icon={TOOL_CONFIGS.chart.icon}
         color={TOOL_CONFIGS.chart.color}
@@ -203,7 +219,7 @@ export default function ToolPanels({
         toolId="presetComparison"
         panelId="preset"
         show={panels.preset.show}
-        onClose={() => panels.preset.setShow(false)}
+        onClose={() => { panels.preset.setShow(false); setPresetHelp(false); }}
         title={t('sidebar.presetComparison')}
         icon={TOOL_CONFIGS.presetComparison.icon}
         color={TOOL_CONFIGS.presetComparison.color}
@@ -235,7 +251,7 @@ export default function ToolPanels({
         toolId="imbalanceDetector"
         panelId="imbalance"
         show={panels.imbalance.show}
-        onClose={() => panels.imbalance.setShow(false)}
+        onClose={() => { panels.imbalance.setShow(false); setImbalanceHelp(false); }}
         title={t('sidebar.imbalanceDetector')}
         icon={TOOL_CONFIGS.imbalanceDetector.icon}
         color={TOOL_CONFIGS.imbalanceDetector.color}
@@ -266,7 +282,7 @@ export default function ToolPanels({
         toolId="goalSolver"
         panelId="goal"
         show={panels.goal.show}
-        onClose={() => panels.goal.setShow(false)}
+        onClose={() => { panels.goal.setShow(false); setGoalHelp(false); }}
         title={t('sidebar.goalSolver')}
         icon={TOOL_CONFIGS.goalSolver.icon}
         color={TOOL_CONFIGS.goalSolver.color}
@@ -297,7 +313,7 @@ export default function ToolPanels({
         toolId="balanceAnalysis"
         panelId="balance"
         show={panels.balance.show}
-        onClose={() => panels.balance.setShow(false)}
+        onClose={() => { panels.balance.setShow(false); setBalanceAnalysisHelp(false); }}
         title={t('sidebar.balanceAnalysis')}
         icon={TOOL_CONFIGS.balanceAnalysis.icon}
         color={TOOL_CONFIGS.balanceAnalysis.color}
@@ -328,7 +344,7 @@ export default function ToolPanels({
         toolId="economy"
         panelId="economy"
         show={panels.economy.show}
-        onClose={() => panels.economy.setShow(false)}
+        onClose={() => { panels.economy.setShow(false); setEconomyHelp(false); }}
         title={t('sidebar.economy')}
         icon={TOOL_CONFIGS.economy.icon}
         color={TOOL_CONFIGS.economy.color}
@@ -358,7 +374,7 @@ export default function ToolPanels({
         toolId="dpsVariance"
         panelId="dpsVariance"
         show={panels.dpsVariance.show}
-        onClose={() => panels.dpsVariance.setShow(false)}
+        onClose={() => { panels.dpsVariance.setShow(false); setDpsVarianceHelp(false); }}
         title={t('sidebar.dpsVariance')}
         icon={TOOL_CONFIGS.dpsVariance.icon}
         color={TOOL_CONFIGS.dpsVariance.color}
@@ -390,7 +406,7 @@ export default function ToolPanels({
         toolId="curveFitting"
         panelId="curveFitting"
         show={panels.curveFitting.show}
-        onClose={() => panels.curveFitting.setShow(false)}
+        onClose={() => { panels.curveFitting.setShow(false); setCurveFittingHelp(false); }}
         title={t('sidebar.curveFitting')}
         icon={TOOL_CONFIGS.curveFitting.icon}
         color={TOOL_CONFIGS.curveFitting.color}
@@ -421,7 +437,7 @@ export default function ToolPanels({
         toolId="formulaHelper"
         panelId="formulaHelper"
         show={panels.formulaHelper.show}
-        onClose={() => panels.formulaHelper.setShow(false)}
+        onClose={() => { panels.formulaHelper.setShow(false); setFormulaHelperHelp(false); }}
         title={t('bottomTabs.formulaHelper')}
         icon={TOOL_CONFIGS.formulaHelper.icon}
         color={TOOL_CONFIGS.formulaHelper.color}
@@ -452,7 +468,7 @@ export default function ToolPanels({
         toolId="balanceValidator"
         panelId="balanceValidator"
         show={panels.balanceValidator.show}
-        onClose={() => panels.balanceValidator.setShow(false)}
+        onClose={() => { panels.balanceValidator.setShow(false); setBalanceValidatorHelp(false); }}
         title={t('bottomTabs.balanceValidator')}
         icon={TOOL_CONFIGS.balanceValidator.icon}
         color={TOOL_CONFIGS.balanceValidator.color}
@@ -483,7 +499,7 @@ export default function ToolPanels({
         toolId="difficultyCurve"
         panelId="difficultyCurve"
         show={panels.difficultyCurve.show}
-        onClose={() => panels.difficultyCurve.setShow(false)}
+        onClose={() => { panels.difficultyCurve.setShow(false); setDifficultyCurveHelp(false); }}
         title={t('bottomTabs.difficultyCurve')}
         icon={TOOL_CONFIGS.difficultyCurve.icon}
         color={TOOL_CONFIGS.difficultyCurve.color}
@@ -514,7 +530,7 @@ export default function ToolPanels({
         toolId="simulation"
         panelId="simulation"
         show={panels.simulation.show}
-        onClose={() => panels.simulation.setShow(false)}
+        onClose={() => { panels.simulation.setShow(false); setSimulationHelp(false); }}
         title={t('bottomTabs.simulation')}
         icon={TOOL_CONFIGS.simulation.icon}
         color={TOOL_CONFIGS.simulation.color}

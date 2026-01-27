@@ -32,13 +32,14 @@ import {
   PenTool,
   Plus,
   Code,
+  Activity,
 } from 'lucide-react';
 import { useProjectStore } from '@/stores/projectStore';
 import { useToolLayoutStore, AllToolId } from '@/stores/toolLayoutStore';
 import { deleteProjectFromDB } from '@/lib/storage';
 import { formatRelativeTime } from '@/lib/utils';
 import { cn } from '@/lib/utils';
-import { ThemeToggle } from '@/components/ui';
+import { ThemeToggle, ConfirmDialog } from '@/components/ui';
 import { useTranslations, useLocale } from 'next-intl';
 import Image from 'next/image';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -64,7 +65,42 @@ interface SidebarProps {
   onToggleBalanceValidator?: () => void;
   onToggleDifficultyCurve?: () => void;
   onToggleSimulation?: () => void;
+  // 활성화된 도구 상태
+  activeTools?: {
+    calculator?: boolean;
+    comparison?: boolean;
+    chart?: boolean;
+    presetComparison?: boolean;
+    imbalanceDetector?: boolean;
+    goalSolver?: boolean;
+    balanceAnalysis?: boolean;
+    economy?: boolean;
+    dpsVariance?: boolean;
+    curveFitting?: boolean;
+    formulaHelper?: boolean;
+    balanceValidator?: boolean;
+    difficultyCurve?: boolean;
+    simulation?: boolean;
+  };
 }
+
+// 도구 설정
+const TOOL_CONFIG: Record<string, { icon: typeof Calculator; color: string; labelKey: string }> = {
+  calculator: { icon: Calculator, color: '#8b5cf6', labelKey: 'sidebar.calculator' },
+  comparison: { icon: PieChart, color: '#3b82f6', labelKey: 'sidebar.comparison' },
+  chart: { icon: BarChart3, color: '#22c55e', labelKey: 'sidebar.chart' },
+  presetComparison: { icon: GitCompare, color: '#f97316', labelKey: 'sidebar.presetComparison' },
+  imbalanceDetector: { icon: AlertTriangle, color: '#eab308', labelKey: 'sidebar.imbalanceDetector' },
+  goalSolver: { icon: Target, color: '#14b8a6', labelKey: 'sidebar.goalSolver' },
+  balanceAnalysis: { icon: Activity, color: '#ec4899', labelKey: 'sidebar.balanceAnalysis' },
+  economy: { icon: Coins, color: '#f59e0b', labelKey: 'sidebar.economy' },
+  dpsVariance: { icon: BarChart2, color: '#f97316', labelKey: 'sidebar.dpsVariance' },
+  curveFitting: { icon: PenTool, color: '#6366f1', labelKey: 'sidebar.curveFitting' },
+  formulaHelper: { icon: FunctionSquare, color: '#3b82f6', labelKey: 'bottomTabs.formulaHelper' },
+  balanceValidator: { icon: Shield, color: '#22c55e', labelKey: 'bottomTabs.balanceValidator' },
+  difficultyCurve: { icon: TrendingUp, color: '#8b5cf6', labelKey: 'bottomTabs.difficultyCurve' },
+  simulation: { icon: Swords, color: '#ef4444', labelKey: 'bottomTabs.simulation' },
+};
 
 export default function Sidebar({
   onShowChart,
@@ -86,6 +122,7 @@ export default function Sidebar({
   onToggleBalanceValidator,
   onToggleDifficultyCurve,
   onToggleSimulation,
+  activeTools = {},
 }: SidebarProps) {
   const {
     projects,
@@ -113,9 +150,10 @@ export default function Sidebar({
     toolLocations,
     getSidebarTools,
     reorderSidebarTools,
+    moveToolToLocation,
     sidebarWidth,
     toolsSectionHeight,
-    setToolsSectionHeight
+    setToolsSectionHeight,
   } = useToolLayoutStore();
 
   // 클라이언트 마운트 후에만 저장된 값 사용 (SSR 하이드레이션 불일치 방지)
@@ -126,15 +164,20 @@ export default function Sidebar({
   const effectiveWidth = mounted ? sidebarWidth : 256;
   const effectiveToolsHeight = mounted ? toolsSectionHeight : 200;
 
-  // 도구 드래그 앤 드롭 상태 (toolId 기반으로 변경)
-  const [draggedToolId, setDraggedToolId] = useState<string | null>(null);
-  const [dragOverToolId, setDragOverToolId] = useState<string | null>(null);
+  // 드래그 상태 - 단순화
+  const [dragState, setDragState] = useState<{
+    draggedToolId: AllToolId | null;
+    draggedFromSidebar: boolean;
+    dropTargetIndex: number | null;
+    isOverSidebar: boolean;
+  }>({
+    draggedToolId: null,
+    draggedFromSidebar: false,
+    dropTargetIndex: null,
+    isOverSidebar: false,
+  });
 
-  // toolLocations가 변경되면 드래그 상태 초기화 (하단에서 사이드바로 이동 시)
-  useEffect(() => {
-    setDraggedToolId(null);
-    setDragOverToolId(null);
-  }, [toolLocations]);
+  const toolsContainerRef = useRef<HTMLDivElement>(null);
 
   const [expandedProjects, setExpandedProjects] = useState<Set<string>>(new Set());
   const [editingProjectId, setEditingProjectId] = useState<string | null>(null);
@@ -187,6 +230,42 @@ export default function Sidebar({
   const [isResizingToolsSection, setIsResizingToolsSection] = useState(false);
   const toolsResizeStartY = useRef(0);
   const toolsResizeStartHeight = useRef(0);
+
+  // ConfirmDialog 상태
+  const [sheetMoveConfirm, setSheetMoveConfirm] = useState<{
+    fromProjectId: string;
+    toProjectId: string;
+    toProjectName: string;
+    sheetId: string;
+    sheetName: string;
+  } | null>(null);
+  const [sheetDeleteConfirm, setSheetDeleteConfirm] = useState<{
+    projectId: string;
+    sheetId: string;
+    sheetName: string;
+  } | null>(null);
+  const [projectDeleteConfirm, setProjectDeleteConfirm] = useState<{
+    projectId: string;
+    projectName: string;
+  } | null>(null);
+
+  // 도구 클릭 핸들러 매핑
+  const toolClickHandlers: Record<string, (() => void) | undefined> = {
+    calculator: onShowCalculator,
+    comparison: onShowComparison,
+    chart: onShowChart,
+    presetComparison: onShowPresetComparison,
+    imbalanceDetector: onShowImbalanceDetector,
+    goalSolver: onShowGoalSolver,
+    balanceAnalysis: onShowBalanceAnalysis,
+    economy: onShowEconomy,
+    dpsVariance: onShowDpsVariance,
+    curveFitting: onShowCurveFitting,
+    formulaHelper: onToggleFormulaHelper,
+    balanceValidator: onToggleBalanceValidator,
+    difficultyCurve: onToggleDifficultyCurve,
+    simulation: onToggleSimulation,
+  };
 
   // 도구 섹션 리사이즈 핸들러
   const handleToolsResizeStart = useCallback((e: React.MouseEvent) => {
@@ -246,6 +325,24 @@ export default function Sidebar({
     };
   }, [isResizingToolsSection]);
 
+  // 전역 드래그 이벤트 감지
+  useEffect(() => {
+    const handleGlobalDragEnd = () => {
+      setDragState({
+        draggedToolId: null,
+        draggedFromSidebar: false,
+        dropTargetIndex: null,
+        isOverSidebar: false,
+      });
+    };
+
+    document.addEventListener('dragend', handleGlobalDragEnd);
+
+    return () => {
+      document.removeEventListener('dragend', handleGlobalDragEnd);
+    };
+  }, []);
+
   const toggleProject = (projectId: string) => {
     const newExpanded = new Set(expandedProjects);
     if (newExpanded.has(projectId)) {
@@ -278,9 +375,141 @@ export default function Sidebar({
     setEditName('');
   };
 
+  // 도구 드래그 시작
+  const handleToolDragStart = (e: React.DragEvent, toolId: AllToolId) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', toolId);
+    e.dataTransfer.setData('application/x-tool-id', toolId);
+    // 사이드바에서 드래그 시작임을 표시 (독에서 온 것이 아님)
+
+    setDragState({
+      draggedToolId: toolId,
+      draggedFromSidebar: true,
+      dropTargetIndex: null,
+      isOverSidebar: false,
+    });
+  };
+
+  // 도구 섹션 드래그 오버
+  const handleToolsSectionDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = 'move';
+
+    if (!e.dataTransfer.types.includes('application/x-tool-id')) return;
+
+    // 독바에서 오는 드래그인지 확인
+    const isFromDock = e.dataTransfer.types.includes('application/x-from-dock');
+
+    // 드롭 위치 계산
+    if (toolsContainerRef.current) {
+      const rect = toolsContainerRef.current.getBoundingClientRect();
+      const y = e.clientY - rect.top;
+      const itemHeight = 48; // 아이템 높이 + 간격
+      const currentSidebarTools = getSidebarTools();
+
+      let targetIndex = Math.floor(y / itemHeight);
+      targetIndex = Math.max(0, Math.min(targetIndex, currentSidebarTools.length));
+
+      setDragState(prev => ({
+        ...prev,
+        isOverSidebar: true,
+        dropTargetIndex: targetIndex,
+        // 독바에서 드래그해서 사이드바로 들어온 경우에도 draggedFromSidebar를 false로 설정
+        draggedFromSidebar: isFromDock ? false : prev.draggedFromSidebar,
+      }));
+    }
+  };
+
+  // 도구 섹션 드래그 리브
+  const handleToolsSectionDragLeave = (e: React.DragEvent) => {
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setDragState(prev => ({ ...prev, isOverSidebar: false, dropTargetIndex: null }));
+  };
+
+  // 도구 드롭 처리
+  const handleToolsDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const toolId = e.dataTransfer.getData('text/plain') as AllToolId;
+    const isFromDock = e.dataTransfer.types.includes('application/x-from-dock');
+
+    if (!toolId) {
+      setDragState({
+        draggedToolId: null,
+        draggedFromSidebar: false,
+        dropTargetIndex: null,
+        isOverSidebar: false,
+      });
+      return;
+    }
+
+    const { dropTargetIndex, draggedFromSidebar } = dragState;
+    const sidebarTools = getSidebarTools();
+
+    if (isFromDock) {
+      // 독에서 사이드바로 이동 (드롭 위치에 삽입)
+      moveToolToLocation(toolId, 'sidebar', dropTargetIndex ?? undefined);
+    } else if (draggedFromSidebar) {
+      // 사이드바 내에서 순서 변경
+      const fromIndex = sidebarTools.indexOf(toolId);
+      if (fromIndex !== -1 && dropTargetIndex !== null && fromIndex !== dropTargetIndex) {
+        // dropTargetIndex는 "이 위치 앞에 삽입" 의미
+        // reorderSidebarTools는 fromIndex를 제거한 후 toIndex에 삽입
+        // 따라서 fromIndex가 dropTargetIndex보다 작으면 (위에서 아래로 이동)
+        // 제거 후 인덱스가 1 줄어들므로 -1 필요
+        let toIndex = dropTargetIndex;
+        if (fromIndex < dropTargetIndex) {
+          toIndex = dropTargetIndex - 1;
+        }
+        reorderSidebarTools(fromIndex, toIndex);
+      }
+    }
+
+    setDragState({
+      draggedToolId: null,
+      draggedFromSidebar: false,
+      dropTargetIndex: null,
+      isOverSidebar: false,
+    });
+  };
+
+  // 밀림 효과 계산
+  const getToolTransformY = (index: number, toolId: AllToolId) => {
+    const { draggedToolId, draggedFromSidebar, dropTargetIndex, isOverSidebar } = dragState;
+    const currentSidebarTools = getSidebarTools();
+
+    if (dropTargetIndex === null) return 0;
+
+    if (draggedFromSidebar && draggedToolId) {
+      // 사이드바 내에서 드래그 중
+      if (draggedToolId === toolId) return 0; // 드래그 중인 아이템 자체
+
+      const draggedIndex = currentSidebarTools.indexOf(draggedToolId);
+
+      if (draggedIndex < dropTargetIndex) {
+        // 아래로 이동: 드래그 아이템과 드롭 위치 사이의 아이템들은 위로
+        if (index > draggedIndex && index < dropTargetIndex) {
+          return -48;
+        }
+      } else if (draggedIndex > dropTargetIndex) {
+        // 위로 이동: 드래그 아이템과 드롭 위치 사이의 아이템들은 아래로
+        if (index < draggedIndex && index >= dropTargetIndex) {
+          return 48;
+        }
+      }
+    } else if (isOverSidebar && !draggedFromSidebar) {
+      // 독에서 사이드바로 드래그 중 (외부에서 들어옴)
+      if (index >= dropTargetIndex) {
+        return 48; // 드롭 위치 이후의 모든 아이템은 아래로
+      }
+    }
+
+    return 0;
+  };
+
   // 현재 프로젝트와 시트 가져오기
   const currentProject = projects.find(p => p.id === currentProjectId);
-  const currentSheet = currentProject?.sheets.find(s => s.id === currentSheetId);
+
+  const sidebarTools = getSidebarTools();
 
   return (
     <>
@@ -418,8 +647,14 @@ export default function Sidebar({
                   if (draggedSheetId && dragProjectId && dragProjectId !== project.id) {
                     const fromProject = projects.find(p => p.id === dragProjectId);
                     const sheet = fromProject?.sheets.find(s => s.id === draggedSheetId);
-                    if (sheet && confirm(t('sheet.moveConfirm', { sheetName: sheet.name, projectName: project.name }))) {
-                      moveSheetToProject(dragProjectId, project.id, draggedSheetId);
+                    if (sheet) {
+                      setSheetMoveConfirm({
+                        fromProjectId: dragProjectId,
+                        toProjectId: project.id,
+                        toProjectName: project.name,
+                        sheetId: draggedSheetId,
+                        sheetName: sheet.name,
+                      });
                     }
                   }
                   setDraggedProjectIndex(null);
@@ -660,70 +895,90 @@ export default function Sidebar({
         />
       </div>
 
-      {/* 도구 - 스크롤 가능, 드래그로 하단에 추가 가능, 순서 변경 가능 */}
+      {/* 도구 섹션 */}
       <div
         id="sidebar-tools-section"
         className="p-2 flex flex-col shrink-0"
         style={{ height: `${effectiveToolsHeight}px`, minHeight: '60px', maxHeight: '600px' }}
+        onDragOver={handleToolsSectionDragOver}
+        onDragLeave={handleToolsSectionDragLeave}
+        onDrop={handleToolsDrop}
       >
-        <div className="text-[10px] font-medium uppercase tracking-wider px-2 mb-1.5 shrink-0" style={{ color: 'var(--text-tertiary)' }}>
-          {t('sidebar.tools')}
+        <div className="flex items-center gap-2 px-2.5 mb-2 shrink-0">
+          <div className="text-xs font-bold" style={{ color: 'var(--text-primary)' }}>
+            {t('sidebar.tools')}
+          </div>
+          <div className="flex-1 h-px" style={{ background: 'var(--border-primary)' }} />
         </div>
-        <div className="space-y-0.5 overflow-y-auto flex-1 pr-1">
-          {/* 사이드바에 있는 도구들을 순서대로 표시 */}
-          {getSidebarTools().map((toolId, index) => {
-            const toolConfig: Record<string, { icon: typeof Calculator; color: string; labelKey: string; onClick?: () => void; badge?: number }> = {
-              // 사이드바 도구
-              calculator: { icon: Calculator, color: '#8b5cf6', labelKey: 'sidebar.calculator', onClick: onShowCalculator, badge: selectedRows.length },
-              comparison: { icon: PieChart, color: '#3b82f6', labelKey: 'sidebar.comparison', onClick: onShowComparison, badge: selectedRows.length },
-              chart: { icon: BarChart3, color: '#22c55e', labelKey: 'sidebar.chart', onClick: onShowChart },
-              presetComparison: { icon: GitCompare, color: '#f97316', labelKey: 'sidebar.presetComparison', onClick: onShowPresetComparison },
-              imbalanceDetector: { icon: AlertTriangle, color: '#eab308', labelKey: 'sidebar.imbalanceDetector', onClick: onShowImbalanceDetector },
-              goalSolver: { icon: Target, color: '#14b8a6', labelKey: 'sidebar.goalSolver', onClick: onShowGoalSolver },
-              balanceAnalysis: { icon: TrendingUp, color: '#ec4899', labelKey: 'sidebar.balanceAnalysis', onClick: onShowBalanceAnalysis },
-              economy: { icon: Coins, color: '#f59e0b', labelKey: 'sidebar.economy', onClick: onShowEconomy },
-              dpsVariance: { icon: BarChart2, color: '#f97316', labelKey: 'sidebar.dpsVariance', onClick: onShowDpsVariance },
-              curveFitting: { icon: PenTool, color: '#6366f1', labelKey: 'sidebar.curveFitting', onClick: onShowCurveFitting },
-              // 패널 도구 (하단에서 이동해온 경우)
-              formulaHelper: { icon: FunctionSquare, color: '#3b82f6', labelKey: 'bottomTabs.formulaHelper', onClick: onToggleFormulaHelper },
-              balanceValidator: { icon: Shield, color: '#22c55e', labelKey: 'bottomTabs.balanceValidator', onClick: onToggleBalanceValidator },
-              difficultyCurve: { icon: TrendingUp, color: '#8b5cf6', labelKey: 'bottomTabs.difficultyCurve', onClick: onToggleDifficultyCurve },
-              simulation: { icon: Swords, color: '#ef4444', labelKey: 'bottomTabs.simulation', onClick: onToggleSimulation },
-            };
+        <div ref={toolsContainerRef} className="space-y-1 overflow-y-auto flex-1 pr-1 scrollbar-visible">
+          {sidebarTools.map((toolId, index) => {
+            const config = TOOL_CONFIG[toolId];
+            if (!config) return null;
 
-            const config = toolConfig[toolId];
-            if (!config || !config.onClick) return null;
+            const Icon = config.icon;
+            const onClick = toolClickHandlers[toolId];
+            if (!onClick) return null;
+
+            const isActive = activeTools[toolId as keyof typeof activeTools];
+            const isDragging = dragState.draggedToolId === toolId && dragState.draggedFromSidebar;
+            const translateY = getToolTransformY(index, toolId);
 
             return (
-              <DraggableToolButton
+              <div
                 key={toolId}
-                toolId={toolId as AllToolId}
-                index={index}
-                icon={config.icon}
-                label={t(config.labelKey)}
-                onClick={config.onClick}
-                badge={config.badge}
-                color={config.color}
-                isDragging={draggedToolId === toolId}
-                isDragOver={dragOverToolId === toolId}
-                onDragStart={() => setDraggedToolId(toolId)}
-                onDragOver={() => setDragOverToolId(toolId)}
-                onDragEnd={() => {
-                  // 사이드바 내에서 순서 변경
-                  if (draggedToolId && dragOverToolId && draggedToolId !== dragOverToolId) {
-                    const tools = getSidebarTools();
-                    const fromIndex = tools.indexOf(draggedToolId as AllToolId);
-                    const toIndex = tools.indexOf(dragOverToolId as AllToolId);
-                    if (fromIndex !== -1 && toIndex !== -1) {
-                      reorderSidebarTools(fromIndex, toIndex);
-                    }
-                  }
-                  // 항상 상태 초기화 (하단으로 드롭했을 때도)
-                  setDraggedToolId(null);
-                  setDragOverToolId(null);
+                draggable
+                onDragStart={(e) => handleToolDragStart(e, toolId)}
+                className={cn(
+                  "group cursor-grab active:cursor-grabbing rounded-lg relative",
+                  isDragging && "opacity-30 z-50"
+                )}
+                style={{
+                  transform: `translateY(${translateY}px)`,
+                  transition: 'transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+                  boxShadow: isDragging ? '0 8px 24px rgba(0,0,0,0.15)' : undefined,
                 }}
-                onDragLeave={() => setDragOverToolId(null)}
-              />
+              >
+                <button
+                  onClick={onClick}
+                  className="w-full flex items-center gap-3 px-2.5 py-2.5 text-sm rounded-lg transition-colors duration-150 hover:bg-[var(--bg-hover)] active:scale-[0.98]"
+                >
+                  <div
+                    className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 transition-transform duration-200 group-hover:scale-105"
+                    style={{ background: `${config.color}20` }}
+                  >
+                    <Icon className="w-[18px] h-[18px]" style={{ color: config.color }} />
+                  </div>
+                  <span
+                    className="flex-1 text-left font-semibold truncate"
+                    style={{ color: 'var(--text-primary)' }}
+                  >
+                    {t(config.labelKey)}
+                  </span>
+                  {isActive && (
+                    <div
+                      className="w-2 h-2 rounded-full shrink-0 transition-transform duration-200"
+                      style={{ background: config.color }}
+                    />
+                  )}
+                  {toolId === 'calculator' && selectedRows.length > 0 && (
+                    <span
+                      className="px-2 py-0.5 text-xs font-bold rounded-md shrink-0"
+                      style={{ background: config.color, color: 'white' }}
+                    >
+                      {selectedRows.length}
+                    </span>
+                  )}
+                  {toolId === 'comparison' && selectedRows.length > 0 && (
+                    <span
+                      className="px-2 py-0.5 text-xs font-bold rounded-md shrink-0"
+                      style={{ background: config.color, color: 'white' }}
+                    >
+                      {selectedRows.length}
+                    </span>
+                  )}
+                  <GripVertical className="w-4 h-4 opacity-0 group-hover:opacity-50 transition-opacity shrink-0" style={{ color: 'var(--text-tertiary)' }} />
+                </button>
+              </div>
             );
           })}
         </div>
@@ -878,9 +1133,11 @@ export default function Sidebar({
           <div className="my-1 border-t" style={{ borderColor: 'var(--border-primary)' }} />
           <button
             onClick={() => {
-              if (confirm(t('alert.deleteSheetConfirm', { name: sheetContextMenu.sheetName }))) {
-                deleteSheet(sheetContextMenu.projectId, sheetContextMenu.sheetId);
-              }
+              setSheetDeleteConfirm({
+                projectId: sheetContextMenu.projectId,
+                sheetId: sheetContextMenu.sheetId,
+                sheetName: sheetContextMenu.sheetName,
+              });
               setSheetContextMenu(null);
             }}
             className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
@@ -910,7 +1167,6 @@ export default function Sidebar({
               onChange={(e) => setEditClassName(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === 'Enter' && editClassName.trim()) {
-                  const sheet = projects.flatMap(p => p.sheets).find(s => s.id === editingClassNameSheetId);
                   const project = projects.find(p => p.sheets.some(s => s.id === editingClassNameSheetId));
                   if (project) {
                     updateSheet(project.id, editingClassNameSheetId, { exportClassName: editClassName.trim() || undefined });
@@ -1021,11 +1277,11 @@ export default function Sidebar({
           </button>
           <div className="my-1 border-t" style={{ borderColor: 'var(--border-primary)' }} />
           <button
-            onClick={async () => {
-              if (confirm(t('project.deleteConfirm', { name: projectContextMenu.projectName }))) {
-                deleteProject(projectContextMenu.projectId);
-                await deleteProjectFromDB(projectContextMenu.projectId);
-              }
+            onClick={() => {
+              setProjectDeleteConfirm({
+                projectId: projectContextMenu.projectId,
+                projectName: projectContextMenu.projectName,
+              });
               setProjectContextMenu(null);
             }}
             className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
@@ -1038,102 +1294,55 @@ export default function Sidebar({
           </button>
         </div>
       )}
+
+      {/* 시트 이동 확인 다이얼로그 */}
+      <ConfirmDialog
+        isOpen={!!sheetMoveConfirm}
+        onClose={() => setSheetMoveConfirm(null)}
+        onConfirm={() => {
+          if (sheetMoveConfirm) {
+            moveSheetToProject(sheetMoveConfirm.fromProjectId, sheetMoveConfirm.toProjectId, sheetMoveConfirm.sheetId);
+          }
+        }}
+        title={t('sheet.moveSheet')}
+        message={t('sheet.moveConfirm', { sheetName: sheetMoveConfirm?.sheetName || '', projectName: sheetMoveConfirm?.toProjectName || '' })}
+        confirmText={t('common.move')}
+        cancelText={t('common.cancel')}
+        variant="warning"
+      />
+
+      {/* 시트 삭제 확인 다이얼로그 */}
+      <ConfirmDialog
+        isOpen={!!sheetDeleteConfirm}
+        onClose={() => setSheetDeleteConfirm(null)}
+        onConfirm={() => {
+          if (sheetDeleteConfirm) {
+            deleteSheet(sheetDeleteConfirm.projectId, sheetDeleteConfirm.sheetId);
+          }
+        }}
+        title={t('sheet.deleteSheet')}
+        message={t('alert.deleteSheetConfirm', { name: sheetDeleteConfirm?.sheetName || '' })}
+        confirmText={t('common.delete')}
+        cancelText={t('common.cancel')}
+        variant="danger"
+      />
+
+      {/* 프로젝트 삭제 확인 다이얼로그 */}
+      <ConfirmDialog
+        isOpen={!!projectDeleteConfirm}
+        onClose={() => setProjectDeleteConfirm(null)}
+        onConfirm={async () => {
+          if (projectDeleteConfirm) {
+            deleteProject(projectDeleteConfirm.projectId);
+            await deleteProjectFromDB(projectDeleteConfirm.projectId);
+          }
+        }}
+        title={t('project.deleteProject')}
+        message={t('project.deleteConfirm', { name: projectDeleteConfirm?.projectName || '' })}
+        confirmText={t('common.delete')}
+        cancelText={t('common.cancel')}
+        variant="danger"
+      />
     </>
-  );
-}
-
-// 드래그 가능한 도구 버튼 (하단으로 드래그해서 이동 가능, 순서 변경 가능)
-function DraggableToolButton({
-  toolId,
-  index,
-  icon: Icon,
-  label,
-  onClick,
-  badge,
-  color,
-  isDragging,
-  isDragOver,
-  onDragStart,
-  onDragOver,
-  onDragEnd,
-  onDragLeave,
-}: {
-  toolId: AllToolId;
-  index: number;
-  icon: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
-  label: string;
-  onClick: () => void;
-  badge?: number;
-  color?: string;
-  isDragging?: boolean;
-  isDragOver?: boolean;
-  onDragStart?: () => void;
-  onDragOver?: () => void;
-  onDragEnd?: () => void;
-  onDragLeave?: () => void;
-}) {
-  const iconColor = color || 'var(--accent)';
-
-  const handleDragStart = (e: React.DragEvent) => {
-    e.dataTransfer.setData('text/plain', toolId);
-    e.dataTransfer.setData('application/x-tool-id', toolId); // 도구임을 식별하기 위한 커스텀 타입
-    e.dataTransfer.effectAllowed = 'move';
-    onDragStart?.();
-  };
-
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    onDragOver?.();
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    onDragEnd?.();
-  };
-
-  const handleDragEnd = () => {
-    onDragEnd?.();
-  };
-
-  return (
-    <div
-      draggable
-      onDragStart={handleDragStart}
-      onDragOver={handleDragOver}
-      onDragLeave={onDragLeave}
-      onDrop={handleDrop}
-      onDragEnd={handleDragEnd}
-      className={cn(
-        "cursor-grab active:cursor-grabbing rounded-lg transition-all",
-        isDragOver && "ring-2 ring-[var(--accent)] bg-[var(--accent-light)]"
-      )}
-      style={{ opacity: isDragging ? 0.5 : 1 }}
-    >
-      <button
-        onClick={onClick}
-        className="w-full flex items-center gap-2.5 px-2 py-2 text-sm rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-        style={{ color: 'var(--text-secondary)' }}
-      >
-        <div
-          className="w-7 h-7 rounded-lg flex items-center justify-center"
-          style={{ background: color ? `${color}20` : 'var(--accent-light)' }}
-        >
-          <Icon className="w-4 h-4" style={{ color: iconColor }} />
-        </div>
-        <span className="flex-1 text-left font-medium">{label}</span>
-        {badge !== undefined && badge > 0 && (
-          <span
-            className="px-1.5 py-0.5 text-xs font-medium rounded"
-            style={{
-              background: iconColor,
-              color: 'white'
-            }}
-          >
-            {badge}
-          </span>
-        )}
-        <GripVertical className="w-3 h-3 opacity-30" style={{ color: 'var(--text-tertiary)' }} />
-      </button>
-    </div>
   );
 }

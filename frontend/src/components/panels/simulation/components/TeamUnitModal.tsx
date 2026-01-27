@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
+import { useEscapeKey } from '@/hooks';
 import { X, Heart, Swords, Shield, Zap, ChevronDown, ChevronUp } from 'lucide-react';
 import type { UnitStats, Skill } from '@/lib/simulation/types';
 import { SkillEditor } from './SkillEditor';
@@ -56,6 +57,9 @@ export function TeamUnitModal({
       setShowSkills(!!unit?.skills?.length);
     }
   }, [isOpen, unit, teamNumber]);
+
+  // ESC 키로 닫기
+  useEscapeKey(onClose, isOpen);
 
   if (!isOpen) return null;
 

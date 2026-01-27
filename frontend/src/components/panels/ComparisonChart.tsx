@@ -20,6 +20,7 @@ import { X, Trash2, Download, Check, HelpCircle, ChevronDown, ChevronUp, PieChar
 import { useProjectStore } from '@/stores/projectStore';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
+import { useEscapeKey } from '@/hooks';
 
 interface ComparisonChartProps {
   onClose: () => void;
@@ -51,6 +52,7 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
   const currentProject = getCurrentProject();
   const currentSheet = getCurrentSheet();
   const t = useTranslations('comparisonChart');
+  useEscapeKey(onClose);
 
   const [activeTab, setActiveTab] = useState<'radar' | 'bar' | 'histogram'>('radar');
   const [items, setItems] = useState<ComparisonItem[]>([]);

@@ -26,6 +26,7 @@ import {
 } from '@/lib/economySimulator';
 import { useProjectStore } from '@/stores/projectStore';
 import { Tooltip as TooltipUI } from '@/components/ui/Tooltip';
+import { useEscapeKey } from '@/hooks';
 
 interface EconomyPanelProps {
   showHelp?: boolean;
@@ -34,6 +35,7 @@ interface EconomyPanelProps {
 
 export default function EconomyPanel({ showHelp, setShowHelp }: EconomyPanelProps) {
   const t = useTranslations('economy');
+  useEscapeKey(() => {});
 
   // State
   const [faucets, setFaucets] = useState<Faucet[]>(DEFAULT_FAUCETS);

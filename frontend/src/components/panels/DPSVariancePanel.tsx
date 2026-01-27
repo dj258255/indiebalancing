@@ -6,6 +6,7 @@ import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { useProjectStore } from '@/stores/projectStore';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { useEscapeKey } from '@/hooks';
 import {
   simulateDPSVariance,
   simulateTTKVariance,
@@ -28,6 +29,7 @@ type SimMode = 'dps' | 'ttk' | 'compare';
 export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHelp }: DPSVariancePanelProps) {
   const t = useTranslations('dpsVariance');
   const tCommon = useTranslations('common');
+  useEscapeKey(onClose);
 
   // Simulation mode
   const [mode, setMode] = useState<SimMode>('dps');

@@ -8,6 +8,9 @@ import {
   Trash2,
   ArrowLeft,
   ArrowRight,
+  EyeOff,
+  Eye,
+  Eraser,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -16,10 +19,13 @@ interface ColumnContextMenuProps {
   y: number;
   columnName: string;
   isLocked: boolean;
+  isExportExcluded: boolean;
   onClose: () => void;
   onToggleLock: () => void;
+  onToggleExportExclude: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onClearValues: () => void;
   onInsertLeft: () => void;
   onInsertRight: () => void;
 }
@@ -37,10 +43,13 @@ export default function ColumnContextMenu({
   y,
   columnName,
   isLocked,
+  isExportExcluded,
   onClose,
   onToggleLock,
+  onToggleExportExclude,
   onEdit,
   onDelete,
+  onClearValues,
   onInsertLeft,
   onInsertRight,
 }: ColumnContextMenuProps) {
@@ -92,6 +101,11 @@ export default function ColumnContextMenu({
       onClick: onToggleLock,
     },
     {
+      label: isExportExcluded ? t('table.includeInExport') : t('table.excludeFromExport'),
+      icon: isExportExcluded ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />,
+      onClick: onToggleExportExclude,
+    },
+    {
       label: t('table.editColumn'),
       icon: <Edit3 className="w-4 h-4" />,
       onClick: onEdit,
@@ -107,6 +121,11 @@ export default function ColumnContextMenu({
       icon: <ArrowRight className="w-4 h-4" />,
       onClick: onInsertRight,
       divider: true,
+    },
+    {
+      label: t('contextMenu.clearColumnValues'),
+      icon: <Eraser className="w-4 h-4" />,
+      onClick: onClearValues,
     },
     {
       label: t('table.deleteColumn'),

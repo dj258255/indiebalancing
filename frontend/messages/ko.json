@@ -60,6 +60,8 @@
     "colCount": "{count}개 열",
     "selectCellFor": "{field}에 사용할 셀을 선택하세요",
     "moveConfirm": "\"{sheetName}\" 시트를 \"{projectName}\" 프로젝트로 이동하시겠습니까?",
+    "moveSheet": "시트 이동",
+    "deleteSheet": "시트 삭제",
     "sheets": "시트",
     "className": "클래스명",
     "editClassName": "클래스명 편집",
@@ -94,6 +96,7 @@
     "export": "내보내기",
     "import": "가져오기",
     "copy": "복사",
+    "move": "이동",
     "paste": "붙여넣기",
     "undo": "실행 취소",
     "redo": "다시 실행",
@@ -117,9 +120,13 @@
     "deleteRow": "행 삭제",
     "deleteRows": "선택한 행 삭제",
     "deleteColumn": "열 삭제",
+    "clearRowValues": "행 값만 지우기",
+    "clearColumnValues": "열 값만 지우기",
     "addMemo": "메모 추가",
     "editMemo": "메모 편집",
-    "deleteMemo": "메모 삭제"
+    "deleteMemo": "메모 삭제",
+    "resetWidth": "너비 초기화",
+    "resetHeight": "높이 초기화"
   },
   "memo": {
     "content": "메모 내용",
@@ -201,35 +208,6 @@
     "addAll": "모두 추가",
     "clearAll": "모두 제거",
     "selectColumns": "비교할 열 선택"
-  },
-  "growthCurve": {
-    "title": "성장 곡선 차트",
-    "description": "시트 데이터를 기반으로 레벨별 스탯 성장 추이를 시각화합니다.",
-    "base": "기본값",
-    "rate": "성장률",
-    "maxLevel": "최대 레벨",
-    "linear": "선형",
-    "exponential": "지수",
-    "logarithmic": "로그",
-    "quadratic": "2차",
-    "scurve": "S-곡선",
-    "custom": "커스텀",
-    "previewLevel": "레벨별 값 확인",
-    "help": "시트에 level, hp, atk 등의 컬럼이 필요합니다",
-    "help2": "여러 스탯을 동시에 비교할 수 있습니다",
-    "help3": "성장 패턴(선형/지수/로그)을 확인할 수 있습니다",
-    "segmentedCurve": "구간별 성장",
-    "segmentSettings": "구간 설정",
-    "addSegment": "구간 추가",
-    "segment": "구간",
-    "startLevel": "시작 레벨",
-    "endLevel": "종료 레벨",
-    "segmentedDesc": "각 구간마다 다른 성장 곡선을 적용할 수 있습니다. 초반 급성장 → 중반 안정 → 후반 완만 등의 패턴을 설계하세요.",
-    "interpolationSettings": "구간 전환 보간",
-    "interpolation_none": "없음",
-    "interpolation_linear": "선형",
-    "interpolation_smooth": "부드럽게",
-    "transitionWidth": "전환 구간 (레벨)"
   },
   "presetComparison": {
     "title": "프리셋 비교",
@@ -324,7 +302,11 @@
     "simulation": "전투 시뮬레이션",
     "dropHere": "사이드바에서 드래그해서 추가",
     "rightClickToReturn": "우클릭으로 사이드바로 돌리기",
-    "dropToMove": "여기에 놓으면 이동됩니다"
+    "dropToMove": "여기에 놓으면 이동됩니다",
+    "tools": "도구 바",
+    "active": "활성",
+    "expand": "펼치기",
+    "collapse": "접기"
   },
   "welcome": {
     "title": "인디밸런싱",
@@ -341,7 +323,9 @@
   "alert": {
     "exportSelectSheet": "내보낼 시트를 먼저 선택해주세요.",
     "importSelectProject": "CSV를 가져올 프로젝트를 먼저 선택해주세요.",
-    "deleteSheetConfirm": "\"{name}\" 시트를 삭제하시겠습니까?"
+    "deleteSheetConfirm": "\"{name}\" 시트를 삭제하시겠습니까?",
+    "deleteRowConfirm": "행 {rowNumber}을(를) 삭제하시겠습니까?",
+    "deleteColumnConfirm": "\"{columnName}\" 열을 삭제하시겠습니까?"
   },
   "column": {
     "addTitle": "열 추가",
@@ -405,6 +389,8 @@
     "unlockColumn": "열 잠금 해제",
     "newColumn": "새 열",
     "confirmDeleteColumn": "\"{name}\" 열을 삭제하시겠습니까?",
+    "confirmDeleteRow": "{index}번 행을 삭제하시겠습니까?",
+    "deleteRow": "행 삭제",
     "defaultFormula": "기본 수식: {formula}",
     "noFormula": "없음",
     "dragToFill": "드래그하여 수식/값 채우기",
@@ -415,7 +401,16 @@
     "applyBulkEdit": "선택된 셀에 일괄 값/수식 적용",
     "clearSelectedCells": "선택된 셀 내용 지우기",
     "enterValuePlaceholder": "값 또는 =수식 입력",
-    "valueOrFormulaToApply": "적용할 값 또는 수식"
+    "valueOrFormulaToApply": "적용할 값 또는 수식",
+    "excludeFromExport": "내보내기 제외",
+    "includeInExport": "내보내기 포함",
+    "exportExcluded": "내보내기 제외됨",
+    "deleteRowOptions": "행 삭제 옵션",
+    "deleteRowOptionsDesc": "{index}번 행을 어떻게 처리하시겠습니까?",
+    "clearValuesOnly": "값만 지우기",
+    "clearValuesOnlyDesc": "행은 유지하고 값만 초기화합니다",
+    "deleteRowCompletely": "행 삭제",
+    "deleteRowCompletelyDesc": "행 전체를 삭제합니다"
   },
   "templateSelector": {
     "title": "새 시트 만들기",
@@ -561,7 +556,9 @@
     "selectSheets": "시트를 선택하세요",
     "selectFormat": "형식 선택",
     "selectData": "데이터 선택",
-    "options": "옵션"
+    "options": "옵션",
+    "columnSettings": "컬럼 설정",
+    "selectColumns": "내보낼 컬럼 선택"
   },
   "import": {
     "codeImport": "코드 가져오기",
@@ -1557,7 +1554,19 @@
     "sCurve": "S-곡선",
     "enlargeGraph": "그래프 확대",
     "levelPreview": "레벨별 값 확인:",
-    "levelUnit": "레벨"
+    "levelUnit": "레벨",
+    "segmentedCurve": "구간별 성장",
+    "segmentSettings": "구간 설정",
+    "addSegment": "구간 추가",
+    "segment": "구간",
+    "startLevel": "시작 레벨",
+    "endLevel": "종료 레벨",
+    "segmentedDesc": "각 구간마다 다른 성장 곡선을 적용할 수 있습니다. 초반 급성장 → 중반 안정 → 후반 완만 등의 패턴을 설계하세요.",
+    "interpolationSettings": "구간 전환 보간",
+    "interpolation_none": "없음",
+    "interpolation_linear": "선형",
+    "interpolation_smooth": "부드럽게",
+    "transitionWidth": "전환 구간 (레벨)"
   },
   "comparisonChart": {
     "title": "비교 분석",

@@ -7,6 +7,7 @@ import { useTheme } from '@/contexts/ThemeContext';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import { useEscapeKey } from '@/hooks';
 
 // 토큰 배경색 제거한 커스텀 스타일 생성
 function removeTokenBackgrounds(style: Record<string, React.CSSProperties>): Record<string, React.CSSProperties> {
@@ -62,6 +63,7 @@ const CURVE_NAMES: Record<CurveType, string> = {
 
 export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: CurveFittingPanelProps) {
   const t = useTranslations('curveFitting');
+  useEscapeKey(onClose ?? (() => {}), !!onClose);
   const { theme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [points, setPoints] = useState<Point[]>([]);

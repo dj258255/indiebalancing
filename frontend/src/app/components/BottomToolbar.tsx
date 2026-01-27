@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { FunctionSquare, Shield, TrendingUp, Swords, Calculator, PieChart, BarChart3, GitCompare, AlertTriangle, Target, Coins, BarChart2, PenTool } from 'lucide-react';
+import { FunctionSquare, Shield, TrendingUp, Swords, Calculator, PieChart, BarChart3, GitCompare, AlertTriangle, Target, Coins, BarChart2, PenTool, Activity } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useToolLayoutStore, AllToolId, PanelToolId } from '@/stores/toolLayoutStore';
 import { cn } from '@/lib/utils';
@@ -33,6 +33,19 @@ interface BottomToolbarProps {
     difficultyCurve: (value: boolean) => void;
     simulation: (value: boolean) => void;
   };
+  // 모든 도구의 활성 상태 (점 표시용)
+  activeTools?: {
+    calculator?: boolean;
+    comparison?: boolean;
+    chart?: boolean;
+    presetComparison?: boolean;
+    imbalanceDetector?: boolean;
+    goalSolver?: boolean;
+    balanceAnalysis?: boolean;
+    economy?: boolean;
+    dpsVariance?: boolean;
+    curveFitting?: boolean;
+  };
   onShowCalculator?: () => void;
   onShowComparison?: () => void;
   onShowChart?: () => void;
@@ -57,7 +70,7 @@ const TOOL_CONFIG: Record<AllToolId, { icon: typeof FunctionSquare; color: strin
   presetComparison: { icon: GitCompare, color: '#f97316', labelKey: 'sidebar.presetComparison' },
   imbalanceDetector: { icon: AlertTriangle, color: '#eab308', labelKey: 'sidebar.imbalanceDetector' },
   goalSolver: { icon: Target, color: '#14b8a6', labelKey: 'sidebar.goalSolver' },
-  balanceAnalysis: { icon: TrendingUp, color: '#ec4899', labelKey: 'sidebar.balanceAnalysis' },
+  balanceAnalysis: { icon: Activity, color: '#ec4899', labelKey: 'sidebar.balanceAnalysis' },
   economy: { icon: Coins, color: '#f59e0b', labelKey: 'sidebar.economy' },
   dpsVariance: { icon: BarChart2, color: '#f97316', labelKey: 'sidebar.dpsVariance' },
   curveFitting: { icon: PenTool, color: '#6366f1', labelKey: 'sidebar.curveFitting' },
@@ -67,9 +80,21 @@ const isPanelTool = (toolId: AllToolId): toolId is PanelToolId => {
   return ['formulaHelper', 'balanceValidator', 'difficultyCurve', 'simulation'].includes(toolId);
 };
 
+// 인접 아이템 스케일 계산 (macOS Dock 효과)
+function calculateAdjacentScale(itemIndex: number, hoveredIndex: number | null, isDragging: boolean): number {
+  if (isDragging) return 1; // 드래그 중에는 스케일 효과 없음
+  if (hoveredIndex === null) return 1;
+  const distance = Math.abs(itemIndex - hoveredIndex);
+  if (distance === 0) return 1.4;
+  if (distance === 1) return 1.2;
+  if (distance === 2) return 1.08;
+  return 1;
+}
+
 export default function BottomToolbar({
   show,
   setShow,
+  activeTools = {},
   onShowCalculator,
   onShowComparison,
   onShowChart,
@@ -85,11 +110,10 @@ export default function BottomToolbar({
   const t = useTranslations();
   const {
     toolLocations,
-    bottomToolPositions,
-    updateBottomToolPosition,
     moveToolToLocation,
     getBottomTools,
-    getToolZIndex,
+    bringToolToFront,
+    reorderBottomTools,
     sidebarWidth
   } = useToolLayoutStore();
 
@@ -99,22 +123,22 @@ export default function BottomToolbar({
     setMounted(true);
   }, []);
 
-  const [draggingTool, setDraggingTool] = useState<AllToolId | null>(null);
-  const [dragPosition, setDragPosition] = useState<{ x: number; y: number } | null>(null);
-  const [isOverToolsSection, setIsOverToolsSection] = useState(false);
-  const [toolsSectionRect, setToolsSectionRect] = useState<DOMRect | null>(null);
-  const [isDraggingFromSidebar, setIsDraggingFromSidebar] = useState(false);
-  const [isGlobalDragging, setIsGlobalDragging] = useState(false);
-  const [dragMode, setDragMode] = useState<'horizontal' | 'detach' | null>(null);
+  const [hoveredIndex, setHoveredIndex] = useState<number | null>(null);
 
-  const dragStartX = useRef(0);
-  const dragStartY = useRef(0);
-  const hasMoved = useRef(false);
-  const pendingTool = useRef<AllToolId | null>(null);
+  // 드래그 상태 - 단순화
+  const [dragState, setDragState] = useState<{
+    draggedToolId: AllToolId | null;
+    draggedFromDock: boolean;
+    dropTargetIndex: number | null;
+    isOverDock: boolean;
+  }>({
+    draggedToolId: null,
+    draggedFromDock: false,
+    dropTargetIndex: null,
+    isOverDock: false,
+  });
+
   const containerRef = useRef<HTMLDivElement>(null);
-
-  const DETACH_THRESHOLD = 50; // 위로 50px 이상 드래그하면 떼기 모드
-
   const bottomTools = getBottomTools();
 
   // 최신 props를 ref로 저장해서 stale closure 방지
@@ -171,7 +195,6 @@ export default function BottomToolbar({
     if (modalOpen) return;
 
     // 클릭 시 맨 앞으로 가져오기
-    const { bringToolToFront } = useToolLayoutStore.getState();
     bringToolToFront(toolId);
 
     if (isPanelTool(toolId)) {
@@ -190,121 +213,33 @@ export default function BottomToolbar({
         case 'curveFitting': curveFittingHandler?.(); break;
       }
     }
-  }, []);
-
-  const handleMouseDown = (e: React.MouseEvent, toolId: AllToolId) => {
-    if (e.button !== 0) return;
-
-    dragStartX.current = e.clientX;
-    dragStartY.current = e.clientY;
-    hasMoved.current = false;
-    pendingTool.current = toolId;
-  };
-
-  useEffect(() => {
-    const handleMouseMove = (e: MouseEvent) => {
-      if (!pendingTool.current) return;
-
-      const deltaX = Math.abs(e.clientX - dragStartX.current);
-      const deltaY = dragStartY.current - e.clientY; // 위로 가면 양수
-
-      if (!hasMoved.current && (deltaX > 5 || Math.abs(deltaY) > 5)) {
-        hasMoved.current = true;
-        setDraggingTool(pendingTool.current);
-        setDragMode('horizontal'); // 기본은 수평 모드
-      }
-
-      if (hasMoved.current && pendingTool.current) {
-        // 위로 일정 거리 이상 드래그하면 떼기 모드로 전환
-        if (deltaY > DETACH_THRESHOLD) {
-          setDragMode('detach');
-          setDragPosition({ x: e.clientX, y: e.clientY });
-
-          // 도구 섹션 영역 체크 (떼기 모드에서만)
-          const toolsSection = document.getElementById('sidebar-tools-section');
-          if (toolsSection) {
-            const rect = toolsSection.getBoundingClientRect();
-            setToolsSectionRect(rect);
-            const isInToolsSection =
-              e.clientX >= rect.left &&
-              e.clientX <= rect.right &&
-              e.clientY >= rect.top &&
-              e.clientY <= rect.bottom;
-            setIsOverToolsSection(isInToolsSection);
-          } else {
-            setIsOverToolsSection(false);
-          }
-        } else {
-          // 수평 모드: X 좌표만 업데이트
-          setDragMode('horizontal');
-          setDragPosition({ x: e.clientX, y: dragStartY.current });
-          setIsOverToolsSection(false);
-          setToolsSectionRect(null);
-        }
-      }
-    };
-
-    const handleMouseUp = (e: MouseEvent) => {
-      const currentTool = pendingTool.current;
-      const currentDragMode = dragMode;
-
-      if (currentTool && !hasMoved.current) {
-        handleToolClick(currentTool);
-      } else if (currentTool && hasMoved.current) {
-        if (currentDragMode === 'detach') {
-          // 떼기 모드: 도구 섹션 영역에서 놓으면 사이드바로 이동
-          const toolsSection = document.getElementById('sidebar-tools-section');
-          if (toolsSection) {
-            const rect = toolsSection.getBoundingClientRect();
-            const isInToolsSection =
-              e.clientX >= rect.left &&
-              e.clientX <= rect.right &&
-              e.clientY >= rect.top &&
-              e.clientY <= rect.bottom;
-            if (isInToolsSection) {
-              moveToolToLocation(currentTool, 'sidebar');
-            }
-            // 떼기 모드에서 사이드바 밖에 놓으면 위치 변경 없음 (원래 위치 유지)
-          }
-        } else {
-          // 수평 모드: 좌우로만 이동
-          const buttonHalfWidth = 50;
-          updateBottomToolPosition(currentTool, e.clientX - buttonHalfWidth);
-        }
-      }
-
-      setDraggingTool(null);
-      setDragPosition(null);
-      setDragMode(null);
-      setIsOverToolsSection(false);
-      setToolsSectionRect(null);
-      pendingTool.current = null;
-      hasMoved.current = false;
-    };
-
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
-
-    return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
-    };
-  }, [handleToolClick, moveToolToLocation, updateBottomToolPosition, dragMode]);
+  }, [bringToolToFront]);
 
   // 유효한 도구 ID 목록
   const validToolIds = Object.keys(TOOL_CONFIG);
 
-  // 전역 드래그 이벤트 감지 (document 레벨)
+  // 전역 드래그 이벤트 감지
   useEffect(() => {
     const handleGlobalDragStart = (e: DragEvent) => {
+      const toolId = e.dataTransfer?.getData('text/plain') as AllToolId;
+      const isFromDock = e.dataTransfer?.types.includes('application/x-from-dock');
+
       if (e.dataTransfer?.types.includes('application/x-tool-id')) {
-        setIsGlobalDragging(true);
+        setDragState(prev => ({
+          ...prev,
+          draggedToolId: toolId || null,
+          draggedFromDock: !!isFromDock,
+        }));
       }
     };
 
     const handleGlobalDragEnd = () => {
-      setIsGlobalDragging(false);
-      setIsDraggingFromSidebar(false);
+      setDragState({
+        draggedToolId: null,
+        draggedFromDock: false,
+        dropTargetIndex: null,
+        isOverDock: false,
+      });
     };
 
     document.addEventListener('dragstart', handleGlobalDragStart);
@@ -316,306 +251,368 @@ export default function BottomToolbar({
     };
   }, []);
 
-  const handleDragOver = (e: React.DragEvent) => {
-    // 드래그 중인 데이터가 도구인지 확인 (커스텀 MIME 타입으로 구분)
-    const isToolDrag = e.dataTransfer.types.includes('application/x-tool-id');
-    if (!isToolDrag) return;
+  // 독 아이템 드래그 시작
+  const handleDragStart = (e: React.DragEvent, toolId: AllToolId) => {
+    e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', toolId);
+    e.dataTransfer.setData('application/x-tool-id', toolId);
+    e.dataTransfer.setData('application/x-from-dock', 'true');
 
-    e.preventDefault();
-    setIsDraggingFromSidebar(true);
+    setDragState({
+      draggedToolId: toolId,
+      draggedFromDock: true,
+      dropTargetIndex: null,
+      isOverDock: false,
+    });
+
+    // 드래그 이미지 설정
+    const config = TOOL_CONFIG[toolId];
+    const dragIcon = document.createElement('div');
+    dragIcon.innerHTML = `
+      <div style="
+        width: 56px;
+        height: 56px;
+        background: ${config.color}20;
+        border: 2px solid ${config.color};
+        border-radius: 16px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 8px 32px ${config.color}40;
+      ">
+        <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="${config.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          ${getIconPath(toolId)}
+        </svg>
+      </div>
+    `;
+    dragIcon.style.position = 'absolute';
+    dragIcon.style.top = '-1000px';
+    document.body.appendChild(dragIcon);
+    e.dataTransfer.setDragImage(dragIcon, 28, 28);
+    setTimeout(() => document.body.removeChild(dragIcon), 0);
   };
 
-  const handleDragLeave = (e: React.DragEvent) => {
-    // 자식 요소로 이동할 때는 무시
-    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
-    setIsDraggingFromSidebar(false);
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
+  // 독 컨테이너 드래그 오버
+  const handleContainerDragOver = (e: React.DragEvent) => {
     e.preventDefault();
-    setIsDraggingFromSidebar(false);
-    const toolId = e.dataTransfer.getData('text/plain') as AllToolId;
-    // 유효한 도구 ID인지 확인
-    if (toolId && validToolIds.includes(toolId) && toolLocations[toolId] === 'sidebar') {
-      const x = e.clientX - 50; // 버튼 중앙 기준
-      moveToolToLocation(toolId, 'bottom', x);
+    e.dataTransfer.dropEffect = 'move';
+
+    if (!e.dataTransfer.types.includes('application/x-tool-id')) return;
+
+    setDragState(prev => ({ ...prev, isOverDock: true }));
+
+    // 드롭 위치 계산
+    if (containerRef.current) {
+      const rect = containerRef.current.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const itemWidth = 52; // 아이템 너비 + 간격
+      const startX = 6; // padding
+
+      let targetIndex = Math.floor((x - startX) / itemWidth);
+      targetIndex = Math.max(0, Math.min(targetIndex, bottomTools.length));
+
+      setDragState(prev => ({ ...prev, dropTargetIndex: targetIndex }));
     }
   };
 
+  // 독 컨테이너 드래그 리브
+  const handleContainerDragLeave = (e: React.DragEvent) => {
+    if (e.currentTarget.contains(e.relatedTarget as Node)) return;
+    setDragState(prev => ({ ...prev, isOverDock: false, dropTargetIndex: null }));
+  };
+
+  // 드롭 처리
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const toolId = e.dataTransfer.getData('text/plain') as AllToolId;
+    const isFromDock = e.dataTransfer.types.includes('application/x-from-dock');
+
+    if (!toolId || !validToolIds.includes(toolId)) {
+      setDragState({
+        draggedToolId: null,
+        draggedFromDock: false,
+        dropTargetIndex: null,
+        isOverDock: false,
+      });
+      return;
+    }
+
+    const { dropTargetIndex } = dragState;
+
+    if (isFromDock) {
+      // 독 내에서 순서 변경
+      const fromIndex = bottomTools.indexOf(toolId);
+      if (fromIndex !== -1 && dropTargetIndex !== null && fromIndex !== dropTargetIndex) {
+        // dropTargetIndex는 "이 위치 앞에 삽입" 의미
+        // reorderBottomTools는 fromIndex를 제거한 후 toIndex에 삽입
+        // 따라서 fromIndex가 dropTargetIndex보다 작으면 (앞에서 뒤로 이동)
+        // 제거 후 인덱스가 1 줄어들므로 -1 필요
+        let toIndex = dropTargetIndex;
+        if (fromIndex < dropTargetIndex) {
+          toIndex = dropTargetIndex - 1;
+        }
+        reorderBottomTools(fromIndex, toIndex);
+      }
+    } else if (toolLocations[toolId] === 'sidebar') {
+      // 사이드바에서 독으로 이동
+      moveToolToLocation(toolId, 'bottom', dropTargetIndex ?? undefined);
+    }
+
+    setDragState({
+      draggedToolId: null,
+      draggedFromDock: false,
+      dropTargetIndex: null,
+      isOverDock: false,
+    });
+  };
+
   const isMobile = useIsMobile();
-  // 모바일에서는 sidebarWidth가 아닌 0 사용 (사이드바가 숨겨지므로)
-  // 클라이언트 마운트 전에는 기본값 256 사용
   const effectiveSidebarWidth = mounted ? sidebarWidth : 256;
   const responsiveLeftOffset = isMobile ? 0 : effectiveSidebarWidth;
 
-  // 하단 도구가 없으면 드롭 영역만 표시 (항상 드롭 가능하도록 영역은 유지)
+  // 하단 도구가 없고 드래그 중이 아니면 표시하지 않음
+  const isAnyDragging = dragState.draggedToolId !== null;
+
+  if (bottomTools.length === 0 && !isAnyDragging) {
+    return null;
+  }
+
+  // 하단 도구가 없지만 드래그 중이면 드롭 영역만 표시
   if (bottomTools.length === 0) {
     return (
       <div
         ref={containerRef}
-        className="fixed bottom-0 right-0 z-30 hidden md:flex items-end justify-center pointer-events-auto transition-all"
+        className="fixed bottom-3 z-[45] hidden md:flex items-end justify-center pointer-events-auto"
         style={{
           left: `${responsiveLeftOffset}px`,
-          height: isDraggingFromSidebar ? '120px' : '80px', // 감지 영역 확대
+          right: '0',
         }}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
+        onDragOver={handleContainerDragOver}
+        onDragLeave={handleContainerDragLeave}
         onDrop={handleDrop}
       >
-        {isDraggingFromSidebar && (
-          <div
-            className="w-full h-16 flex items-center justify-center"
-            style={{
-              background: 'rgba(var(--accent-rgb), 0.1)',
-              borderTop: '2px dashed var(--accent)',
-            }}
-          >
-            <div
-              className="px-4 py-2 rounded-lg text-sm font-medium"
-              style={{
-                background: 'var(--accent)',
-                color: 'white',
-              }}
-            >
-              {t('bottomTabs.dropToMove')}
-            </div>
+        <div
+          className="liquid-glass-dock flex items-center justify-center px-6 py-4 transition-all duration-200"
+        >
+          <div className="text-sm font-medium text-[var(--text-secondary)]">
+            {t('sidebar.dropHere')}
           </div>
-        )}
+        </div>
       </div>
     );
   }
 
+  // 밀림 효과 계산
+  const getItemTransform = (index: number, toolId: AllToolId) => {
+    const { draggedToolId, draggedFromDock, dropTargetIndex, isOverDock } = dragState;
+
+    if (!draggedToolId || dropTargetIndex === null) return 0;
+
+    const draggedIndex = bottomTools.indexOf(draggedToolId);
+
+    if (draggedFromDock) {
+      // 독 내에서 드래그 중
+      if (draggedToolId === toolId) return 0; // 드래그 중인 아이템 자체
+
+      if (draggedIndex < dropTargetIndex) {
+        // 오른쪽으로 이동: 드래그 아이템과 드롭 위치 사이의 아이템들은 왼쪽으로
+        // dropTargetIndex가 배열 끝일 수 있으므로 <= (length - 1) 대신 < dropTargetIndex 사용
+        if (index > draggedIndex && index < dropTargetIndex) {
+          return -52;
+        }
+      } else if (draggedIndex > dropTargetIndex) {
+        // 왼쪽으로 이동: 드래그 아이템과 드롭 위치 사이의 아이템들은 오른쪽으로
+        if (index < draggedIndex && index >= dropTargetIndex) {
+          return 52;
+        }
+      }
+    } else if (isOverDock) {
+      // 사이드바에서 독으로 드래그 중
+      if (index >= dropTargetIndex) {
+        return 52; // 드롭 위치 이후의 모든 아이템은 오른쪽으로
+      }
+    }
+
+    return 0;
+  };
+
   return (
     <>
-      {/* 도구 섹션 드롭 영역 표시 - 떼기 모드에서만 */}
-      {draggingTool && dragMode === 'detach' && isOverToolsSection && toolsSectionRect && (
+      {/* macOS Dock 스타일 Liquid Glass 탭 바 */}
+      <div
+        className="fixed bottom-3 z-[45] hidden md:flex items-end justify-center pointer-events-none"
+        style={{
+          left: `${responsiveLeftOffset}px`,
+          right: '0',
+          paddingTop: '32px',
+        }}
+      >
         <div
-          className="fixed z-50 pointer-events-none flex items-center justify-center rounded-lg"
-          style={{
-            left: toolsSectionRect.left,
-            top: toolsSectionRect.top,
-            width: toolsSectionRect.width,
-            height: toolsSectionRect.height,
-            background: 'rgba(var(--accent-rgb), 0.15)',
-            border: '2px dashed var(--accent)'
-          }}
+          ref={containerRef}
+          className="liquid-glass-dock flex items-center gap-0.5 px-1.5 py-1.5 pointer-events-auto transition-all duration-200"
+          onDragOver={handleContainerDragOver}
+          onDragLeave={handleContainerDragLeave}
+          onDrop={handleDrop}
         >
-          <div
-            className="px-4 py-2 rounded-lg text-sm font-medium"
-            style={{
-              background: 'var(--accent)',
-              color: 'white'
-            }}
-          >
-            {t('bottomTabs.dropToMove')}
-          </div>
-        </div>
-      )}
+          {/* 도구 버튼들 */}
+          {bottomTools.map((toolId, index) => {
+            const config = TOOL_CONFIG[toolId];
+            if (!config) return null;
 
-      {/* 드래그 중인 버튼 미리보기 - 떼기 모드일 때만 자유롭게 이동 */}
-      {draggingTool && dragPosition && dragMode === 'detach' && (
-        <div
-          className="fixed z-50 pointer-events-none"
-          style={{
-            left: dragPosition.x - 50,
-            top: dragPosition.y - 20,
-            opacity: 0.9,
-            transform: 'scale(1.1)',
-          }}
-        >
-          {(() => {
-            const config = TOOL_CONFIG[draggingTool];
             const Icon = config.icon;
+            const isActive = isPanelTool(toolId)
+              ? show[toolId]
+              : (() => {
+                  const toolActiveMap: Record<string, boolean | undefined> = {
+                    calculator: activeTools.calculator,
+                    comparison: activeTools.comparison,
+                    chart: activeTools.chart,
+                    presetComparison: activeTools.presetComparison,
+                    imbalanceDetector: activeTools.imbalanceDetector,
+                    goalSolver: activeTools.goalSolver,
+                    balanceAnalysis: activeTools.balanceAnalysis,
+                    economy: activeTools.economy,
+                    dpsVariance: activeTools.dpsVariance,
+                    curveFitting: activeTools.curveFitting,
+                  };
+                  return toolActiveMap[toolId] ?? false;
+                })();
+
+            const isDragging = dragState.draggedToolId === toolId && dragState.draggedFromDock;
+            const isHovered = hoveredIndex === index && !dragState.draggedToolId;
+            const scale = calculateAdjacentScale(index, hoveredIndex, !!dragState.draggedToolId);
+            const translateX = getItemTransform(index, toolId);
+
             return (
               <div
-                className="flex items-center gap-2 px-3 py-2 text-sm font-semibold rounded-xl shadow-lg"
+                key={toolId}
+                className={cn(
+                  "dock-item-wrapper relative",
+                  isDragging && "opacity-30"
+                )}
                 style={{
-                  background: 'var(--bg-primary)',
-                  border: '2px solid var(--accent)',
-                  color: config.color,
+                  transform: `translateX(${translateX}px)`,
+                  transition: 'transform 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
                 }}
+                onMouseEnter={() => setHoveredIndex(index)}
+                onMouseLeave={() => setHoveredIndex(null)}
               >
-                <Icon className="w-4 h-4" style={{ color: config.color }} />
-                <span>{t(config.labelKey)}</span>
-              </div>
-            );
-          })()}
-        </div>
-      )}
-
-      {/* 사이드바에서 드래그 시 하단 드롭 영역 표시 */}
-      {isDraggingFromSidebar && (
-        <div
-          className="fixed bottom-0 right-0 z-[100] h-20 pointer-events-none flex items-center justify-center hidden md:flex"
-          style={{
-            left: `${responsiveLeftOffset}px`,
-            background: 'var(--bg-primary)',
-            borderTop: '2px dashed var(--accent)',
-            boxShadow: '0 -4px 20px rgba(0,0,0,0.1)',
-          }}
-        >
-          <div
-            className="px-6 py-3 rounded-xl text-sm font-semibold shadow-lg"
-            style={{
-              background: 'var(--accent)',
-              color: 'white'
-            }}
-          >
-            {t('bottomTabs.dropToMove')}
-          </div>
-        </div>
-      )}
-
-      {/* 하단 드롭 영역 (사이드바에서 드래그할 때만 활성화) */}
-      <div
-        ref={containerRef}
-        className="fixed bottom-0 left-0 right-0 z-20 h-24"
-        onDragEnter={handleDragOver}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        style={{ pointerEvents: isGlobalDragging ? 'auto' : 'none' }}
-      />
-
-      {/* 하단 버튼들 - 위치가 지정되지 않은 것은 가운데 정렬, 지정된 것은 절대 위치 */}
-      {(() => {
-        const centeredTools = bottomTools.filter(id => !bottomToolPositions[id]);
-        const positionedTools = bottomTools.filter(id => bottomToolPositions[id]);
-
-        return (
-          <>
-            {/* 가운데 정렬 버튼들 (위치 미지정) */}
-            {centeredTools.length > 0 && (
-              <div className="fixed bottom-0 left-0 md:left-auto right-0 z-[45] flex justify-center items-end gap-1 pointer-events-none" style={{ left: isMobile ? 0 : `${responsiveLeftOffset}px` }}>
-                {centeredTools.map((toolId) => {
-                  const config = TOOL_CONFIG[toolId];
-                  if (!config) return null;
-
-                  const Icon = config.icon;
-                  const isActive = isPanelTool(toolId) ? show[toolId] : false;
-                  const isDraggingThis = draggingTool === toolId;
-
-                  return (
-                    <div
-                      key={toolId}
-                      className={cn(
-                        'pointer-events-auto cursor-grab active:cursor-grabbing transition-all'
-                      )}
-                      style={{ opacity: isDraggingThis ? 0.5 : 1 }}
-                      onMouseDown={(e) => handleMouseDown(e, toolId)}
-                    >
-                      <div
-                        className={cn(
-                          'flex items-center gap-1 sm:gap-2 px-2 sm:px-3 lg:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all rounded-t-xl whitespace-nowrap select-none',
-                          isActive
-                            ? 'liquid-glass-active'
-                            : 'bg-[var(--bg-primary)] text-[var(--text-secondary)] border-t border-l border-r border-[var(--border-primary)]',
-                          isModalOpen && 'opacity-50'
-                        )}
-                        style={{
-                          color: isActive ? config.color : undefined,
-                        }}
-                      >
-                        <Icon className="w-4 h-4" style={{ color: config.color }} />
-                        <span className="hidden sm:inline">{t(config.labelKey)}</span>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            )}
-
-            {/* 절대 위치 버튼들 (위치 지정됨) - 데스크탑에서만 표시 */}
-            {!isMobile && positionedTools.map((toolId) => {
-              const config = TOOL_CONFIG[toolId];
-              if (!config) return null;
-
-              const Icon = config.icon;
-              const isActive = isPanelTool(toolId) ? show[toolId] : false;
-              const position = bottomToolPositions[toolId];
-              const isDraggingThis = draggingTool === toolId;
-              const zIndex = getToolZIndex(toolId);
-
-              // 수평 드래그 중이면 dragPosition.x 사용, 아니면 저장된 position.x 사용
-              const displayX = isDraggingThis && dragMode === 'horizontal' && dragPosition
-                ? dragPosition.x - 50  // 버튼 중앙 기준
-                : position.x;
-
-              // 떼기 모드면 숨김 (미리보기로 대체)
-              if (isDraggingThis && dragMode === 'detach') {
-                return null;
-              }
-
-              return (
                 <div
-                  key={toolId}
                   className={cn(
-                    'fixed bottom-0 cursor-grab active:cursor-grabbing hidden md:block',
-                    !isDraggingThis && 'transition-all'
+                    "dock-item",
+                    isActive && "active"
                   )}
                   style={{
-                    left: `${displayX}px`,
-                    zIndex: isDraggingThis ? 100 : 45 + zIndex,
+                    transform: isDragging
+                      ? 'scale(1.05)'
+                      : `scale(${scale}) translateY(${isHovered ? -8 : 0}px)`,
+                    zIndex: isDragging ? 200 : isHovered ? 100 : 1,
+                    transition: 'transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1), background 0.15s ease, box-shadow 0.2s ease',
+                    boxShadow: isDragging ? `0 8px 24px ${config.color}40` : undefined,
                   }}
-                  onMouseDown={(e) => handleMouseDown(e, toolId)}
+                  draggable
+                  onDragStart={(e) => handleDragStart(e, toolId)}
+                  onClick={() => {
+                    if (!dragState.draggedToolId) {
+                      handleToolClick(toolId);
+                    }
+                  }}
                 >
-                  <div
-                    className={cn(
-                      'flex items-center gap-1 sm:gap-2 px-2 sm:px-3 lg:px-4 py-2 sm:py-2.5 text-xs sm:text-sm font-semibold transition-all rounded-t-xl whitespace-nowrap select-none',
-                      isActive
-                        ? 'liquid-glass-active'
-                        : 'bg-[var(--bg-primary)] text-[var(--text-secondary)] border-t border-l border-r border-[var(--border-primary)]',
-                      isModalOpen && 'opacity-50'
-                    )}
-                    style={{
-                      color: isActive ? config.color : undefined,
-                    }}
-                  >
-                    <Icon className="w-4 h-4" style={{ color: config.color }} />
-                    <span className="hidden sm:inline">{t(config.labelKey)}</span>
+                  {/* 툴팁 */}
+                  <div className="dock-tooltip">
+                    {t(config.labelKey)}
                   </div>
+
+                  {/* 아이콘 */}
+                  <Icon
+                    className="w-6 h-6 pointer-events-none"
+                    style={{
+                      color: config.color,
+                      filter: isActive ? `drop-shadow(0 0 8px ${config.color}60)` : undefined,
+                    }}
+                  />
+
+                  {/* 활성화 표시 점 */}
+                  <div
+                    className="dock-item-indicator"
+                    style={{ background: config.color }}
+                  />
                 </div>
-              );
-            })}
-
-            {/* 모바일에서는 위치 지정된 버튼들도 가운데 정렬로 표시 */}
-            {isMobile && positionedTools.length > 0 && (
-              <div className="fixed bottom-0 left-0 right-0 z-[45] flex justify-center items-end gap-1 pointer-events-none md:hidden">
-                {positionedTools.map((toolId) => {
-                  const config = TOOL_CONFIG[toolId];
-                  if (!config) return null;
-
-                  const Icon = config.icon;
-                  const isActive = isPanelTool(toolId) ? show[toolId] : false;
-
-                  return (
-                    <div
-                      key={toolId}
-                      className="pointer-events-auto"
-                      onClick={() => handleToolClick(toolId)}
-                    >
-                      <div
-                        className={cn(
-                          'flex items-center gap-1 px-2 py-2 text-xs font-semibold transition-all rounded-t-xl whitespace-nowrap select-none',
-                          isActive
-                            ? 'liquid-glass-active'
-                            : 'bg-[var(--bg-primary)] text-[var(--text-secondary)] border-t border-l border-r border-[var(--border-primary)]',
-                          isModalOpen && 'opacity-50'
-                        )}
-                        style={{
-                          color: isActive ? config.color : undefined,
-                        }}
-                      >
-                        <Icon className="w-4 h-4" style={{ color: config.color }} />
-                      </div>
-                    </div>
-                  );
-                })}
               </div>
-            )}
-          </>
-        );
-      })()}
+            );
+          })}
+        </div>
+      </div>
+
+      {/* 모바일용 Liquid Glass 탭 바 */}
+      <div className="fixed bottom-2 left-2 right-2 z-[45] md:hidden">
+        <div className="liquid-glass-dock flex items-center gap-1 px-2 py-2 overflow-x-auto scrollbar-none">
+          {bottomTools.map((toolId) => {
+            const config = TOOL_CONFIG[toolId];
+            if (!config) return null;
+
+            const Icon = config.icon;
+            const isActive = isPanelTool(toolId)
+              ? show[toolId]
+              : (() => {
+                  const toolActiveMap: Record<string, boolean | undefined> = {
+                    calculator: activeTools.calculator,
+                    comparison: activeTools.comparison,
+                    chart: activeTools.chart,
+                    presetComparison: activeTools.presetComparison,
+                    imbalanceDetector: activeTools.imbalanceDetector,
+                    goalSolver: activeTools.goalSolver,
+                    balanceAnalysis: activeTools.balanceAnalysis,
+                    economy: activeTools.economy,
+                    dpsVariance: activeTools.dpsVariance,
+                    curveFitting: activeTools.curveFitting,
+                  };
+                  return toolActiveMap[toolId] ?? false;
+                })();
+
+            return (
+              <div
+                key={toolId}
+                className={cn(
+                  'relative flex items-center justify-center w-11 h-11 rounded-xl shrink-0 transition-all',
+                  isActive && 'bg-black/[0.08] dark:bg-white/[0.12]',
+                  isModalOpen && 'opacity-50'
+                )}
+                onClick={() => handleToolClick(toolId)}
+              >
+                <Icon className="w-5 h-5" style={{ color: config.color }} />
+                {isActive && (
+                  <div
+                    className="absolute -bottom-0.5 w-1.5 h-1.5 rounded-full"
+                    style={{ background: config.color }}
+                  />
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
     </>
   );
+}
+
+// 아이콘 SVG path 가져오기 (드래그 이미지용)
+function getIconPath(toolId: AllToolId): string {
+  const paths: Record<AllToolId, string> = {
+    formulaHelper: '<rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>',
+    balanceValidator: '<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>',
+    difficultyCurve: '<polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/>',
+    simulation: '<path d="M14.5 17.5L3 6V3h3l11.5 11.5"/><path d="M13 19l6-6"/><path d="M16 16l4 4"/><path d="M19 21l2-2"/>',
+    calculator: '<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" y1="6" x2="16" y2="6"/><line x1="8" y1="10" x2="8" y2="10"/><line x1="12" y1="10" x2="12" y2="10"/><line x1="16" y1="10" x2="16" y2="10"/><line x1="8" y1="14" x2="8" y2="14"/><line x1="12" y1="14" x2="12" y2="14"/><line x1="16" y1="14" x2="16" y2="14"/><line x1="8" y1="18" x2="8" y2="18"/><line x1="12" y1="18" x2="12" y2="18"/><line x1="16" y1="18" x2="16" y2="18"/>',
+    comparison: '<path d="M21.21 15.89A10 10 0 1 1 8 2.83"/><path d="M22 12A10 10 0 0 0 12 2v10z"/>',
+    chart: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+    presetComparison: '<circle cx="18" cy="18" r="3"/><circle cx="6" cy="6" r="3"/><path d="M13 6h3a2 2 0 0 1 2 2v7"/><path d="M11 18H8a2 2 0 0 1-2-2V9"/>',
+    imbalanceDetector: '<path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/>',
+    goalSolver: '<circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="6"/><circle cx="12" cy="12" r="2"/>',
+    balanceAnalysis: '<polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>',
+    economy: '<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>',
+    dpsVariance: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
+    curveFitting: '<path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/>',
+  };
+  return paths[toolId] || '';
 }

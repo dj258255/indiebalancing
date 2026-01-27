@@ -3,6 +3,7 @@
 import React from 'react';
 import { useTranslations } from 'next-intl';
 import { useLocaleSwitch, Locale } from '@/lib/i18n';
+import { useEscapeKey } from '@/hooks';
 import { Check } from 'lucide-react';
 
 interface SettingsModalProps {
@@ -13,6 +14,9 @@ interface SettingsModalProps {
 export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
   const t = useTranslations();
   const { locale, setLocale } = useLocaleSwitch();
+
+  // ESC 키로 닫기
+  useEscapeKey(onClose, isOpen);
 
   if (!isOpen) return null;
 

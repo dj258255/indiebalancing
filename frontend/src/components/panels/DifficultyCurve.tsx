@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
+import { useEscapeKey } from '@/hooks';
 
 // number input spinner 숨기는 스타일
 const hideSpinnerStyle = `
@@ -84,6 +85,7 @@ interface MilestoneData {
 
 export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp }: DifficultyCurveProps) {
   const t = useTranslations('difficultyCurve');
+  useEscapeKey(onClose ?? (() => {}), !!onClose);
   const [preset, setPreset] = useState<keyof typeof CURVE_PRESETS>('balanced');
   const [playtime, setPlaytime] = useState<keyof typeof PLAYTIME_TARGETS>('1hr');
   const [maxStage, setMaxStage] = useState(100);

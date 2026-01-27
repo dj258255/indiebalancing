@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils';
 import { DPS, TTK, EHP, DAMAGE, SCALE } from '@/lib/formulaEngine';
 import { useProjectStore } from '@/stores/projectStore';
 import { Tooltip } from '@/components/ui/Tooltip';
+import { useEscapeKey } from '@/hooks';
 
 // 행 표시명 생성 헬퍼
 function getRowDisplayName(rowId: string, currentSheet: { name: string; rows: { id: string }[] } | undefined, t: any): string {
@@ -123,6 +124,9 @@ export default function Calculator({ onClose, isPanel = false, showHelp = false,
   const [activeTab, setActiveTab] = useState<CalculatorTab>('dps');
   const [showTabDropdown, setShowTabDropdown] = useState(false);
   const { selectedRows, clearSelectedRows, deselectRow, projects, currentProjectId, currentSheetId } = useProjectStore();
+
+  // ESC 키로 패널 닫기
+  useEscapeKey(onClose);
 
   // 현재 시트 가져오기
   const currentProject = projects.find(p => p.id === currentProjectId);
@@ -806,7 +810,7 @@ function InputField({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+      <label className="block text-sm font-medium mb-1.5 leading-none" style={{ color: 'var(--text-secondary)' }}>
         {label}
       </label>
       <div className="relative">
@@ -835,7 +839,12 @@ function InputField({
               setInputValue(String(num));
             }
           }}
-          className="w-full px-3 py-2 pr-9 rounded-lg"
+          className="w-full px-3 py-2 pr-9 rounded-lg text-sm leading-normal"
+          style={{
+            background: 'var(--bg-secondary)',
+            border: '1px solid var(--border-primary)',
+            color: 'var(--text-primary)',
+          }}
         />
         {/* 셀 선택 버튼 - 호버 시 표시 */}
         {isHovered && !cellSelectionMode.active && (
@@ -865,11 +874,11 @@ function ResultCard({
   extra?: string;
 }) {
   return (
-    <div className="rounded-xl p-4 text-center" style={{ background: 'var(--bg-tertiary)' }}>
-      <div className="text-sm mb-1" style={{ color: 'var(--text-tertiary)' }}>{label}</div>
-      <div className="text-3xl font-bold" style={{ color }}>{value}</div>
+    <div className="rounded-xl p-4 flex flex-col items-center justify-center" style={{ background: 'var(--bg-tertiary)' }}>
+      <div className="text-sm mb-1 leading-tight" style={{ color: 'var(--text-tertiary)' }}>{label}</div>
+      <div className="text-3xl font-bold leading-tight" style={{ color }}>{value}</div>
       {extra && (
-        <div className="text-xs mt-2" style={{ color: 'var(--text-tertiary)' }}>{extra}</div>
+        <div className="text-xs mt-2 leading-tight" style={{ color: 'var(--text-tertiary)' }}>{extra}</div>
       )}
     </div>
   );

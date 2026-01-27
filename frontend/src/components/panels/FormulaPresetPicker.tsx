@@ -12,6 +12,7 @@ import {
   type FormulaCategory,
 } from '@/lib/formulaPresets';
 import { useTranslations } from 'next-intl';
+import { useEscapeKey } from '@/hooks';
 
 interface FormulaPresetPickerProps {
   onSelect: (formula: string) => void;
@@ -30,6 +31,7 @@ const CATEGORY_ICONS: Record<FormulaCategory, typeof Swords> = {
 
 export default function FormulaPresetPicker({ onSelect, onClose }: FormulaPresetPickerProps) {
   const t = useTranslations();
+  useEscapeKey(onClose);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState<FormulaCategory | 'all'>('all');
   const [selectedPreset, setSelectedPreset] = useState<FormulaPreset | null>(null);

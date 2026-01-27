@@ -3,13 +3,13 @@ import type { CellStyle } from '@/types';
 
 // 기본 셀 스타일 (스타일이 지정되지 않은 셀의 기본값)
 export const DEFAULT_CELL_STYLE: CellStyle = {
-  fontSize: 12,
+  fontSize: 15,
   bold: false,
   italic: false,
   underline: false,
   strikethrough: false,
-  hAlign: undefined,
-  vAlign: undefined,
+  hAlign: 'center',
+  vAlign: 'middle',
   textRotation: 0,
 };
 

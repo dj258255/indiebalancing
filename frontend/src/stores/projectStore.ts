@@ -4,11 +4,13 @@ import type { Project, Sheet, Column, Row, CellValue, ColumnType, Sticker, CellS
 
 // 기본 셀 스타일 (스타일이 없는 셀에 적용되는 기본값)
 const DEFAULT_CELL_STYLE: CellStyle = {
-  fontSize: 12,
+  fontSize: 15,
   bold: false,
   italic: false,
   underline: false,
   strikethrough: false,
+  hAlign: 'center',
+  vAlign: 'middle',
   textRotation: 0,
 };
 

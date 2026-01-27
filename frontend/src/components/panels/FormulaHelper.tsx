@@ -5,6 +5,7 @@ import { Calculator, Copy, Check, Swords, Coins, Layers, Wrench, Link, Sigma, Tr
 import { availableFunctions, evaluateFormula } from '@/lib/formulaEngine';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
+import { useEscapeKey } from '@/hooks';
 
 // 카테고리 정의 - 번역 키 사용
 const CATEGORY_IDS = ['all', 'combat', 'economy', 'stage', 'util', 'ref', 'math', 'stat', 'trig', 'logic'] as const;
@@ -41,8 +42,9 @@ interface FormulaHelperProps {
 
 const PANEL_COLOR = '#3b82f6';
 
-export default function FormulaHelper({ showHelp = false, setShowHelp }: FormulaHelperProps) {
+export default function FormulaHelper({ onClose, showHelp = false, setShowHelp }: FormulaHelperProps) {
   const t = useTranslations();
+  useEscapeKey(onClose ?? (() => {}), !!onClose);
   const [testFormula, setTestFormula] = useState('');
   const [testResult, setTestResult] = useState<string | null>(null);
   const [copiedFunction, setCopiedFunction] = useState<string | null>(null);

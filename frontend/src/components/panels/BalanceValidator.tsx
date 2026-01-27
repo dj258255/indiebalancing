@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
+import { useEscapeKey } from '@/hooks';
 
 const PANEL_COLOR = '#22c55e';
 
@@ -181,6 +182,7 @@ function simulate1v1(unitA: UnitData, unitB: UnitData): { winner: string; rounds
 
 export default function BalanceValidator({ onClose, showHelp = false, setShowHelp }: BalanceValidatorProps) {
   const t = useTranslations('balanceValidator');
+  useEscapeKey(onClose ?? (() => {}), !!onClose);
   const [units, setUnits] = useState<UnitData[]>([
     {
       name: '전사',

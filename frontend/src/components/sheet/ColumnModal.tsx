@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { X, Check, HelpCircle, Lock, Globe } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useEscapeKey } from '@/hooks';
 import FormulaAutocomplete from './FormulaAutocomplete';
 import type { Column, ColumnType, DataType, ValidationConfig } from '@/types';
 
@@ -46,6 +47,9 @@ export default function ColumnModal({
   useEffect(() => {
     nameInputRef.current?.focus();
   }, []);
+
+  // ESC 키로 닫기
+  useEscapeKey(onClose);
 
   useEffect(() => {
     if (formula.startsWith('=') && formula.length > 1) {
@@ -242,10 +246,11 @@ export default function ColumnModal({
 
           <div className="border-t pt-3" style={{ borderColor: 'var(--border-primary)' }}>
             <div className="flex items-center justify-between">
-              <label className="flex items-center gap-2 cursor-pointer">
-                <button
-                  type="button"
-                  onClick={() => setShowValidation(!showValidation)}
+              <div
+                className="flex items-center gap-2 cursor-pointer"
+                onClick={() => setShowValidation(!showValidation)}
+              >
+                <div
                   className="w-5 h-5 rounded border-2 flex items-center justify-center transition-all"
                   style={{
                     borderColor: showValidation ? 'var(--primary-blue)' : 'var(--border-secondary)',
@@ -253,11 +258,11 @@ export default function ColumnModal({
                   }}
                 >
                   {showValidation && <Check className="w-3.5 h-3.5 text-white" />}
-                </button>
+                </div>
                 <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
                   {t('column.validation')}
                 </span>
-              </label>
+              </div>
               <div className="relative group">
                 <HelpCircle className="w-4 h-4 cursor-help" style={{ color: 'var(--text-tertiary)' }} />
                 <div className="absolute right-0 bottom-full mb-2 w-56 p-2 rounded-lg shadow-lg text-xs opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-50"
@@ -331,10 +336,11 @@ export default function ColumnModal({
                 </div>
               )}
 
-              <label className="flex items-center gap-2 cursor-pointer">
-                <button
-                  type="button"
-                  onClick={() => setRequired(!required)}
+              <div
+                className="flex items-center gap-2 cursor-pointer"
+                onClick={() => setRequired(!required)}
+              >
+                <div
                   className="w-4 h-4 rounded border-2 flex items-center justify-center transition-all"
                   style={{
                     borderColor: required ? 'var(--primary-blue)' : 'var(--border-secondary)',
@@ -342,19 +348,20 @@ export default function ColumnModal({
                   }}
                 >
                   {required && <Check className="w-3 h-3 text-white" />}
-                </button>
+                </div>
                 <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                   {t('column.required')}
                 </span>
-              </label>
+              </div>
             </div>
           )}
 
           <div className="border-t pt-3" style={{ borderColor: 'var(--border-primary)' }}>
-            <label className="flex items-center gap-2 cursor-pointer">
-              <button
-                type="button"
-                onClick={() => setLocked(!locked)}
+            <div
+              className="flex items-center gap-2 cursor-pointer"
+              onClick={() => setLocked(!locked)}
+            >
+              <div
                 className="w-5 h-5 rounded border-2 flex items-center justify-center transition-all"
                 style={{
                   borderColor: locked ? 'var(--warning)' : 'var(--border-secondary)',
@@ -362,12 +369,12 @@ export default function ColumnModal({
                 }}
               >
                 {locked && <Check className="w-3.5 h-3.5 text-white" />}
-              </button>
+              </div>
               <Lock className="w-4 h-4" style={{ color: locked ? 'var(--warning)' : 'var(--text-tertiary)' }} />
               <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
                 {t('column.lock')}
               </span>
-            </label>
+            </div>
           </div>
         </div>
         <div className="border-t px-4 sm:px-5 py-3 sm:py-4 flex justify-end gap-2" style={{

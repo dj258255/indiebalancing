@@ -16,6 +16,7 @@ import { Maximize2, X, Plus, Trash2, Layers } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { SCALE } from '@/lib/formulaEngine';
 import type { CurveType } from '@/types';
+import { useEscapeKey } from '@/hooks';
 
 interface GrowthCurveChartProps {
   initialBase?: number;
@@ -179,6 +180,7 @@ export default function GrowthCurveChart({
   showHelp = false,
   setShowHelp,
 }: GrowthCurveChartProps) {
+  useEscapeKey(() => {});
   const [base, setBase] = useState(initialBase);
   const [rate, setRate] = useState(initialRate);
   const [maxLevel, setMaxLevel] = useState(initialMaxLevel);

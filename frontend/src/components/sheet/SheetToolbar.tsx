@@ -277,7 +277,7 @@ export default function SheetToolbar({
               borderColor: 'var(--border-primary)',
             }}
           >
-            <div className="max-h-[280px] overflow-y-auto">
+            <div className="max-h-[280px] overflow-y-auto scrollbar-visible">
               {/* Undo 히스토리 */}
               {past.length > 0 && (
                 <div className="p-2 border-b" style={{ borderColor: 'var(--border-primary)' }}>

@@ -60,6 +60,8 @@
     "selectCellFor": "Select a cell for {field}",
     "sheets": "sheets",
     "moveConfirm": "Move \"{sheetName}\" sheet to \"{projectName}\" project?",
+    "moveSheet": "Move Sheet",
+    "deleteSheet": "Delete Sheet",
     "className": "Class Name",
     "editClassName": "Edit Class Name",
     "exportClassName": "Export Class Name"
@@ -93,6 +95,7 @@
     "export": "Export",
     "import": "Import",
     "copy": "Copy",
+    "move": "Move",
     "paste": "Paste",
     "undo": "Undo",
     "redo": "Redo",
@@ -116,9 +119,13 @@
     "deleteRow": "Delete row",
     "deleteRows": "Delete selected rows",
     "deleteColumn": "Delete column",
+    "clearRowValues": "Clear row values",
+    "clearColumnValues": "Clear column values",
     "addMemo": "Add memo",
     "editMemo": "Edit memo",
-    "deleteMemo": "Delete memo"
+    "deleteMemo": "Delete memo",
+    "resetWidth": "Reset Width",
+    "resetHeight": "Reset Height"
   },
   "memo": {
     "content": "Memo content",
@@ -200,35 +207,6 @@
     "addAll": "Add All",
     "clearAll": "Clear All",
     "selectColumns": "Select Columns"
-  },
-  "growthCurve": {
-    "title": "Growth Curve Chart",
-    "description": "Visualize stat growth trends by level based on sheet data.",
-    "base": "Base",
-    "rate": "Rate",
-    "maxLevel": "Max Level",
-    "linear": "Linear",
-    "exponential": "Exponential",
-    "logarithmic": "Logarithmic",
-    "quadratic": "Quadratic",
-    "scurve": "S-Curve",
-    "custom": "Custom",
-    "previewLevel": "Preview Level Value",
-    "help": "Requires level, hp, atk columns in sheet",
-    "help2": "Compare multiple stats at once",
-    "help3": "Check growth patterns (linear/exp/log)",
-    "segmentedCurve": "Segmented Growth",
-    "segmentSettings": "Segment Settings",
-    "addSegment": "Add Segment",
-    "segment": "Segment",
-    "startLevel": "Start Level",
-    "endLevel": "End Level",
-    "segmentedDesc": "Apply different growth curves to each segment. Design patterns like early rapid growth → mid stable → late gradual.",
-    "interpolationSettings": "Segment Transition",
-    "interpolation_none": "None",
-    "interpolation_linear": "Linear",
-    "interpolation_smooth": "Smooth",
-    "transitionWidth": "Transition Width (levels)"
   },
   "presetComparison": {
     "title": "Preset Comparison",
@@ -323,7 +301,11 @@
     "simulation": "Combat Simulation",
     "dropHere": "Drag from sidebar to add",
     "rightClickToReturn": "Right-click to return to sidebar",
-    "dropToMove": "Drop here to move"
+    "dropToMove": "Drop here to move",
+    "tools": "Tool Bar",
+    "active": "active",
+    "expand": "Expand",
+    "collapse": "Collapse"
   },
   "welcome": {
     "title": "IndieBalancing",
@@ -340,7 +322,9 @@
   "alert": {
     "exportSelectSheet": "Please select a sheet first.",
     "importSelectProject": "Please select a project first.",
-    "deleteSheetConfirm": "Delete sheet \"{name}\"?"
+    "deleteSheetConfirm": "Delete sheet \"{name}\"?",
+    "deleteRowConfirm": "Delete row {rowNumber}?",
+    "deleteColumnConfirm": "Delete column \"{columnName}\"?"
   },
   "column": {
     "addTitle": "Add Column",
@@ -404,6 +388,8 @@
     "unlockColumn": "Unlock Column",
     "newColumn": "New Column",
     "confirmDeleteColumn": "Are you sure you want to delete the \"{name}\" column?",
+    "confirmDeleteRow": "Are you sure you want to delete row {index}?",
+    "deleteRow": "Delete Row",
     "defaultFormula": "Default formula: {formula}",
     "noFormula": "None",
     "dragToFill": "Drag to fill formula/value",
@@ -414,7 +400,16 @@
     "applyBulkEdit": "Apply bulk value/formula to selected cells",
     "clearSelectedCells": "Clear selected cells",
     "enterValuePlaceholder": "Enter value or =formula",
-    "valueOrFormulaToApply": "Value or formula to apply"
+    "valueOrFormulaToApply": "Value or formula to apply",
+    "excludeFromExport": "Exclude from export",
+    "includeInExport": "Include in export",
+    "exportExcluded": "Export excluded",
+    "deleteRowOptions": "Delete Row Options",
+    "deleteRowOptionsDesc": "How would you like to handle row {index}?",
+    "clearValuesOnly": "Clear Values Only",
+    "clearValuesOnlyDesc": "Keep the row but clear all values",
+    "deleteRowCompletely": "Delete Row",
+    "deleteRowCompletelyDesc": "Remove the entire row"
   },
   "templateSelector": {
     "title": "Create New Sheet",
@@ -560,7 +555,9 @@
     "selectSheets": "Select sheets",
     "selectFormat": "Select Format",
     "selectData": "Select Data",
-    "options": "Options"
+    "options": "Options",
+    "columnSettings": "Column Settings",
+    "selectColumns": "Select columns to export"
   },
   "import": {
     "codeImport": "Import Code",
@@ -1553,7 +1550,19 @@
     "sCurve": "S-Curve",
     "enlargeGraph": "Enlarge Graph",
     "levelPreview": "Preview value at level:",
-    "levelUnit": "Level"
+    "levelUnit": "Level",
+    "segmentedCurve": "Segmented Growth",
+    "segmentSettings": "Segment Settings",
+    "addSegment": "Add Segment",
+    "segment": "Segment",
+    "startLevel": "Start Level",
+    "endLevel": "End Level",
+    "segmentedDesc": "Apply different growth curves to each segment. Design patterns like early rapid growth → mid stable → late gradual.",
+    "interpolationSettings": "Segment Transition",
+    "interpolation_none": "None",
+    "interpolation_linear": "Linear",
+    "interpolation_smooth": "Smooth",
+    "transitionWidth": "Transition Width (levels)"
   },
   "comparisonChart": {
     "title": "Comparison Analysis",

@@ -179,6 +179,17 @@ export function usePanelManager(options: UsePanelManagerOptions) {
     }));
   }, []);
 
+  // 패널 위치를 초기 상태로 리셋
+  const resetPanelPosition = useCallback((panelId: string) => {
+    const index = panels.indexOf(panelId);
+    const state = initialStates[panelId] || defaultState(index >= 0 ? index : 0);
+    maxZRef.current += 1;
+    setPanelStates((prev) => ({
+      ...prev,
+      [panelId]: { ...state, zIndex: maxZRef.current },
+    }));
+  }, [panels, initialStates]);
+
   const updatePanel = useCallback(
     (panelId: string, updates: Partial<DraggableState>) => {
       setPanelStates((prev) => ({
@@ -208,6 +219,9 @@ export function usePanelManager(options: UsePanelManagerOptions) {
     [panelStates, bringToFront]
   );
 
+  // 현재 드래그 중인 패널 ID 저장
+  const draggingPanelRef = useRef<string | null>(null);
+
   const createDragHandler = useCallback(
     (panelId: string) => (e: React.MouseEvent) => {
       if ((e.target as HTMLElement).closest('button')) return;
@@ -220,6 +234,10 @@ export function usePanelManager(options: UsePanelManagerOptions) {
       const startPosX = state.x;
       const startPosY = state.y;
 
+      // 드래그 시작 - panel-drag-start 이벤트에 panelId 전달
+      draggingPanelRef.current = panelId;
+      window.dispatchEvent(new CustomEvent('panel-drag-start', { detail: { panelId } }));
+
       const onMouseMove = (moveEvent: MouseEvent) => {
         updatePanel(panelId, {
           x: Math.max(0, startPosX + moveEvent.clientX - startX),
@@ -228,6 +246,9 @@ export function usePanelManager(options: UsePanelManagerOptions) {
       };
 
       const onMouseUp = () => {
+        // 드래그 종료 이벤트
+        window.dispatchEvent(new CustomEvent('panel-drag-end', { detail: { panelId } }));
+        draggingPanelRef.current = null;
         document.removeEventListener('mousemove', onMouseMove);
         document.removeEventListener('mouseup', onMouseUp);
       };
@@ -237,6 +258,9 @@ export function usePanelManager(options: UsePanelManagerOptions) {
     },
     [panelStates, updatePanel]
   );
+
+  // 현재 드래그 중인 패널 ID 가져오기
+  const getDraggingPanel = useCallback(() => draggingPanelRef.current, []);
 
   // 패널별 최소/최대 크기 설정
   const panelSizeLimits: Record<string, { minW: number; maxW: number; minH: number }> = {
@@ -294,5 +318,7 @@ export function usePanelManager(options: UsePanelManagerOptions) {
     getPanelProps,
     createDragHandler,
     createResizeHandler,
+    getDraggingPanel,
+    resetPanelPosition,
   };
 }

@@ -7,6 +7,7 @@ import {
   Trash2,
   ArrowUp,
   ArrowDown,
+  Eraser,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
@@ -18,6 +19,7 @@ interface RowContextMenuProps {
   onClose: () => void;
   onToggleLock: () => void;
   onDelete: () => void;
+  onClearValues: () => void;
   onInsertAbove: () => void;
   onInsertBelow: () => void;
 }
@@ -38,6 +40,7 @@ export default function RowContextMenu({
   onClose,
   onToggleLock,
   onDelete,
+  onClearValues,
   onInsertAbove,
   onInsertBelow,
 }: RowContextMenuProps) {
@@ -99,6 +102,11 @@ export default function RowContextMenu({
       icon: <ArrowDown className="w-4 h-4" />,
       onClick: onInsertBelow,
       divider: true,
+    },
+    {
+      label: t('contextMenu.clearRowValues'),
+      icon: <Eraser className="w-4 h-4" />,
+      onClick: onClearValues,
     },
     {
       label: t('contextMenu.deleteRow'),

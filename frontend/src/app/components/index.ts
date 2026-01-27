@@ -5,7 +5,6 @@ export { default as MobileSidebar } from './MobileSidebar';
 export { default as SheetHeader } from './SheetHeader';
 export { default as HistoryPanel } from './HistoryPanel';
 export { default as BottomToolbar } from './BottomToolbar';
-export { default as BottomPanels } from './BottomPanels';
 export { default as EmptySheetView } from './EmptySheetView';
 export { default as FloatingPanels } from './FloatingPanels';
 export { default as MobilePanels } from './MobilePanels';

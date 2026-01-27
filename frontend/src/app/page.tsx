@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { useTranslations } from 'next-intl';
 import { useProjectStore } from '@/stores/projectStore';
 import { useHistoryStore } from '@/stores/historyStore';
@@ -58,6 +58,7 @@ import EmptySheetView from './components/EmptySheetView';
 import MobilePanels from './components/MobilePanels';
 import ToolPanels from './components/ToolPanels';
 import SidebarResizer from './components/SidebarResizer';
+import TrashDropZone from './components/TrashDropZone';
 
 // Panel configuration
 const PANEL_CONFIG = {
@@ -115,6 +116,8 @@ export default function Home() {
     bringToFront,
     createDragHandler,
     createResizeHandler,
+    getDraggingPanel,
+    resetPanelPosition,
   } = usePanelManager({
     panels: ['calculator', 'comparison', 'chart', 'preset', 'imbalance', 'goal', 'balance', 'economy', 'dpsVariance', 'curveFitting', 'formulaHelper', 'balanceValidator', 'difficultyCurve', 'simulation'],
     initialStates: Object.fromEntries(
@@ -124,6 +127,29 @@ export default function Home() {
       ])
     ),
   });
+
+  // 드래그 중인 패널 ID를 ref로 추적
+  const draggingPanelRef = useRef<string | null>(null);
+
+  // 드래그 이벤트 리스너로 패널 ID 추적
+  useEffect(() => {
+    const handleDragStart = (e: Event) => {
+      const customEvent = e as CustomEvent<{ panelId: string }>;
+      draggingPanelRef.current = customEvent.detail?.panelId || null;
+    };
+
+    const handleDragEnd = () => {
+      draggingPanelRef.current = null;
+    };
+
+    window.addEventListener('panel-drag-start', handleDragStart);
+    window.addEventListener('panel-drag-end', handleDragEnd);
+
+    return () => {
+      window.removeEventListener('panel-drag-start', handleDragStart);
+      window.removeEventListener('panel-drag-end', handleDragEnd);
+    };
+  }, []);
 
   // UI State
   const [isLoading, setIsLoading] = useState(true);
@@ -235,28 +261,70 @@ export default function Home() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showHistoryPanel]);
 
-  // Sidebar callbacks
+  // Sidebar callbacks - 패널 열 때 위치 초기화
   const sidebarCallbacks = {
-    onShowChart: () => setShowChart(!showChart),
+    onShowChart: () => {
+      if (!showChart) resetPanelPosition('chart');
+      setShowChart(!showChart);
+    },
     onShowHelp: () => setShowOnboarding(true),
-    onShowCalculator: () => setShowCalculator(!showCalculator),
-    onShowComparison: () => setShowComparison(!showComparison),
+    onShowCalculator: () => {
+      if (!showCalculator) resetPanelPosition('calculator');
+      setShowCalculator(!showCalculator);
+    },
+    onShowComparison: () => {
+      if (!showComparison) resetPanelPosition('comparison');
+      setShowComparison(!showComparison);
+    },
     onShowReferences: () => setShowReferences(true),
-    onShowPresetComparison: () => setShowPresetComparison(!showPresetComparison),
-    onShowImbalanceDetector: () => setShowImbalanceDetector(!showImbalanceDetector),
-    onShowGoalSolver: () => setShowGoalSolver(!showGoalSolver),
-    onShowBalanceAnalysis: () => setShowBalanceAnalysis(!showBalanceAnalysis),
-    onShowEconomy: () => setShowEconomy(!showEconomy),
-    onShowDpsVariance: () => setShowDpsVariance(!showDpsVariance),
-    onShowCurveFitting: () => setShowCurveFitting(!showCurveFitting),
+    onShowPresetComparison: () => {
+      if (!showPresetComparison) resetPanelPosition('preset');
+      setShowPresetComparison(!showPresetComparison);
+    },
+    onShowImbalanceDetector: () => {
+      if (!showImbalanceDetector) resetPanelPosition('imbalance');
+      setShowImbalanceDetector(!showImbalanceDetector);
+    },
+    onShowGoalSolver: () => {
+      if (!showGoalSolver) resetPanelPosition('goal');
+      setShowGoalSolver(!showGoalSolver);
+    },
+    onShowBalanceAnalysis: () => {
+      if (!showBalanceAnalysis) resetPanelPosition('balance');
+      setShowBalanceAnalysis(!showBalanceAnalysis);
+    },
+    onShowEconomy: () => {
+      if (!showEconomy) resetPanelPosition('economy');
+      setShowEconomy(!showEconomy);
+    },
+    onShowDpsVariance: () => {
+      if (!showDpsVariance) resetPanelPosition('dpsVariance');
+      setShowDpsVariance(!showDpsVariance);
+    },
+    onShowCurveFitting: () => {
+      if (!showCurveFitting) resetPanelPosition('curveFitting');
+      setShowCurveFitting(!showCurveFitting);
+    },
     onShowSettings: () => setShowSettings(true),
     onShowExportModal: () => setShowExportModal(true),
     onShowImportModal: () => setShowImportModal(true),
     // 패널 도구 토글 (하단에서 사이드바로 이동한 경우)
-    onToggleFormulaHelper: () => setShowFormulaHelper(!showFormulaHelper),
-    onToggleBalanceValidator: () => setShowBalanceValidator(!showBalanceValidator),
-    onToggleDifficultyCurve: () => setShowDifficultyCurve(!showDifficultyCurve),
-    onToggleSimulation: () => setShowSimulation(!showSimulation),
+    onToggleFormulaHelper: () => {
+      if (!showFormulaHelper) resetPanelPosition('formulaHelper');
+      setShowFormulaHelper(!showFormulaHelper);
+    },
+    onToggleBalanceValidator: () => {
+      if (!showBalanceValidator) resetPanelPosition('balanceValidator');
+      setShowBalanceValidator(!showBalanceValidator);
+    },
+    onToggleDifficultyCurve: () => {
+      if (!showDifficultyCurve) resetPanelPosition('difficultyCurve');
+      setShowDifficultyCurve(!showDifficultyCurve);
+    },
+    onToggleSimulation: () => {
+      if (!showSimulation) resetPanelPosition('simulation');
+      setShowSimulation(!showSimulation);
+    },
   };
 
   // Add memo handler
@@ -267,11 +335,40 @@ export default function Home() {
         color: '#fef08a',
         x: 10 + Math.random() * 30,
         y: 10 + Math.random() * 30,
-        width: 150,
-        height: 80,
+        width: 200,
+        height: 120,
       });
     }
   };
+
+  // 드래그 중인 패널 닫기 (쓰레기통에 드롭 시)
+  const handleCloseDraggingPanel = useCallback((panelId?: string) => {
+    const targetPanelId = panelId || draggingPanelRef.current;
+    if (!targetPanelId) return;
+
+    // panelId에 따라 해당 패널 닫기
+    const closeMap: Record<string, () => void> = {
+      calculator: () => setShowCalculator(false),
+      comparison: () => setShowComparison(false),
+      chart: () => setShowChart(false),
+      preset: () => setShowPresetComparison(false),
+      imbalance: () => setShowImbalanceDetector(false),
+      goal: () => setShowGoalSolver(false),
+      balance: () => setShowBalanceAnalysis(false),
+      economy: () => setShowEconomy(false),
+      dpsVariance: () => setShowDpsVariance(false),
+      curveFitting: () => setShowCurveFitting(false),
+      formulaHelper: () => setShowFormulaHelper(false),
+      balanceValidator: () => setShowBalanceValidator(false),
+      difficultyCurve: () => setShowDifficultyCurve(false),
+      simulation: () => setShowSimulation(false),
+    };
+
+    const closeHandler = closeMap[targetPanelId];
+    if (closeHandler) {
+      closeHandler();
+    }
+  }, []);
 
   if (isLoading) {
     return <LoadingScreen />;
@@ -317,7 +414,25 @@ export default function Home() {
 
       {/* Desktop Sidebar */}
       <div className="hidden md:block">
-        <Sidebar {...sidebarCallbacks} />
+        <Sidebar
+          {...sidebarCallbacks}
+          activeTools={{
+            calculator: showCalculator,
+            comparison: showComparison,
+            chart: showChart,
+            presetComparison: showPresetComparison,
+            imbalanceDetector: showImbalanceDetector,
+            goalSolver: showGoalSolver,
+            balanceAnalysis: showBalanceAnalysis,
+            economy: showEconomy,
+            dpsVariance: showDpsVariance,
+            curveFitting: showCurveFitting,
+            formulaHelper: showFormulaHelper,
+            balanceValidator: showBalanceValidator,
+            difficultyCurve: showDifficultyCurve,
+            simulation: showSimulation,
+          }}
+        />
       </div>
 
       {/* Sidebar Resizer */}
@@ -408,106 +523,121 @@ export default function Home() {
           difficultyCurve: showDifficultyCurve,
           simulation: showSimulation,
         }}
+        activeTools={{
+          calculator: showCalculator,
+          comparison: showComparison,
+          chart: showChart,
+          presetComparison: showPresetComparison,
+          imbalanceDetector: showImbalanceDetector,
+          goalSolver: showGoalSolver,
+          balanceAnalysis: showBalanceAnalysis,
+          economy: showEconomy,
+          dpsVariance: showDpsVariance,
+          curveFitting: showCurveFitting,
+        }}
         setShow={{
           formulaHelper: (value) => {
+            if (value) resetPanelPosition('formulaHelper');
             setShowFormulaHelper(value);
-            if (value) bringToFront('formulaHelper');
           },
           balanceValidator: (value) => {
+            if (value) resetPanelPosition('balanceValidator');
             setShowBalanceValidator(value);
-            if (value) bringToFront('balanceValidator');
           },
           difficultyCurve: (value) => {
+            if (value) resetPanelPosition('difficultyCurve');
             setShowDifficultyCurve(value);
-            if (value) bringToFront('difficultyCurve');
           },
           simulation: (value) => {
+            if (value) resetPanelPosition('simulation');
             setShowSimulation(value);
-            if (value) bringToFront('simulation');
           },
         }}
         onShowCalculator={() => {
           if (showCalculator) {
             setShowCalculator(false);
           } else {
+            resetPanelPosition('calculator');
             setShowCalculator(true);
-            bringToFront('calculator');
           }
         }}
         onShowComparison={() => {
           if (showComparison) {
             setShowComparison(false);
           } else {
+            resetPanelPosition('comparison');
             setShowComparison(true);
-            bringToFront('comparison');
           }
         }}
         onShowChart={() => {
           if (showChart) {
             setShowChart(false);
           } else {
+            resetPanelPosition('chart');
             setShowChart(true);
-            bringToFront('chart');
           }
         }}
         onShowPresetComparison={() => {
           if (showPresetComparison) {
             setShowPresetComparison(false);
           } else {
+            resetPanelPosition('preset');
             setShowPresetComparison(true);
-            bringToFront('preset');
           }
         }}
         onShowImbalanceDetector={() => {
           if (showImbalanceDetector) {
             setShowImbalanceDetector(false);
           } else {
+            resetPanelPosition('imbalance');
             setShowImbalanceDetector(true);
-            bringToFront('imbalance');
           }
         }}
         onShowGoalSolver={() => {
           if (showGoalSolver) {
             setShowGoalSolver(false);
           } else {
+            resetPanelPosition('goal');
             setShowGoalSolver(true);
-            bringToFront('goal');
           }
         }}
         onShowBalanceAnalysis={() => {
           if (showBalanceAnalysis) {
             setShowBalanceAnalysis(false);
           } else {
+            resetPanelPosition('balance');
             setShowBalanceAnalysis(true);
-            bringToFront('balance');
           }
         }}
         onShowEconomy={() => {
           if (showEconomy) {
             setShowEconomy(false);
           } else {
+            resetPanelPosition('economy');
             setShowEconomy(true);
-            bringToFront('economy');
           }
         }}
         onShowDpsVariance={() => {
           if (showDpsVariance) {
             setShowDpsVariance(false);
           } else {
+            resetPanelPosition('dpsVariance');
             setShowDpsVariance(true);
-            bringToFront('dpsVariance');
           }
         }}
         onShowCurveFitting={() => {
           if (showCurveFitting) {
             setShowCurveFitting(false);
           } else {
+            resetPanelPosition('curveFitting');
             setShowCurveFitting(true);
-            bringToFront('curveFitting');
           }
         }}
         isModalOpen={isModalOpen}
       />
+
+      {/* Trash Drop Zone (드래그로 패널 닫기) */}
+      <TrashDropZone onClosePanel={handleCloseDraggingPanel} />
     </div>
   );
 }

@@ -44,6 +44,7 @@ function StickerItem({ sticker, projectId, sheetId, containerRef }: StickerItemP
   const [isResizing, setIsResizing] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [showColorPicker, setShowColorPicker] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [text, setText] = useState(sticker.text);
   const stickerRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -127,8 +128,8 @@ function StickerItem({ sticker, projectId, sheetId, containerRef }: StickerItemP
       const deltaX = e.clientX - resizeStart.current.mouseX;
       const deltaY = e.clientY - resizeStart.current.mouseY;
 
-      const newWidth = Math.max(100, resizeStart.current.width + deltaX);
-      const newHeight = Math.max(60, resizeStart.current.height + deltaY);
+      const newWidth = Math.max(150, resizeStart.current.width + deltaX);
+      const newHeight = Math.max(100, resizeStart.current.height + deltaY);
 
       updateSticker(projectId, sheetId, sticker.id, {
         width: newWidth,
@@ -186,35 +187,42 @@ function StickerItem({ sticker, projectId, sheetId, containerRef }: StickerItemP
   return (
     <div
       ref={stickerRef}
-      className="absolute group"
+      className="absolute"
       style={{
         left: `${sticker.x}%`,
         top: `${sticker.y}%`,
         width: sticker.width,
         minHeight: sticker.height,
         zIndex: isDragging || isResizing ? 40 : 20,
+        // 그림자를 외부 wrapper에 적용
+        filter: 'drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1)) drop-shadow(0 2px 4px rgba(0, 0, 0, 0.06))',
       }}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => !showColorPicker && setIsHovered(false)}
     >
       <div
-        className="rounded-lg shadow-lg overflow-hidden flex flex-col h-full"
+        className="rounded-lg overflow-hidden flex flex-col h-full"
         style={{
           background: sticker.color,
           border: `1px solid ${darkenColor(sticker.color, 25)}`,
           minHeight: sticker.height,
         }}
       >
-        {/* 헤더 바 (드래그 핸들 + 버튼들) - 호버 시 나타남, absolute로 오버레이 */}
+        {/* 헤더 바 (드래그 핸들 + 버튼들) - 호버 시에만 표시 */}
         <div
-          className="absolute top-0 left-0 right-0 flex items-center px-1.5 py-1 cursor-grab select-none opacity-0 group-hover:opacity-100 transition-opacity z-10"
+          className="absolute top-0 left-0 right-0 flex items-center px-2 py-1.5 cursor-grab select-none transition-all z-10"
           style={{
-            background: 'rgba(0,0,0,0.08)',
+            background: 'rgba(0,0,0,0.15)',
             borderRadius: '8px 8px 0 0',
-            justifyContent: sticker.width < 120 ? 'flex-start' : 'center'
+            justifyContent: 'flex-start',
+            minHeight: '32px',
+            opacity: isHovered || isDragging ? 1 : 0,
+            pointerEvents: isHovered || isDragging ? 'auto' : 'none',
           }}
           onMouseDown={handleDragStart}
         >
-          {/* 드래그 아이콘 (좁으면 왼쪽, 넓으면 가운데) */}
-          <GripHorizontal className="w-4 h-4 text-gray-500" />
+          {/* 드래그 아이콘 */}
+          <GripHorizontal className="w-4 h-4 text-gray-600" />
 
           {/* 오른쪽: 텍스트 크기 + 색상 + 닫기 버튼 */}
           <div className="absolute right-1.5 flex items-center gap-0.5">
@@ -324,15 +332,22 @@ function StickerItem({ sticker, projectId, sheetId, containerRef }: StickerItemP
           )}
         </div>
 
-        {/* 리사이즈 핸들 (우하단) */}
+        {/* 리사이즈 핸들 (우하단) - 호버 시에만 표시 */}
         <div
-          className="absolute bottom-0 right-0 w-4 h-4 cursor-se-resize opacity-0 group-hover:opacity-100 transition-opacity"
+          className="absolute bottom-1 right-1 w-4 h-4 cursor-se-resize transition-all"
           onMouseDown={handleResizeStart}
           style={{
-            background: `linear-gradient(135deg, transparent 50%, ${darkenColor(sticker.color, 30)} 50%)`,
-            borderRadius: '0 0 8px 0',
+            opacity: isHovered || isResizing ? 1 : 0,
+            pointerEvents: isHovered || isResizing ? 'auto' : 'none',
           }}
-        />
+        >
+          {/* 대각선 줄무늬 - 내부에 위치 */}
+          <svg width="16" height="16" viewBox="0 0 16 16">
+            <line x1="14" y1="6" x2="6" y2="14" stroke={darkenColor(sticker.color, 30)} strokeWidth="2" strokeLinecap="round" />
+            <line x1="14" y1="10" x2="10" y2="14" stroke={darkenColor(sticker.color, 30)} strokeWidth="2" strokeLinecap="round" />
+            <line x1="14" y1="14" x2="14" y2="14" stroke={darkenColor(sticker.color, 30)} strokeWidth="2" strokeLinecap="round" />
+          </svg>
+        </div>
       </div>
     </div>
   );
