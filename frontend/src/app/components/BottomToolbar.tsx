@@ -301,15 +301,23 @@ export default function BottomToolbar({
 
     setDragState(prev => ({ ...prev, isOverDock: true }));
 
-    // 드롭 위치 계산
+    // 드롭 위치 계산 - 실제 아이템 위치 기반
     if (containerRef.current) {
-      const rect = containerRef.current.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const itemWidth = 52; // 아이템 너비 + 간격
-      const startX = 6; // padding
+      const x = e.clientX;
 
-      let targetIndex = Math.floor((x - startX) / itemWidth);
-      targetIndex = Math.max(0, Math.min(targetIndex, bottomTools.length));
+      // 각 아이템의 실제 위치를 기반으로 드롭 인덱스 계산
+      const items = containerRef.current.querySelectorAll('.dock-item-wrapper');
+      let targetIndex = bottomTools.length; // 기본값: 맨 끝
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i] as HTMLElement;
+        const itemRect = item.getBoundingClientRect();
+        // 아이템 중심보다 왼쪽이면 이 위치에 삽입
+        if (x < itemRect.left + itemRect.width / 2) {
+          targetIndex = i;
+          break;
+        }
+      }
 
       setDragState(prev => ({ ...prev, dropTargetIndex: targetIndex }));
     }
@@ -402,34 +410,37 @@ export default function BottomToolbar({
     );
   }
 
-  // 밀림 효과 계산
+  // 밀림 효과 계산 (macOS Dock 스타일)
+  // 삽입 위치 기준으로 자연스럽게 공간 생성
   const getItemTransform = (index: number, toolId: AllToolId) => {
     const { draggedToolId, draggedFromDock, dropTargetIndex, isOverDock } = dragState;
 
     if (!draggedToolId || dropTargetIndex === null) return 0;
 
-    const draggedIndex = bottomTools.indexOf(draggedToolId);
+    const itemWidth = 52; // 아이템 너비 + 간격
 
     if (draggedFromDock) {
-      // 독 내에서 드래그 중
+      // 독 내에서 드래그 중 (재정렬)
+      const draggedIndex = bottomTools.indexOf(draggedToolId);
+      if (draggedIndex === -1) return 0;
       if (draggedToolId === toolId) return 0; // 드래그 중인 아이템 자체
 
       if (draggedIndex < dropTargetIndex) {
-        // 오른쪽으로 이동: 드래그 아이템과 드롭 위치 사이의 아이템들은 왼쪽으로
-        // dropTargetIndex가 배열 끝일 수 있으므로 <= (length - 1) 대신 < dropTargetIndex 사용
+        // 오른쪽으로 이동: draggedIndex와 dropTargetIndex 사이 아이템들이 왼쪽으로
         if (index > draggedIndex && index < dropTargetIndex) {
-          return -52;
+          return -itemWidth;
         }
       } else if (draggedIndex > dropTargetIndex) {
-        // 왼쪽으로 이동: 드래그 아이템과 드롭 위치 사이의 아이템들은 오른쪽으로
-        if (index < draggedIndex && index >= dropTargetIndex) {
-          return 52;
+        // 왼쪽으로 이동: dropTargetIndex와 draggedIndex 사이 아이템들이 오른쪽으로
+        if (index >= dropTargetIndex && index < draggedIndex) {
+          return itemWidth;
         }
       }
     } else if (isOverDock) {
-      // 사이드바에서 독으로 드래그 중
+      // 사이드바에서 독으로 드래그 중 (새 아이템 삽입)
+      // macOS Dock처럼 삽입 위치 이후의 아이템들만 오른쪽으로 밀림
       if (index >= dropTargetIndex) {
-        return 52; // 드롭 위치 이후의 모든 아이템은 오른쪽으로
+        return itemWidth;
       }
     }
 
