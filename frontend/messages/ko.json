@@ -426,7 +426,10 @@
     "clearValuesOnly": "값만 지우기",
     "clearValuesOnlyDesc": "행은 유지하고 값만 초기화합니다",
     "deleteRowCompletely": "행 삭제",
-    "deleteRowCompletelyDesc": "행 전체를 삭제합니다"
+    "deleteRowCompletelyDesc": "행 전체를 삭제합니다",
+    "addRow": "행 추가",
+    "addColumn": "열 추가",
+    "noData": "데이터가 없습니다. 아래 \"행 추가\" 버튼을 클릭하세요."
   },
   "templateSelector": {
     "title": "새 시트 만들기",

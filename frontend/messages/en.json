@@ -425,7 +425,10 @@
     "clearValuesOnly": "Clear Values Only",
     "clearValuesOnlyDesc": "Keep the row but clear all values",
     "deleteRowCompletely": "Delete Row",
-    "deleteRowCompletelyDesc": "Remove the entire row"
+    "deleteRowCompletelyDesc": "Remove the entire row",
+    "addRow": "Add Row",
+    "addColumn": "Add Column",
+    "noData": "No data. Click the \"Add Row\" button below."
   },
   "templateSelector": {
     "title": "Create New Sheet",

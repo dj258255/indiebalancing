@@ -3114,7 +3114,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                   className="text-center py-12"
                   style={{ color: 'var(--text-tertiary)' }}
                 >
-                  데이터가 없습니다. 아래 &quot;행 추가&quot; 버튼을 클릭하세요.
+                  {t('table.noData')}
                 </td>
               </tr>
             ) : (
@@ -3313,7 +3313,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
           onMouseLeave={(e) => e.currentTarget.style.background = 'var(--primary-green)'}
         >
           <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          행 추가
+          {t('table.addRow')}
         </button>
 
         <button
@@ -3333,7 +3333,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
           }}
         >
           <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-          열 추가
+          {t('table.addColumn')}
         </button>
       </div>
 
