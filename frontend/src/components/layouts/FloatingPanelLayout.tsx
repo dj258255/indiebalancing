@@ -18,6 +18,7 @@ interface FloatingPanelLayoutProps {
   onResizeSE: (e: React.MouseEvent) => void;
   // 헤더 관련 props
   title: string;
+  description?: string;
   icon: LucideIcon;
   color: string;
   onClose: () => void;
@@ -35,6 +36,7 @@ export default function FloatingPanelLayout({
   onResizeS,
   onResizeSE,
   title,
+  description,
   icon,
   color,
   onClose,
@@ -63,6 +65,7 @@ export default function FloatingPanelLayout({
       {/* 공통 헤더 - 레이아웃에서 제공 */}
       <PanelHeader
         title={title}
+        description={description}
         icon={icon}
         color={color}
         onClose={onClose}

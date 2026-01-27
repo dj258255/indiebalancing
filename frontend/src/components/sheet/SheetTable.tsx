@@ -155,6 +155,16 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     memo: string;
   } | null>(null);
 
+  // 메모 호버 툴팁 상태
+  const [memoHover, setMemoHover] = useState<{
+    rowId: string;
+    columnId: string;
+    memo: string;
+    x: number;
+    y: number;
+  } | null>(null);
+  const memoHoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
   // 삭제 확인 다이얼로그 상태
   const [deleteColumnConfirm, setDeleteColumnConfirm] = useState<{
     columnId: string;
@@ -1624,6 +1634,9 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
 
   // 셀 이동 드래그 시작 (선택된 셀에서 다시 마우스다운 후 드래그)
   const handleMoveStart = useCallback((rowId: string, columnId: string, e: React.MouseEvent) => {
+    // 왼쪽 버튼만 처리
+    if (e.button !== 0) return;
+
     // 채우기 핸들 드래그 중이면 무시
     if (isFillDragging) return;
 
@@ -2311,6 +2324,9 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
             <div
               data-cell-id={cellKey(row.original.id, col.id)}
               onMouseDown={(e) => {
+                // 우클릭(컨텍스트 메뉴)은 onContextMenu에서 처리
+                if (e.button === 2) return;
+
                 // 셀 선택 모드일 때는 즉시 selectCell 호출
                 if (cellSelectionMode.active) {
                   selectCell(row.original.id, col.id, e);
@@ -2339,6 +2355,29 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                 // 이동 드래그 중일 때 처리
                 if (isMoveDragging) {
                   handleMoveDragEnter(row.original.id, col.id);
+                }
+              }}
+              onMouseMove={(e) => {
+                // 메모가 있으면 마우스 위치에 툴팁 표시
+                if (cellMemo) {
+                  if (memoHoverTimeoutRef.current) {
+                    clearTimeout(memoHoverTimeoutRef.current);
+                  }
+                  setMemoHover({
+                    rowId: row.original.id,
+                    columnId: col.id,
+                    memo: cellMemo,
+                    x: e.clientX,
+                    y: e.clientY,
+                  });
+                }
+              }}
+              onMouseLeave={() => {
+                // 메모 툴팁 숨김
+                if (cellMemo) {
+                  memoHoverTimeoutRef.current = setTimeout(() => {
+                    setMemoHover(null);
+                  }, 100);
                 }
               }}
               onClick={(e) => {
@@ -2384,12 +2423,6 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                 outlineOffset: '-2px',
                 willChange: 'background, outline',
               }}
-              title={
-                usesColumnFormula ? `열 수식: ${col.formula}\n값: ${value}` :
-                cellHasFormula ? `셀 수식: ${cellRawValue}\n값: ${value}` :
-                hasCellOverride ? `셀 오버라이드 값: ${value}` :
-                typeof value === 'number' ? String(value) : undefined
-              }
             >
               <span
                 className="truncate block"
@@ -2433,14 +2466,14 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
               {/* 메모 표시 (삼각형) */}
               {cellMemo && (
                 <div
-                  className="absolute top-0 right-0 w-0 h-0 cursor-pointer group/memo"
+                  className="absolute top-0 right-0 w-0 h-0 cursor-pointer"
                   style={{
                     borderLeft: '12px solid transparent',
                     borderTop: '12px solid var(--warning)',
                   }}
-                  title={cellMemo}
                   onClick={(e) => {
                     e.stopPropagation();
+                    setMemoHover(null);
                     setMemoModal({
                       rowId: row.original.id,
                       columnId: col.id,
@@ -2950,6 +2983,8 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
             setContextMenu(null);
             setColumnContextMenu(null);
             setRowContextMenu(null);
+            // 우클릭은 컨텍스트 메뉴 닫기만 하고 드래그 선택 시작하지 않음
+            if (e.button === 2) return;
             // 외부 드래그 선택 시작
             handleContainerMouseDown(e);
           }}
@@ -3592,6 +3627,27 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
           className="fixed inset-0 z-[9998]"
           onClick={() => setResizeContextMenu(null)}
         />
+      )}
+
+      {/* 메모 호버 툴팁 */}
+      {memoHover && (
+        <div
+          className="fixed z-[60] max-w-xs p-3 rounded-lg shadow-lg pointer-events-none"
+          style={{
+            left: Math.min(memoHover.x + 12, window.innerWidth - 260),
+            top: memoHover.y + 16,
+            background: 'var(--bg-primary)',
+            border: '1px solid var(--warning)',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.15)',
+          }}
+        >
+          <div className="flex items-start gap-2">
+            <StickyNote className="w-4 h-4 flex-shrink-0 mt-0.5" style={{ color: 'var(--warning)' }} />
+            <p className="text-sm whitespace-pre-wrap break-words" style={{ color: 'var(--text-primary)' }}>
+              {memoHover.memo}
+            </p>
+          </div>
+        </div>
       )}
 
       {/* 메모 모달 - 크기 확대 및 드래그 핸들 추가 */}

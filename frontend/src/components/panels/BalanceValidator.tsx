@@ -8,13 +8,12 @@ import {
   AlertTriangle,
   CheckCircle,
   TrendingUp,
-  X,
   Target,
   Zap,
   Play,
-  HelpCircle,
-  ChevronDown,
-  ChevronUp,
+  Users,
+  Plus,
+  Trash2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
@@ -28,43 +27,41 @@ interface BalanceValidatorProps {
   setShowHelp?: (value: boolean) => void;
 }
 
-// 역할별 기대 범위
 const ROLE_EXPECTATIONS = {
   tank: {
     name: '탱커',
     icon: Shield,
     color: '#3b82f6',
-    dpsRange: [50, 90],      // 기준의 50-90%
-    ehpRange: [180, 250],    // 기준의 180-250%
+    dpsRange: [50, 90],
+    ehpRange: [180, 250],
     description: '높은 생존력, 낮은 화력',
   },
   dps: {
     name: '딜러',
     icon: Swords,
     color: '#ef4444',
-    dpsRange: [130, 200],    // 기준의 130-200%
-    ehpRange: [60, 90],      // 기준의 60-90%
+    dpsRange: [130, 200],
+    ehpRange: [60, 90],
     description: '높은 화력, 낮은 생존력',
   },
   support: {
     name: '서포터',
     icon: Heart,
     color: '#10b981',
-    dpsRange: [40, 70],      // 기준의 40-70%
-    ehpRange: [90, 130],     // 기준의 90-130%
+    dpsRange: [40, 70],
+    ehpRange: [90, 130],
     description: '유틸리티 중심, 중간 생존력',
   },
   balanced: {
     name: '밸런스',
     icon: Target,
     color: '#f59e0b',
-    dpsRange: [90, 110],     // 기준의 90-110%
-    ehpRange: [90, 110],     // 기준의 90-110%
+    dpsRange: [90, 110],
+    ehpRange: [90, 110],
     description: '균형잡힌 스탯',
   },
 };
 
-// 기준값 (앵커)
 const BASE_STATS = {
   hp: 1000,
   atk: 100,
@@ -85,36 +82,18 @@ interface UnitData {
   critDamage: number;
 }
 
-// DPS 계산
 function calculateDPS(unit: UnitData): number {
   const effectiveDamage = unit.atk * (1 + unit.critRate * (unit.critDamage - 1));
   return effectiveDamage * unit.attackSpeed;
 }
 
-// EHP 계산
 function calculateEHP(unit: UnitData): number {
   return unit.hp * (1 + unit.def / 100);
 }
 
-// 기준 DPS/EHP
-const BASE_DPS = calculateDPS({
-  name: '',
-  role: 'balanced',
-  ...BASE_STATS,
-});
+const BASE_DPS = calculateDPS({ name: '', role: 'balanced', ...BASE_STATS });
+const BASE_EHP = calculateEHP({ name: '', role: 'balanced', hp: BASE_STATS.hp, atk: BASE_STATS.atk, def: BASE_STATS.def, attackSpeed: BASE_STATS.attackSpeed, critRate: BASE_STATS.critRate, critDamage: BASE_STATS.critDamage });
 
-const BASE_EHP = calculateEHP({
-  name: '',
-  role: 'balanced',
-  hp: BASE_STATS.hp,
-  atk: BASE_STATS.atk,
-  def: BASE_STATS.def,
-  attackSpeed: BASE_STATS.attackSpeed,
-  critRate: BASE_STATS.critRate,
-  critDamage: BASE_STATS.critDamage,
-});
-
-// 밸런스 검증
 function validateUnit(unit: UnitData) {
   const dps = calculateDPS(unit);
   const ehp = calculateEHP(unit);
@@ -141,30 +120,17 @@ function validateUnit(unit: UnitData) {
     }
   }
 
-  // 총 가치 계산 (DPS + EHP 가중 평균)
   const totalValue = (dpsPercent * 0.5 + ehpPercent * 0.5);
 
-  return {
-    dps,
-    ehp,
-    dpsPercent,
-    ehpPercent,
-    dpsInRange,
-    ehpInRange,
-    totalValue,
-    isBalanced: issues.length === 0,
-    issues,
-  };
+  return { dps, ehp, dpsPercent, ehpPercent, dpsInRange, ehpInRange, totalValue, isBalanced: issues.length === 0, issues };
 }
 
-// 1:1 시뮬레이션
 function simulate1v1(unitA: UnitData, unitB: UnitData): { winner: string; rounds: number; hpRemaining: number } {
   const dpsA = calculateDPS(unitA);
   const dpsB = calculateDPS(unitB);
   const ehpA = calculateEHP(unitA);
   const ehpB = calculateEHP(unitB);
 
-  // 서로에게 주는 실제 데미지 (방어력 감소 적용)
   const dmgAtoB = dpsA * (100 / (100 + unitB.def));
   const dmgBtoA = dpsB * (100 / (100 + unitA.def));
 
@@ -184,34 +150,13 @@ export default function BalanceValidator({ onClose, showHelp = false, setShowHel
   const t = useTranslations('balanceValidator');
   useEscapeKey(onClose ?? (() => {}), !!onClose);
   const [units, setUnits] = useState<UnitData[]>([
-    {
-      name: '전사',
-      role: 'balanced',
-      hp: 1000,
-      atk: 100,
-      def: 50,
-      attackSpeed: 1.0,
-      critRate: 0.05,
-      critDamage: 1.5,
-    },
+    { name: '전사', role: 'balanced', hp: 1000, atk: 100, def: 50, attackSpeed: 1.0, critRate: 0.05, critDamage: 1.5 },
   ]);
   const [selectedUnits, setSelectedUnits] = useState<[number, number]>([0, 0]);
   const [simResult, setSimResult] = useState<{ winner: string; rounds: number; hpRemaining: number } | null>(null);
 
   const addUnit = () => {
-    setUnits([
-      ...units,
-      {
-        name: `유닛 ${units.length + 1}`,
-        role: 'balanced',
-        hp: 1000,
-        atk: 100,
-        def: 50,
-        attackSpeed: 1.0,
-        critRate: 0.05,
-        critDamage: 1.5,
-      },
-    ]);
+    setUnits([...units, { name: `유닛 ${units.length + 1}`, role: 'balanced', hp: 1000, atk: 100, def: 50, attackSpeed: 1.0, critRate: 0.05, critDamage: 1.5 }]);
   };
 
   const updateUnit = (index: number, field: keyof UnitData, value: string | number) => {
@@ -225,15 +170,12 @@ export default function BalanceValidator({ onClose, showHelp = false, setShowHel
   };
 
   const removeUnit = (index: number) => {
-    if (units.length > 1) {
-      setUnits(units.filter((_, i) => i !== index));
-    }
+    if (units.length > 1) setUnits(units.filter((_, i) => i !== index));
   };
 
   const runSimulation = () => {
     if (units.length >= 2 && selectedUnits[0] !== selectedUnits[1]) {
-      const result = simulate1v1(units[selectedUnits[0]], units[selectedUnits[1]]);
-      setSimResult(result);
+      setSimResult(simulate1v1(units[selectedUnits[0]], units[selectedUnits[1]]));
     }
   };
 
@@ -244,447 +186,336 @@ export default function BalanceValidator({ onClose, showHelp = false, setShowHel
     const avg = totalValues.reduce((a, b) => a + b, 0) / totalValues.length;
     const variance = totalValues.reduce((acc, v) => acc + Math.pow(v - avg, 2), 0) / totalValues.length;
     const stdDev = Math.sqrt(variance);
-    return {
-      average: avg,
-      stdDev,
-      isBalanced: stdDev < 15, // 표준편차 15% 이내면 밸런스 양호
-    };
+    return { average: avg, stdDev, isBalanced: stdDev < 15 };
   }, [validations]);
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-3 pb-12 space-y-3 overflow-y-auto overflow-x-hidden flex-1">
-          {/* 도움말 섹션 */}
-          {showHelp && (
-            <div className="mb-4 p-3 rounded-lg animate-slideDown" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
-              <div className="space-y-2">
-                <div className="flex items-start gap-2">
-                  <div className="w-5 h-5 rounded flex items-center justify-center shrink-0 mt-0.5" style={{ background: `${PANEL_COLOR}20` }}>
-                    <Shield className="w-3 h-3" style={{ color: PANEL_COLOR }} />
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{t('tooltipTitle')}</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{t('tooltipDesc')}</p>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                    <span className="font-medium" style={{ color: PANEL_COLOR }}>DPS</span>
-                    <span className="ml-1" style={{ color: 'var(--text-tertiary)' }}>{t('tooltipFeature1')}</span>
-                  </div>
-                  <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                    <span className="font-medium" style={{ color: PANEL_COLOR }}>EHP</span>
-                    <span className="ml-1" style={{ color: 'var(--text-tertiary)' }}>{t('tooltipFeature2')}</span>
-                  </div>
-                </div>
+      <div className="p-4 space-y-5 overflow-y-auto overflow-x-hidden flex-1 scrollbar-slim">
+        {/* 도움말 섹션 */}
+        {showHelp && (
+          <div className="glass-card p-4 animate-slideDown space-y-4">
+            <div className="flex items-start gap-3">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: `linear-gradient(135deg, ${PANEL_COLOR}, ${PANEL_COLOR}cc)` }}
+              >
+                <Shield className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{t('tooltipTitle')}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{t('tooltipDesc')}</p>
               </div>
             </div>
-          )}
-          {/* 기준값 표시 */}
-          <div
-            className="rounded-lg p-3 text-xs"
-            style={{ background: 'var(--bg-tertiary)' }}
-          >
-            <div className="font-medium mb-2" style={{ color: 'var(--text-primary)' }}>
-              {t('baseValue')}
-            </div>
-            <div className="grid grid-cols-3 gap-2" style={{ color: 'var(--text-secondary)' }}>
-              <div>HP: {BASE_STATS.hp}</div>
-              <div>ATK: {BASE_STATS.atk}</div>
-              <div>DEF: {BASE_STATS.def}</div>
-              <div>{t('baseDps')}: {BASE_DPS.toFixed(0)}</div>
-              <div>{t('baseEhp')}: {BASE_EHP.toFixed(0)}</div>
-              <div>{t('atkSpeed')}: {BASE_STATS.attackSpeed}</div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="glass-section p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Zap className="w-3.5 h-3.5" style={{ color: '#f59e0b' }} />
+                  <span className="font-medium text-xs" style={{ color: 'var(--text-primary)' }}>DPS</span>
+                </div>
+                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('tooltipFeature1')}</p>
+              </div>
+              <div className="glass-section p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Shield className="w-3.5 h-3.5" style={{ color: '#3b82f6' }} />
+                  <span className="font-medium text-xs" style={{ color: 'var(--text-primary)' }}>EHP</span>
+                </div>
+                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('tooltipFeature2')}</p>
+              </div>
             </div>
           </div>
+        )}
 
-          {/* 역할별 기대치 */}
+        {/* 기준값 표시 */}
+        <div className="glass-card p-4">
+          <div className="flex items-center gap-2 mb-3">
+            <Target className="w-4 h-4" style={{ color: PANEL_COLOR }} />
+            <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{t('baseValue')}</span>
+          </div>
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: 'HP', value: BASE_STATS.hp },
+              { label: 'ATK', value: BASE_STATS.atk },
+              { label: 'DEF', value: BASE_STATS.def },
+              { label: t('baseDps'), value: BASE_DPS.toFixed(0) },
+              { label: t('baseEhp'), value: BASE_EHP.toFixed(0) },
+              { label: t('atkSpeed'), value: BASE_STATS.attackSpeed },
+            ].map(({ label, value }) => (
+              <div key={label} className="glass-section p-2 text-center">
+                <div className="text-[10px] font-medium" style={{ color: 'var(--text-tertiary)' }}>{label}</div>
+                <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{value}</div>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* 역할별 기대치 */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4" style={{ color: PANEL_COLOR }} />
+            <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>역할별 기대치</span>
+          </div>
           <div className="grid grid-cols-2 gap-2">
             {Object.entries(ROLE_EXPECTATIONS).map(([key, role]) => {
               const Icon = role.icon;
               return (
                 <div
                   key={key}
-                  className="rounded-lg p-2 text-xs border"
-                  style={{ borderColor: role.color, borderLeftWidth: '3px' }}
+                  className="glass-card p-3"
+                  style={{ borderLeft: `3px solid ${role.color}` }}
                 >
-                  <div className="flex items-center gap-1 mb-1">
-                    <Icon className="w-3.5 h-3.5" style={{ color: role.color }} />
-                    <span className="font-medium" style={{ color: 'var(--text-primary)' }}>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <Icon className="w-4 h-4" style={{ color: role.color }} />
+                    <span className="font-semibold text-xs" style={{ color: 'var(--text-primary)' }}>
                       {t(`roles.${key}`)}
                     </span>
                   </div>
-                  <div style={{ color: 'var(--text-tertiary)' }}>
-                    DPS: {role.dpsRange[0]}-{role.dpsRange[1]}% | EHP: {role.ehpRange[0]}-{role.ehpRange[1]}%
+                  <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                    DPS: {role.dpsRange[0]}-{role.dpsRange[1]}%
+                  </div>
+                  <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                    EHP: {role.ehpRange[0]}-{role.ehpRange[1]}%
                   </div>
                 </div>
               );
             })}
           </div>
+        </div>
 
-          {/* 유닛 목록 */}
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <h4 className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+        {/* 유닛 목록 */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Swords className="w-4 h-4" style={{ color: PANEL_COLOR }} />
+              <h4 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
                 {t('unitValidation')}
               </h4>
-              <button
-                onClick={addUnit}
-                className="text-xs px-2 py-1 rounded"
-                style={{ background: 'var(--accent)', color: 'white' }}
-              >
-                {t('addUnit')}
-              </button>
             </div>
+            <button
+              onClick={addUnit}
+              className="glass-button-primary flex items-center gap-1.5 !px-3 !py-1.5 text-xs"
+              style={{ background: `linear-gradient(135deg, ${PANEL_COLOR}, ${PANEL_COLOR}dd)` }}
+            >
+              <Plus className="w-3.5 h-3.5" />
+              {t('addUnit')}
+            </button>
+          </div>
 
-            {units.map((unit, index) => {
-              const validation = validations[index];
-              const role = ROLE_EXPECTATIONS[unit.role];
-              const RoleIcon = role.icon;
+          {units.map((unit, index) => {
+            const validation = validations[index];
+            const role = ROLE_EXPECTATIONS[unit.role];
+            const RoleIcon = role.icon;
 
-              return (
-                <div
-                  key={index}
-                  className="border rounded-lg p-3"
-                  style={{
-                    borderColor: validation.isBalanced ? 'var(--success)' : 'var(--warning)',
-                    background: 'var(--bg-primary)',
-                  }}
-                >
-                  {/* 유닛 기본 정보 */}
-                  <div className="flex items-center gap-2 mb-3">
-                    <input
-                      type="text"
-                      value={unit.name}
-                      onChange={(e) => updateUnit(index, 'name', e.target.value)}
-                      className="flex-1 px-2 py-1 rounded text-sm font-medium"
-                      style={{ background: 'var(--bg-tertiary)' }}
-                    />
-                    <select
-                      value={unit.role}
-                      onChange={(e) => updateUnit(index, 'role', e.target.value)}
-                      className="px-2 py-1 rounded text-xs"
-                      style={{ background: 'var(--bg-tertiary)' }}
-                    >
-                      {Object.entries(ROLE_EXPECTATIONS).map(([key]) => (
-                        <option key={key} value={key}>{t(`roles.${key}`)}</option>
-                      ))}
-                    </select>
+            return (
+              <div
+                key={index}
+                className="glass-card p-4"
+                style={{
+                  borderLeft: `3px solid ${validation.isBalanced ? '#22c55e' : '#f59e0b'}`,
+                }}
+              >
+                {/* 유닛 기본 정보 */}
+                <div className="flex items-center gap-2 mb-4">
+                  <input
+                    type="text"
+                    value={unit.name}
+                    onChange={(e) => updateUnit(index, 'name', e.target.value)}
+                    className="glass-input flex-1 text-sm font-medium"
+                  />
+                  <select
+                    value={unit.role}
+                    onChange={(e) => updateUnit(index, 'role', e.target.value)}
+                    className="glass-select !py-2 text-xs"
+                  >
+                    {Object.entries(ROLE_EXPECTATIONS).map(([key]) => (
+                      <option key={key} value={key}>{t(`roles.${key}`)}</option>
+                    ))}
+                  </select>
+                  <div
+                    className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
+                    style={{ background: `${role.color}20` }}
+                  >
                     <RoleIcon className="w-4 h-4" style={{ color: role.color }} />
-                    {units.length > 1 && (
-                      <button
-                        onClick={() => removeUnit(index)}
-                        className="text-xs px-2 py-1 rounded"
-                        style={{ color: 'var(--error)' }}
-                      >
-                        {t('delete')}
-                      </button>
-                    )}
                   </div>
+                  {units.length > 1 && (
+                    <button
+                      onClick={() => removeUnit(index)}
+                      className="glass-button !p-2"
+                      style={{ color: '#ef4444' }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  )}
+                </div>
 
-                  {/* 스탯 입력 */}
-                  <div className="grid grid-cols-3 gap-2 mb-3">
-                    {[
-                      { key: 'hp', label: t('stats.hp') },
-                      { key: 'atk', label: t('stats.atk') },
-                      { key: 'def', label: t('stats.def') },
-                      { key: 'attackSpeed', label: t('stats.atkSpeed') },
-                      { key: 'critRate', label: t('stats.critRate') },
-                      { key: 'critDamage', label: t('stats.critDmg') },
-                    ].map(({ key, label }) => (
-                      <div key={key}>
-                        <label className="text-[10px] block mb-0.5" style={{ color: 'var(--text-tertiary)' }}>
-                          {label}
-                        </label>
-                        <input
-                          type="number"
-                          step={key === 'critRate' ? '0.01' : key === 'attackSpeed' || key === 'critDamage' ? '0.1' : '10'}
-                          value={unit[key as keyof UnitData]}
-                          onChange={(e) => updateUnit(index, key as keyof UnitData, e.target.value)}
-                          className="w-full px-2 py-1 rounded text-xs"
-                          style={{ background: 'var(--bg-tertiary)' }}
-                        />
+                {/* 스탯 입력 */}
+                <div className="grid grid-cols-3 gap-2 mb-4">
+                  {[
+                    { key: 'hp', label: t('stats.hp'), step: '10' },
+                    { key: 'atk', label: t('stats.atk'), step: '10' },
+                    { key: 'def', label: t('stats.def'), step: '10' },
+                    { key: 'attackSpeed', label: t('stats.atkSpeed'), step: '0.1' },
+                    { key: 'critRate', label: t('stats.critRate'), step: '0.01' },
+                    { key: 'critDamage', label: t('stats.critDmg'), step: '0.1' },
+                  ].map(({ key, label, step }) => (
+                    <div key={key}>
+                      <label className="text-[10px] block mb-1 font-medium" style={{ color: 'var(--text-tertiary)' }}>
+                        {label}
+                      </label>
+                      <input
+                        type="number"
+                        step={step}
+                        value={unit[key as keyof UnitData]}
+                        onChange={(e) => updateUnit(index, key as keyof UnitData, e.target.value)}
+                        className="glass-input w-full !py-1.5 text-xs text-center"
+                      />
+                    </div>
+                  ))}
+                </div>
+
+                {/* 검증 결과 */}
+                <div className="grid grid-cols-2 gap-2 mb-3">
+                  <div
+                    className="glass-section p-3"
+                    style={{
+                      background: validation.dpsInRange ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                    }}
+                  >
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Zap className="w-3.5 h-3.5" style={{ color: validation.dpsInRange ? '#22c55e' : '#f59e0b' }} />
+                      <span className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
+                        DPS: {validation.dps.toFixed(0)}
+                      </span>
+                    </div>
+                    <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                      {validation.dpsPercent.toFixed(0)}% ({t('expected')}: {role.dpsRange[0]}-{role.dpsRange[1]}%)
+                    </div>
+                  </div>
+                  <div
+                    className="glass-section p-3"
+                    style={{
+                      background: validation.ehpInRange ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                    }}
+                  >
+                    <div className="flex items-center gap-1.5 mb-1">
+                      <Shield className="w-3.5 h-3.5" style={{ color: validation.ehpInRange ? '#22c55e' : '#f59e0b' }} />
+                      <span className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
+                        EHP: {validation.ehp.toFixed(0)}
+                      </span>
+                    </div>
+                    <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                      {validation.ehpPercent.toFixed(0)}% ({t('expected')}: {role.ehpRange[0]}-{role.ehpRange[1]}%)
+                    </div>
+                  </div>
+                </div>
+
+                {/* 경고/성공 메시지 */}
+                {validation.isBalanced ? (
+                  <div className="flex items-center gap-1.5 text-xs" style={{ color: '#22c55e' }}>
+                    <CheckCircle className="w-4 h-4" />
+                    <span className="font-medium">{t('roleBalanced')}</span>
+                  </div>
+                ) : (
+                  <div className="space-y-1">
+                    {validation.issues.map((issue, i) => (
+                      <div key={i} className="flex items-center gap-1.5 text-xs" style={{ color: '#f59e0b' }}>
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        <span>{issue}</span>
                       </div>
                     ))}
                   </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
 
-                  {/* 검증 결과 */}
-                  <div className="grid grid-cols-2 gap-2 mb-2">
-                    <div
-                      className={cn('rounded p-2 text-xs')}
-                      style={{
-                        background: validation.dpsInRange ? 'var(--success-light)' : 'var(--warning-light)',
-                      }}
-                    >
-                      <div className="flex items-center gap-1">
-                        <Zap className="w-3 h-3" />
-                        <span className="font-medium">DPS: {validation.dps.toFixed(0)}</span>
-                      </div>
-                      <div style={{ color: 'var(--text-tertiary)' }}>
-                        {validation.dpsPercent.toFixed(0)}% ({t('expected')}: {role.dpsRange[0]}-{role.dpsRange[1]}%)
-                      </div>
-                    </div>
-                    <div
-                      className={cn('rounded p-2 text-xs')}
-                      style={{
-                        background: validation.ehpInRange ? 'var(--success-light)' : 'var(--warning-light)',
-                      }}
-                    >
-                      <div className="flex items-center gap-1">
-                        <Shield className="w-3 h-3" />
-                        <span className="font-medium">EHP: {validation.ehp.toFixed(0)}</span>
-                      </div>
-                      <div style={{ color: 'var(--text-tertiary)' }}>
-                        {validation.ehpPercent.toFixed(0)}% ({t('expected')}: {role.ehpRange[0]}-{role.ehpRange[1]}%)
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* 경고/성공 메시지 */}
-                  {validation.isBalanced ? (
-                    <div
-                      className="flex items-center gap-1 text-xs"
-                      style={{ color: 'var(--success)' }}
-                    >
-                      <CheckCircle className="w-3.5 h-3.5" />
-                      <span>{t('roleBalanced')}</span>
-                    </div>
-                  ) : (
-                    <div className="space-y-1">
-                      {validation.issues.map((issue, i) => (
-                        <div
-                          key={i}
-                          className="flex items-center gap-1 text-xs"
-                          style={{ color: 'var(--warning)' }}
-                        >
-                          <AlertTriangle className="w-3.5 h-3.5" />
-                          <span>{issue}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-
-          {/* 1:1 시뮬레이션 */}
-          {units.length >= 2 && (
-            <div
-              className="rounded-lg p-3 border"
-              style={{ borderColor: 'var(--border-primary)' }}
-            >
-              <h4 className="font-medium text-sm mb-3" style={{ color: 'var(--text-primary)' }}>
+        {/* 1:1 시뮬레이션 */}
+        {units.length >= 2 && (
+          <div className="glass-card p-4">
+            <div className="flex items-center gap-2 mb-3">
+              <Play className="w-4 h-4" style={{ color: PANEL_COLOR }} />
+              <h4 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
                 {t('simulation1v1')}
               </h4>
-              <div className="flex items-center gap-2 mb-3">
-                <select
-                  value={selectedUnits[0]}
-                  onChange={(e) => setSelectedUnits([Number(e.target.value), selectedUnits[1]])}
-                  className="flex-1 px-2 py-1 rounded text-sm"
-                  style={{ background: 'var(--bg-tertiary)' }}
-                >
-                  {units.map((u, i) => (
-                    <option key={i} value={i}>{u.name}</option>
-                  ))}
-                </select>
-                <span style={{ color: 'var(--text-tertiary)' }}>VS</span>
-                <select
-                  value={selectedUnits[1]}
-                  onChange={(e) => setSelectedUnits([selectedUnits[0], Number(e.target.value)])}
-                  className="flex-1 px-2 py-1 rounded text-sm"
-                  style={{ background: 'var(--bg-tertiary)' }}
-                >
-                  {units.map((u, i) => (
-                    <option key={i} value={i}>{u.name}</option>
-                  ))}
-                </select>
-                <button
-                  onClick={runSimulation}
-                  disabled={selectedUnits[0] === selectedUnits[1]}
-                  className="px-3 py-1 rounded text-sm font-medium disabled:opacity-50"
-                  style={{ background: 'var(--accent)', color: 'white' }}
-                >
-                  <Play className="w-4 h-4" />
-                </button>
-              </div>
-              {simResult && (
-                <div
-                  className="rounded p-2 text-sm"
-                  style={{ background: 'var(--bg-tertiary)' }}
-                >
-                  <div className="font-medium" style={{ color: 'var(--text-primary)' }}>
-                    {t('winner')}: {simResult.winner}
-                  </div>
-                  <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                    {simResult.rounds}{t('afterSeconds')}: {simResult.hpRemaining.toFixed(0)}
-                  </div>
+            </div>
+            <div className="flex items-center gap-2 mb-3">
+              <select
+                value={selectedUnits[0]}
+                onChange={(e) => setSelectedUnits([Number(e.target.value), selectedUnits[1]])}
+                className="glass-select flex-1 text-sm"
+              >
+                {units.map((u, i) => (
+                  <option key={i} value={i}>{u.name}</option>
+                ))}
+              </select>
+              <span className="text-sm font-bold px-2" style={{ color: 'var(--text-tertiary)' }}>VS</span>
+              <select
+                value={selectedUnits[1]}
+                onChange={(e) => setSelectedUnits([selectedUnits[0], Number(e.target.value)])}
+                className="glass-select flex-1 text-sm"
+              >
+                {units.map((u, i) => (
+                  <option key={i} value={i}>{u.name}</option>
+                ))}
+              </select>
+              <button
+                onClick={runSimulation}
+                disabled={selectedUnits[0] === selectedUnits[1]}
+                className="glass-button-primary !p-2.5 disabled:opacity-50"
+              >
+                <Play className="w-4 h-4" />
+              </button>
+            </div>
+            {simResult && (
+              <div className="glass-section p-3">
+                <div className="font-bold text-sm mb-1" style={{ color: PANEL_COLOR }}>
+                  {t('winner')}: {simResult.winner}
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* 전체 밸런스 요약 */}
-          <div
-            className="rounded-lg p-3"
-            style={{
-              background: overallBalance.isBalanced ? 'var(--success-light)' : 'var(--warning-light)',
-            }}
-          >
-            <div className="flex items-center gap-2 mb-1">
-              <TrendingUp className="w-4 h-4" />
-              <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
-                {t('overallBalance')}
-              </span>
-            </div>
-            <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-              {t('avgValue')}: {overallBalance.average.toFixed(1)}% |
-              {t('stdDev')}: {overallBalance.stdDev.toFixed(1)}%
-              {overallBalance.isBalanced ? ` (${t('good')})` : ` (${t('needsAdjust')})`}
-            </div>
+                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                  {simResult.rounds}{t('afterSeconds')}: {simResult.hpRemaining.toFixed(0)}
+                </div>
+              </div>
+            )}
           </div>
+        )}
 
-          {/* 도움말 */}
-          {showHelp && setShowHelp && (
-            <div
-              className="rounded-lg p-4 border space-y-4 animate-fadeIn"
-              style={{ background: 'var(--bg-secondary)', borderColor: 'var(--accent)' }}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <HelpCircle className="w-5 h-5" style={{ color: 'var(--accent)' }} />
-                  <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-                    {t('helpTitle')}
-                  </span>
-                </div>
-                <button
-                  onClick={() => setShowHelp(false)}
-                  className="p-1 rounded hover:bg-black/10 dark:hover:bg-white/10 transition-colors"
-                  style={{ color: 'var(--text-tertiary)' }}
-                >
-                  <ChevronUp className="w-4 h-4" />
-                </button>
-              </div>
-
-              {/* 개요 */}
-              <div className="space-y-1">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpOverview')}</div>
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  {t('helpOverviewDesc')}
-                </p>
-              </div>
-
-              {/* 사용 방법 */}
-              <div className="space-y-2">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpUsage')}</div>
-                <div className="space-y-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  <div className="flex gap-2">
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
-                          style={{ background: 'var(--accent)', color: 'white' }}>1</span>
-                    <span>{t('helpStep1')}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
-                          style={{ background: 'var(--accent)', color: 'white' }}>2</span>
-                    <span>{t('helpStep2')}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
-                          style={{ background: 'var(--accent)', color: 'white' }}>3</span>
-                    <span>{t('helpStep3')}</span>
-                  </div>
-                  <div className="flex gap-2">
-                    <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0"
-                          style={{ background: 'var(--accent)', color: 'white' }}>4</span>
-                    <span>{t('helpStep4')}</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* 역할별 기대치 설명 */}
-              <div className="space-y-2">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpRoles')}</div>
-                <div className="grid grid-cols-2 gap-2 text-xs">
-                  <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="flex items-center gap-1 mb-1">
-                      <Shield className="w-3 h-3" style={{ color: '#3b82f6' }} />
-                      <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{t('roles.tank')}</span>
-                    </div>
-                    <div style={{ color: 'var(--text-tertiary)' }}>
-                      EHP 180-250%, DPS 50-90%<br/>
-                      {t('helpTankDesc')}
-                    </div>
-                  </div>
-                  <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="flex items-center gap-1 mb-1">
-                      <Swords className="w-3 h-3" style={{ color: '#ef4444' }} />
-                      <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{t('roles.dps')}</span>
-                    </div>
-                    <div style={{ color: 'var(--text-tertiary)' }}>
-                      DPS 130-200%, EHP 60-90%<br/>
-                      {t('helpDpsDesc')}
-                    </div>
-                  </div>
-                  <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="flex items-center gap-1 mb-1">
-                      <Heart className="w-3 h-3" style={{ color: '#10b981' }} />
-                      <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{t('roles.support')}</span>
-                    </div>
-                    <div style={{ color: 'var(--text-tertiary)' }}>
-                      DPS 40-70%, EHP 90-130%<br/>
-                      {t('helpSupportDesc')}
-                    </div>
-                  </div>
-                  <div className="p-2 rounded" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="flex items-center gap-1 mb-1">
-                      <Target className="w-3 h-3" style={{ color: '#f59e0b' }} />
-                      <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{t('roles.balanced')}</span>
-                    </div>
-                    <div style={{ color: 'var(--text-tertiary)' }}>
-                      DPS 90-110%, EHP 90-110%<br/>
-                      {t('helpBalancedDesc')}
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* 1:1 시뮬레이션 설명 */}
-              <div className="space-y-1">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpSimulation')}</div>
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  {t('helpSimulationDesc')}
-                </p>
-              </div>
-
-              {/* 팁 */}
-              <div className="space-y-1">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('helpTips')}</div>
-                <ul className="text-xs space-y-0.5" style={{ color: 'var(--text-secondary)' }}>
-                  <li>• {t('helpTip1')}</li>
-                  <li>• {t('helpTip2')}</li>
-                  <li>• {t('helpTip3')}</li>
-                  <li>• {t('helpTip4')}</li>
-                </ul>
-              </div>
+        {/* 전체 밸런스 요약 */}
+        <div
+          className="glass-card p-4"
+          style={{
+            background: overallBalance.isBalanced
+              ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05))'
+              : 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.05))',
+          }}
+        >
+          <div className="flex items-center gap-2 mb-2">
+            <TrendingUp className="w-4 h-4" style={{ color: overallBalance.isBalanced ? '#22c55e' : '#f59e0b' }} />
+            <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
+              {t('overallBalance')}
+            </span>
+          </div>
+          <div className="flex items-center gap-4 text-xs">
+            <div>
+              <span style={{ color: 'var(--text-tertiary)' }}>{t('avgValue')}: </span>
+              <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{overallBalance.average.toFixed(1)}%</span>
             </div>
-          )}
-
-          {/* 간단 도움말 (접힌 상태) */}
-          {!showHelp && setShowHelp && (
-            <div
-              className="rounded-lg p-3 text-xs border cursor-pointer hover:border-opacity-70 transition-colors"
-              style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-primary)' }}
-              onClick={() => setShowHelp(true)}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5" style={{ color: 'var(--text-secondary)' }}>
-                  <HelpCircle className="w-3.5 h-3.5" />
-                  <span>{t('showHelp')}</span>
-                </div>
-                <ChevronDown className="w-3.5 h-3.5" style={{ color: 'var(--text-tertiary)' }} />
-              </div>
+            <div>
+              <span style={{ color: 'var(--text-tertiary)' }}>{t('stdDev')}: </span>
+              <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{overallBalance.stdDev.toFixed(1)}%</span>
             </div>
-          )}
+            <span
+              className="glass-badge ml-auto"
+              style={{
+                background: overallBalance.isBalanced ? 'rgba(34, 197, 94, 0.2)' : 'rgba(245, 158, 11, 0.2)',
+                color: overallBalance.isBalanced ? '#22c55e' : '#f59e0b',
+              }}
+            >
+              {overallBalance.isBalanced ? t('good') : t('needsAdjust')}
+            </span>
+          </div>
+        </div>
       </div>
     </div>
   );

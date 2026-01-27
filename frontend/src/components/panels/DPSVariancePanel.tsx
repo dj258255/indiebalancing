@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
-import { BarChart2, Play, RefreshCw, Info, TrendingUp, TrendingDown, Minus, Sword, Shield as ShieldIcon, Maximize2, X, Grid3X3 } from 'lucide-react';
+import { BarChart2, Play, RefreshCw, Info, TrendingUp, TrendingDown, Minus, Sword, Shield as ShieldIcon, Maximize2, X, Grid3X3, Settings, Target } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { cn } from '@/lib/utils';
 import { useProjectStore } from '@/stores/projectStore';
@@ -26,12 +26,18 @@ interface DPSVariancePanelProps {
 
 type SimMode = 'dps' | 'ttk' | 'compare';
 
+const PANEL_COLOR = '#f97316';
+const MODE_COLORS = {
+  dps: '#3b82f6',
+  ttk: '#22c55e',
+  compare: '#8b5cf6',
+};
+
 export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHelp }: DPSVariancePanelProps) {
   const t = useTranslations('dpsVariance');
   const tCommon = useTranslations('common');
   useEscapeKey(onClose);
 
-  // Simulation mode
   const [mode, setMode] = useState<SimMode>('dps');
 
   // Build A configuration
@@ -46,7 +52,7 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
   // TTK specific
   const [targetHP, setTargetHP] = useState(10000);
 
-  // Build B configuration (for compare mode)
+  // Build B configuration
   const [damageB, setDamageB] = useState(120);
   const [attackSpeedB, setAttackSpeedB] = useState(0.8);
   const [critRateB, setCritRateB] = useState(15);
@@ -59,8 +65,6 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
   const [ttkResult, setTtkResult] = useState<TTKDistribution | null>(null);
   const [compareResult, setCompareResult] = useState<BuildComparisonResult | null>(null);
   const [dpsResultB, setDpsResultB] = useState<DPSDistribution | null>(null);
-
-  // Fullscreen state
   const [fullscreenChart, setFullscreenChart] = useState<'dps' | 'ttk' | 'compareA' | 'compareB' | null>(null);
 
   const configA: DPSSimulationConfig = useMemo(() => ({
@@ -85,8 +89,6 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
 
   const runSimulation = () => {
     setIsSimulating(true);
-
-    // Use setTimeout to allow UI to update before heavy computation
     setTimeout(() => {
       try {
         if (mode === 'dps') {
@@ -128,12 +130,10 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
     setDpsResultB(null);
   };
 
-  // Render histogram
   const renderHistogram = (histogram: { min: number; max: number; count: number; percentage: number }[], color: string = '#3b82f6') => {
     const maxPercent = Math.max(...histogram.map(h => h.percentage));
-
     return (
-      <div className="flex items-end gap-0.5 h-24 sm:h-32 mt-2">
+      <div className="flex items-end gap-0.5 h-28 mt-2">
         {histogram.map((bin, i) => (
           <div key={i} className="flex-1 flex flex-col items-center group relative">
             <div
@@ -144,11 +144,10 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
                 background: color,
               }}
             />
-            {/* Tooltip */}
             <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-              <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded px-2 py-1 text-xs whitespace-nowrap shadow-lg">
-                <div>{bin.min.toFixed(0)} - {bin.max.toFixed(0)}</div>
-                <div className="text-[var(--text-secondary)]">{bin.count} ({bin.percentage.toFixed(1)}%)</div>
+              <div className="glass-card px-2 py-1 text-xs whitespace-nowrap shadow-lg">
+                <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{bin.min.toFixed(0)} - {bin.max.toFixed(0)}</div>
+                <div style={{ color: 'var(--text-secondary)' }}>{bin.count} ({bin.percentage.toFixed(1)}%)</div>
               </div>
             </div>
           </div>
@@ -157,64 +156,50 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
     );
   };
 
-  // Render percentile bar
   const renderPercentileBar = (percentiles: { p5: number; p25: number; p50: number; p75: number; p95: number }, min: number, max: number) => {
     const range = max - min;
     const getPos = (val: number) => ((val - min) / range) * 100;
 
     return (
       <div className="relative h-6 mt-4 mb-2">
-        {/* Background bar */}
-        <div className="absolute inset-y-2 left-0 right-0 bg-[var(--bg-tertiary)] rounded" />
-
-        {/* IQR (25-75) box */}
+        <div className="absolute inset-y-2 left-0 right-0 rounded" style={{ background: 'var(--bg-tertiary)' }} />
         <div
-          className="absolute inset-y-1 bg-blue-500/30 rounded"
+          className="absolute inset-y-1 rounded"
           style={{
             left: `${getPos(percentiles.p25)}%`,
             right: `${100 - getPos(percentiles.p75)}%`,
+            background: `${PANEL_COLOR}30`,
           }}
         />
-
-        {/* Whiskers (5-95) */}
         <div
-          className="absolute top-1/2 -translate-y-1/2 h-0.5 bg-[var(--text-tertiary)]"
+          className="absolute top-1/2 -translate-y-1/2 h-0.5"
           style={{
             left: `${getPos(percentiles.p5)}%`,
             right: `${100 - getPos(percentiles.p25)}%`,
+            background: 'var(--text-tertiary)',
           }}
         />
         <div
-          className="absolute top-1/2 -translate-y-1/2 h-0.5 bg-[var(--text-tertiary)]"
+          className="absolute top-1/2 -translate-y-1/2 h-0.5"
           style={{
             left: `${getPos(percentiles.p75)}%`,
             right: `${100 - getPos(percentiles.p95)}%`,
+            background: 'var(--text-tertiary)',
           }}
         />
-
-        {/* Median line */}
         <div
-          className="absolute top-0 bottom-0 w-0.5 bg-yellow-500"
-          style={{ left: `${getPos(percentiles.p50)}%` }}
+          className="absolute top-0 bottom-0 w-0.5"
+          style={{ left: `${getPos(percentiles.p50)}%`, background: '#f59e0b' }}
         />
-
-        {/* Labels */}
-        <div className="absolute -bottom-5 text-[10px] text-[var(--text-tertiary)]" style={{ left: `${getPos(percentiles.p5)}%`, transform: 'translateX(-50%)' }}>
-          5%
-        </div>
-        <div className="absolute -bottom-5 text-[10px] text-[var(--text-tertiary)]" style={{ left: `${getPos(percentiles.p50)}%`, transform: 'translateX(-50%)' }}>
-          50%
-        </div>
-        <div className="absolute -bottom-5 text-[10px] text-[var(--text-tertiary)]" style={{ left: `${getPos(percentiles.p95)}%`, transform: 'translateX(-50%)' }}>
-          95%
-        </div>
+        <div className="absolute -bottom-5 text-[10px]" style={{ left: `${getPos(percentiles.p5)}%`, transform: 'translateX(-50%)', color: 'var(--text-tertiary)' }}>5%</div>
+        <div className="absolute -bottom-5 text-[10px]" style={{ left: `${getPos(percentiles.p50)}%`, transform: 'translateX(-50%)', color: 'var(--text-tertiary)' }}>50%</div>
+        <div className="absolute -bottom-5 text-[10px]" style={{ left: `${getPos(percentiles.p95)}%`, transform: 'translateX(-50%)', color: 'var(--text-tertiary)' }}>95%</div>
       </div>
     );
   };
 
   const { startCellSelection, cellSelectionMode } = useProjectStore();
 
-  // 셀 선택 버튼이 있는 입력 필드 (데미지, 공격속도, 치명타율, 치명타배율, 변동성, HP 등)
   const InputFieldWithCell = ({ label, value, onChange, min, max, step = 1, unit }: {
     label: string;
     value: number;
@@ -239,12 +224,8 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
     };
 
     return (
-      <div
-        className="flex items-center gap-1.5 sm:gap-2"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
-      >
-        <label className="text-[10px] sm:text-xs text-[var(--text-secondary)] w-14 sm:w-20 shrink-0">{label}</label>
+      <div className="flex items-center gap-2" onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
+        <label className="text-xs w-20 shrink-0 font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</label>
         <div className="flex-1 relative">
           <input
             type="text"
@@ -255,9 +236,7 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
               if (newValue === '' || /^-?\d*\.?\d*$/.test(newValue)) {
                 setInputValue(newValue);
                 const num = parseFloat(newValue);
-                if (!isNaN(num)) {
-                  onChange(num);
-                }
+                if (!isNaN(num)) onChange(num);
               }
             }}
             onBlur={() => {
@@ -269,25 +248,24 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
                 setInputValue(String(num));
               }
             }}
-            className="w-full px-2 py-1 pr-7 text-sm bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded focus:outline-none focus:border-[var(--accent)]"
+            className="glass-input w-full text-sm !pr-8"
           />
           {isHovered && !cellSelectionMode.active && (
             <Tooltip content={t('selectFromCell')} position="top">
               <button
                 onClick={handleCellSelect}
-                className="absolute right-1 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors hover:bg-[var(--bg-hover)]"
+                className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"
               >
-                <Grid3X3 className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+                <Grid3X3 className="w-3.5 h-3.5" style={{ color: 'var(--text-tertiary)' }} />
               </button>
             </Tooltip>
           )}
         </div>
-        {unit && <span className="text-[10px] sm:text-xs text-[var(--text-tertiary)] w-6 sm:w-8">{unit}</span>}
+        {unit && <span className="text-xs w-8" style={{ color: 'var(--text-tertiary)' }}>{unit}</span>}
       </div>
     );
   };
 
-  // 셀 선택 버튼 없는 간단한 입력 필드 (반복횟수, 지속시간)
   const InputFieldSimple = ({ label, value, onChange, min, max, step = 1, unit }: {
     label: string;
     value: number;
@@ -304,8 +282,8 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
     }, [value]);
 
     return (
-      <div className="flex items-center gap-1.5 sm:gap-2">
-        <label className="text-[10px] sm:text-xs text-[var(--text-secondary)] w-14 sm:w-20 shrink-0">{label}</label>
+      <div className="flex items-center gap-2">
+        <label className="text-xs w-20 shrink-0 font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</label>
         <input
           type="text"
           inputMode="decimal"
@@ -315,9 +293,7 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
             if (newValue === '' || /^-?\d*\.?\d*$/.test(newValue)) {
               setInputValue(newValue);
               const num = parseFloat(newValue);
-              if (!isNaN(num)) {
-                onChange(num);
-              }
+              if (!isNaN(num)) onChange(num);
             }
           }}
           onBlur={() => {
@@ -329,77 +305,86 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
               setInputValue(String(num));
             }
           }}
-          className="flex-1 px-2 py-1 text-sm bg-[var(--bg-secondary)] border border-[var(--border-primary)] rounded focus:outline-none focus:border-[var(--accent)]"
+          className="glass-input flex-1 text-sm"
         />
-        {unit && <span className="text-[10px] sm:text-xs text-[var(--text-tertiary)] w-6 sm:w-8">{unit}</span>}
+        {unit && <span className="text-xs w-8" style={{ color: 'var(--text-tertiary)' }}>{unit}</span>}
       </div>
     );
   };
 
   return (
-    <div className={cn(
-      'flex flex-col h-full overflow-hidden',
-      isPanel ? 'bg-transparent' : 'bg-[var(--bg-primary)]'
-    )}>
-      <div className="flex-1 overflow-y-auto overflow-x-hidden p-3 space-y-4">
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-5 scrollbar-slim">
         {/* Help Content */}
         {showHelp && (
-          <div className="p-2 sm:p-3 rounded-lg animate-slideDown" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
-            <div className="space-y-2 sm:space-y-3">
-              <div className="flex items-start gap-1.5 sm:gap-2">
-                <div className="w-4 h-4 sm:w-5 sm:h-5 rounded flex items-center justify-center shrink-0 mt-0.5" style={{ background: '#f9731620' }}>
-                  <BarChart2 className="w-2.5 h-2.5 sm:w-3 sm:h-3" style={{ color: '#f97316' }} />
-                </div>
-                <div>
-                  <p className="font-medium text-xs sm:text-sm" style={{ color: 'var(--text-primary)' }}>{t('helpTitle')}</p>
-                  <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{t('helpDesc')}</p>
-                </div>
+          <div className="glass-card p-4 animate-slideDown space-y-4">
+            <div className="flex items-start gap-3">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: `linear-gradient(135deg, ${PANEL_COLOR}, ${PANEL_COLOR}cc)` }}
+              >
+                <BarChart2 className="w-5 h-5 text-white" />
               </div>
-              <div className="p-2 sm:p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #f59e0b' }}>
-                <span className="font-medium text-xs sm:text-sm" style={{ color: '#f59e0b' }}>{t('helpDiffTitle')}</span>
-                <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpDiff')}</p>
+              <div>
+                <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{t('helpTitle')}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{t('helpDesc')}</p>
               </div>
-              <div className="space-y-1.5 sm:space-y-2">
-                <div className="p-2 sm:p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #3b82f6' }}>
-                  <span className="font-medium text-xs sm:text-sm" style={{ color: '#3b82f6' }}>{t('mode.dps')}</span>
-                  <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpDps')}</p>
+            </div>
+
+            <div className="glass-section p-2.5" style={{ borderLeft: `3px solid #f59e0b` }}>
+              <span className="font-medium text-xs" style={{ color: '#f59e0b' }}>{t('helpDiffTitle')}</span>
+              <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpDiff')}</p>
+            </div>
+
+            <div className="space-y-2">
+              {[
+                { mode: 'dps', color: MODE_COLORS.dps },
+                { mode: 'ttk', color: MODE_COLORS.ttk },
+                { mode: 'compare', color: MODE_COLORS.compare },
+              ].map(({ mode: m, color }) => (
+                <div key={m} className="glass-section p-2.5" style={{ borderLeft: `3px solid ${color}` }}>
+                  <span className="font-medium text-xs" style={{ color }}>{t(`mode.${m}`)}</span>
+                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t(`help${m.charAt(0).toUpperCase() + m.slice(1)}`)}</p>
                 </div>
-                <div className="p-2 sm:p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #22c55e' }}>
-                  <span className="font-medium text-xs sm:text-sm" style={{ color: '#22c55e' }}>{t('mode.ttk')}</span>
-                  <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpTtk')}</p>
-                </div>
-                <div className="p-2 sm:p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #8b5cf6' }}>
-                  <span className="font-medium text-xs sm:text-sm" style={{ color: '#8b5cf6' }}>{t('mode.compare')}</span>
-                  <p className="text-[10px] sm:text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpCompare')}</p>
-                </div>
-              </div>
+              ))}
             </div>
           </div>
         )}
 
         {/* Mode Selector */}
-        <div className="flex gap-0.5 sm:gap-1 p-0.5 sm:p-1 bg-[var(--bg-secondary)] rounded-lg">
-          {(['dps', 'ttk', 'compare'] as SimMode[]).map(m => (
-            <button
-              key={m}
-              onClick={() => { setMode(m); resetSimulation(); }}
-              className={cn(
-                'flex-1 px-2 sm:px-3 py-1 sm:py-1.5 text-xs sm:text-sm rounded-md transition-all',
-                mode === m
-                  ? 'bg-[var(--accent)] text-white'
-                  : 'text-[var(--text-secondary)] hover:bg-[var(--bg-tertiary)]'
-              )}
-            >
-              {t(`mode.${m}`)}
-            </button>
-          ))}
+        <div className="glass-card p-1.5">
+          <div className="flex gap-1">
+            {(['dps', 'ttk', 'compare'] as SimMode[]).map(m => {
+              const isActive = mode === m;
+              const color = MODE_COLORS[m];
+              return (
+                <button
+                  key={m}
+                  onClick={() => { setMode(m); resetSimulation(); }}
+                  className={cn(
+                    'flex-1 px-3 py-2 text-sm font-medium rounded-xl transition-all',
+                    isActive && 'shadow-sm'
+                  )}
+                  style={{
+                    background: isActive ? `${color}15` : 'transparent',
+                    color: isActive ? color : 'var(--text-secondary)',
+                    border: isActive ? `1px solid ${color}` : '1px solid transparent',
+                  }}
+                >
+                  {t(`mode.${m}`)}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        {/* Configuration */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium text-[var(--text-primary)]">
-            <Sword className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-red-500" />
-            {mode === 'compare' ? t('buildA') : t('config')}
+        {/* Build A Configuration */}
+        <div className="glass-card p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Sword className="w-4 h-4" style={{ color: '#ef4444' }} />
+            <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+              {mode === 'compare' ? t('buildA') : t('config')}
+            </span>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -414,12 +399,12 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
           </div>
         </div>
 
-        {/* Build B Configuration (compare mode only) */}
+        {/* Build B Configuration */}
         {mode === 'compare' && (
-          <div className="space-y-3">
-            <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm font-medium text-[var(--text-primary)]">
-              <ShieldIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-500" />
-              {t('buildB')}
+          <div className="glass-card p-4 space-y-3">
+            <div className="flex items-center gap-2">
+              <ShieldIcon className="w-4 h-4" style={{ color: '#3b82f6' }} />
+              <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('buildB')}</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -433,11 +418,17 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
         )}
 
         {/* Simulation Settings */}
-        <div className="flex flex-col sm:flex-row gap-2">
-          <InputFieldSimple label={t('iterations')} value={iterations} onChange={setIterations} min={100} max={10000} />
-          {mode !== 'ttk' && (
-            <InputFieldSimple label={t('duration')} value={duration} onChange={setDuration} min={1} max={60} unit="s" />
-          )}
+        <div className="glass-card p-4 space-y-3">
+          <div className="flex items-center gap-2">
+            <Settings className="w-4 h-4" style={{ color: PANEL_COLOR }} />
+            <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('simSettings') || 'Simulation Settings'}</span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <InputFieldSimple label={t('iterations')} value={iterations} onChange={setIterations} min={100} max={10000} />
+            {mode !== 'ttk' && (
+              <InputFieldSimple label={t('duration')} value={duration} onChange={setDuration} min={1} max={60} unit="s" />
+            )}
+          </div>
         </div>
 
         {/* Run Button */}
@@ -445,20 +436,23 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
           onClick={runSimulation}
           disabled={isSimulating}
           className={cn(
-            'w-full py-1.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium flex items-center justify-center gap-1.5 sm:gap-2 transition-all',
-            isSimulating
-              ? 'bg-[var(--bg-tertiary)] text-[var(--text-tertiary)] cursor-not-allowed'
-              : 'bg-orange-500 text-white hover:bg-orange-600'
+            'w-full py-2.5 rounded-xl text-sm font-medium flex items-center justify-center gap-2 transition-all',
+            isSimulating ? 'glass-button cursor-not-allowed opacity-50' : ''
           )}
+          style={{
+            background: isSimulating ? 'var(--bg-tertiary)' : `linear-gradient(135deg, ${PANEL_COLOR}, ${PANEL_COLOR}dd)`,
+            color: isSimulating ? 'var(--text-tertiary)' : 'white',
+            boxShadow: isSimulating ? 'none' : `0 4px 16px ${PANEL_COLOR}40`,
+          }}
         >
           {isSimulating ? (
             <>
-              <RefreshCw className="w-3.5 h-3.5 sm:w-4 sm:h-4 animate-spin" />
+              <RefreshCw className="w-4 h-4 animate-spin" />
               {t('simulating')}
             </>
           ) : (
             <>
-              <Play className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <Play className="w-4 h-4" />
               {t('runSimulation')}
             </>
           )}
@@ -466,106 +460,95 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
 
         {/* DPS Results */}
         {dpsResult && mode === 'dps' && (
-          <div className="space-y-3 sm:space-y-4 animate-fade-in">
-            <div className="text-xs sm:text-sm font-medium text-[var(--text-primary)]">{t('results')}</div>
+          <div className="glass-card p-4 space-y-4 animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4" style={{ color: PANEL_COLOR }} />
+              <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('results')}</span>
+            </div>
 
-            {/* Statistics */}
-            <div className="grid grid-cols-3 gap-1 sm:gap-2">
-              <div className="p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded text-center">
-                <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">{t('mean')}</div>
-                <div className="text-sm sm:text-lg font-bold text-orange-500">{dpsResult.mean.toFixed(1)}</div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="glass-stat text-center">
+                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('mean')}</div>
+                <div className="text-lg font-bold" style={{ color: PANEL_COLOR }}>{dpsResult.mean.toFixed(1)}</div>
               </div>
-              <div className="p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded text-center">
-                <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">{t('stdDev')}</div>
-                <div className="text-sm sm:text-lg font-bold text-blue-500">{dpsResult.stdDev.toFixed(1)}</div>
+              <div className="glass-stat text-center">
+                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('stdDev')}</div>
+                <div className="text-lg font-bold" style={{ color: '#3b82f6' }}>{dpsResult.stdDev.toFixed(1)}</div>
               </div>
-              <div className="p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded text-center">
-                <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">{t('cv')}</div>
-                <div className="text-sm sm:text-lg font-bold text-purple-500">{dpsResult.coefficientOfVariation.toFixed(1)}%</div>
+              <div className="glass-stat text-center">
+                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('cv')}</div>
+                <div className="text-lg font-bold" style={{ color: '#8b5cf6' }}>{dpsResult.coefficientOfVariation.toFixed(1)}%</div>
               </div>
             </div>
 
-            {/* Range */}
-            <div className="flex items-center justify-between text-xs sm:text-sm">
-              <span className="text-[var(--text-secondary)]">{t('range')}</span>
-              <span className="font-medium">
+            <div className="flex items-center justify-between text-sm">
+              <span style={{ color: 'var(--text-secondary)' }}>{t('range')}</span>
+              <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>
                 {dpsResult.min.toFixed(0)} - {dpsResult.max.toFixed(0)} DPS
               </span>
             </div>
 
-            {/* Histogram */}
-            <div className="relative p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded-lg">
-              <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)] mb-1">{t('distribution')}</div>
+            <div className="glass-section p-3 relative group">
+              <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('distribution')}</div>
               <button
                 onClick={() => setFullscreenChart('dps')}
-                className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 p-1 sm:p-1.5 rounded hover:bg-[var(--bg-tertiary)] transition-colors"
+                className="absolute top-2 right-2 glass-button !p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
                 title={tCommon('fullscreen')}
               >
-                <Maximize2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[var(--text-tertiary)]" />
+                <Maximize2 className="w-3.5 h-3.5" />
               </button>
-              {renderHistogram(dpsResult.histogram, '#f97316')}
+              {renderHistogram(dpsResult.histogram, PANEL_COLOR)}
             </div>
 
-            {/* Percentile Box Plot */}
             <div>
-              <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)] mb-1">{t('percentiles')}</div>
-              {renderPercentileBar(
-                dpsResult.percentiles,
-                dpsResult.min,
-                dpsResult.max
-              )}
+              <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('percentiles')}</div>
+              {renderPercentileBar(dpsResult.percentiles, dpsResult.min, dpsResult.max)}
             </div>
 
-            {/* Percentile Values */}
-            <div className="grid grid-cols-4 gap-0.5 sm:gap-1 text-[10px] sm:text-xs mt-4 sm:mt-6">
-              <div className="text-center p-0.5 sm:p-1 bg-[var(--bg-secondary)] rounded">
-                <div className="text-[var(--text-tertiary)]">P5</div>
-                <div className="font-medium">{dpsResult.percentiles.p5.toFixed(0)}</div>
-              </div>
-              <div className="text-center p-0.5 sm:p-1 bg-[var(--bg-secondary)] rounded">
-                <div className="text-[var(--text-tertiary)]">P25</div>
-                <div className="font-medium">{dpsResult.percentiles.p25.toFixed(0)}</div>
-              </div>
-              <div className="text-center p-0.5 sm:p-1 bg-[var(--bg-secondary)] rounded">
-                <div className="text-[var(--text-tertiary)]">P75</div>
-                <div className="font-medium">{dpsResult.percentiles.p75.toFixed(0)}</div>
-              </div>
-              <div className="text-center p-0.5 sm:p-1 bg-[var(--bg-secondary)] rounded">
-                <div className="text-[var(--text-tertiary)]">P95</div>
-                <div className="font-medium">{dpsResult.percentiles.p95.toFixed(0)}</div>
-              </div>
+            <div className="grid grid-cols-4 gap-1 text-xs mt-6">
+              {['p5', 'p25', 'p75', 'p95'].map(p => (
+                <div key={p} className="glass-stat text-center !p-1.5">
+                  <div style={{ color: 'var(--text-tertiary)' }}>P{p.slice(1)}</div>
+                  <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>
+                    {dpsResult.percentiles[p as keyof typeof dpsResult.percentiles].toFixed(0)}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
         {/* TTK Results */}
         {ttkResult && mode === 'ttk' && (
-          <div className="space-y-3 sm:space-y-4 animate-fade-in">
-            <div className="text-xs sm:text-sm font-medium text-[var(--text-primary)]">{t('results')}</div>
+          <div className="glass-card p-4 space-y-4 animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4" style={{ color: MODE_COLORS.ttk }} />
+              <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('results')}</span>
+            </div>
 
-            <div className="grid grid-cols-3 gap-1 sm:gap-2">
-              <div className="p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded text-center">
-                <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">{t('meanTTK')}</div>
-                <div className="text-sm sm:text-lg font-bold text-orange-500">{ttkResult.mean.toFixed(2)}s</div>
+            <div className="grid grid-cols-3 gap-2">
+              <div className="glass-stat text-center">
+                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('meanTTK')}</div>
+                <div className="text-lg font-bold" style={{ color: PANEL_COLOR }}>{ttkResult.mean.toFixed(2)}s</div>
               </div>
-              <div className="p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded text-center">
-                <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">{t('minTTK')}</div>
-                <div className="text-sm sm:text-lg font-bold text-green-500">{ttkResult.min.toFixed(2)}s</div>
+              <div className="glass-stat text-center">
+                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('minTTK')}</div>
+                <div className="text-lg font-bold" style={{ color: '#22c55e' }}>{ttkResult.min.toFixed(2)}s</div>
               </div>
-              <div className="p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded text-center">
-                <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">{t('maxTTK')}</div>
-                <div className="text-sm sm:text-lg font-bold text-red-500">{ttkResult.max.toFixed(2)}s</div>
+              <div className="glass-stat text-center">
+                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('maxTTK')}</div>
+                <div className="text-lg font-bold" style={{ color: '#ef4444' }}>{ttkResult.max.toFixed(2)}s</div>
               </div>
             </div>
 
-            <div className="relative p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded-lg">
-              <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)] mb-1">{t('ttkDistribution')}</div>
+            <div className="glass-section p-3 relative group">
+              <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('ttkDistribution')}</div>
               <button
                 onClick={() => setFullscreenChart('ttk')}
-                className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 p-1 sm:p-1.5 rounded hover:bg-[var(--bg-tertiary)] transition-colors"
+                className="absolute top-2 right-2 glass-button !p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
                 title={tCommon('fullscreen')}
               >
-                <Maximize2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[var(--text-tertiary)]" />
+                <Maximize2 className="w-3.5 h-3.5" />
               </button>
               {renderHistogram(ttkResult.histogram, '#22c55e')}
             </div>
@@ -574,84 +557,81 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
 
         {/* Compare Results */}
         {compareResult && mode === 'compare' && dpsResult && dpsResultB && (
-          <div className="space-y-3 sm:space-y-4 animate-fade-in">
-            <div className="text-xs sm:text-sm font-medium text-[var(--text-primary)]">{t('comparisonResults')}</div>
+          <div className="glass-card p-4 space-y-4 animate-fadeIn">
+            <div className="flex items-center gap-2">
+              <Target className="w-4 h-4" style={{ color: MODE_COLORS.compare }} />
+              <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('comparisonResults')}</span>
+            </div>
 
-            {/* Win Rate Bar */}
-            <div className="space-y-1.5 sm:space-y-2">
-              <div className="flex justify-between text-[10px] sm:text-xs text-[var(--text-secondary)]">
+            <div className="space-y-2">
+              <div className="flex justify-between text-xs" style={{ color: 'var(--text-secondary)' }}>
                 <span>{t('buildA')}</span>
                 <span>{t('buildB')}</span>
               </div>
-              <div className="flex h-5 sm:h-6 rounded overflow-hidden">
+              <div className="flex h-6 rounded-xl overflow-hidden">
                 <div
-                  className="bg-red-500 flex items-center justify-center text-[10px] sm:text-xs text-white font-medium"
-                  style={{ width: `${compareResult.buildAWinRate}%` }}
+                  className="flex items-center justify-center text-xs text-white font-medium"
+                  style={{ width: `${compareResult.buildAWinRate}%`, background: '#ef4444' }}
                 >
                   {compareResult.buildAWinRate > 15 && `${compareResult.buildAWinRate.toFixed(0)}%`}
                 </div>
                 <div
-                  className="bg-blue-500 flex items-center justify-center text-[10px] sm:text-xs text-white font-medium"
-                  style={{ width: `${compareResult.buildBWinRate}%` }}
+                  className="flex items-center justify-center text-xs text-white font-medium"
+                  style={{ width: `${compareResult.buildBWinRate}%`, background: '#3b82f6' }}
                 >
                   {compareResult.buildBWinRate > 15 && `${compareResult.buildBWinRate.toFixed(0)}%`}
                 </div>
               </div>
             </div>
 
-            {/* Stats Comparison */}
-            <div className="grid grid-cols-2 gap-2 sm:gap-3">
-              <div className="p-2 sm:p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)] mb-1">{t('buildA')}</div>
-                <div className="text-lg sm:text-xl font-bold text-red-500">{dpsResult.mean.toFixed(0)}</div>
-                <div className="text-[10px] sm:text-xs text-[var(--text-secondary)]">DPS</div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="glass-section p-3" style={{ borderLeft: '3px solid #ef4444' }}>
+                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('buildA')}</div>
+                <div className="text-xl font-bold" style={{ color: '#ef4444' }}>{dpsResult.mean.toFixed(0)}</div>
+                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>DPS</div>
               </div>
-              <div className="p-2 sm:p-3 bg-blue-500/10 border border-blue-500/30 rounded-lg">
-                <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)] mb-1">{t('buildB')}</div>
-                <div className="text-lg sm:text-xl font-bold text-blue-500">{dpsResultB.mean.toFixed(0)}</div>
-                <div className="text-[10px] sm:text-xs text-[var(--text-secondary)]">DPS</div>
+              <div className="glass-section p-3" style={{ borderLeft: '3px solid #3b82f6' }}>
+                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('buildB')}</div>
+                <div className="text-xl font-bold" style={{ color: '#3b82f6' }}>{dpsResultB.mean.toFixed(0)}</div>
+                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>DPS</div>
               </div>
             </div>
 
-            {/* Difference */}
-            <div className="flex items-center justify-center gap-1.5 sm:gap-2 p-2 sm:p-3 bg-[var(--bg-secondary)] rounded-lg">
+            <div className="glass-section flex items-center justify-center gap-2 p-3">
               {compareResult.dpsDifference > 0 ? (
-                <TrendingUp className="w-4 h-4 sm:w-5 sm:h-5 text-green-500" />
+                <TrendingUp className="w-5 h-5" style={{ color: '#22c55e' }} />
               ) : compareResult.dpsDifference < 0 ? (
-                <TrendingDown className="w-4 h-4 sm:w-5 sm:h-5 text-red-500" />
+                <TrendingDown className="w-5 h-5" style={{ color: '#ef4444' }} />
               ) : (
-                <Minus className="w-4 h-4 sm:w-5 sm:h-5 text-gray-500" />
+                <Minus className="w-5 h-5" style={{ color: 'var(--text-tertiary)' }} />
               )}
-              <span className="text-base sm:text-lg font-bold">
+              <span className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
                 {compareResult.dpsDifference > 0 ? '+' : ''}
                 {compareResult.dpsDifferencePercent.toFixed(1)}%
               </span>
-              <span className="text-xs sm:text-sm text-[var(--text-secondary)]">
+              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                 ({compareResult.dpsDifference > 0 ? '+' : ''}{compareResult.dpsDifference.toFixed(0)} DPS)
               </span>
             </div>
 
-            {/* Side by side histograms */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-3">
-              <div className="relative p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded-lg">
-                <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)] mb-1">{t('buildA')}</div>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="glass-section p-3 relative group">
+                <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('buildA')}</div>
                 <button
                   onClick={() => setFullscreenChart('compareA')}
-                  className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 p-1 sm:p-1.5 rounded hover:bg-[var(--bg-tertiary)] transition-colors"
-                  title={tCommon('fullscreen')}
+                  className="absolute top-2 right-2 glass-button !p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <Maximize2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[var(--text-tertiary)]" />
+                  <Maximize2 className="w-3 h-3" />
                 </button>
                 {renderHistogram(dpsResult.histogram, '#ef4444')}
               </div>
-              <div className="relative p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded-lg">
-                <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)] mb-1">{t('buildB')}</div>
+              <div className="glass-section p-3 relative group">
+                <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('buildB')}</div>
                 <button
                   onClick={() => setFullscreenChart('compareB')}
-                  className="absolute top-1.5 sm:top-2 right-1.5 sm:right-2 p-1 sm:p-1.5 rounded hover:bg-[var(--bg-tertiary)] transition-colors"
-                  title={tCommon('fullscreen')}
+                  className="absolute top-2 right-2 glass-button !p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
-                  <Maximize2 className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[var(--text-tertiary)]" />
+                  <Maximize2 className="w-3 h-3" />
                 </button>
                 {renderHistogram(dpsResultB.histogram, '#3b82f6')}
               </div>
@@ -661,12 +641,10 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
 
         {/* Info Section */}
         {!dpsResult && !ttkResult && !compareResult && (
-          <div className="p-2.5 sm:p-4 bg-[var(--bg-secondary)] rounded-lg">
-            <div className="flex items-start gap-1.5 sm:gap-2">
-              <Info className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-blue-500 mt-0.5 shrink-0" />
-              <div className="text-xs sm:text-sm text-[var(--text-secondary)]">
-                {t('description')}
-              </div>
+          <div className="glass-card p-4">
+            <div className="flex items-start gap-2">
+              <Info className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#3b82f6' }} />
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('description')}</p>
             </div>
           </div>
         )}
@@ -675,36 +653,34 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
       {/* Fullscreen Chart Modal */}
       {fullscreenChart && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4"
-          style={{ background: 'rgba(0, 0, 0, 0.8)' }}
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
           onClick={() => setFullscreenChart(null)}
         >
           <div
-            className="w-full h-full max-w-4xl max-h-[90vh] sm:max-h-[80vh] rounded-lg sm:rounded-xl p-3 sm:p-6 flex flex-col"
-            style={{ background: 'var(--bg-primary)' }}
+            className="glass-panel w-full max-w-4xl h-[80vh] flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between mb-2 sm:mb-4">
-              <div className="flex items-center gap-2">
-                <BarChart2 className="w-4 h-4 sm:w-5 sm:h-5 text-orange-500" />
-                <h3 className="text-sm sm:text-base font-semibold text-[var(--text-primary)]">
+            <div className="glass-panel-header">
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-9 h-9 rounded-xl flex items-center justify-center"
+                  style={{ background: `linear-gradient(135deg, ${PANEL_COLOR}, ${PANEL_COLOR}cc)` }}
+                >
+                  <BarChart2 className="w-4.5 h-4.5 text-white" />
+                </div>
+                <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
                   {fullscreenChart === 'dps' && t('distribution')}
                   {fullscreenChart === 'ttk' && t('ttkDistribution')}
                   {fullscreenChart === 'compareA' && `${t('buildA')} - ${t('distribution')}`}
                   {fullscreenChart === 'compareB' && `${t('buildB')} - ${t('distribution')}`}
                 </h3>
               </div>
-              <button
-                onClick={() => setFullscreenChart(null)}
-                className="p-1.5 sm:p-2 rounded-lg hover:bg-[var(--bg-tertiary)] transition-colors"
-              >
-                <X className="w-4 h-4 sm:w-5 sm:h-5 text-[var(--text-secondary)]" />
+              <button onClick={() => setFullscreenChart(null)} className="glass-button !p-2">
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Fullscreen Histogram */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 p-6 flex flex-col">
               {fullscreenChart === 'dps' && dpsResult && (
                 <>
                   <div className="flex-1 flex items-end gap-1 min-h-0">
@@ -717,39 +693,39 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
                             style={{
                               height: `${(bin.percentage / maxPercent) * 100}%`,
                               minHeight: bin.count > 0 ? '4px' : '0',
-                              background: '#f97316',
+                              background: PANEL_COLOR,
                             }}
                           />
                           <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                            <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded px-3 py-2 text-sm whitespace-nowrap shadow-lg">
-                              <div className="font-medium">{bin.min.toFixed(0)} - {bin.max.toFixed(0)} DPS</div>
-                              <div className="text-[var(--text-secondary)]">{bin.count} ({bin.percentage.toFixed(1)}%)</div>
+                            <div className="glass-card px-3 py-2 text-sm whitespace-nowrap shadow-lg">
+                              <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{bin.min.toFixed(0)} - {bin.max.toFixed(0)} DPS</div>
+                              <div style={{ color: 'var(--text-secondary)' }}>{bin.count} ({bin.percentage.toFixed(1)}%)</div>
                             </div>
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                  <div className="mt-2 sm:mt-4 grid grid-cols-3 sm:grid-cols-5 gap-1.5 sm:gap-2 text-xs sm:text-sm">
-                    <div className="text-center p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded">
-                      <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">{t('mean')}</div>
-                      <div className="font-bold text-orange-500">{dpsResult.mean.toFixed(1)}</div>
+                  <div className="mt-4 grid grid-cols-5 gap-2 text-sm">
+                    <div className="glass-stat text-center">
+                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('mean')}</div>
+                      <div className="font-bold" style={{ color: PANEL_COLOR }}>{dpsResult.mean.toFixed(1)}</div>
                     </div>
-                    <div className="text-center p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded">
-                      <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">{t('stdDev')}</div>
-                      <div className="font-bold text-blue-500">{dpsResult.stdDev.toFixed(1)}</div>
+                    <div className="glass-stat text-center">
+                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('stdDev')}</div>
+                      <div className="font-bold" style={{ color: '#3b82f6' }}>{dpsResult.stdDev.toFixed(1)}</div>
                     </div>
-                    <div className="text-center p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded">
-                      <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">Min</div>
-                      <div className="font-bold">{dpsResult.min.toFixed(0)}</div>
+                    <div className="glass-stat text-center">
+                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Min</div>
+                      <div className="font-bold" style={{ color: 'var(--text-primary)' }}>{dpsResult.min.toFixed(0)}</div>
                     </div>
-                    <div className="text-center p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded">
-                      <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">Max</div>
-                      <div className="font-bold">{dpsResult.max.toFixed(0)}</div>
+                    <div className="glass-stat text-center">
+                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Max</div>
+                      <div className="font-bold" style={{ color: 'var(--text-primary)' }}>{dpsResult.max.toFixed(0)}</div>
                     </div>
-                    <div className="text-center p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded">
-                      <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">{t('cv')}</div>
-                      <div className="font-bold text-purple-500">{dpsResult.coefficientOfVariation.toFixed(1)}%</div>
+                    <div className="glass-stat text-center">
+                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('cv')}</div>
+                      <div className="font-bold" style={{ color: '#8b5cf6' }}>{dpsResult.coefficientOfVariation.toFixed(1)}%</div>
                     </div>
                   </div>
                 </>
@@ -771,113 +747,80 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
                             }}
                           />
                           <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                            <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded px-3 py-2 text-sm whitespace-nowrap shadow-lg">
-                              <div className="font-medium">{bin.min.toFixed(2)}s - {bin.max.toFixed(2)}s</div>
-                              <div className="text-[var(--text-secondary)]">{bin.count} ({bin.percentage.toFixed(1)}%)</div>
+                            <div className="glass-card px-3 py-2 text-sm whitespace-nowrap shadow-lg">
+                              <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{bin.min.toFixed(2)}s - {bin.max.toFixed(2)}s</div>
+                              <div style={{ color: 'var(--text-secondary)' }}>{bin.count} ({bin.percentage.toFixed(1)}%)</div>
                             </div>
                           </div>
                         </div>
                       );
                     })}
                   </div>
-                  <div className="mt-2 sm:mt-4 grid grid-cols-3 gap-1.5 sm:gap-2 text-xs sm:text-sm">
-                    <div className="text-center p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded">
-                      <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">{t('meanTTK')}</div>
-                      <div className="font-bold text-orange-500">{ttkResult.mean.toFixed(2)}s</div>
+                  <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
+                    <div className="glass-stat text-center">
+                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('meanTTK')}</div>
+                      <div className="font-bold" style={{ color: PANEL_COLOR }}>{ttkResult.mean.toFixed(2)}s</div>
                     </div>
-                    <div className="text-center p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded">
-                      <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">{t('minTTK')}</div>
-                      <div className="font-bold text-green-500">{ttkResult.min.toFixed(2)}s</div>
+                    <div className="glass-stat text-center">
+                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('minTTK')}</div>
+                      <div className="font-bold" style={{ color: '#22c55e' }}>{ttkResult.min.toFixed(2)}s</div>
                     </div>
-                    <div className="text-center p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded">
-                      <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">{t('maxTTK')}</div>
-                      <div className="font-bold text-red-500">{ttkResult.max.toFixed(2)}s</div>
+                    <div className="glass-stat text-center">
+                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('maxTTK')}</div>
+                      <div className="font-bold" style={{ color: '#ef4444' }}>{ttkResult.max.toFixed(2)}s</div>
                     </div>
                   </div>
                 </>
               )}
 
-              {fullscreenChart === 'compareA' && dpsResult && (
+              {(fullscreenChart === 'compareA' || fullscreenChart === 'compareB') && (
                 <>
-                  <div className="flex-1 flex items-end gap-1 min-h-0">
-                    {dpsResult.histogram.map((bin, i) => {
-                      const maxPercent = Math.max(...dpsResult.histogram.map(h => h.percentage));
-                      return (
-                        <div key={i} className="flex-1 flex flex-col items-center group relative h-full justify-end">
-                          <div
-                            className="w-full rounded-t transition-all duration-200 hover:opacity-80"
-                            style={{
-                              height: `${(bin.percentage / maxPercent) * 100}%`,
-                              minHeight: bin.count > 0 ? '4px' : '0',
-                              background: '#ef4444',
-                            }}
-                          />
-                          <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                            <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded px-3 py-2 text-sm whitespace-nowrap shadow-lg">
-                              <div className="font-medium">{bin.min.toFixed(0)} - {bin.max.toFixed(0)} DPS</div>
-                              <div className="text-[var(--text-secondary)]">{bin.count} ({bin.percentage.toFixed(1)}%)</div>
-                            </div>
+                  {(() => {
+                    const result = fullscreenChart === 'compareA' ? dpsResult : dpsResultB;
+                    const color = fullscreenChart === 'compareA' ? '#ef4444' : '#3b82f6';
+                    if (!result) return null;
+                    return (
+                      <>
+                        <div className="flex-1 flex items-end gap-1 min-h-0">
+                          {result.histogram.map((bin, i) => {
+                            const maxPercent = Math.max(...result.histogram.map(h => h.percentage));
+                            return (
+                              <div key={i} className="flex-1 flex flex-col items-center group relative h-full justify-end">
+                                <div
+                                  className="w-full rounded-t transition-all duration-200 hover:opacity-80"
+                                  style={{
+                                    height: `${(bin.percentage / maxPercent) * 100}%`,
+                                    minHeight: bin.count > 0 ? '4px' : '0',
+                                    background: color,
+                                  }}
+                                />
+                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                  <div className="glass-card px-3 py-2 text-sm whitespace-nowrap shadow-lg">
+                                    <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{bin.min.toFixed(0)} - {bin.max.toFixed(0)} DPS</div>
+                                    <div style={{ color: 'var(--text-secondary)' }}>{bin.count} ({bin.percentage.toFixed(1)}%)</div>
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                        <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
+                          <div className="glass-stat text-center">
+                            <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('mean')}</div>
+                            <div className="font-bold" style={{ color }}>{result.mean.toFixed(1)} DPS</div>
+                          </div>
+                          <div className="glass-stat text-center">
+                            <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('stdDev')}</div>
+                            <div className="font-bold" style={{ color: 'var(--text-primary)' }}>{result.stdDev.toFixed(1)}</div>
+                          </div>
+                          <div className="glass-stat text-center">
+                            <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('cv')}</div>
+                            <div className="font-bold" style={{ color: 'var(--text-primary)' }}>{result.coefficientOfVariation.toFixed(1)}%</div>
                           </div>
                         </div>
-                      );
-                    })}
-                  </div>
-                  <div className="mt-2 sm:mt-4 grid grid-cols-3 gap-1.5 sm:gap-2 text-xs sm:text-sm">
-                    <div className="text-center p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded">
-                      <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">{t('mean')}</div>
-                      <div className="font-bold text-red-500">{dpsResult.mean.toFixed(1)} DPS</div>
-                    </div>
-                    <div className="text-center p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded">
-                      <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">{t('stdDev')}</div>
-                      <div className="font-bold">{dpsResult.stdDev.toFixed(1)}</div>
-                    </div>
-                    <div className="text-center p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded">
-                      <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">{t('cv')}</div>
-                      <div className="font-bold">{dpsResult.coefficientOfVariation.toFixed(1)}%</div>
-                    </div>
-                  </div>
-                </>
-              )}
-
-              {fullscreenChart === 'compareB' && dpsResultB && (
-                <>
-                  <div className="flex-1 flex items-end gap-1 min-h-0">
-                    {dpsResultB.histogram.map((bin, i) => {
-                      const maxPercent = Math.max(...dpsResultB.histogram.map(h => h.percentage));
-                      return (
-                        <div key={i} className="flex-1 flex flex-col items-center group relative h-full justify-end">
-                          <div
-                            className="w-full rounded-t transition-all duration-200 hover:opacity-80"
-                            style={{
-                              height: `${(bin.percentage / maxPercent) * 100}%`,
-                              minHeight: bin.count > 0 ? '4px' : '0',
-                              background: '#3b82f6',
-                            }}
-                          />
-                          <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                            <div className="bg-[var(--bg-primary)] border border-[var(--border-primary)] rounded px-3 py-2 text-sm whitespace-nowrap shadow-lg">
-                              <div className="font-medium">{bin.min.toFixed(0)} - {bin.max.toFixed(0)} DPS</div>
-                              <div className="text-[var(--text-secondary)]">{bin.count} ({bin.percentage.toFixed(1)}%)</div>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                  <div className="mt-2 sm:mt-4 grid grid-cols-3 gap-1.5 sm:gap-2 text-xs sm:text-sm">
-                    <div className="text-center p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded">
-                      <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">{t('mean')}</div>
-                      <div className="font-bold text-blue-500">{dpsResultB.mean.toFixed(1)} DPS</div>
-                    </div>
-                    <div className="text-center p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded">
-                      <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">{t('stdDev')}</div>
-                      <div className="font-bold">{dpsResultB.stdDev.toFixed(1)}</div>
-                    </div>
-                    <div className="text-center p-1.5 sm:p-2 bg-[var(--bg-secondary)] rounded">
-                      <div className="text-[10px] sm:text-xs text-[var(--text-tertiary)]">{t('cv')}</div>
-                      <div className="font-bold">{dpsResultB.coefficientOfVariation.toFixed(1)}%</div>
-                    </div>
-                  </div>
+                      </>
+                    );
+                  })()}
                 </>
               )}
             </div>

@@ -6,6 +6,8 @@ import { solve, SOLVER_FORMULAS, type SolverFormula } from '@/lib/goalSolver';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useTranslations } from 'next-intl';
 
+const PANEL_COLOR = '#14b8a6';
+
 interface GoalSolverPanelProps {
   onClose: () => void;
   showHelp?: boolean;
@@ -124,21 +126,21 @@ export default function GoalSolverPanel({ onClose, showHelp: externalShowHelp, s
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-2">
         {/* 도움말 패널 */}
         {showHelp && (
-          <div className="mb-4 p-4 rounded-lg animate-slideDown" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+          <div className="mb-4 glass-card p-4 rounded-lg animate-slideDown">
             <div className="font-semibold mb-3 text-base" style={{ color: 'var(--text-primary)' }}>{t('helpTitle')}</div>
             <p className="mb-4 text-sm leading-relaxed" style={{ color: 'var(--text-secondary)' }}>{t('helpDesc')}</p>
             <div className="space-y-2 mb-4">
-              <div className="p-2.5 rounded-lg text-sm" style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
-                {t('helpExample1')}
+              <div className="glass-section p-2.5 rounded-lg text-sm" style={{ borderLeft: `3px solid ${PANEL_COLOR}` }}>
+                <span style={{ color: 'var(--text-secondary)' }}>{t('helpExample1')}</span>
               </div>
-              <div className="p-2.5 rounded-lg text-sm" style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
-                {t('helpExample2')}
+              <div className="glass-section p-2.5 rounded-lg text-sm" style={{ borderLeft: `3px solid ${PANEL_COLOR}` }}>
+                <span style={{ color: 'var(--text-secondary)' }}>{t('helpExample2')}</span>
               </div>
-              <div className="p-2.5 rounded-lg text-sm" style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
-                {t('helpExample3')}
+              <div className="glass-section p-2.5 rounded-lg text-sm" style={{ borderLeft: `3px solid ${PANEL_COLOR}` }}>
+                <span style={{ color: 'var(--text-secondary)' }}>{t('helpExample3')}</span>
               </div>
             </div>
-            <div className="pt-3 border-t text-sm" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
+            <div className="glass-divider pt-3 border-t text-sm" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
               {t('helpVsFormula')}
             </div>
           </div>
@@ -155,7 +157,7 @@ export default function GoalSolverPanel({ onClose, showHelp: externalShowHelp, s
           const result = results[formula.id];
 
           return (
-            <div key={formula.id} className="rounded-lg overflow-hidden" style={{ background: 'var(--bg-tertiary)' }}>
+            <div key={formula.id} className="glass-card rounded-lg overflow-hidden">
               {/* 헤더 (클릭 가능) */}
               <button
                 onClick={() => handleToggleFormula(formula.id)}
@@ -163,11 +165,13 @@ export default function GoalSolverPanel({ onClose, showHelp: externalShowHelp, s
                   isExpanded ? 'border-b' : ''
                 }`}
                 style={{
-                  background: isExpanded ? 'var(--accent-light)' : 'transparent',
+                  background: isExpanded ? `${PANEL_COLOR}10` : 'transparent',
                   borderColor: 'var(--border-primary)'
                 }}
               >
-                <Calculator className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--accent)' }} />
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `${PANEL_COLOR}15` }}>
+                  <Calculator className="w-4 h-4 flex-shrink-0" style={{ color: PANEL_COLOR }} />
+                </div>
                 <div className="flex-1 min-w-0">
                   <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
                     {formula.name}
@@ -184,7 +188,7 @@ export default function GoalSolverPanel({ onClose, showHelp: externalShowHelp, s
 
               {/* 확장된 입력 폼 */}
               {isExpanded && (
-                <div className="p-4 space-y-4" style={{ background: 'var(--bg-secondary)' }}>
+                <div className="p-4 space-y-4">
                   {/* 목표값 입력 */}
                   <div>
                     <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
@@ -195,12 +199,7 @@ export default function GoalSolverPanel({ onClose, showHelp: externalShowHelp, s
                       value={targetValue}
                       onChange={(e) => setTargetValues(prev => ({ ...prev, [formula.id]: e.target.value }))}
                       placeholder={t('targetPlaceholder')}
-                      className="hide-spinner w-full px-3 py-2.5 rounded-lg text-sm"
-                      style={{
-                        background: 'var(--bg-primary)',
-                        border: '1px solid var(--border-primary)',
-                        color: 'var(--text-primary)'
-                      }}
+                      className="glass-input hide-spinner w-full px-3 py-2.5 rounded-lg text-sm"
                     />
                   </div>
 
@@ -215,12 +214,7 @@ export default function GoalSolverPanel({ onClose, showHelp: externalShowHelp, s
                         value={formulaParams[param.key] || ''}
                         onChange={(e) => updateParam(formula.id, param.key, e.target.value)}
                         placeholder={String(param.defaultValue)}
-                        className="hide-spinner w-full px-3 py-2.5 rounded-lg text-sm"
-                        style={{
-                          background: 'var(--bg-primary)',
-                          border: '1px solid var(--border-primary)',
-                          color: 'var(--text-primary)'
-                        }}
+                        className="glass-input hide-spinner w-full px-3 py-2.5 rounded-lg text-sm"
                       />
                     </div>
                   ))}
@@ -229,11 +223,8 @@ export default function GoalSolverPanel({ onClose, showHelp: externalShowHelp, s
                   <button
                     onClick={() => handleCalculate(formula.id)}
                     disabled={!targetValue}
-                    className="w-full py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
-                    style={{
-                      background: 'var(--accent)',
-                      color: 'white'
-                    }}
+                    className="glass-button-primary w-full py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 disabled:opacity-50"
+                    style={{ background: PANEL_COLOR }}
                   >
                     <Calculator className="w-4 h-4" />
                     {t('calculate')}
@@ -241,27 +232,26 @@ export default function GoalSolverPanel({ onClose, showHelp: externalShowHelp, s
 
                   {/* 결과 표시 - 더 세련된 카드 스타일 */}
                   {result && (
-                    <div className="rounded-xl overflow-hidden" style={{ border: `1px solid ${result.success ? 'rgba(20, 184, 166, 0.3)' : 'rgba(239, 68, 68, 0.3)'}` }}>
+                    <div className="glass-card rounded-xl overflow-hidden" style={{ borderColor: result.success ? `${PANEL_COLOR}50` : 'rgba(239, 68, 68, 0.3)' }}>
                       {result.success && result.value !== undefined ? (
                         <>
                           {/* 결과 헤더 */}
                           <div
                             className="px-4 py-3 flex items-center justify-between"
-                            style={{ background: 'rgba(20, 184, 166, 0.08)' }}
+                            style={{ background: `${PANEL_COLOR}10` }}
                           >
                             <div className="flex items-center gap-2">
-                              <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: '#14b8a6' }}>
+                              <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: PANEL_COLOR }}>
                                 <Check className="w-3.5 h-3.5 text-white" />
                               </div>
-                              <span className="text-sm font-semibold" style={{ color: '#14b8a6' }}>{t('calculationComplete')}</span>
+                              <span className="text-sm font-semibold" style={{ color: PANEL_COLOR }}>{t('calculationComplete')}</span>
                             </div>
                             <button
                               onClick={() => handleCopy(formula.id, result.value!)}
-                              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105"
+                              className="glass-button flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
                               style={{
-                                background: copied === formula.id ? '#14b8a6' : 'var(--bg-primary)',
+                                background: copied === formula.id ? PANEL_COLOR : 'transparent',
                                 color: copied === formula.id ? 'white' : 'var(--text-secondary)',
-                                border: '1px solid var(--border-primary)'
                               }}
                             >
                               {copied === formula.id ? <Check className="w-3 h-3" /> : <Copy className="w-3 h-3" />}
@@ -270,13 +260,13 @@ export default function GoalSolverPanel({ onClose, showHelp: externalShowHelp, s
                           </div>
 
                           {/* 결과값 */}
-                          <div className="p-5 text-center" style={{ background: 'var(--bg-primary)' }}>
+                          <div className="glass-stat p-5 text-center">
                             <div className="text-xs font-medium mb-2" style={{ color: 'var(--text-tertiary)' }}>
                               {t('requiredValue')}
                             </div>
                             <div
                               className="text-4xl font-bold tracking-tight mb-1"
-                              style={{ color: '#14b8a6' }}
+                              style={{ color: PANEL_COLOR }}
                             >
                               {typeof result.value === 'number'
                                 ? result.value.toLocaleString(undefined, { maximumFractionDigits: 3 })
@@ -285,11 +275,11 @@ export default function GoalSolverPanel({ onClose, showHelp: externalShowHelp, s
                           </div>
 
                           {/* 설명 */}
-                          <div className="px-4 py-3 space-y-3" style={{ background: 'var(--bg-tertiary)' }}>
+                          <div className="glass-section px-4 py-3 space-y-3">
                             <p className="text-sm whitespace-pre-line" style={{ color: 'var(--text-secondary)' }}>
                               {result.explanation}
                             </p>
-                            <div className="px-3 py-2 rounded-lg font-mono text-xs" style={{ background: 'var(--bg-primary)', color: 'var(--text-tertiary)' }}>
+                            <div className="glass-section px-3 py-2 rounded-lg font-mono text-xs" style={{ color: 'var(--text-tertiary)' }}>
                               {result.formula}
                             </div>
                           </div>

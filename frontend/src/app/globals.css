@@ -448,6 +448,271 @@ input[type="checkbox"]:checked::after {
   color: var(--text-primary);
 }
 
+/* ========================================
+   Glassmorphism Panel System
+   ======================================== */
+
+/* Glass Panel Base */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.08),
+    0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  border-radius: 20px;
+}
+
+.dark .glass-panel {
+  background: rgba(30, 41, 59, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  box-shadow:
+    0 8px 32px rgba(0, 0, 0, 0.3),
+    0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+}
+
+/* Glass Panel Header */
+.glass-panel-header {
+  @apply flex items-center justify-between px-5 py-4;
+  background: transparent;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.dark .glass-panel-header {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* Glass Panel Content */
+.glass-panel-content {
+  @apply p-5;
+}
+
+/* Glass Card - 패널 내부 카드 */
+.glass-card {
+  background: rgba(255, 255, 255, 0.5);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+  border-radius: 16px;
+  transition: all 0.2s ease;
+}
+
+.glass-card:hover {
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+}
+
+.dark .glass-card {
+  background: rgba(51, 65, 85, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.dark .glass-card:hover {
+  background: rgba(51, 65, 85, 0.7);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+
+/* Glass Input */
+.glass-input {
+  background: rgba(255, 255, 255, 0.6) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 12px !important;
+  transition: all 0.2s ease;
+}
+
+.glass-input:focus {
+  background: rgba(255, 255, 255, 0.9) !important;
+  border-color: var(--accent) !important;
+  box-shadow: 0 0 0 3px var(--accent-light) !important;
+}
+
+.dark .glass-input {
+  background: rgba(51, 65, 85, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+}
+
+.dark .glass-input:focus {
+  background: rgba(51, 65, 85, 0.9) !important;
+}
+
+/* Glass Button */
+.glass-button {
+  @apply px-4 py-2.5 font-medium rounded-xl transition-all duration-200;
+  background: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  color: var(--text-primary);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+.glass-button:hover {
+  background: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-1px);
+}
+
+.glass-button:active {
+  transform: translateY(0);
+}
+
+.dark .glass-button {
+  background: rgba(51, 65, 85, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.dark .glass-button:hover {
+  background: rgba(51, 65, 85, 0.9);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+
+/* Glass Button Primary */
+.glass-button-primary {
+  @apply px-4 py-2.5 font-semibold rounded-xl transition-all duration-200;
+  background: linear-gradient(135deg, var(--accent), var(--accent-hover));
+  border: none;
+  color: white;
+  box-shadow: 0 4px 16px rgba(14, 165, 233, 0.3);
+}
+
+.glass-button-primary:hover {
+  box-shadow: 0 6px 20px rgba(14, 165, 233, 0.4);
+  transform: translateY(-1px);
+}
+
+.glass-button-primary:active {
+  transform: translateY(0);
+}
+
+/* Glass Tabs */
+.glass-tabs {
+  @apply flex gap-1 p-1;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 14px;
+}
+
+.dark .glass-tabs {
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.glass-tab {
+  @apply px-4 py-2 text-sm font-medium rounded-xl transition-all duration-200;
+  color: var(--text-secondary);
+}
+
+.glass-tab:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.glass-tab.active {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.dark .glass-tab:hover {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.dark .glass-tab.active {
+  background: rgba(255, 255, 255, 0.12);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Glass Badge */
+.glass-badge {
+  @apply inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold;
+  background: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.dark .glass-badge {
+  background: rgba(51, 65, 85, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Glass Section - 섹션 구분용 */
+.glass-section {
+  @apply p-4 rounded-2xl;
+  background: rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.dark .glass-section {
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+/* Glass Divider */
+.glass-divider {
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(0, 0, 0, 0.08) 20%,
+    rgba(0, 0, 0, 0.08) 80%,
+    transparent
+  );
+}
+
+.dark .glass-divider {
+  background: linear-gradient(
+    90deg,
+    transparent,
+    rgba(255, 255, 255, 0.08) 20%,
+    rgba(255, 255, 255, 0.08) 80%,
+    transparent
+  );
+}
+
+/* Glass Select */
+.glass-select {
+  @apply appearance-none cursor-pointer;
+  background: rgba(255, 255, 255, 0.6) !important;
+  border: 1px solid rgba(0, 0, 0, 0.08) !important;
+  border-radius: 12px !important;
+  padding-right: 2.5rem !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2364748b' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+  background-repeat: no-repeat !important;
+  background-position: right 0.75rem center !important;
+}
+
+.dark .glass-select {
+  background-color: rgba(51, 65, 85, 0.6) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2394a3b8' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E") !important;
+}
+
+/* Glass Stat Card */
+.glass-stat {
+  @apply p-4 rounded-2xl text-center;
+  background: linear-gradient(135deg, rgba(255,255,255,0.6), rgba(255,255,255,0.3));
+  border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+.dark .glass-stat {
+  background: linear-gradient(135deg, rgba(51,65,85,0.6), rgba(51,65,85,0.3));
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* Glass Progress Bar */
+.glass-progress {
+  @apply h-2 rounded-full overflow-hidden;
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.dark .glass-progress {
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.glass-progress-bar {
+  @apply h-full rounded-full transition-all duration-300;
+  background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+}
+
 /* 스크롤바 완전 숨김 (커스텀 스크롤바 사용) */
 .hide-scrollbar {
   -ms-overflow-style: none;

@@ -130,6 +130,7 @@ export default function ToolPanels({
         show={panels.calculator.show}
         onClose={() => { panels.calculator.setShow(false); setCalculatorHelp(false); }}
         title={t('sidebar.calculator')}
+        description={t(TOOL_CONFIGS.calculator.descriptionKey)}
         icon={TOOL_CONFIGS.calculator.icon}
         color={TOOL_CONFIGS.calculator.color}
         headerExtra={
@@ -162,6 +163,7 @@ export default function ToolPanels({
         show={panels.comparison.show}
         onClose={() => { panels.comparison.setShow(false); setComparisonHelp(false); }}
         title={t('sidebar.comparison')}
+        description={t(TOOL_CONFIGS.comparison.descriptionKey)}
         icon={TOOL_CONFIGS.comparison.icon}
         color={TOOL_CONFIGS.comparison.color}
         headerExtra={
@@ -194,6 +196,7 @@ export default function ToolPanels({
         show={panels.chart.show}
         onClose={() => { panels.chart.setShow(false); setChartHelp(false); }}
         title={t('growthCurve.title')}
+        description={t(TOOL_CONFIGS.chart.descriptionKey)}
         icon={TOOL_CONFIGS.chart.icon}
         color={TOOL_CONFIGS.chart.color}
         headerExtra={
@@ -211,7 +214,7 @@ export default function ToolPanels({
         onResizeSE={createResizeHandler('chart', 'se')}
         defaultIndex={TOOL_CONFIGS.chart.defaultIndex}
       >
-        <GrowthCurveChart showHelp={chartHelp} setShowHelp={setChartHelp} />
+        <GrowthCurveChart showHelp={chartHelp} setShowHelp={setChartHelp} onClose={() => { panels.chart.setShow(false); setChartHelp(false); }} />
       </ToolPanelRenderer>
 
       {/* Preset Comparison */}
@@ -221,6 +224,7 @@ export default function ToolPanels({
         show={panels.preset.show}
         onClose={() => { panels.preset.setShow(false); setPresetHelp(false); }}
         title={t('sidebar.presetComparison')}
+        description={t(TOOL_CONFIGS.presetComparison.descriptionKey)}
         icon={TOOL_CONFIGS.presetComparison.icon}
         color={TOOL_CONFIGS.presetComparison.color}
         headerExtra={
@@ -253,6 +257,7 @@ export default function ToolPanels({
         show={panels.imbalance.show}
         onClose={() => { panels.imbalance.setShow(false); setImbalanceHelp(false); }}
         title={t('sidebar.imbalanceDetector')}
+        description={t(TOOL_CONFIGS.imbalanceDetector.descriptionKey)}
         icon={TOOL_CONFIGS.imbalanceDetector.icon}
         color={TOOL_CONFIGS.imbalanceDetector.color}
         headerExtra={
@@ -284,6 +289,7 @@ export default function ToolPanels({
         show={panels.goal.show}
         onClose={() => { panels.goal.setShow(false); setGoalHelp(false); }}
         title={t('sidebar.goalSolver')}
+        description={t(TOOL_CONFIGS.goalSolver.descriptionKey)}
         icon={TOOL_CONFIGS.goalSolver.icon}
         color={TOOL_CONFIGS.goalSolver.color}
         headerExtra={
@@ -315,6 +321,7 @@ export default function ToolPanels({
         show={panels.balance.show}
         onClose={() => { panels.balance.setShow(false); setBalanceAnalysisHelp(false); }}
         title={t('sidebar.balanceAnalysis')}
+        description={t(TOOL_CONFIGS.balanceAnalysis.descriptionKey)}
         icon={TOOL_CONFIGS.balanceAnalysis.icon}
         color={TOOL_CONFIGS.balanceAnalysis.color}
         headerExtra={
@@ -346,6 +353,7 @@ export default function ToolPanels({
         show={panels.economy.show}
         onClose={() => { panels.economy.setShow(false); setEconomyHelp(false); }}
         title={t('sidebar.economy')}
+        description={t(TOOL_CONFIGS.economy.descriptionKey)}
         icon={TOOL_CONFIGS.economy.icon}
         color={TOOL_CONFIGS.economy.color}
         headerExtra={
@@ -366,6 +374,7 @@ export default function ToolPanels({
         <EconomyPanel
           showHelp={economyHelp}
           setShowHelp={setEconomyHelp}
+          onClose={() => { panels.economy.setShow(false); setEconomyHelp(false); }}
         />
       </ToolPanelRenderer>
 
@@ -376,6 +385,7 @@ export default function ToolPanels({
         show={panels.dpsVariance.show}
         onClose={() => { panels.dpsVariance.setShow(false); setDpsVarianceHelp(false); }}
         title={t('sidebar.dpsVariance')}
+        description={t(TOOL_CONFIGS.dpsVariance.descriptionKey)}
         icon={TOOL_CONFIGS.dpsVariance.icon}
         color={TOOL_CONFIGS.dpsVariance.color}
         headerExtra={
@@ -408,6 +418,7 @@ export default function ToolPanels({
         show={panels.curveFitting.show}
         onClose={() => { panels.curveFitting.setShow(false); setCurveFittingHelp(false); }}
         title={t('sidebar.curveFitting')}
+        description={t(TOOL_CONFIGS.curveFitting.descriptionKey)}
         icon={TOOL_CONFIGS.curveFitting.icon}
         color={TOOL_CONFIGS.curveFitting.color}
         headerExtra={
@@ -439,6 +450,7 @@ export default function ToolPanels({
         show={panels.formulaHelper.show}
         onClose={() => { panels.formulaHelper.setShow(false); setFormulaHelperHelp(false); }}
         title={t('bottomTabs.formulaHelper')}
+        description={t(TOOL_CONFIGS.formulaHelper.descriptionKey)}
         icon={TOOL_CONFIGS.formulaHelper.icon}
         color={TOOL_CONFIGS.formulaHelper.color}
         headerExtra={
@@ -470,6 +482,7 @@ export default function ToolPanels({
         show={panels.balanceValidator.show}
         onClose={() => { panels.balanceValidator.setShow(false); setBalanceValidatorHelp(false); }}
         title={t('bottomTabs.balanceValidator')}
+        description={t(TOOL_CONFIGS.balanceValidator.descriptionKey)}
         icon={TOOL_CONFIGS.balanceValidator.icon}
         color={TOOL_CONFIGS.balanceValidator.color}
         headerExtra={
@@ -501,6 +514,7 @@ export default function ToolPanels({
         show={panels.difficultyCurve.show}
         onClose={() => { panels.difficultyCurve.setShow(false); setDifficultyCurveHelp(false); }}
         title={t('bottomTabs.difficultyCurve')}
+        description={t(TOOL_CONFIGS.difficultyCurve.descriptionKey)}
         icon={TOOL_CONFIGS.difficultyCurve.icon}
         color={TOOL_CONFIGS.difficultyCurve.color}
         headerExtra={
@@ -532,6 +546,7 @@ export default function ToolPanels({
         show={panels.simulation.show}
         onClose={() => { panels.simulation.setShow(false); setSimulationHelp(false); }}
         title={t('bottomTabs.simulation')}
+        description={t(TOOL_CONFIGS.simulation.descriptionKey)}
         icon={TOOL_CONFIGS.simulation.icon}
         color={TOOL_CONFIGS.simulation.color}
         headerExtra={

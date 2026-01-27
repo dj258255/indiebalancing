@@ -22,6 +22,8 @@ import { detectImbalances, getSeverityColor, type ImbalanceIssue, type Severity,
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useTranslations } from 'next-intl';
 
+const PANEL_COLOR = '#f59e0b';
+
 interface ImbalanceDetectorPanelProps {
   onClose: () => void;
   showHelp?: boolean;
@@ -118,40 +120,40 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
         {/* 도움말 패널 */}
         {showHelp && (
-          <div className="mb-4 p-3 rounded-lg animate-slideDown" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+          <div className="mb-4 glass-card p-3 rounded-lg animate-slideDown">
             <div className="font-medium mb-2 text-sm" style={{ color: 'var(--text-primary)' }}>{t('helpTitle')}</div>
             <p className="mb-3 text-sm" style={{ color: 'var(--text-secondary)' }}>{t('helpDesc')}</p>
             <div className="space-y-2 mb-3">
-              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #ef4444' }}>
+              <div className="glass-section p-2.5 rounded-lg" style={{ borderLeft: '3px solid #ef4444' }}>
                 <span className="font-medium text-sm" style={{ color: '#ef4444' }}>{t('outlier')}</span>
                 <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpOutlier')}</p>
               </div>
-              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #f59e0b' }}>
+              <div className="glass-section p-2.5 rounded-lg" style={{ borderLeft: '3px solid #f59e0b' }}>
                 <span className="font-medium text-sm" style={{ color: '#f59e0b' }}>{t('powerCreep')}</span>
                 <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpPowerCreep')}</p>
               </div>
-              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #8b5cf6' }}>
+              <div className="glass-section p-2.5 rounded-lg" style={{ borderLeft: '3px solid #8b5cf6' }}>
                 <span className="font-medium text-sm" style={{ color: '#8b5cf6' }}>{t('cliff')}</span>
                 <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpCliff')}</p>
               </div>
-              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #3b82f6' }}>
+              <div className="glass-section p-2.5 rounded-lg" style={{ borderLeft: '3px solid #3b82f6' }}>
                 <span className="font-medium text-sm" style={{ color: '#3b82f6' }}>{t('variance')}</span>
                 <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpVariance')}</p>
               </div>
             </div>
-            <div className="pt-2 border-t text-xs" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
+            <div className="glass-divider pt-2 border-t text-xs" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
               {t('helpVsAnalysis')}
             </div>
           </div>
         )}
         {/* 설정 패널 */}
         {showSettings && (
-          <div className="p-3 rounded-lg space-y-3" style={{ background: 'var(--bg-tertiary)' }}>
+          <div className="glass-card p-3 rounded-lg space-y-3">
             <div className="flex items-center gap-2">
               <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t('settings')}</div>
               <div className="group relative">
                 <HelpCircle className="w-3.5 h-3.5 cursor-help" style={{ color: 'var(--text-tertiary)' }} />
-                <div className="absolute left-0 top-5 z-50 hidden group-hover:block w-64 p-2 rounded-lg text-xs shadow-lg" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}>
+                <div className="absolute left-0 top-5 z-50 hidden group-hover:block w-64 glass-panel p-2 rounded-lg text-xs shadow-lg" style={{ color: 'var(--text-secondary)' }}>
                   {t('settingsTooltip')}
                 </div>
               </div>
@@ -166,7 +168,7 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
                   </label>
                   <div className="group relative">
                     <HelpCircle className="w-3 h-3 cursor-help" style={{ color: 'var(--text-tertiary)' }} />
-                    <div className="absolute left-0 top-4 z-50 hidden group-hover:block w-56 p-2 rounded-lg text-xs shadow-lg" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}>
+                    <div className="absolute left-0 top-4 z-50 hidden group-hover:block w-56 glass-panel p-2 rounded-lg text-xs shadow-lg" style={{ color: 'var(--text-secondary)' }}>
                       <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('outlierTooltipTitle')}</div>
                       {t('outlierTooltipDesc')}
                       <div className="mt-1.5 space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
@@ -184,12 +186,7 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
                   step={0.5}
                   min={1}
                   max={5}
-                  className="w-full px-2 py-1.5 rounded text-sm"
-                  style={{
-                    background: 'var(--bg-primary)',
-                    border: '1px solid var(--border-primary)',
-                    color: 'var(--text-primary)'
-                  }}
+                  className="glass-input w-full px-2 py-1.5 rounded text-sm"
                 />
               </div>
 
@@ -201,7 +198,7 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
                   </label>
                   <div className="group relative">
                     <HelpCircle className="w-3 h-3 cursor-help" style={{ color: 'var(--text-tertiary)' }} />
-                    <div className="absolute right-0 top-4 z-50 hidden group-hover:block w-56 p-2 rounded-lg text-xs shadow-lg" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}>
+                    <div className="absolute right-0 top-4 z-50 hidden group-hover:block w-56 glass-panel p-2 rounded-lg text-xs shadow-lg" style={{ color: 'var(--text-secondary)' }}>
                       <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('powerCreepTooltipTitle')}</div>
                       {t('powerCreepTooltipDesc')}
                       <div className="mt-1.5 space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
@@ -219,12 +216,7 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
                   step={0.5}
                   min={1.5}
                   max={10}
-                  className="w-full px-2 py-1.5 rounded text-sm"
-                  style={{
-                    background: 'var(--bg-primary)',
-                    border: '1px solid var(--border-primary)',
-                    color: 'var(--text-primary)'
-                  }}
+                  className="glass-input w-full px-2 py-1.5 rounded text-sm"
                 />
               </div>
 
@@ -236,7 +228,7 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
                   </label>
                   <div className="group relative">
                     <HelpCircle className="w-3 h-3 cursor-help" style={{ color: 'var(--text-tertiary)' }} />
-                    <div className="absolute left-0 top-4 z-50 hidden group-hover:block w-56 p-2 rounded-lg text-xs shadow-lg" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}>
+                    <div className="absolute left-0 top-4 z-50 hidden group-hover:block w-56 glass-panel p-2 rounded-lg text-xs shadow-lg" style={{ color: 'var(--text-secondary)' }}>
                       <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('varianceTooltipTitle')}</div>
                       {t('varianceTooltipDesc')}
                       <div className="mt-1.5 space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
@@ -254,12 +246,7 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
                   step={0.1}
                   min={0.1}
                   max={1}
-                  className="w-full px-2 py-1.5 rounded text-sm"
-                  style={{
-                    background: 'var(--bg-primary)',
-                    border: '1px solid var(--border-primary)',
-                    color: 'var(--text-primary)'
-                  }}
+                  className="glass-input w-full px-2 py-1.5 rounded text-sm"
                 />
               </div>
 
@@ -271,7 +258,7 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
                   </label>
                   <div className="group relative">
                     <HelpCircle className="w-3 h-3 cursor-help" style={{ color: 'var(--text-tertiary)' }} />
-                    <div className="absolute right-0 top-4 z-50 hidden group-hover:block w-56 p-2 rounded-lg text-xs shadow-lg" style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}>
+                    <div className="absolute right-0 top-4 z-50 hidden group-hover:block w-56 glass-panel p-2 rounded-lg text-xs shadow-lg" style={{ color: 'var(--text-secondary)' }}>
                       <div className="font-medium mb-1" style={{ color: 'var(--text-primary)' }}>{t('cliffTooltipTitle')}</div>
                       {t('cliffTooltipDesc')}
                       <div className="mt-1.5 space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
@@ -289,23 +276,18 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
                   step={0.5}
                   min={1.5}
                   max={5}
-                  className="w-full px-2 py-1.5 rounded text-sm"
-                  style={{
-                    background: 'var(--bg-primary)',
-                    border: '1px solid var(--border-primary)',
-                    color: 'var(--text-primary)'
-                  }}
+                  className="glass-input w-full px-2 py-1.5 rounded text-sm"
                 />
               </div>
             </div>
 
             {/* 추천 설정 안내 */}
-            <div className="p-2 rounded-lg text-xs" style={{ background: 'var(--accent-light)', color: 'var(--text-secondary)' }}>
+            <div className="glass-section p-2 rounded-lg text-xs" style={{ background: `${PANEL_COLOR}10`, borderLeft: `3px solid ${PANEL_COLOR}` }}>
               <div className="flex items-center gap-1.5 mb-1">
-                <Info className="w-3 h-3" style={{ color: 'var(--accent)' }} />
-                <span className="font-medium" style={{ color: 'var(--accent)' }}>{t('recommendedSettings')}</span>
+                <Info className="w-3 h-3" style={{ color: PANEL_COLOR }} />
+                <span className="font-medium" style={{ color: PANEL_COLOR }}>{t('recommendedSettings')}</span>
               </div>
-              <div>{t('recommendedSettingsDesc')}</div>
+              <div style={{ color: 'var(--text-secondary)' }}>{t('recommendedSettingsDesc')}</div>
             </div>
           </div>
         )}
@@ -314,9 +296,9 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
         <button
           onClick={runAnalysis}
           disabled={!currentSheet || isAnalyzing}
-          className="w-full py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 transition-colors disabled:opacity-50"
+          className="glass-button-primary w-full py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 disabled:opacity-50"
           style={{
-            background: isAnalyzing ? 'var(--bg-tertiary)' : 'var(--primary-yellow)',
+            background: isAnalyzing ? 'var(--bg-tertiary)' : PANEL_COLOR,
             color: isAnalyzing ? 'var(--text-secondary)' : 'white'
           }}
         >
@@ -337,7 +319,7 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
         {hasAnalyzed && (
           <>
             {/* 요약 */}
-            <div className="p-4 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
+            <div className="glass-card p-4 rounded-lg">
               {issues.length === 0 ? (
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(34, 197, 94, 0.2)' }}>
@@ -354,15 +336,13 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
                     {t('issuesFound', { count: issues.length })}
                   </div>
 
-                  <div className="flex gap-2">
+                  <div className="glass-tabs flex gap-2 p-1 rounded-lg">
                     <button
                       onClick={() => setFilterSeverity('all')}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                        filterSeverity === 'all' ? 'bg-[var(--accent)] text-white' : ''
-                      }`}
+                      className="glass-button px-3 py-1.5 rounded-lg text-xs font-medium"
                       style={{
-                        background: filterSeverity === 'all' ? undefined : 'var(--bg-primary)',
-                        color: filterSeverity === 'all' ? undefined : 'var(--text-secondary)'
+                        background: filterSeverity === 'all' ? 'var(--accent)' : 'transparent',
+                        color: filterSeverity === 'all' ? 'white' : 'var(--text-secondary)'
                       }}
                     >
                       {t('all')} ({issues.length})
@@ -370,12 +350,10 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
                     {severityCounts.critical > 0 && (
                       <button
                         onClick={() => setFilterSeverity('critical')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                          filterSeverity === 'critical' ? 'text-white' : ''
-                        }`}
+                        className="glass-button px-3 py-1.5 rounded-lg text-xs font-medium"
                         style={{
-                          background: filterSeverity === 'critical' ? 'var(--primary-red)' : 'var(--bg-primary)',
-                          color: filterSeverity === 'critical' ? undefined : 'var(--primary-red)'
+                          background: filterSeverity === 'critical' ? '#ef4444' : 'transparent',
+                          color: filterSeverity === 'critical' ? 'white' : '#ef4444'
                         }}
                       >
                         {t('critical')} ({severityCounts.critical})
@@ -384,12 +362,10 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
                     {severityCounts.warning > 0 && (
                       <button
                         onClick={() => setFilterSeverity('warning')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                          filterSeverity === 'warning' ? 'text-white' : ''
-                        }`}
+                        className="glass-button px-3 py-1.5 rounded-lg text-xs font-medium"
                         style={{
-                          background: filterSeverity === 'warning' ? 'var(--primary-yellow)' : 'var(--bg-primary)',
-                          color: filterSeverity === 'warning' ? undefined : 'var(--primary-yellow)'
+                          background: filterSeverity === 'warning' ? PANEL_COLOR : 'transparent',
+                          color: filterSeverity === 'warning' ? 'white' : PANEL_COLOR
                         }}
                       >
                         {t('warning')} ({severityCounts.warning})
@@ -398,12 +374,10 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
                     {severityCounts.info > 0 && (
                       <button
                         onClick={() => setFilterSeverity('info')}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
-                          filterSeverity === 'info' ? 'text-white' : ''
-                        }`}
+                        className="glass-button px-3 py-1.5 rounded-lg text-xs font-medium"
                         style={{
-                          background: filterSeverity === 'info' ? 'var(--primary-blue)' : 'var(--bg-primary)',
-                          color: filterSeverity === 'info' ? undefined : 'var(--primary-blue)'
+                          background: filterSeverity === 'info' ? '#3b82f6' : 'transparent',
+                          color: filterSeverity === 'info' ? 'white' : '#3b82f6'
                         }}
                       >
                         {t('info')} ({severityCounts.info})
@@ -425,11 +399,9 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
                   return (
                     <div
                       key={issue.id}
-                      className="rounded-lg overflow-hidden"
+                      className="glass-card rounded-lg overflow-hidden"
                       style={{
-                        border: `1px solid ${color}50`,
                         borderLeft: `4px solid ${color}`,
-                        background: 'var(--bg-primary)'
                       }}
                     >
                       <button
@@ -463,16 +435,16 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
                       </button>
 
                       {isExpanded && (
-                        <div className="p-3 space-y-3" style={{ background: 'var(--bg-primary)' }}>
+                        <div className="p-3 space-y-3">
                           <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                             {issue.description}
                           </div>
 
                           {issue.suggestion && (
-                            <div className="p-2 rounded-lg text-xs" style={{ background: 'var(--bg-tertiary)' }}>
+                            <div className="glass-section p-2 rounded-lg text-xs" style={{ borderLeft: `3px solid ${color}` }}>
                               <div className="flex items-center gap-1 mb-1">
-                                <Info className="w-3 h-3" style={{ color: 'var(--accent)' }} />
-                                <span className="font-medium" style={{ color: 'var(--accent)' }}>{t('suggestion')}</span>
+                                <Info className="w-3 h-3" style={{ color }} />
+                                <span className="font-medium" style={{ color }}>{t('suggestion')}</span>
                               </div>
                               <div style={{ color: 'var(--text-secondary)' }}>{issue.suggestion}</div>
                             </div>
@@ -484,8 +456,7 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
                               return (
                                 <span
                                   key={colId}
-                                  className="px-2 py-0.5 rounded text-xs"
-                                  style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                                  className="glass-badge px-2 py-0.5 rounded text-xs"
                                 >
                                   {col?.name || colId}
                                 </span>
@@ -504,7 +475,7 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
 
         {/* 시트가 없을 때 */}
         {!currentSheet && (
-          <div className="text-center py-8">
+          <div className="glass-card text-center py-8 rounded-lg">
             <AlertTriangle className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--text-tertiary)' }} />
             <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
               {t('selectSheet')}

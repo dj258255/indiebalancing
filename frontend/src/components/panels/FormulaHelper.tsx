@@ -1,13 +1,30 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import { Calculator, Copy, Check, Swords, Coins, Layers, Wrench, Link, Sigma, Triangle, GitBranch, BarChart3, FunctionSquare } from 'lucide-react';
+import {
+  Calculator,
+  Copy,
+  Check,
+  Swords,
+  Coins,
+  Layers,
+  Wrench,
+  Link,
+  Sigma,
+  Triangle,
+  GitBranch,
+  BarChart3,
+  FunctionSquare,
+  Play,
+  Search,
+  BookOpen,
+} from 'lucide-react';
 import { availableFunctions, evaluateFormula } from '@/lib/formulaEngine';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { useEscapeKey } from '@/hooks';
 
-// 카테고리 정의 - 번역 키 사용
+// 카테고리 정의
 const CATEGORY_IDS = ['all', 'combat', 'economy', 'stage', 'util', 'ref', 'math', 'stat', 'trig', 'logic'] as const;
 const CATEGORY_ICONS: Record<string, typeof Calculator> = {
   all: Calculator,
@@ -22,7 +39,7 @@ const CATEGORY_ICONS: Record<string, typeof Calculator> = {
   logic: GitBranch,
 };
 const CATEGORY_COLORS: Record<string, string> = {
-  all: 'var(--accent)',
+  all: '#3b82f6',
   combat: '#ef4444',
   economy: '#f59e0b',
   stage: '#8b5cf6',
@@ -49,8 +66,8 @@ export default function FormulaHelper({ onClose, showHelp = false, setShowHelp }
   const [testResult, setTestResult] = useState<string | null>(null);
   const [copiedFunction, setCopiedFunction] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
-  // 카테고리 번역 키 매핑
   const getCategoryName = (id: string) => {
     const keyMap: Record<string, string> = {
       all: 'formulaHelper.catAll',
@@ -67,7 +84,6 @@ export default function FormulaHelper({ onClose, showHelp = false, setShowHelp }
     return t(keyMap[id] || id);
   };
 
-  // 함수 설명 번역 (특수 문자 포함된 함수명 처리)
   const getFunctionDescription = (funcName: string, fallback: string) => {
     if (funcName.includes('.')) {
       return fallback;
@@ -77,13 +93,24 @@ export default function FormulaHelper({ onClose, showHelp = false, setShowHelp }
     return translated === key ? fallback : translated;
   };
 
-  // 카테고리별 필터링
   const filteredFunctions = useMemo(() => {
-    if (selectedCategory === 'all') return availableFunctions;
-    return availableFunctions.filter(f => f.category === selectedCategory);
-  }, [selectedCategory]);
+    let funcs = availableFunctions;
 
-  // 카테고리별 함수 개수
+    if (selectedCategory !== 'all') {
+      funcs = funcs.filter(f => f.category === selectedCategory);
+    }
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      funcs = funcs.filter(f =>
+        f.name.toLowerCase().includes(query) ||
+        f.description.toLowerCase().includes(query)
+      );
+    }
+
+    return funcs;
+  }, [selectedCategory, searchQuery]);
+
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { all: availableFunctions.length };
     availableFunctions.forEach(f => {
@@ -113,125 +140,131 @@ export default function FormulaHelper({ onClose, showHelp = false, setShowHelp }
 
   return (
     <div className="flex flex-col h-full">
-      <div className="p-3 pb-12 space-y-3 overflow-y-auto overflow-x-hidden flex-1">
+      <div className="p-4 space-y-5 overflow-y-auto overflow-x-hidden flex-1 scrollbar-slim">
         {/* 도움말 섹션 */}
         {showHelp && (
-          <div className="mb-4 p-3 rounded-lg animate-slideDown" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
-            <div className="space-y-3">
-              {/* 개요 */}
-              <div className="flex items-start gap-2">
-                <div className="w-5 h-5 rounded flex items-center justify-center shrink-0 mt-0.5" style={{ background: `${PANEL_COLOR}20` }}>
-                  <FunctionSquare className="w-3 h-3" style={{ color: PANEL_COLOR }} />
-                </div>
-                <div>
-                  <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.helpTitle')}</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{t('formulaHelper.helpDesc')}</p>
-                </div>
+          <div className="glass-card p-4 animate-slideDown space-y-4">
+            <div className="flex items-start gap-3">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                style={{ background: `linear-gradient(135deg, ${PANEL_COLOR}, ${PANEL_COLOR}cc)` }}
+              >
+                <FunctionSquare className="w-5 h-5 text-white" />
               </div>
+              <div>
+                <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.helpTitle')}</p>
+                <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{t('formulaHelper.helpDesc')}</p>
+              </div>
+            </div>
 
-              {/* 사용 방법 */}
+            <div className="grid grid-cols-2 gap-3">
+              <div className="glass-section p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <BookOpen className="w-3.5 h-3.5" style={{ color: PANEL_COLOR }} />
+                  <span className="font-medium text-xs" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.helpUsage')}</span>
+                </div>
+                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('formulaHelper.helpUsageDesc')}</p>
+              </div>
+              <div className="glass-section p-3">
+                <div className="flex items-center gap-2 mb-1">
+                  <Play className="w-3.5 h-3.5" style={{ color: '#10b981' }} />
+                  <span className="font-medium text-xs" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.helpTest')}</span>
+                </div>
+                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('formulaHelper.helpTestDesc')}</p>
+              </div>
+            </div>
+
+            <div className="glass-divider" />
+
+            <div className="space-y-2">
+              <div className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.syntaxGuide')}</div>
               <div className="grid grid-cols-2 gap-2 text-xs">
-                <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                  <span className="font-medium" style={{ color: PANEL_COLOR }}>{t('formulaHelper.helpUsage')}</span>
-                  <span className="ml-1" style={{ color: 'var(--text-tertiary)' }}>{t('formulaHelper.helpUsageDesc')}</span>
+                <div className="glass-section p-2">
+                  <code className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: `${PANEL_COLOR}15`, color: PANEL_COLOR }}>=</code>
+                  <span className="ml-1.5" style={{ color: 'var(--text-tertiary)' }}>{t('formulaHelper.formulaStart')}</span>
                 </div>
-                <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                  <span className="font-medium" style={{ color: PANEL_COLOR }}>{t('formulaHelper.helpTest')}</span>
-                  <span className="ml-1" style={{ color: 'var(--text-tertiary)' }}>{t('formulaHelper.helpTestDesc')}</span>
+                <div className="glass-section p-2">
+                  <code className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: `${PANEL_COLOR}15`, color: PANEL_COLOR }}>PREV.</code>
+                  <span className="ml-1.5" style={{ color: 'var(--text-tertiary)' }}>{t('formulaHelper.prevRowRef')}</span>
                 </div>
-              </div>
-
-              {/* 수식 문법 가이드 */}
-              <div className="space-y-1.5">
-                <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.syntaxGuide')}</div>
-                <ul className="space-y-1.5 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  <li>
-                    <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>=</code> {t('formulaHelper.formulaStart')}
-                  </li>
-                  <li>
-                    {t('formulaHelper.basicOps')} <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>+</code>{' '}
-                    <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>-</code>{' '}
-                    <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>*</code>{' '}
-                    <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>/</code>{' '}
-                    <code className="px-1 rounded" style={{ background: 'var(--bg-primary)' }}>^</code>
-                  </li>
-                  <li className="pt-1.5 border-t" style={{ borderColor: 'var(--border-primary)' }}>
-                    <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.sameRowRef')}</span> {t('formulaHelper.useColumnName')}
-                    <br />
-                    <code className="px-1 rounded mt-0.5 inline-block" style={{ background: 'var(--bg-primary)' }}>=ATK * 1.5</code>
-                  </li>
-                  <li>
-                    <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.prevRowRef')}</span>
-                    <br />
-                    <code className="px-1 rounded mt-0.5 inline-block" style={{ background: 'var(--bg-primary)' }}>=PREV.CumulativeEXP + CurrentEXP</code>
-                  </li>
-                  <li className="pt-1.5 border-t" style={{ borderColor: 'var(--border-primary)' }}>
-                    <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.settingsRef')}</span>
-                    <br />
-                    <span style={{ color: 'var(--text-tertiary)' }}>{t('formulaHelper.settingsDesc')}</span>
-                    <br />
-                    <code className="px-1 rounded mt-0.5 inline-block" style={{ background: 'var(--bg-primary)' }}>=Settings.BASE_HP * HPMultiplier</code>
-                  </li>
-                  <li>
-                    <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.cellRef')}</span>
-                    <br />
-                    <code className="px-1 rounded mt-0.5 inline-block" style={{ background: 'var(--bg-primary)' }}>REF(&quot;SheetName&quot;, &quot;RowID&quot;, &quot;ColumnName&quot;)</code>
-                  </li>
-                </ul>
+                <div className="glass-section p-2">
+                  <code className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: `${PANEL_COLOR}15`, color: PANEL_COLOR }}>Settings.</code>
+                  <span className="ml-1.5" style={{ color: 'var(--text-tertiary)' }}>{t('formulaHelper.settingsRef')}</span>
+                </div>
+                <div className="glass-section p-2">
+                  <code className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: `${PANEL_COLOR}15`, color: PANEL_COLOR }}>REF()</code>
+                  <span className="ml-1.5" style={{ color: 'var(--text-tertiary)' }}>{t('formulaHelper.cellRef')}</span>
+                </div>
               </div>
             </div>
           </div>
         )}
 
-        {/* 함수 개수 배지 */}
-        <div className="flex items-center justify-between">
-          <span className="text-xs px-2 py-0.5 rounded-full" style={{ background: `${PANEL_COLOR}20`, color: PANEL_COLOR }}>
-            {t('formulaHelper.functionCount', { count: availableFunctions.length })}
-          </span>
+        {/* 수식 테스트 */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Play className="w-4 h-4" style={{ color: PANEL_COLOR }} />
+            <h4 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.testFormula')}</h4>
+          </div>
+          <div className="glass-card p-3 space-y-3">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={testFormula}
+                onChange={(e) => setTestFormula(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleTest()}
+                placeholder={t('formulaHelper.testPlaceholder')}
+                className="glass-input flex-1 text-sm"
+              />
+              <button
+                onClick={handleTest}
+                className="glass-button-primary !px-4 text-sm"
+              >
+                {t('formulaHelper.test')}
+              </button>
+            </div>
+            {testResult && (
+              <div
+                className="px-3 py-2.5 rounded-xl text-sm font-medium"
+                style={{
+                  background: testResult.startsWith(t('formulaHelper.error'))
+                    ? 'rgba(239, 68, 68, 0.1)'
+                    : 'rgba(16, 185, 129, 0.1)',
+                  color: testResult.startsWith(t('formulaHelper.error'))
+                    ? '#ef4444'
+                    : '#10b981',
+                }}
+              >
+                {testResult}
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* 수식 테스트 */}
-        <div className="space-y-2">
-          <h4 className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.testFormula')}</h4>
-          <div className="flex gap-2">
+        {/* 검색 및 카테고리 */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2">
+            <Search className="w-4 h-4" style={{ color: PANEL_COLOR }} />
+            <h4 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.category')}</h4>
+            <span className="glass-badge ml-auto text-[10px]" style={{ color: PANEL_COLOR }}>
+              {t('formulaHelper.functionCount', { count: availableFunctions.length })}
+            </span>
+          </div>
+
+          {/* 검색 */}
+          <div className="relative">
+            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2" style={{ color: 'var(--text-tertiary)' }} />
             <input
               type="text"
-              value={testFormula}
-              onChange={(e) => setTestFormula(e.target.value)}
-              onKeyDown={(e) => e.key === 'Enter' && handleTest()}
-              placeholder={t('formulaHelper.testPlaceholder')}
-              className="flex-1 px-3 py-2 rounded-lg text-sm"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="함수 검색..."
+              className="glass-input w-full !pl-9 text-sm"
             />
-            <button
-              onClick={handleTest}
-              className="px-4 py-2 rounded-lg text-sm font-medium transition-colors"
-              style={{ background: 'var(--accent)', color: 'white' }}
-            >
-              {t('formulaHelper.test')}
-            </button>
           </div>
-          {testResult && (
-            <div
-              className={cn(
-                'px-3 py-2 rounded-lg text-sm',
-                testResult.startsWith(t('formulaHelper.error'))
-                  ? ''
-                  : ''
-              )}
-              style={{
-                background: testResult.startsWith(t('formulaHelper.error')) ? 'var(--error-light)' : 'var(--success-light)',
-                color: testResult.startsWith(t('formulaHelper.error')) ? 'var(--error)' : 'var(--success)',
-              }}
-            >
-              {testResult}
-            </div>
-          )}
-        </div>
 
-        {/* 카테고리 탭 */}
-        <div className="space-y-2">
-          <h4 className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{t('formulaHelper.category')}</h4>
-          <div className="flex flex-wrap gap-2">
+          {/* 카테고리 탭 */}
+          <div className="flex flex-wrap gap-1.5">
             {CATEGORY_IDS.map((catId) => {
               const Icon = CATEGORY_ICONS[catId];
               const color = CATEGORY_COLORS[catId];
@@ -241,22 +274,20 @@ export default function FormulaHelper({ onClose, showHelp = false, setShowHelp }
                   key={catId}
                   onClick={() => setSelectedCategory(catId)}
                   className={cn(
-                    'flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all',
-                    isSelected ? 'ring-2 ring-offset-1' : 'hover:opacity-80'
+                    'flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl text-[11px] font-medium transition-all duration-200',
+                    isSelected ? 'shadow-sm' : 'hover:opacity-80'
                   )}
                   style={{
-                    background: isSelected ? color : 'var(--bg-tertiary)',
+                    background: isSelected ? color : 'rgba(0,0,0,0.03)',
                     color: isSelected ? 'white' : 'var(--text-secondary)',
-                    // @ts-expect-error CSS custom property
-                    '--tw-ring-color': color,
                   }}
                 >
-                  <Icon className="w-3.5 h-3.5" />
+                  <Icon className="w-3 h-3" />
                   <span>{getCategoryName(catId)}</span>
                   <span
-                    className="px-1.5 py-0.5 rounded-full text-[10px]"
+                    className="px-1.5 py-0.5 rounded-full text-[9px] font-bold"
                     style={{
-                      background: isSelected ? 'rgba(255,255,255,0.2)' : 'var(--bg-secondary)',
+                      background: isSelected ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.05)',
                     }}
                   >
                     {categoryCounts[catId] || 0}
@@ -267,96 +298,95 @@ export default function FormulaHelper({ onClose, showHelp = false, setShowHelp }
           </div>
         </div>
 
-        {/* 사용 가능한 함수 목록 */}
-        <div className="space-y-2">
+        {/* 함수 목록 */}
+        <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <h4 className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>
+            <h4 className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
               {t('formulaHelper.functionList')}
             </h4>
             <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
               {t('formulaHelper.showing', { count: filteredFunctions.length })}
             </span>
           </div>
-          <div className="grid gap-2 pr-1">
+
+          <div className="grid gap-2">
             {filteredFunctions.map((func) => {
               const categoryColor = CATEGORY_COLORS[func.category];
               const categoryName = getCategoryName(func.category);
+              const CategoryIcon = CATEGORY_ICONS[func.category];
+
               return (
                 <div
                   key={func.name}
-                  className="border rounded-lg p-3 transition-colors hover:border-opacity-60"
+                  className="glass-card p-3 transition-all duration-200 hover:shadow-md"
                   style={{
-                    borderColor: 'var(--border-primary)',
-                    background: 'var(--bg-primary)',
-                    borderLeftWidth: '3px',
-                    borderLeftColor: categoryColor || 'var(--border-primary)',
+                    borderLeft: `3px solid ${categoryColor}`,
                   }}
                 >
-                  <div className="flex items-start justify-between">
+                  <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <code className="font-semibold" style={{ color: categoryColor || 'var(--accent)' }}>
+                        <code
+                          className="font-bold text-sm"
+                          style={{ color: categoryColor }}
+                        >
                           {func.name}
                         </code>
                         <span
-                          className="text-[10px] px-1.5 py-0.5 rounded"
-                          style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}
+                          className="glass-badge flex items-center gap-1 !py-0.5"
+                          style={{ background: `${categoryColor}15`, color: categoryColor }}
                         >
-                          {categoryName}
+                          <CategoryIcon className="w-2.5 h-2.5" />
+                          <span className="text-[10px]">{categoryName}</span>
                         </span>
                       </div>
-                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                      <p className="text-xs mt-1.5" style={{ color: 'var(--text-secondary)' }}>
                         {getFunctionDescription(func.name, func.description)}
                       </p>
-                      <code className="text-xs block mt-1 truncate" style={{ color: 'var(--text-tertiary)' }}>
+                      <code
+                        className="text-[11px] block mt-1.5 px-2 py-1 rounded-lg"
+                        style={{ background: 'rgba(0,0,0,0.03)', color: 'var(--text-tertiary)' }}
+                      >
                         {func.syntax}
                       </code>
                     </div>
                     <button
                       onClick={() => handleCopy(func.example, func.name)}
-                      className="p-1.5 rounded-lg transition-colors ml-2 flex-shrink-0"
-                      style={{
-                        color: 'var(--text-tertiary)',
-                        background: 'var(--bg-tertiary)',
-                      }}
+                      className="glass-button !p-2 shrink-0"
                       title={t('formulaHelper.copyExample')}
                     >
                       {copiedFunction === func.name ? (
-                        <Check className="w-4 h-4" style={{ color: 'var(--success)' }} />
+                        <Check className="w-4 h-4" style={{ color: '#10b981' }} />
                       ) : (
                         <Copy className="w-4 h-4" />
                       )}
                     </button>
                   </div>
-                  <div className="mt-2">
+
+                  <div className="mt-2.5 flex items-center gap-2">
+                    <span className="text-[10px] font-medium" style={{ color: 'var(--text-tertiary)' }}>예시:</span>
                     <code
-                      className="text-xs px-2 py-1 rounded inline-block"
-                      style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
+                      className="text-xs px-2 py-1 rounded-lg font-medium"
+                      style={{ background: `${categoryColor}10`, color: categoryColor }}
                     >
                       {func.example}
                     </code>
                   </div>
+
                   {(func.formula || func.paramHint) && (
-                    <div
-                      className="mt-2 px-2 py-1.5 rounded text-xs border-l-2 space-y-1 overflow-hidden"
-                      style={{
-                        background: 'var(--bg-secondary)',
-                        borderLeftColor: categoryColor || 'var(--accent)',
-                      }}
-                    >
+                    <div className="glass-section mt-2.5 p-2.5 space-y-1.5">
                       {func.formula && (
-                        <div className="flex items-start gap-1.5 min-w-0">
-                          <span className="shrink-0" style={{ color: 'var(--text-tertiary)' }}>{t('formulaHelper.formulaLabel')}</span>
-                          <code
-                            className="font-mono break-all"
-                            style={{ color: 'var(--text-primary)' }}
-                          >
+                        <div className="flex items-start gap-2 text-xs">
+                          <span className="shrink-0 font-medium" style={{ color: 'var(--text-tertiary)' }}>
+                            {t('formulaHelper.formulaLabel')}
+                          </span>
+                          <code className="font-mono break-all" style={{ color: 'var(--text-primary)' }}>
                             {func.formula}
                           </code>
                         </div>
                       )}
                       {func.paramHint && (
-                        <div className="break-words" style={{ color: 'var(--text-tertiary)' }}>
+                        <div className="text-[11px] break-words" style={{ color: 'var(--text-tertiary)' }}>
                           {func.paramHint}
                         </div>
                       )}

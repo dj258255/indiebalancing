@@ -13,7 +13,7 @@ interface TooltipProps {
 
 export function Tooltip({ content, children, position = 'top', delay = 200, className = '' }: TooltipProps) {
   const [isVisible, setIsVisible] = useState(false);
-  const [coords, setCoords] = useState({ x: 0, y: 0 });
+  const [coords, setCoords] = useState<{ x: number; y: number } | null>(null);
   const triggerRef = useRef<HTMLSpanElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -76,6 +76,7 @@ export function Tooltip({ content, children, position = 'top', delay = 200, clas
       timeoutRef.current = null;
     }
     setIsVisible(false);
+    setCoords(null); // 위치 초기화
   }, []);
 
   useEffect(() => {
@@ -99,12 +100,15 @@ export function Tooltip({ content, children, position = 'top', delay = 200, clas
         role="tooltip"
         className="fixed z-[9999] px-2.5 py-1.5 text-xs font-medium rounded-md shadow-lg pointer-events-none animate-fadeIn"
         style={{
-          left: coords.x,
-          top: coords.y,
+          left: coords?.x ?? 0,
+          top: coords?.y ?? 0,
           backgroundColor: 'var(--tooltip-bg, #1f2937)',
           color: 'var(--tooltip-text, #f9fafb)',
           border: '1px solid var(--tooltip-border, #374151)',
           maxWidth: '280px',
+          // 위치가 계산되기 전까지 숨김
+          visibility: coords ? 'visible' : 'hidden',
+          opacity: coords ? 1 : 0,
         }}
       >
         {content}

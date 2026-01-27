@@ -3,6 +3,22 @@
     "name": "인디밸런싱",
     "description": "인디게임 개발자를 위한 밸런스 데이터 관리 툴"
   },
+  "toolDescriptions": {
+    "calculator": "선택한 열의 수식을 빠르게 계산합니다",
+    "comparison": "여러 행의 데이터를 차트로 비교 분석합니다",
+    "chart": "레벨별 성장 곡선을 시각화합니다",
+    "presetComparison": "저장된 프리셋 간의 차이를 비교합니다",
+    "imbalanceDetector": "데이터의 이상치와 불균형을 감지합니다",
+    "goalSolver": "목표값에서 필요한 입력값을 역산합니다",
+    "balanceAnalysis": "전체 밸런스 상태를 분석합니다",
+    "economy": "게임 내 재화 흐름을 시뮬레이션합니다",
+    "dpsVariance": "DPS의 분산과 안정성을 분석합니다",
+    "curveFitting": "데이터에 맞는 수식을 자동으로 찾습니다",
+    "formulaHelper": "다양한 게임 밸런스 수식을 제공합니다",
+    "balanceValidator": "밸런스 규칙 준수 여부를 검증합니다",
+    "difficultyCurve": "스테이지별 난이도 곡선을 설계합니다",
+    "simulation": "유닛 간 전투를 시뮬레이션합니다"
+  },
   "sidebar": {
     "newProject": "새 프로젝트",
     "projects": "프로젝트",
@@ -668,6 +684,11 @@
     "helpWallDesc": "난이도 급상승 구간",
     "helpMilestone": "마일스톤",
     "helpMilestoneDesc": "신규 시스템 해금 지점",
+    "helpGraphTitle": "그래프 수치 의미",
+    "helpGraphPlayer": "플레이어 파워: 장비, 스킬, 레벨 등 총 전투력 (초기값 100)",
+    "helpGraphEnemy": "적 파워: 해당 스테이지 적의 총 전투력 (초기값 100)",
+    "helpGraphRatio": "비율 1 이상 = 클리어 가능, 1 미만 = 벽 (성장 필요)",
+    "helpGraphGrowth": "성장률: 스테이지마다 파워에 곱해지는 비율 (예: 1.10 = 매 스테이지 10% 증가)",
     "wallCount": "{count}개 벽",
     "presetLabel": "난이도 프리셋",
     "playtimeLabel": "일일 플레이타임 목표",
@@ -676,6 +697,7 @@
     "curveLabel": "난이도 곡선",
     "player": "플레이어",
     "enemy": "적",
+    "ratio": "비율",
     "wallStages": "벽 스테이지 (막히는 구간)",
     "stage": "스테이지",
     "add": "추가",
@@ -734,7 +756,11 @@
     "helpTip4": "과금 유도 시점 = 벽 + 편의 기능 해금",
     "helpTip5": "일일 플레이타임 목표를 먼저 정하고 역산 설계",
     "helpTip6": "마일스톤으로 목표 의식 부여 (해금 콘텐츠 예고)",
-    "showHelp": "도움말 보기 (사용법, 프리셋, 설계 팁)"
+    "showHelp": "도움말 보기 (사용법, 프리셋, 설계 팁)",
+    "fullscreen": "전체화면",
+    "wallStage": "벽 구간",
+    "dragToMove": "드래그하여 이동",
+    "scrollToZoom": "스크롤하여 확대/축소"
   },
   "simulation": {
     "title": "전투 시뮬레이션",
@@ -1930,6 +1956,8 @@
     "copyCode": "코드 복사",
     "copied": "복사됨!",
     "history": "기록",
-    "clearHistory": "기록 전체 삭제"
+    "clearHistory": "기록 전체 삭제",
+    "fullscreen": "전체화면",
+    "axisRange": "축 범위"
   }
 }

@@ -14,6 +14,7 @@ interface ToolPanelRendererProps {
   onClose: () => void;
   // 헤더 정보 (필수)
   title: string;
+  description?: string;
   icon: LucideIcon;
   color: string;
   headerExtra?: ReactNode;
@@ -35,6 +36,7 @@ export default function ToolPanelRenderer({
   show,
   onClose,
   title,
+  description,
   icon,
   color,
   headerExtra,
@@ -65,6 +67,7 @@ export default function ToolPanelRenderer({
       onResizeS={onResizeS}
       onResizeSE={onResizeSE}
       title={title}
+      description={description}
       icon={icon}
       color={color}
       onClose={onClose}

@@ -7,7 +7,6 @@ import {
   PolarAngleAxis,
   PolarRadiusAxis,
   Radar,
-  Legend,
   ResponsiveContainer,
   BarChart,
   Bar,
@@ -16,7 +15,7 @@ import {
   CartesianGrid,
   Tooltip,
 } from 'recharts';
-import { X, Trash2, Download, Check, HelpCircle, ChevronDown, ChevronUp, PieChart } from 'lucide-react';
+import { X, Trash2, Download, Check, HelpCircle, ChevronDown, ChevronUp, BarChart3, PieChart, TrendingUp } from 'lucide-react';
 import { useProjectStore } from '@/stores/projectStore';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
@@ -47,6 +46,8 @@ const COLORS = [
   '#f97316', // orange
 ];
 
+const PANEL_COLOR = '#6366f1';
+
 export default function ComparisonChart({ onClose, isPanel = false, showHelp = false, setShowHelp }: ComparisonChartProps) {
   const { getCurrentProject, getCurrentSheet, selectedRows, clearSelectedRows, deselectRow } = useProjectStore();
   const currentProject = getCurrentProject();
@@ -58,26 +59,22 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
   const [items, setItems] = useState<ComparisonItem[]>([]);
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
 
-  // 숫자 컬럼만 필터링 (general 타입도 숫자일 수 있음)
+  // 숫자 컬럼만 필터링
   const numericColumns = useMemo(() => {
     if (!currentSheet) return [];
-    // general과 formula 타입 모두 숫자 데이터를 가질 수 있음
     return currentSheet.columns.filter(
       (col) => col.type === 'general' || col.type === 'formula'
     );
   }, [currentSheet]);
 
-  // 행 데이터 (비교 대상)
+  // 행 데이터
   const availableRows = useMemo(() => {
     if (!currentSheet) return [];
     return currentSheet.rows.map((row, index) => {
-      // 이름으로 사용할 컬럼 찾기 (우선순위 순)
       const namePatterns = ['이름', 'name', 'Name', '캐릭터', '캐릭터명', '유닛', '아이템', '무기', '스킬'];
       const idPatterns = ['ID', 'id', 'Id'];
 
       let nameCol = currentSheet.columns.find((c) => namePatterns.includes(c.name));
-
-      // 이름 컬럼이 없으면 첫 번째 일반 컬럼 사용
       if (!nameCol) {
         nameCol = currentSheet.columns.find((c) => c.type === 'general');
       }
@@ -86,13 +83,10 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
 
       let name = '';
       if (nameCol && row.cells[nameCol.id]) {
-        // 이름이 있으면 시트명 + 행 번호 + 이름
         name = `${currentSheet.name} - ${index + 1}행 (${row.cells[nameCol.id]})`;
       } else if (idCol && row.cells[idCol.id]) {
-        // ID만 있으면 시트명 + 행 번호 + ID
         name = `${currentSheet.name} - ${index + 1}행 (${row.cells[idCol.id]})`;
       } else {
-        // 아무것도 없으면 "시트명 - N행" 형식
         name = `${currentSheet.name} - ${index + 1}행`;
       }
 
@@ -100,7 +94,7 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
     });
   }, [currentSheet]);
 
-  // 아이템 추가
+  // 아이템 추가/제거
   const addItem = (rowId: string) => {
     const row = availableRows.find((r) => r.id === rowId);
     if (!row || items.find((i) => i.id === rowId)) return;
@@ -122,12 +116,10 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
     ]);
   };
 
-  // 아이템 제거
   const removeItem = (id: string) => {
     setItems(items.filter((i) => i.id !== id));
   };
 
-  // 컬럼 토글
   const toggleColumn = (colName: string) => {
     if (selectedColumns.includes(colName)) {
       setSelectedColumns(selectedColumns.filter((c) => c !== colName));
@@ -136,7 +128,6 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
     }
   };
 
-  // 중복 제거된 선택된 컬럼
   const uniqueSelectedColumns = useMemo(() => {
     return [...new Set(selectedColumns)];
   }, [selectedColumns]);
@@ -214,46 +205,57 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
     return bins;
   }, [currentSheet, histogramColumn]);
 
-  // 시트가 없을 때 표시할 빈 상태 컴포넌트
+  const hasSheet = currentProject && currentSheet;
+
+  const tabs = [
+    { id: 'radar' as const, label: t('tabs.radar'), icon: PieChart, color: PANEL_COLOR },
+    { id: 'bar' as const, label: t('tabs.bar'), icon: BarChart3, color: '#22c55e' },
+    { id: 'histogram' as const, label: t('tabs.histogram'), icon: TrendingUp, color: '#f59e0b' },
+  ];
+
+  // 빈 상태 컴포넌트
   const EmptyState = () => (
     <div className="flex-1 flex items-center justify-center">
       <div className="text-center p-8">
-        <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ background: 'var(--bg-tertiary)' }}>
-          <div className="w-8 h-8 rounded-full" style={{ background: '#3b82f6', opacity: 0.5 }} />
+        <div
+          className="w-16 h-16 mx-auto mb-4 rounded-2xl flex items-center justify-center"
+          style={{ background: `linear-gradient(135deg, ${PANEL_COLOR}, ${PANEL_COLOR}cc)` }}
+        >
+          <PieChart className="w-8 h-8 text-white" />
         </div>
-        <p className="text-lg font-medium mb-2" style={{ color: 'var(--text-primary)' }}>{t('noSheetSelected')}</p>
+        <p className="text-lg font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>{t('noSheetSelected')}</p>
         <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('selectSheetToCompare')}</p>
       </div>
     </div>
   );
 
-  const hasSheet = currentProject && currentSheet;
-
-  // 공통 wrapper 클래스
   const wrapperClass = isPanel
     ? "flex flex-col h-full"
-    : "fixed inset-0 modal-overlay flex items-center justify-center z-[9999] p-4";
+    : "fixed inset-0 flex items-center justify-center z-[9999] p-4" + " bg-black/50 backdrop-blur-sm";
 
   const cardClass = isPanel
     ? "flex flex-col h-full"
-    : "card w-full max-w-5xl max-h-[90vh] flex flex-col animate-fadeIn";
+    : "glass-panel w-full max-w-5xl max-h-[90vh] flex flex-col";
 
   return (
     <div className={wrapperClass}>
       <div className={cardClass}>
         {/* 헤더 - 모달일 때만 표시 */}
         {!isPanel && (
-          <div
-            className="flex items-center justify-between shrink-0 px-6 py-4 border-b"
-            style={{ borderColor: 'var(--border-primary)' }}
-          >
-            <div className="flex items-center gap-2">
+          <div className="glass-panel-header">
+            <div className="flex items-center gap-3">
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center"
+                style={{ background: `linear-gradient(135deg, ${PANEL_COLOR}, ${PANEL_COLOR}cc)` }}
+              >
+                <PieChart className="w-5 h-5 text-white" />
+              </div>
               <div>
-                <h2 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
+                <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
                   {t('fullTitle')}
                 </h2>
                 {hasSheet && (
-                  <p className="text-sm mt-1" style={{ color: 'var(--text-tertiary)' }}>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
                     {t('visualizeData', { sheetName: currentSheet.name })}
                   </p>
                 )}
@@ -263,91 +265,79 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
               {setShowHelp && (
                 <button
                   onClick={() => setShowHelp(!showHelp)}
-                  className="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm transition-colors"
-                  style={{
-                    background: showHelp ? 'var(--accent-light)' : 'var(--bg-tertiary)',
-                    color: showHelp ? 'var(--accent-text)' : 'var(--text-secondary)'
-                  }}
+                  className="glass-button flex items-center gap-1.5 !px-3"
+                  style={{ color: showHelp ? PANEL_COLOR : 'var(--text-secondary)' }}
                 >
                   <HelpCircle className="w-4 h-4" />
-                  {t('help')}
+                  <span className="text-sm">{t('help')}</span>
                   {showHelp ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
                 </button>
               )}
-              <button
-                onClick={onClose}
-                className="rounded-lg transition-colors p-2"
-                style={{ color: 'var(--text-tertiary)' }}
-              >
+              <button onClick={onClose} className="glass-button !p-2">
                 <X className="w-5 h-5" />
               </button>
             </div>
           </div>
         )}
 
-
         {/* 모달 모드 도움말 */}
         {!isPanel && showHelp && (
-          <div className="px-6 py-4 border-b animate-fadeIn" style={{
-            background: 'var(--bg-tertiary)',
-            borderColor: 'var(--border-primary)'
-          }}>
-            <p className="text-sm mb-3" style={{ color: 'var(--text-secondary)' }}>
+          <div className="px-5 py-4 border-b animate-slideDown" style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-primary)' }}>
+            <p className="text-sm mb-4" style={{ color: 'var(--text-secondary)' }}>
               {t('modalHelpDesc')}
             </p>
-
             <div className="grid grid-cols-3 gap-3 mb-3">
-              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                <div className="font-medium text-sm mb-1" style={{ color: 'var(--accent)' }}>{t('tabs.radar')}</div>
-                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('radarUseCase')}</p>
-              </div>
-              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                <div className="font-medium text-sm mb-1" style={{ color: 'var(--success)' }}>{t('tabs.bar')}</div>
-                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('barUseCase')}</p>
-              </div>
-              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                <div className="font-medium text-sm mb-1" style={{ color: 'var(--warning)' }}>{t('tabs.histogram')}</div>
-                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('histogramUseCase')}</p>
-              </div>
+              {tabs.map((tab) => (
+                <div key={tab.id} className="glass-card p-3">
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <tab.icon className="w-4 h-4" style={{ color: tab.color }} />
+                    <span className="font-medium text-sm" style={{ color: tab.color }}>{tab.label}</span>
+                  </div>
+                  <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                    {tab.id === 'radar' && t('radarUseCase')}
+                    {tab.id === 'bar' && t('barUseCase')}
+                    {tab.id === 'histogram' && t('histogramUseCase')}
+                  </p>
+                </div>
+              ))}
             </div>
-
-            <div className="text-xs p-2 rounded-lg" style={{ background: 'var(--bg-primary)', color: 'var(--text-tertiary)' }}>
+            <div className="glass-section p-2.5 text-xs" style={{ color: 'var(--text-tertiary)' }}>
               {t('usageGuide')}
             </div>
           </div>
         )}
 
-        {/* 탭 - 시트가 있을 때만 표시 */}
+        {/* 탭 */}
         {hasSheet && (
-          <div className="flex border-b px-4" style={{ borderColor: 'var(--border-primary)' }}>
-            {['radar', 'bar', 'histogram'].map((tab) => (
-              <button
-                key={tab}
-                onClick={() => setActiveTab(tab as typeof activeTab)}
-                className={cn(
-                  'px-4 py-3 border-b-2 transition-colors text-sm font-medium',
-                  activeTab === tab ? 'border-current' : 'border-transparent'
-                )}
-                style={{
-                  color: activeTab === tab ? 'var(--accent)' : 'var(--text-tertiary)'
-                }}
-              >
-                {tab === 'radar' && t('tabs.radar')}
-                {tab === 'bar' && t('tabs.bar')}
-                {tab === 'histogram' && t('tabs.histogram')}
-              </button>
-            ))}
+          <div className="flex gap-1 px-4 py-2 border-b" style={{ borderColor: 'var(--border-primary)' }}>
+            {tabs.map((tab) => {
+              const isActive = activeTab === tab.id;
+              return (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={cn(
+                    'flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all',
+                    isActive && 'shadow-sm'
+                  )}
+                  style={{
+                    background: isActive ? `${tab.color}15` : 'transparent',
+                    color: isActive ? tab.color : 'var(--text-tertiary)',
+                  }}
+                >
+                  <tab.icon className="w-4 h-4" />
+                  {tab.label}
+                </button>
+              );
+            })}
           </div>
         )}
 
         {/* 시트에서 선택된 데이터 불러오기 */}
         {hasSheet && selectedRows.length > 0 && (activeTab === 'radar' || activeTab === 'bar') && (
-          <div className="px-6 py-3 border-b" style={{
-            background: 'var(--accent-light)',
-            borderColor: 'var(--border-primary)'
-          }}>
+          <div className="px-5 py-3 border-b" style={{ background: `${PANEL_COLOR}08`, borderColor: 'var(--border-primary)' }}>
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--accent-text)' }}>
+              <div className="flex items-center gap-2 text-sm" style={{ color: PANEL_COLOR }}>
                 <Download className="w-4 h-4" />
                 <span className="font-medium">{t('selectedData', { count: selectedRows.length })}</span>
               </div>
@@ -386,15 +376,14 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
                       setSelectedColumns(numCols.slice(0, 6));
                     }
                   }}
-                  className="px-3 py-1 rounded text-xs transition-colors"
-                  style={{ background: 'var(--accent)', color: 'white' }}
+                  className="glass-button-primary !px-3 !py-1.5 text-xs"
                 >
                   {t('addAll')}
                 </button>
                 <button
                   onClick={clearSelectedRows}
-                  className="text-xs"
-                  style={{ color: 'var(--accent-text)' }}
+                  className="text-xs font-medium"
+                  style={{ color: PANEL_COLOR }}
                 >
                   {t('clearSelection')}
                 </button>
@@ -403,20 +392,16 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
             <div className="flex flex-wrap gap-2">
               {selectedRows.map((row) => {
                 const isAdded = items.some((i) => i.id === row.rowId);
-                // 시트명 + 행 번호로 표시
                 const rowIndex = currentSheet?.rows.findIndex(r => r.id === row.rowId) ?? -1;
                 const displayName = `${currentSheet?.name || t('sheet')} - ${t('rowNum', { num: rowIndex + 1 })}`;
                 return (
                   <div
                     key={row.rowId}
-                    className="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm"
-                    style={{
-                      background: isAdded ? 'var(--success-light)' : 'var(--bg-primary)',
-                      borderColor: 'var(--border-primary)'
-                    }}
+                    className="glass-badge flex items-center gap-2 !py-1.5"
+                    style={{ background: isAdded ? 'rgba(34, 197, 94, 0.1)' : undefined }}
                   >
-                    {isAdded && <Check className="w-3 h-3" style={{ color: 'var(--success)' }} />}
-                    <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{displayName}</span>
+                    {isAdded && <Check className="w-3 h-3" style={{ color: '#22c55e' }} />}
+                    <span className="font-medium text-xs" style={{ color: 'var(--text-primary)' }}>{displayName}</span>
                     {!isAdded && (
                       <button
                         onClick={() => {
@@ -439,16 +424,13 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
                             },
                           ]);
                         }}
-                        className="px-2 py-0.5 rounded text-xs"
-                        style={{ background: 'var(--accent)', color: 'white' }}
+                        className="px-2 py-0.5 rounded-lg text-[10px] font-medium"
+                        style={{ background: PANEL_COLOR, color: 'white' }}
                       >
                         {t('add')}
                       </button>
                     )}
-                    <button
-                      onClick={() => deselectRow(row.rowId)}
-                      style={{ color: 'var(--text-tertiary)' }}
-                    >
+                    <button onClick={() => deselectRow(row.rowId)} style={{ color: 'var(--text-tertiary)' }}>
                       <X className="w-3 h-3" />
                     </button>
                   </div>
@@ -458,28 +440,38 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
           </div>
         )}
 
-        {/* 패널 모드 도움말 - 시트 유무와 관계없이 표시 */}
+        {/* 패널 모드 도움말 */}
         {isPanel && showHelp && (
-          <div className="mb-4 p-3 rounded-lg animate-slideDown mx-4 mt-4" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
-            <div className="font-medium mb-2 text-sm" style={{ color: 'var(--text-primary)' }}>{t('title')}</div>
-            <p className="mb-3 text-sm" style={{ color: 'var(--text-secondary)' }}>{t('helpDesc')}</p>
-            <div className="space-y-2 mb-3">
-              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #3b82f6' }}>
-                <span className="font-medium text-sm" style={{ color: '#3b82f6' }}>{t('radar')}</span>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpRadar')}</p>
+          <div className="glass-card m-4 p-4 animate-slideDown space-y-3">
+            <div className="flex items-center gap-2">
+              <div
+                className="w-8 h-8 rounded-xl flex items-center justify-center"
+                style={{ background: `linear-gradient(135deg, ${PANEL_COLOR}, ${PANEL_COLOR}cc)` }}
+              >
+                <PieChart className="w-4 h-4 text-white" />
               </div>
-              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #22c55e' }}>
-                <span className="font-medium text-sm" style={{ color: '#22c55e' }}>{t('bar')}</span>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpBar')}</p>
-              </div>
-              <div className="p-2.5 rounded-lg" style={{ background: 'var(--bg-primary)', borderLeft: '3px solid #f59e0b' }}>
-                <span className="font-medium text-sm" style={{ color: '#f59e0b' }}>{t('histogram')}</span>
-                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpHistogram')}</p>
+              <div>
+                <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{t('title')}</p>
+                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('helpDesc')}</p>
               </div>
             </div>
-            <div className="pt-2 border-t text-xs" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
-              {t('helpUsage')}
+            <div className="space-y-2">
+              {tabs.map((tab) => (
+                <div key={tab.id} className="glass-section p-2.5" style={{ borderLeft: `3px solid ${tab.color}` }}>
+                  <div className="flex items-center gap-2">
+                    <tab.icon className="w-3.5 h-3.5" style={{ color: tab.color }} />
+                    <span className="font-medium text-xs" style={{ color: tab.color }}>{tab.label}</span>
+                  </div>
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
+                    {tab.id === 'radar' && t('helpRadar')}
+                    {tab.id === 'bar' && t('helpBar')}
+                    {tab.id === 'histogram' && t('helpHistogram')}
+                  </p>
+                </div>
+              ))}
             </div>
+            <div className="glass-divider" />
+            <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('helpUsage')}</p>
           </div>
         )}
 
@@ -487,261 +479,276 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
         {!hasSheet ? (
           <EmptyState />
         ) : (
-        <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
-
-          <div className="flex-1 min-h-0 overflow-hidden flex">
-          {/* 사이드바 - 레이더/바 차트용 */}
-          {(activeTab === 'radar' || activeTab === 'bar') && (
-            <div className="w-64 shrink-0 border-r p-4 overflow-y-auto" style={{ borderColor: 'var(--border-primary)' }}>
-              {/* 비교 대상 선택 */}
-              <div className="mb-6">
-                <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>{t('compareTarget')}</h4>
-                <select
-                  onChange={(e) => addItem(e.target.value)}
-                  value=""
-                  className="w-full px-3 py-2 rounded-lg text-sm mb-2"
-                >
-                  <option value="">{t('addTarget')}</option>
-                  {availableRows
-                    .filter((r) => !items.find((i) => i.id === r.id))
-                    .map((row) => (
-                      <option key={row.id} value={row.id}>
-                        {row.name}
-                      </option>
-                    ))}
-                </select>
-                {/* 비교 대상 목록 - 그리드 형태로 배치 */}
-                <div className={cn(
-                  'gap-1.5',
-                  items.length <= 2 ? 'space-y-1.5' : 'grid grid-cols-1'
-                )}>
-                  {items.map((item) => (
-                    <div
-                      key={item.id}
-                      className="flex items-center gap-1.5 px-2 py-1 rounded-lg group"
-                      style={{ background: 'var(--bg-tertiary)', borderLeft: `3px solid ${item.color}` }}
+          <div className="flex-1 min-h-0 overflow-hidden flex flex-col">
+            {/* 상단: 설정 영역 - 레이더/바 차트용 */}
+            {(activeTab === 'radar' || activeTab === 'bar') && (
+              <div className="shrink-0 border-b p-4 overflow-x-auto scrollbar-slim" style={{ borderColor: 'var(--border-primary)' }}>
+                {/* 비교 대상 선택 */}
+                <div className="mb-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h4 className="font-semibold text-xs" style={{ color: 'var(--text-secondary)' }}>{t('compareTarget')}</h4>
+                    <select
+                      onChange={(e) => addItem(e.target.value)}
+                      value=""
+                      className="glass-select text-sm flex-1 max-w-xs"
                     >
-                      <span
-                        className="flex-1 text-xs truncate"
-                        style={{ color: 'var(--text-primary)' }}
-                        title={item.name}
-                      >
-                        {item.name}
+                      <option value="">{t('addTarget')}</option>
+                      {availableRows
+                        .filter((r) => !items.find((i) => i.id === r.id))
+                        .map((row) => (
+                          <option key={row.id} value={row.id}>
+                            {row.name}
+                          </option>
+                        ))}
+                    </select>
+                    {items.length > 0 && (
+                      <span className="glass-badge text-[10px] px-2 py-1" style={{ color: 'var(--text-tertiary)' }}>
+                        {t('itemCount', { count: items.length })}
                       </span>
-                      <button
-                        onClick={() => removeItem(item.id)}
-                        className="p-0.5 rounded transition-colors opacity-60 hover:opacity-100 hover:text-red-500 shrink-0"
-                        style={{ color: 'var(--text-tertiary)' }}
-                      >
-                        <Trash2 className="w-3 h-3" />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-                {/* 비교 대상 개수 표시 */}
-                {items.length > 0 && (
-                  <div className="mt-2 text-xs text-center py-1 rounded" style={{ background: 'var(--bg-secondary)', color: 'var(--text-tertiary)' }}>
-                    {t('itemCount', { count: items.length })}
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* 비교 항목 (컬럼) 선택 */}
-              <div>
-                <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>{t('compareItems')}</h4>
-                <div className="space-y-1.5">
-                  {numericColumns.map((col) => {
-                    const isChecked = selectedColumns.includes(col.name);
-                    return (
-                      <label
-                        key={col.id}
-                        className="flex items-center gap-2.5 text-sm cursor-pointer py-1 px-2 rounded-lg transition-colors hover:bg-[var(--bg-tertiary)]"
-                        style={{ color: 'var(--text-primary)' }}
-                      >
+                  {/* 비교 대상 목록 - 가로 스크롤 */}
+                  {items.length > 0 && (
+                    <div className="flex gap-2 flex-wrap">
+                      {items.map((item) => (
                         <div
-                          className="w-5 h-5 rounded border-2 flex items-center justify-center transition-colors flex-shrink-0"
+                          key={item.id}
+                          className="glass-card flex items-center gap-2 px-2.5 py-1.5 group"
+                          style={{ borderLeft: `3px solid ${item.color}` }}
+                        >
+                          <span
+                            className="text-xs truncate font-medium max-w-[150px]"
+                            style={{ color: 'var(--text-primary)' }}
+                            title={item.name}
+                          >
+                            {item.name}
+                          </span>
+                          <button
+                            onClick={() => removeItem(item.id)}
+                            className="p-0.5 rounded transition-all opacity-50 hover:opacity-100"
+                            style={{ color: '#ef4444' }}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* 비교 항목 (컬럼) 선택 - 가로 배치 */}
+                <div>
+                  <h4 className="font-semibold text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>{t('compareItems')}</h4>
+                  <div className="flex flex-wrap gap-1.5">
+                    {numericColumns.map((col) => {
+                      const isChecked = selectedColumns.includes(col.name);
+                      return (
+                        <label
+                          key={col.id}
+                          className={cn(
+                            'flex items-center gap-2 text-xs cursor-pointer py-1.5 px-3 rounded-lg transition-all',
+                            isChecked ? 'glass-card' : 'hover:bg-black/5 dark:hover:bg-white/5'
+                          )}
                           style={{
-                            background: isChecked ? 'var(--accent)' : 'var(--bg-primary)',
-                            borderColor: isChecked ? 'var(--accent)' : 'var(--border-secondary)',
+                            color: 'var(--text-primary)',
+                            background: isChecked ? `${PANEL_COLOR}15` : undefined,
+                            border: isChecked ? `1px solid ${PANEL_COLOR}40` : '1px solid transparent'
                           }}
                         >
-                          {isChecked && <Check className="w-3 h-3 text-white" />}
-                        </div>
-                        <input
-                          type="checkbox"
-                          checked={isChecked}
-                          onChange={() => toggleColumn(col.name)}
-                          className="sr-only"
-                        />
-                        <span>{col.name}</span>
-                      </label>
-                    );
-                  })}
+                          <div
+                            className="w-3.5 h-3.5 rounded border-2 flex items-center justify-center transition-all flex-shrink-0"
+                            style={{
+                              background: isChecked ? PANEL_COLOR : 'transparent',
+                              borderColor: isChecked ? PANEL_COLOR : 'var(--border-secondary)',
+                            }}
+                          >
+                            {isChecked && <Check className="w-2 h-2 text-white" />}
+                          </div>
+                          <input
+                            type="checkbox"
+                            checked={isChecked}
+                            onChange={() => toggleColumn(col.name)}
+                            className="sr-only"
+                          />
+                          <span className="font-medium">{col.name}</span>
+                        </label>
+                      );
+                    })}
+                  </div>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* 히스토그램 사이드바 */}
-          {activeTab === 'histogram' && (
-            <div className="w-64 border-r p-4 overflow-y-auto" style={{ borderColor: 'var(--border-primary)' }}>
-              <h4 className="font-medium text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>{t('columnToAnalyze')}</h4>
-              <select
-                value={histogramColumn}
-                onChange={(e) => setHistogramColumn(e.target.value)}
-                className="w-full px-3 py-2 rounded-lg text-sm"
-              >
-                <option value="">{t('select')}</option>
-                {numericColumns.map((col) => (
-                  <option key={col.id} value={col.name}>
-                    {col.name}
-                  </option>
-                ))}
-              </select>
-
-              {histogramColumn && histogramData.length > 0 && (
-                <div className="mt-4 rounded-xl overflow-hidden" style={{ border: '1px solid var(--border-primary)' }}>
-                  <div className="px-3 py-2 text-xs font-medium" style={{ background: 'var(--accent)', color: 'white' }}>
-                    {t('statistics')}
-                  </div>
-                  <div className="p-3 space-y-2" style={{ background: 'var(--bg-tertiary)' }}>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('totalCount')}</span>
-                      <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{currentSheet.rows.length}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('minimum')}</span>
-                      <span className="text-sm font-semibold" style={{ color: 'var(--success)' }}>{Math.min(...histogramData.map((d) => d.min)).toFixed(0)}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('maximum')}</span>
-                      <span className="text-sm font-semibold" style={{ color: 'var(--error)' }}>{Math.max(...histogramData.map((d) => d.max)).toFixed(0)}</span>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* 차트 영역 */}
-          <div className="flex-1 overflow-hidden p-4 flex flex-col" style={{ minWidth: 0, minHeight: 0 }}>
-            {activeTab === 'radar' && (
-              <>
-                {items.length === 0 || uniqueSelectedColumns.length === 0 ? (
-                  <div className="flex-1 flex items-center justify-center">
-                    <div className="text-center" style={{ color: 'var(--text-tertiary)' }}>
-                      <p>{t('selectTargetAndItems')}</p>
-                      <p className="text-sm mt-1">{t('recommendMinimum')}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex-1" style={{ minHeight: 0 }}>
-                      <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
-                        <RadarChart data={radarData}>
-                          <PolarGrid stroke="var(--border-primary)" />
-                          <PolarAngleAxis dataKey="stat" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
-                          <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                          {items.map((item) => (
-                            <Radar
-                              key={item.id}
-                              name={item.name}
-                              dataKey={item.name}
-                              stroke={item.color}
-                              fill={item.color}
-                              fillOpacity={0.2}
-                            />
-                          ))}
-                          <Tooltip formatter={(value: number) => [`${value.toFixed(0)}%`]} />
-                        </RadarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    {/* 별도 Legend 영역 */}
-                    <div className="shrink-0 h-10 flex flex-wrap justify-center items-start gap-x-3 gap-y-1 text-xs overflow-y-auto" style={{ color: 'var(--text-secondary)' }}>
-                      {items.map((item) => (
-                        <div key={item.id} className="flex items-center gap-1">
-                          <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: item.color }} />
-                          <span className="truncate max-w-[80px]" title={item.name}>{item.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </>
             )}
 
-            {activeTab === 'bar' && (
-              <>
-                {items.length === 0 || uniqueSelectedColumns.length === 0 ? (
-                  <div className="flex-1 flex items-center justify-center">
-                    <div className="text-center" style={{ color: 'var(--text-tertiary)' }}>
-                      <p>{t('selectTargetAndItems')}</p>
-                    </div>
-                  </div>
-                ) : (
-                  <>
-                    <div className="flex-1" style={{ minHeight: 0 }}>
-                      <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
-                        <BarChart data={barData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
-                          <XAxis dataKey="stat" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
-                          <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
-                          <Tooltip contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }} />
-                          {items.map((item) => (
-                            <Bar key={item.id} dataKey={item.name} fill={item.color} />
-                          ))}
-                        </BarChart>
-                      </ResponsiveContainer>
-                    </div>
-                    {/* 별도 Legend 영역 */}
-                    <div className="shrink-0 h-10 flex flex-wrap justify-center items-start gap-x-3 gap-y-1 text-xs overflow-y-auto" style={{ color: 'var(--text-secondary)' }}>
-                      {items.map((item) => (
-                        <div key={item.id} className="flex items-center gap-1">
-                          <div className="w-2.5 h-2.5 rounded-sm shrink-0" style={{ background: item.color }} />
-                          <span className="truncate max-w-[80px]" title={item.name}>{item.name}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </>
-                )}
-              </>
-            )}
-
+            {/* 상단: 히스토그램 설정 */}
             {activeTab === 'histogram' && (
-              <>
-                {!histogramColumn ? (
-                  <div className="flex-1 flex items-center justify-center">
-                    <p style={{ color: 'var(--text-tertiary)' }}>{t('selectColumnToAnalyze')}</p>
+              <div className="shrink-0 border-b p-4" style={{ borderColor: 'var(--border-primary)' }}>
+                <div className="flex items-center gap-4 flex-wrap">
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-semibold text-xs" style={{ color: 'var(--text-secondary)' }}>{t('columnToAnalyze')}</h4>
+                    <select
+                      value={histogramColumn}
+                      onChange={(e) => setHistogramColumn(e.target.value)}
+                      className="glass-select text-sm"
+                    >
+                      <option value="">{t('select')}</option>
+                      {numericColumns.map((col) => (
+                        <option key={col.id} value={col.name}>
+                          {col.name}
+                        </option>
+                      ))}
+                    </select>
                   </div>
-                ) : histogramData.length === 0 ? (
-                  <div className="flex-1 flex items-center justify-center">
-                    <p style={{ color: 'var(--text-tertiary)' }}>{t('noNumericData')}</p>
-                  </div>
-                ) : (
-                  <>
-                    <h3 className="text-sm font-medium mb-2 shrink-0" style={{ color: 'var(--text-primary)' }}>{t('distribution', { column: histogramColumn })}</h3>
-                    <div className="flex-1" style={{ minHeight: 0 }}>
-                      <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
-                        <BarChart data={histogramData}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
-                          <XAxis dataKey="range" tick={{ fontSize: 10, fill: 'var(--text-secondary)' }} angle={-45} textAnchor="end" height={50} />
-                          <YAxis tick={{ fontSize: 10, fill: 'var(--text-secondary)' }} />
-                          <Tooltip
-                            formatter={(value: number) => [`${value}${t('count')}`, t('count')]}
-                            labelFormatter={(label) => `${t('range')}: ${label}`}
-                            contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }}
-                          />
-                          <Bar dataKey="count" fill="var(--accent)" />
-                        </BarChart>
-                      </ResponsiveContainer>
+
+                  {histogramColumn && histogramData.length > 0 && (
+                    <div className="flex items-center gap-4 text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <span style={{ color: 'var(--text-tertiary)' }}>{t('totalCount')}:</span>
+                        <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{currentSheet.rows.length}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span style={{ color: 'var(--text-tertiary)' }}>{t('minimum')}:</span>
+                        <span className="font-bold" style={{ color: '#22c55e' }}>{Math.min(...histogramData.map((d) => d.min)).toFixed(0)}</span>
+                      </div>
+                      <div className="flex items-center gap-1.5">
+                        <span style={{ color: 'var(--text-tertiary)' }}>{t('maximum')}:</span>
+                        <span className="font-bold" style={{ color: '#ef4444' }}>{Math.max(...histogramData.map((d) => d.max)).toFixed(0)}</span>
+                      </div>
                     </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* 차트 영역 */}
+            <div className="flex-1 overflow-hidden p-4 flex flex-col" style={{ minWidth: 0, minHeight: 0 }}>
+                {activeTab === 'radar' && (
+                  <>
+                    {items.length === 0 || uniqueSelectedColumns.length === 0 ? (
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center glass-card p-6">
+                          <PieChart className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--text-tertiary)' }} />
+                          <p className="font-medium" style={{ color: 'var(--text-secondary)' }}>{t('selectTargetAndItems')}</p>
+                          <p className="text-sm mt-1" style={{ color: 'var(--text-tertiary)' }}>{t('recommendMinimum')}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex-1" style={{ minHeight: 0 }}>
+                          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
+                            <RadarChart data={radarData}>
+                              <PolarGrid stroke="var(--border-primary)" />
+                              <PolarAngleAxis dataKey="stat" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
+                              <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
+                              {items.map((item) => (
+                                <Radar
+                                  key={item.id}
+                                  name={item.name}
+                                  dataKey={item.name}
+                                  stroke={item.color}
+                                  fill={item.color}
+                                  fillOpacity={0.2}
+                                />
+                              ))}
+                              <Tooltip formatter={(value: number) => [`${value.toFixed(0)}%`]} />
+                            </RadarChart>
+                          </ResponsiveContainer>
+                        </div>
+                        {/* Legend */}
+                        <div className="shrink-0 flex flex-wrap justify-center items-center gap-3 pt-3 border-t" style={{ borderColor: 'var(--border-primary)' }}>
+                          {items.map((item) => (
+                            <div key={item.id} className="flex items-center gap-1.5">
+                              <div className="w-3 h-3 rounded-md shrink-0" style={{ background: item.color }} />
+                              <span className="text-xs font-medium truncate max-w-[100px]" style={{ color: 'var(--text-secondary)' }} title={item.name}>{item.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
                   </>
                 )}
-              </>
-            )}
+
+                {activeTab === 'bar' && (
+                  <>
+                    {items.length === 0 || uniqueSelectedColumns.length === 0 ? (
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center glass-card p-6">
+                          <BarChart3 className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--text-tertiary)' }} />
+                          <p className="font-medium" style={{ color: 'var(--text-secondary)' }}>{t('selectTargetAndItems')}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex-1" style={{ minHeight: 0 }}>
+                          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
+                            <BarChart data={barData}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
+                              <XAxis dataKey="stat" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
+                              <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
+                              <Tooltip contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '12px' }} />
+                              {items.map((item) => (
+                                <Bar key={item.id} dataKey={item.name} fill={item.color} radius={[4, 4, 0, 0]} />
+                              ))}
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                        {/* Legend */}
+                        <div className="shrink-0 flex flex-wrap justify-center items-center gap-3 pt-3 border-t" style={{ borderColor: 'var(--border-primary)' }}>
+                          {items.map((item) => (
+                            <div key={item.id} className="flex items-center gap-1.5">
+                              <div className="w-3 h-3 rounded-md shrink-0" style={{ background: item.color }} />
+                              <span className="text-xs font-medium truncate max-w-[100px]" style={{ color: 'var(--text-secondary)' }} title={item.name}>{item.name}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+
+                {activeTab === 'histogram' && (
+                  <>
+                    {!histogramColumn ? (
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center glass-card p-6">
+                          <TrendingUp className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--text-tertiary)' }} />
+                          <p className="font-medium" style={{ color: 'var(--text-secondary)' }}>{t('selectColumnToAnalyze')}</p>
+                        </div>
+                      </div>
+                    ) : histogramData.length === 0 ? (
+                      <div className="flex-1 flex items-center justify-center">
+                        <div className="text-center glass-card p-6">
+                          <TrendingUp className="w-10 h-10 mx-auto mb-3" style={{ color: 'var(--text-tertiary)' }} />
+                          <p className="font-medium" style={{ color: 'var(--text-secondary)' }}>{t('noNumericData')}</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="glass-card px-4 py-2 mb-3 inline-flex items-center gap-2 self-start">
+                          <TrendingUp className="w-4 h-4" style={{ color: '#f59e0b' }} />
+                          <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('distribution', { column: histogramColumn })}</span>
+                        </div>
+                        <div className="flex-1" style={{ minHeight: 0 }}>
+                          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
+                            <BarChart data={histogramData}>
+                              <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
+                              <XAxis dataKey="range" tick={{ fontSize: 10, fill: 'var(--text-secondary)' }} angle={-45} textAnchor="end" height={50} />
+                              <YAxis tick={{ fontSize: 10, fill: 'var(--text-secondary)' }} />
+                              <Tooltip
+                                formatter={(value: number) => [`${value}${t('count')}`, t('count')]}
+                                labelFormatter={(label) => `${t('range')}: ${label}`}
+                                contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '12px' }}
+                              />
+                              <Bar dataKey="count" fill="#f59e0b" radius={[4, 4, 0, 0]} />
+                            </BarChart>
+                          </ResponsiveContainer>
+                        </div>
+                      </>
+                    )}
+                  </>
+                )}
+              </div>
           </div>
-          </div>
-        </div>
         )}
       </div>
     </div>

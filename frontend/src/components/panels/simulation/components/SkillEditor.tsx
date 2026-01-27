@@ -2,8 +2,9 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
-import { Plus, Trash2, Zap, Heart, Shield, RotateCcw, Target, Users } from 'lucide-react';
+import { Plus, Trash2, Zap, Heart, Shield, RotateCcw, Target, Users, Grid3X3 } from 'lucide-react';
 import type { Skill, SkillType } from '@/lib/simulation/types';
+import { useProjectStore } from '@/stores/projectStore';
 
 interface SkillEditorProps {
   skills: Skill[];
@@ -100,6 +101,62 @@ const TRIGGER_TYPES = [
   { type: 'on_hit' as const, label: 'triggerOnHit' },
   { type: 'on_crit' as const, label: 'triggerOnCrit' },
 ];
+
+// 셀 선택 가능한 숫자 입력 컴포넌트
+interface NumberInputWithCellProps {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  min?: number;
+  max?: number;
+  step?: number;
+  placeholder?: string;
+}
+
+function NumberInputWithCell({ label, value, onChange, min, max, step = 1, placeholder }: NumberInputWithCellProps) {
+  const [isHovered, setIsHovered] = useState(false);
+  const { startCellSelection, cellSelectionMode } = useProjectStore();
+
+  const handleCellSelect = () => {
+    startCellSelection(label, (cellValue) => {
+      const num = Number(cellValue);
+      if (!isNaN(num)) onChange(num);
+    });
+  };
+
+  return (
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <label className="text-[10px] font-medium mb-1 block" style={{ color: 'var(--text-tertiary)' }}>
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          type="number"
+          value={value}
+          placeholder={placeholder}
+          onChange={(e) => onChange(Number(e.target.value))}
+          className="w-full px-2 py-1.5 pr-7 rounded text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
+          min={min}
+          max={max}
+          step={step}
+        />
+        {isHovered && !cellSelectionMode?.active && (
+          <button
+            onClick={handleCellSelect}
+            className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors hover:bg-[var(--bg-tertiary)]"
+            title="셀에서 값 가져오기"
+          >
+            <Grid3X3 className="w-3.5 h-3.5" style={{ color: 'var(--text-tertiary)' }} />
+          </button>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blue)' }: SkillEditorProps) {
   const t = useTranslations('simulation');
@@ -228,38 +285,24 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
 
                     {/* 쿨다운 */}
                     <div className="grid grid-cols-2 gap-2">
-                      <div>
-                        <label className="text-[10px] font-medium mb-1 block" style={{ color: 'var(--text-tertiary)' }}>
-                          {t('cooldown')} (s)
-                        </label>
-                        <input
-                          type="number"
-                          value={skill.cooldown}
-                          onChange={(e) => updateSkill(skill.id, { cooldown: Number(e.target.value) })}
-                          className="w-full px-2 py-1.5 rounded text-xs"
-                          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                          min={0}
-                          step={0.5}
-                        />
-                      </div>
+                      <NumberInputWithCell
+                        label={`${t('cooldown')} (s)`}
+                        value={skill.cooldown}
+                        onChange={(v) => updateSkill(skill.id, { cooldown: v })}
+                        min={0}
+                        step={0.5}
+                      />
 
                       {/* 발동 확률 */}
-                      <div>
-                        <label className="text-[10px] font-medium mb-1 block" style={{ color: 'var(--text-tertiary)' }}>
-                          {t('triggerChance')} (%)
-                        </label>
-                        <input
-                          type="number"
-                          value={Math.round((skill.trigger?.chance || 1) * 100)}
-                          onChange={(e) => updateSkill(skill.id, {
-                            trigger: { ...skill.trigger, type: skill.trigger?.type || 'always', chance: Number(e.target.value) / 100 }
-                          })}
-                          className="w-full px-2 py-1.5 rounded text-xs"
-                          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                          min={1}
-                          max={100}
-                        />
-                      </div>
+                      <NumberInputWithCell
+                        label={`${t('triggerChance')} (%)`}
+                        value={Math.round((skill.trigger?.chance || 1) * 100)}
+                        onChange={(v) => updateSkill(skill.id, {
+                          trigger: { ...skill.trigger, type: skill.trigger?.type || 'always', chance: v / 100 }
+                        })}
+                        min={1}
+                        max={100}
+                      />
                     </div>
 
                     {/* 트리거 타입 */}
@@ -287,17 +330,12 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
                       </div>
                       {(skill.trigger?.type === 'hp_below' || skill.trigger?.type === 'hp_above') && (
                         <div className="mt-2">
-                          <label className="text-[10px] font-medium mb-1 block" style={{ color: 'var(--text-tertiary)' }}>
-                            HP {t('threshold')} (%)
-                          </label>
-                          <input
-                            type="number"
+                          <NumberInputWithCell
+                            label={`HP ${t('threshold')} (%)`}
                             value={Math.round((skill.trigger?.value || 0.5) * 100)}
-                            onChange={(e) => updateSkill(skill.id, {
-                              trigger: { ...skill.trigger, type: skill.trigger?.type || 'always', value: Number(e.target.value) / 100 }
+                            onChange={(v) => updateSkill(skill.id, {
+                              trigger: { ...skill.trigger, type: skill.trigger?.type || 'always', value: v / 100 }
                             })}
-                            className="w-full px-2 py-1.5 rounded text-xs"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
                             min={1}
                             max={99}
                           />
@@ -322,20 +360,13 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
                             <option value="flat">{t('flatDamage')}</option>
                           </select>
                         </div>
-                        <div>
-                          <label className="text-[10px] font-medium mb-1 block" style={{ color: 'var(--text-tertiary)' }}>
-                            {skill.damageType === 'multiplier' ? t('multiplier') : t('damage')}
-                          </label>
-                          <input
-                            type="number"
-                            value={skill.damage}
-                            onChange={(e) => updateSkill(skill.id, { damage: Number(e.target.value) })}
-                            className="w-full px-2 py-1.5 rounded text-xs"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                            min={0}
-                            step={skill.damageType === 'multiplier' ? 0.1 : 1}
-                          />
-                        </div>
+                        <NumberInputWithCell
+                          label={skill.damageType === 'multiplier' ? t('multiplier') : t('damage')}
+                          value={skill.damage}
+                          onChange={(v) => updateSkill(skill.id, { damage: v })}
+                          min={0}
+                          step={skill.damageType === 'multiplier' ? 0.1 : 1}
+                        />
                       </div>
                     )}
 
@@ -355,121 +386,72 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
                             <option value="flat">{t('flatHeal')}</option>
                           </select>
                         </div>
-                        <div>
-                          <label className="text-[10px] font-medium mb-1 block" style={{ color: 'var(--text-tertiary)' }}>
-                            {skill.healType === 'percent' ? t('healPercent') : t('healAmount')}
-                          </label>
-                          <input
-                            type="number"
-                            value={skill.healType === 'percent' ? Math.round((skill.healAmount || 0) * 100) : (skill.healAmount || 0)}
-                            onChange={(e) => updateSkill(skill.id, {
-                              healAmount: skill.healType === 'percent' ? Number(e.target.value) / 100 : Number(e.target.value)
-                            })}
-                            className="w-full px-2 py-1.5 rounded text-xs"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                            min={0}
-                          />
-                        </div>
+                        <NumberInputWithCell
+                          label={skill.healType === 'percent' ? t('healPercent') : t('healAmount')}
+                          value={skill.healType === 'percent' ? Math.round((skill.healAmount || 0) * 100) : (skill.healAmount || 0)}
+                          onChange={(v) => updateSkill(skill.id, {
+                            healAmount: skill.healType === 'percent' ? v / 100 : v
+                          })}
+                          min={0}
+                        />
                       </div>
                     )}
 
                     {skill.skillType === 'hot' && (
                       <div className="grid grid-cols-3 gap-2">
-                        <div>
-                          <label className="text-[10px] font-medium mb-1 block" style={{ color: 'var(--text-tertiary)' }}>
-                            {t('duration')} (s)
-                          </label>
-                          <input
-                            type="number"
-                            value={skill.hotDuration || 5}
-                            onChange={(e) => updateSkill(skill.id, { hotDuration: Number(e.target.value) })}
-                            className="w-full px-2 py-1.5 rounded text-xs"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                            min={1}
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-medium mb-1 block" style={{ color: 'var(--text-tertiary)' }}>
-                            {t('tickInterval')} (s)
-                          </label>
-                          <input
-                            type="number"
-                            value={skill.hotTickInterval || 1}
-                            onChange={(e) => updateSkill(skill.id, { hotTickInterval: Number(e.target.value) })}
-                            className="w-full px-2 py-1.5 rounded text-xs"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                            min={0.1}
-                            step={0.1}
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] font-medium mb-1 block" style={{ color: 'var(--text-tertiary)' }}>
-                            {t('tickHeal')} (%)
-                          </label>
-                          <input
-                            type="number"
-                            value={Math.round((skill.hotAmount || 0.05) * 100)}
-                            onChange={(e) => updateSkill(skill.id, { hotAmount: Number(e.target.value) / 100 })}
-                            className="w-full px-2 py-1.5 rounded text-xs"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                            min={1}
-                          />
-                        </div>
+                        <NumberInputWithCell
+                          label={`${t('duration')} (s)`}
+                          value={skill.hotDuration || 5}
+                          onChange={(v) => updateSkill(skill.id, { hotDuration: v })}
+                          min={1}
+                        />
+                        <NumberInputWithCell
+                          label={`${t('tickInterval')} (s)`}
+                          value={skill.hotTickInterval || 1}
+                          onChange={(v) => updateSkill(skill.id, { hotTickInterval: v })}
+                          min={0.1}
+                          step={0.1}
+                        />
+                        <NumberInputWithCell
+                          label={`${t('tickHeal')} (%)`}
+                          value={Math.round((skill.hotAmount || 0.05) * 100)}
+                          onChange={(v) => updateSkill(skill.id, { hotAmount: v / 100 })}
+                          min={1}
+                        />
                       </div>
                     )}
 
                     {skill.skillType === 'invincible' && (
-                      <div>
-                        <label className="text-[10px] font-medium mb-1 block" style={{ color: 'var(--text-tertiary)' }}>
-                          {t('invincibleDuration')} (s)
-                        </label>
-                        <input
-                          type="number"
-                          value={skill.invincibleDuration || 2}
-                          onChange={(e) => updateSkill(skill.id, { invincibleDuration: Number(e.target.value) })}
-                          className="w-full px-2 py-1.5 rounded text-xs"
-                          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                          min={0.1}
-                          step={0.1}
-                        />
-                      </div>
+                      <NumberInputWithCell
+                        label={`${t('invincibleDuration')} (s)`}
+                        value={skill.invincibleDuration || 2}
+                        onChange={(v) => updateSkill(skill.id, { invincibleDuration: v })}
+                        min={0.1}
+                        step={0.1}
+                      />
                     )}
 
                     {skill.skillType === 'revive' && (
-                      <div>
-                        <label className="text-[10px] font-medium mb-1 block" style={{ color: 'var(--text-tertiary)' }}>
-                          {t('reviveHpPercent')} (%)
-                        </label>
-                        <input
-                          type="number"
-                          value={Math.round((skill.reviveHpPercent || 0.3) * 100)}
-                          onChange={(e) => updateSkill(skill.id, { reviveHpPercent: Number(e.target.value) / 100 })}
-                          className="w-full px-2 py-1.5 rounded text-xs"
-                          style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                          min={1}
-                          max={100}
-                        />
-                      </div>
+                      <NumberInputWithCell
+                        label={`${t('reviveHpPercent')} (%)`}
+                        value={Math.round((skill.reviveHpPercent || 0.3) * 100)}
+                        onChange={(v) => updateSkill(skill.id, { reviveHpPercent: v / 100 })}
+                        min={1}
+                        max={100}
+                      />
                     )}
 
                     {(skill.skillType === 'aoe_damage' || skill.skillType === 'aoe_heal') && (
                       <div className="grid grid-cols-2 gap-2">
-                        <div>
-                          <label className="text-[10px] font-medium mb-1 block" style={{ color: 'var(--text-tertiary)' }}>
-                            {t('aoeTargetCount')}
-                          </label>
-                          <input
-                            type="number"
-                            value={skill.aoeTargetCount || ''}
-                            placeholder={t('all')}
-                            onChange={(e) => updateSkill(skill.id, {
-                              aoeTargetCount: e.target.value ? Number(e.target.value) : undefined
-                            })}
-                            className="w-full px-2 py-1.5 rounded text-xs"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                            min={1}
-                          />
-                        </div>
+                        <NumberInputWithCell
+                          label={t('aoeTargetCount')}
+                          value={skill.aoeTargetCount || 0}
+                          onChange={(v) => updateSkill(skill.id, {
+                            aoeTargetCount: v > 0 ? v : undefined
+                          })}
+                          min={0}
+                          placeholder={t('all')}
+                        />
                         <div>
                           <label className="text-[10px] font-medium mb-1 block" style={{ color: 'var(--text-tertiary)' }}>
                             {t('aoeTargetMode')}

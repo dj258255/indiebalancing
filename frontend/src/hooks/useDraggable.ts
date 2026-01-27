@@ -262,12 +262,23 @@ export function usePanelManager(options: UsePanelManagerOptions) {
   // 현재 드래그 중인 패널 ID 가져오기
   const getDraggingPanel = useCallback(() => draggingPanelRef.current, []);
 
-  // 패널별 최소/최대 크기 설정
+  // 패널별 최소/최대 크기 설정 (toolConfig의 defaultWidth/Height를 최소 크기로 사용)
   const panelSizeLimits: Record<string, { minW: number; maxW: number; minH: number }> = {
-    comparison: { minW: 600, maxW: 1200, minH: 450 },
-    chart: { minW: 400, maxW: 900, minH: 350 },
-    preset: { minW: 500, maxW: 1000, minH: 400 },
-    default: { minW: 300, maxW: 800, minH: 250 },
+    calculator: { minW: 480, maxW: 800, minH: 600 },
+    comparison: { minW: 680, maxW: 1200, minH: 600 },
+    chart: { minW: 580, maxW: 1000, minH: 550 },
+    preset: { minW: 580, maxW: 1000, minH: 550 },
+    imbalance: { minW: 520, maxW: 900, minH: 600 },
+    goal: { minW: 500, maxW: 850, minH: 550 },
+    balance: { minW: 580, maxW: 1000, minH: 600 },
+    economy: { minW: 650, maxW: 1100, minH: 650 },
+    dpsVariance: { minW: 580, maxW: 1000, minH: 600 },
+    curveFitting: { minW: 650, maxW: 1100, minH: 650 },
+    formulaHelper: { minW: 500, maxW: 850, minH: 550 },
+    balanceValidator: { minW: 520, maxW: 900, minH: 580 },
+    difficultyCurve: { minW: 580, maxW: 1000, minH: 600 },
+    simulation: { minW: 700, maxW: 1200, minH: 700 },
+    default: { minW: 400, maxW: 900, minH: 400 },
   };
 
   const createResizeHandler = useCallback(

@@ -60,23 +60,23 @@ import ToolPanels from './components/ToolPanels';
 import SidebarResizer from './components/SidebarResizer';
 import TrashDropZone from './components/TrashDropZone';
 
-// Panel configuration
+// Panel configuration - toolConfig.ts의 defaultWidth/defaultHeight와 동기화됨
 const PANEL_CONFIG = {
-  calculator: { x: 270, y: 16, width: 380, height: 480, zIndex: 30, color: '#8b5cf6' },
-  comparison: { x: 300, y: 46, width: 400, height: 500, zIndex: 30, color: '#3b82f6' },
-  chart: { x: 330, y: 76, width: 420, height: 450, zIndex: 30, color: '#22c55e' },
-  preset: { x: 360, y: 106, width: 450, height: 520, zIndex: 30, color: '#f97316' },
-  imbalance: { x: 390, y: 136, width: 400, height: 480, zIndex: 30, color: '#eab308' },
-  goal: { x: 420, y: 166, width: 380, height: 450, zIndex: 30, color: '#14b8a6' },
-  balance: { x: 450, y: 196, width: 420, height: 500, zIndex: 30, color: '#ec4899' },
-  economy: { x: 480, y: 226, width: 400, height: 520, zIndex: 30, color: '#f59e0b' },
-  dpsVariance: { x: 510, y: 256, width: 420, height: 550, zIndex: 30, color: '#f97316' },
-  curveFitting: { x: 540, y: 286, width: 500, height: 600, zIndex: 30, color: '#6366f1' },
+  calculator: { x: 270, y: 16, width: 480, height: 600, zIndex: 30, color: '#8b5cf6' },
+  comparison: { x: 300, y: 46, width: 680, height: 600, zIndex: 30, color: '#3b82f6' },
+  chart: { x: 330, y: 76, width: 580, height: 550, zIndex: 30, color: '#22c55e' },
+  preset: { x: 360, y: 106, width: 580, height: 550, zIndex: 30, color: '#f97316' },
+  imbalance: { x: 390, y: 136, width: 520, height: 600, zIndex: 30, color: '#eab308' },
+  goal: { x: 420, y: 166, width: 500, height: 550, zIndex: 30, color: '#14b8a6' },
+  balance: { x: 450, y: 196, width: 580, height: 600, zIndex: 30, color: '#ec4899' },
+  economy: { x: 300, y: 50, width: 650, height: 650, zIndex: 30, color: '#f59e0b' },
+  dpsVariance: { x: 330, y: 80, width: 580, height: 600, zIndex: 30, color: '#ef4444' },
+  curveFitting: { x: 280, y: 40, width: 650, height: 650, zIndex: 30, color: '#6366f1' },
   // 하단 패널 도구들 (사이드바로 이동했을 때 플로팅 패널로 표시)
-  formulaHelper: { x: 280, y: 56, width: 400, height: 500, zIndex: 30, color: '#3b82f6' },
-  balanceValidator: { x: 310, y: 86, width: 420, height: 520, zIndex: 30, color: '#22c55e' },
-  difficultyCurve: { x: 340, y: 116, width: 450, height: 480, zIndex: 30, color: '#8b5cf6' },
-  simulation: { x: 370, y: 146, width: 480, height: 550, zIndex: 30, color: '#ef4444' },
+  formulaHelper: { x: 280, y: 56, width: 500, height: 550, zIndex: 30, color: '#0ea5e9' },
+  balanceValidator: { x: 310, y: 86, width: 520, height: 580, zIndex: 30, color: '#10b981' },
+  difficultyCurve: { x: 340, y: 116, width: 580, height: 600, zIndex: 30, color: '#a855f7' },
+  simulation: { x: 300, y: 50, width: 700, height: 700, zIndex: 30, color: '#e11d48' },
 };
 
 export default function Home() {

@@ -1,10 +1,11 @@
 'use client';
 
 import { ReactNode, useState, useEffect } from 'react';
-import { X, LucideIcon, Move } from 'lucide-react';
+import { X, LucideIcon, Move, GripVertical } from 'lucide-react';
 
 interface PanelHeaderProps {
   title: string;
+  description?: string;
   icon: LucideIcon;
   color: string;
   onClose?: () => void;
@@ -18,6 +19,7 @@ const DRAG_HINT_KEY = 'powerbalance-drag-hint-shown';
 
 export default function PanelHeader({
   title,
+  description,
   icon: Icon,
   color,
   onClose,
@@ -59,53 +61,54 @@ export default function PanelHeader({
 
   return (
     <div
-      className="flex items-center justify-between px-4 py-3 relative z-20 cursor-grab active:cursor-grabbing shrink-0"
+      className="glass-panel-header flex items-center gap-3 px-4 py-3 relative z-20 cursor-grab active:cursor-grabbing shrink-0"
       style={{
-        background: `${color}15`,
-        borderBottom: `1px solid ${color}40`,
+        background: `${color}08`,
+        borderBottom: `1px solid ${color}20`,
       }}
       onMouseDown={handleMouseDown}
     >
-      <div className="flex items-center gap-2">
-        {/* 드래그 핸들 아이콘 - 가독성 개선 + 테두리 */}
-        <div
-          className="flex flex-col gap-[3px] mr-1.5 p-1 rounded border opacity-70 hover:opacity-100 transition-all hover:bg-[var(--bg-hover)]"
-          style={{ borderColor: `${color}50` }}
-          title="드래그하여 이동"
-        >
-          <div className="flex gap-[3px]">
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-          </div>
-          <div className="flex gap-[3px]">
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-          </div>
-          <div className="flex gap-[3px]">
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-            <div className="w-1.5 h-1.5 rounded-full" style={{ background: color }} />
-          </div>
-        </div>
-        <div
-          className="w-8 h-8 rounded-xl flex items-center justify-center"
-          style={{ background: color }}
-        >
-          <Icon className="w-4 h-4 text-white" />
-        </div>
-        <h3 className="font-semibold text-sm" style={{ color }}>
+      {/* 드래그 핸들 - 미니멀 디자인 */}
+      <div
+        className="flex items-center justify-center w-5 opacity-40 hover:opacity-70 transition-opacity"
+        title="드래그하여 이동"
+      >
+        <GripVertical className="w-4 h-4" style={{ color }} />
+      </div>
+
+      {/* 아이콘 컨테이너 */}
+      <div
+        className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-transform hover:scale-105"
+        style={{ background: `${color}15` }}
+      >
+        <Icon className="w-[18px] h-[18px]" style={{ color }} />
+      </div>
+
+      {/* 제목 & 설명 */}
+      <div className="flex-1 min-w-0">
+        <h3 className="font-semibold text-sm truncate" style={{ color: 'var(--text-primary)' }}>
           {title}
         </h3>
-        {extraContent}
+        {description && (
+          <p className="text-xs truncate mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+            {description}
+          </p>
+        )}
       </div>
-      {onClose && (
-        <button
-          onClick={onClose}
-          className="p-1.5 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-          style={{ color: 'var(--text-tertiary)' }}
-        >
-          <X className="w-4 h-4" />
-        </button>
-      )}
+
+      {/* 우측 액션 영역 */}
+      <div className="flex items-center gap-1 shrink-0">
+        {extraContent}
+        {onClose && (
+          <button
+            onClick={onClose}
+            className="p-1.5 rounded-lg transition-all hover:bg-[var(--bg-hover)] opacity-60 hover:opacity-100"
+            style={{ color: 'var(--text-tertiary)' }}
+          >
+            <X className="w-4 h-4" />
+          </button>
+        )}
+      </div>
 
       {/* 첫 사용자 드래그 힌트 */}
       {showDragHint && (

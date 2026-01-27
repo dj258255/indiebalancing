@@ -19,6 +19,7 @@ export interface ToolConfig {
   icon: typeof Calculator;
   color: string;
   titleKey: string;
+  descriptionKey: string;
   defaultIndex: number;
   // 도구별 최적 기본 크기
   defaultWidth?: number;
@@ -28,113 +29,127 @@ export interface ToolConfig {
 export const TOOL_CONFIGS: Record<AllToolId, ToolConfig> = {
   calculator: {
     icon: Calculator,
-    color: '#8b5cf6',
+    color: '#8b5cf6', // 보라 (Violet)
     titleKey: 'sidebar.calculator',
+    descriptionKey: 'toolDescriptions.calculator',
     defaultIndex: 0,
     defaultWidth: 480,
     defaultHeight: 600,
   },
   comparison: {
     icon: PieChart,
-    color: '#3b82f6',
+    color: '#3b82f6', // 파랑 (Blue)
     titleKey: 'sidebar.comparison',
+    descriptionKey: 'toolDescriptions.comparison',
     defaultIndex: 1,
     defaultWidth: 680,
     defaultHeight: 600,
   },
   chart: {
     icon: BarChart3,
-    color: '#22c55e',
+    color: '#22c55e', // 초록 (Green)
     titleKey: 'growthCurve.title',
+    descriptionKey: 'toolDescriptions.chart',
     defaultIndex: 2,
     defaultWidth: 580,
     defaultHeight: 550,
   },
   presetComparison: {
     icon: GitCompare,
-    color: '#f97316',
+    color: '#f97316', // 오렌지 (Orange)
     titleKey: 'sidebar.presetComparison',
+    descriptionKey: 'toolDescriptions.presetComparison',
     defaultIndex: 3,
     defaultWidth: 580,
     defaultHeight: 550,
   },
   imbalanceDetector: {
     icon: AlertTriangle,
-    color: '#eab308',
+    color: '#eab308', // 옐로우 (Yellow)
     titleKey: 'sidebar.imbalanceDetector',
+    descriptionKey: 'toolDescriptions.imbalanceDetector',
     defaultIndex: 4,
     defaultWidth: 520,
     defaultHeight: 600,
   },
   goalSolver: {
     icon: Target,
-    color: '#14b8a6',
+    color: '#14b8a6', // 틸 (Teal)
     titleKey: 'sidebar.goalSolver',
+    descriptionKey: 'toolDescriptions.goalSolver',
     defaultIndex: 5,
     defaultWidth: 500,
     defaultHeight: 550,
   },
   balanceAnalysis: {
     icon: TrendingUp,
-    color: '#ec4899',
+    color: '#ec4899', // 핑크 (Pink)
     titleKey: 'sidebar.balanceAnalysis',
+    descriptionKey: 'toolDescriptions.balanceAnalysis',
     defaultIndex: 6,
     defaultWidth: 580,
     defaultHeight: 600,
   },
   economy: {
     icon: Coins,
-    color: '#f59e0b',
+    color: '#f59e0b', // 앰버 (Amber)
     titleKey: 'sidebar.economy',
+    descriptionKey: 'toolDescriptions.economy',
     defaultIndex: 7,
     defaultWidth: 650,
     defaultHeight: 650,
   },
   dpsVariance: {
     icon: BarChart2,
-    color: '#f97316',
+    color: '#ef4444', // 레드 (Red)
     titleKey: 'sidebar.dpsVariance',
+    descriptionKey: 'toolDescriptions.dpsVariance',
     defaultIndex: 8,
     defaultWidth: 580,
     defaultHeight: 600,
   },
   curveFitting: {
     icon: PenTool,
-    color: '#6366f1',
+    color: '#6366f1', // 인디고 (Indigo)
     titleKey: 'sidebar.curveFitting',
+    descriptionKey: 'toolDescriptions.curveFitting',
     defaultIndex: 9,
     defaultWidth: 650,
     defaultHeight: 650,
   },
   formulaHelper: {
     icon: FunctionSquare,
-    color: '#3b82f6',
+    color: '#0ea5e9', // 스카이 (Sky)
     titleKey: 'bottomTabs.formulaHelper',
-    defaultIndex: 0, // 하단 패널 첫번째 (왼쪽)
+    descriptionKey: 'toolDescriptions.formulaHelper',
+    defaultIndex: 0,
     defaultWidth: 500,
     defaultHeight: 550,
   },
   balanceValidator: {
     icon: Shield,
-    color: '#22c55e',
+    color: '#10b981', // 에메랄드 (Emerald)
     titleKey: 'bottomTabs.balanceValidator',
-    defaultIndex: 1, // 하단 패널 두번째
+    descriptionKey: 'toolDescriptions.balanceValidator',
+    defaultIndex: 1,
     defaultWidth: 520,
     defaultHeight: 580,
   },
   difficultyCurve: {
     icon: TrendingUp,
-    color: '#8b5cf6',
+    color: '#a855f7', // 퍼플 (Purple)
     titleKey: 'bottomTabs.difficultyCurve',
-    defaultIndex: 2, // 하단 패널 세번째
+    descriptionKey: 'toolDescriptions.difficultyCurve',
+    defaultIndex: 2,
     defaultWidth: 580,
     defaultHeight: 600,
   },
   simulation: {
     icon: Swords,
-    color: '#ef4444',
+    color: '#e11d48', // 로즈 (Rose)
     titleKey: 'bottomTabs.simulation',
-    defaultIndex: 3, // 하단 패널 네번째 (오른쪽)
+    descriptionKey: 'toolDescriptions.simulation',
+    defaultIndex: 3,
     defaultWidth: 700,
     defaultHeight: 700,
   },
