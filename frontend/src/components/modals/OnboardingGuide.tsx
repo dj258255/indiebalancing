@@ -17,6 +17,8 @@ import {
   Sparkles,
   Layers,
   Swords,
+  Gift,
+  ExternalLink,
 } from 'lucide-react';
 
 interface OnboardingGuideProps {
@@ -35,6 +37,7 @@ interface TutorialStep {
   };
   tip?: string;
   isGuidelinesStep?: boolean;
+  isSurveyStep?: boolean;
 }
 
 // Helper function to get guidelines data with translations
@@ -114,6 +117,13 @@ const getTutorialSteps = (t: (key: string) => string): TutorialStep[] => [
     title: t('onboarding.steps.welcome.title'),
     description: t('onboarding.steps.welcome.description'),
     tip: t('onboarding.steps.welcome.tip'),
+  },
+  {
+    id: 'survey',
+    title: t('onboarding.steps.survey.title'),
+    description: t('onboarding.steps.survey.description'),
+    tip: t('onboarding.steps.survey.tip'),
+    isSurveyStep: true,
   },
   {
     id: 'guidelines',
@@ -372,6 +382,75 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
               <div className="flex items-center gap-2" style={{ color: 'var(--warning)' }}>
                 <Play className="w-4 h-4" />
                 <span>→ {step.example.result}</span>
+              </div>
+            </div>
+          )}
+
+          {/* 설문 이벤트 UI */}
+          {step.isSurveyStep && (
+            <div className="space-y-4 mb-4 flex-1">
+              {/* 이벤트 배너 */}
+              <div
+                className="p-4 rounded-xl border-2 border-dashed"
+                style={{ borderColor: 'var(--warning)', background: 'var(--warning-light)' }}
+              >
+                <div className="flex items-center gap-3 mb-3">
+                  <div
+                    className="w-10 h-10 rounded-full flex items-center justify-center"
+                    style={{ background: 'var(--warning)' }}
+                  >
+                    <Gift className="w-5 h-5 text-white" />
+                  </div>
+                  <div>
+                    <div className="font-bold" style={{ color: 'var(--text-primary)' }}>
+                      {t('onboarding.steps.survey.eventTitle')}
+                    </div>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                      {t('onboarding.steps.survey.eventSubtitle')}
+                    </div>
+                  </div>
+                </div>
+
+                <a
+                  href="https://docs.google.com/forms/d/e/1FAIpQLSfDLtkPGgVXckztCnJtwl1O04J162pUadf11mNUW-_8xaDVqg/viewform"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-center gap-2 w-full py-3 rounded-lg font-medium transition-opacity hover:opacity-90"
+                  style={{ background: 'var(--warning)', color: 'white' }}
+                >
+                  {t('onboarding.steps.survey.surveyButton')}
+                  <ExternalLink className="w-4 h-4" />
+                </a>
+              </div>
+
+              {/* 개선점 요청 */}
+              <div
+                className="p-4 rounded-lg"
+                style={{ background: 'var(--bg-tertiary)' }}
+              >
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                  {t('onboarding.steps.survey.feedbackRequest')}
+                </div>
+                <ul className="mt-2 space-y-1 text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                  <li>• {t('onboarding.steps.survey.feedbackItem1')}</li>
+                  <li>• {t('onboarding.steps.survey.feedbackItem2')}</li>
+                  <li>• {t('onboarding.steps.survey.feedbackItem3')}</li>
+                </ul>
+              </div>
+
+              {/* 오픈소스 안내 */}
+              <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                <span>📦</span>
+                <span>{t('onboarding.steps.survey.openSource')}</span>
+                <a
+                  href="https://github.com/dj258255/indiebalancing"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="underline hover:opacity-80 transition-opacity"
+                  style={{ color: 'var(--primary-blue)' }}
+                >
+                  GitHub
+                </a>
               </div>
             </div>
           )}

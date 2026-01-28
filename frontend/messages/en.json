@@ -1745,6 +1745,19 @@
         "description": "This tool helps game designers manage and calculate character stats, weapon damage, level tables, and more.",
         "tip": "Use it like Excel, but with game-specific formulas built in."
       },
+      "survey": {
+        "title": "🍔 MVP Feedback Event",
+        "description": "This is still in early stages with much room for improvement. Please let us know if you find any UI/UX issues, missing features, or areas that need work!",
+        "tip": "PC/Tablet recommended (mobile experience is limited)",
+        "eventTitle": "Burger Giveaway Event!",
+        "eventSubtitle": "3 lucky survey participants will win a burger set",
+        "surveyButton": "Take Survey",
+        "feedbackRequest": "We're looking for feedback on:",
+        "feedbackItem1": "Pain points while using the tool",
+        "feedbackItem2": "Features you'd like to see",
+        "feedbackItem3": "Bug reports and errors",
+        "openSource": "It's open source - feel free to fork and run your own!"
+      },
       "guidelines": {
         "title": "Recommended Values Guide",
         "description": "Industry-standard values commonly used in game balancing. Reference these during your work.",
