@@ -1916,7 +1916,8 @@
     "ttkDistribution": "TTK 분포",
     "comparisonResults": "비교 결과",
     "description": "Monte Carlo 시뮬레이션을 통해 DPS 분산을 분석합니다. 크리티컬 확률, 피해 편차 등 확률적 요소가 실제 전투에서 어떤 분포를 만드는지 확인할 수 있습니다.",
-    "selectFromCell": "셀에서 값 가져오기"
+    "selectFromCell": "셀에서 값 가져오기",
+    "simSettings": "시뮬레이션 설정"
   },
   "curveFitting": {
     "title": "곡선 피팅",

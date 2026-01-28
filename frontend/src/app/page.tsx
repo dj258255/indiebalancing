@@ -55,7 +55,6 @@ import MobileSidebar from './components/MobileSidebar';
 import SheetHeader from './components/SheetHeader';
 import BottomToolbar from './components/BottomToolbar';
 import EmptySheetView from './components/EmptySheetView';
-import MobilePanels from './components/MobilePanels';
 import ToolPanels from './components/ToolPanels';
 import SidebarResizer from './components/SidebarResizer';
 import TrashDropZone from './components/TrashDropZone';
@@ -409,6 +408,74 @@ export default function Home() {
             setShowPresetComparison(true);
             setShowMobileSidebar(false);
           },
+          onShowImbalanceDetector: () => {
+            setShowImbalanceDetector(true);
+            setShowMobileSidebar(false);
+          },
+          onShowGoalSolver: () => {
+            setShowGoalSolver(true);
+            setShowMobileSidebar(false);
+          },
+          onShowBalanceAnalysis: () => {
+            setShowBalanceAnalysis(true);
+            setShowMobileSidebar(false);
+          },
+          onShowEconomy: () => {
+            setShowEconomy(true);
+            setShowMobileSidebar(false);
+          },
+          onShowDpsVariance: () => {
+            setShowDpsVariance(true);
+            setShowMobileSidebar(false);
+          },
+          onShowCurveFitting: () => {
+            setShowCurveFitting(true);
+            setShowMobileSidebar(false);
+          },
+          onShowSettings: () => {
+            setShowSettings(true);
+            setShowMobileSidebar(false);
+          },
+          onShowExportModal: () => {
+            setShowExportModal(true);
+            setShowMobileSidebar(false);
+          },
+          onShowImportModal: () => {
+            setShowImportModal(true);
+            setShowMobileSidebar(false);
+          },
+          onToggleFormulaHelper: () => {
+            setShowFormulaHelper(true);
+            setShowMobileSidebar(false);
+          },
+          onToggleBalanceValidator: () => {
+            setShowBalanceValidator(true);
+            setShowMobileSidebar(false);
+          },
+          onToggleDifficultyCurve: () => {
+            setShowDifficultyCurve(true);
+            setShowMobileSidebar(false);
+          },
+          onToggleSimulation: () => {
+            setShowSimulation(true);
+            setShowMobileSidebar(false);
+          },
+        }}
+        activeTools={{
+          calculator: showCalculator,
+          comparison: showComparison,
+          chart: showChart,
+          presetComparison: showPresetComparison,
+          imbalanceDetector: showImbalanceDetector,
+          goalSolver: showGoalSolver,
+          balanceAnalysis: showBalanceAnalysis,
+          economy: showEconomy,
+          dpsVariance: showDpsVariance,
+          curveFitting: showCurveFitting,
+          formulaHelper: showFormulaHelper,
+          balanceValidator: showBalanceValidator,
+          difficultyCurve: showDifficultyCurve,
+          simulation: showSimulation,
         }}
       />
 
@@ -502,16 +569,6 @@ export default function Home() {
           balanceValidator: { show: showBalanceValidator, setShow: setShowBalanceValidator },
           difficultyCurve: { show: showDifficultyCurve, setShow: setShowDifficultyCurve },
           simulation: { show: showSimulation, setShow: setShowSimulation },
-        }}
-      />
-
-      {/* Mobile Panels */}
-      <MobilePanels
-        panels={{
-          calculator: { show: showCalculator, setShow: setShowCalculator },
-          comparison: { show: showComparison, setShow: setShowComparison },
-          chart: { show: showChart, setShow: setShowChart },
-          preset: { show: showPresetComparison, setShow: setShowPresetComparison },
         }}
       />
 

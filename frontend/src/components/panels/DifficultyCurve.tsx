@@ -766,9 +766,9 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
 
         {/* 전체화면 모달 */}
         {showFullscreen && (
-          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-8" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
+          <div className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-8" style={{ background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(4px)' }}>
             <div
-              className="w-full h-full max-w-6xl max-h-[90vh] flex flex-col rounded-2xl overflow-hidden"
+              className="w-full h-[95vh] sm:h-full max-w-6xl sm:max-h-[90vh] flex flex-col rounded-t-2xl sm:rounded-2xl overflow-hidden"
               style={{
                 background: 'var(--bg-primary)',
                 border: '1px solid var(--border-primary)',

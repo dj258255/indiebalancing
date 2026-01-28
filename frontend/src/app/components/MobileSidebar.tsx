@@ -8,16 +8,45 @@ interface SidebarCallbacks {
   onShowCalculator: () => void;
   onShowComparison: () => void;
   onShowReferences: () => void;
-  onShowPresetComparison: () => void;
+  onShowPresetComparison?: () => void;
+  onShowImbalanceDetector?: () => void;
+  onShowGoalSolver?: () => void;
+  onShowBalanceAnalysis?: () => void;
+  onShowEconomy?: () => void;
+  onShowDpsVariance?: () => void;
+  onShowCurveFitting?: () => void;
+  onShowSettings?: () => void;
+  onShowExportModal?: () => void;
+  onShowImportModal?: () => void;
+  onToggleFormulaHelper?: () => void;
+  onToggleBalanceValidator?: () => void;
+  onToggleDifficultyCurve?: () => void;
+  onToggleSimulation?: () => void;
 }
 
 interface MobileSidebarProps {
   isOpen: boolean;
   onClose: () => void;
   callbacks: SidebarCallbacks;
+  activeTools?: {
+    calculator?: boolean;
+    comparison?: boolean;
+    chart?: boolean;
+    presetComparison?: boolean;
+    imbalanceDetector?: boolean;
+    goalSolver?: boolean;
+    balanceAnalysis?: boolean;
+    economy?: boolean;
+    dpsVariance?: boolean;
+    curveFitting?: boolean;
+    formulaHelper?: boolean;
+    balanceValidator?: boolean;
+    difficultyCurve?: boolean;
+    simulation?: boolean;
+  };
 }
 
-export default function MobileSidebar({ isOpen, onClose, callbacks }: MobileSidebarProps) {
+export default function MobileSidebar({ isOpen, onClose, callbacks, activeTools }: MobileSidebarProps) {
   if (!isOpen) return null;
 
   return (
@@ -27,7 +56,7 @@ export default function MobileSidebar({ isOpen, onClose, callbacks }: MobileSide
         className="absolute left-0 top-0 bottom-0 w-72 animate-slideIn"
         onClick={(e) => e.stopPropagation()}
       >
-        <Sidebar {...callbacks} />
+        <Sidebar {...callbacks} activeTools={activeTools} />
       </div>
     </div>
   );

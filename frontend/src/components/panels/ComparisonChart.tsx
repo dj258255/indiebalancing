@@ -231,11 +231,11 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
 
   const wrapperClass = isPanel
     ? "flex flex-col h-full"
-    : "fixed inset-0 flex items-center justify-center z-[9999] p-4" + " bg-black/50 backdrop-blur-sm";
+    : "fixed inset-0 flex items-end sm:items-center justify-center z-[9999] p-0 sm:p-4 bg-black/50 backdrop-blur-sm";
 
   const cardClass = isPanel
     ? "flex flex-col h-full"
-    : "glass-panel w-full max-w-5xl max-h-[90vh] flex flex-col";
+    : "glass-panel w-full max-w-5xl h-[95vh] sm:h-auto sm:max-h-[90vh] flex flex-col rounded-t-2xl sm:rounded-2xl";
 
   return (
     <div className={wrapperClass}>

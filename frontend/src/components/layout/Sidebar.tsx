@@ -149,6 +149,7 @@ export default function Sidebar({
   const {
     toolLocations,
     getSidebarTools,
+    getAllTools,
     reorderSidebarTools,
     moveToolToLocation,
     sidebarWidth,
@@ -158,8 +159,14 @@ export default function Sidebar({
 
   // 클라이언트 마운트 후에만 저장된 값 사용 (SSR 하이드레이션 불일치 방지)
   const [mounted, setMounted] = useState(false);
+  const [isMobile, setIsMobile] = useState(false);
   useEffect(() => {
     setMounted(true);
+    // 모바일 감지
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
   }, []);
   const effectiveWidth = mounted ? sidebarWidth : 256;
   const effectiveToolsHeight = mounted ? toolsSectionHeight : 200;
@@ -509,7 +516,8 @@ export default function Sidebar({
   // 현재 프로젝트와 시트 가져오기
   const currentProject = projects.find(p => p.id === currentProjectId);
 
-  const sidebarTools = getSidebarTools();
+  // 모바일에서는 모든 도구 표시 (하단 독바가 숨겨지므로)
+  const sidebarTools = isMobile ? getAllTools() : getSidebarTools();
 
   return (
     <>

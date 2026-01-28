@@ -653,11 +653,11 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
       {/* Fullscreen Chart Modal */}
       {fullscreenChart && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-sm"
           onClick={() => setFullscreenChart(null)}
         >
           <div
-            className="glass-panel w-full max-w-4xl h-[80vh] flex flex-col"
+            className="glass-panel w-full max-w-4xl h-[90vh] sm:h-[80vh] flex flex-col rounded-t-2xl sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             <div className="glass-panel-header">

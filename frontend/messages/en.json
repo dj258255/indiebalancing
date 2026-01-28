@@ -1912,7 +1912,8 @@
     "ttkDistribution": "TTK Distribution",
     "comparisonResults": "Comparison Results",
     "description": "Analyze DPS variance using Monte Carlo simulation. See how probabilistic factors like crit rate and damage variance affect actual combat distribution.",
-    "selectFromCell": "Get value from cell"
+    "selectFromCell": "Get value from cell",
+    "simSettings": "Simulation Settings"
   },
   "curveFitting": {
     "title": "Curve Fitting",

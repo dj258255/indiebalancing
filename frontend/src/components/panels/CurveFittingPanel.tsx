@@ -662,10 +662,10 @@ export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: Cu
       {/* Fullscreen Modal */}
       {fullscreenCanvas && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-sm"
           onClick={() => setFullscreenCanvas(false)}
         >
-          <div className="glass-panel w-full max-w-6xl h-[90vh] flex flex-col" onClick={(e) => e.stopPropagation()}>
+          <div className="glass-panel w-full max-w-6xl h-[95vh] sm:h-[90vh] flex flex-col rounded-t-2xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="glass-panel-header">
               <div className="flex items-center gap-3">
                 <div

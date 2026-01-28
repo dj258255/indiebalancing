@@ -338,8 +338,8 @@ export default function EconomyPanel({ showHelp, setShowHelp, onClose }: Economy
 
       {/* Fullscreen Chart Modal */}
       {fullscreenChart && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0, 0, 0, 0.8)' }} onClick={() => setFullscreenChart(false)}>
-          <div className="glass-panel w-full h-full max-w-6xl max-h-[90vh] p-6 flex flex-col" onClick={(e) => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" style={{ background: 'rgba(0, 0, 0, 0.8)' }} onClick={() => setFullscreenChart(false)}>
+          <div className="glass-panel w-full h-[90vh] sm:h-full max-w-6xl sm:max-h-[90vh] p-4 sm:p-6 flex flex-col rounded-t-2xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
               <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{t('supplyOverTime')} ({config.simulationDays}{t('days')})</h2>
               <button onClick={() => setFullscreenChart(false)} className="glass-button !p-2"><X className="w-5 h-5" style={{ color: 'var(--text-tertiary)' }} /></button>

@@ -1237,6 +1237,12 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
 
   // 외부 드래그 선택: 테이블 컨테이너 빈 영역에서 시작
   const handleContainerMouseDown = useCallback((e: React.MouseEvent) => {
+    // 왼쪽 버튼만 처리
+    if (e.button !== 0) return;
+
+    // 이미 셀 드래그 중이면 무시
+    if (isDraggingRef.current || isFillDragging || isMoveDragging) return;
+
     // 테이블 셀이나 헤더 위에서 클릭하면 무시 (기존 로직 유지)
     const target = e.target as HTMLElement;
     // 테이블 내부 요소 클릭 감지 (셀, 버튼, 입력 등)
@@ -1251,6 +1257,9 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     ) {
       return;
     }
+
+    // 브라우저 기본 텍스트 선택 방지
+    e.preventDefault();
 
     // 드래그 임계값용 시작점 저장
     const containerRect = tableContainerRef.current?.getBoundingClientRect();
@@ -2399,7 +2408,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                 startEditing(row.original.id, col.id);
               }}
               onContextMenu={(e) => handleContextMenu(e, row.original.id, col.id)}
-              className={`px-2 py-1 min-h-[32px] relative group overflow-hidden select-none flex ${
+              className={`px-2 sm:px-2 py-1.5 sm:py-1 min-h-[40px] sm:min-h-[32px] relative group overflow-hidden select-none flex ${
                 cellStyle?.vAlign === 'top' ? 'items-start' : cellStyle?.vAlign === 'bottom' ? 'items-end' : 'items-center'
               } ${isSelected && !editingCell ? 'cursor-move' : 'cursor-cell'} ${isMoveSource && !isCopyMode ? 'opacity-50' : ''}`}
               style={{
@@ -2971,7 +2980,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
         {/* 테이블 컨테이너 - 가로 스크롤바는 숨김 */}
         <div
           ref={tableContainerRef}
-          className={cn("flex-1 rounded-tl-lg border-t border-l border-b-0 hide-scrollbar relative", resizingColumn && "select-none")}
+          className={cn("flex-1 rounded-tl-lg border-t border-l border-b-0 hide-scrollbar relative select-none", resizingColumn && "select-none")}
           style={{
             overflowY: 'scroll',
             overflowX: 'scroll',
@@ -3023,7 +3032,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                     <th
                       key={header.id}
                       className={cn(
-                        "px-3 py-1.5 text-xs font-bold uppercase tracking-wide relative",
+                        "px-2 sm:px-3 py-2 sm:py-1.5 text-xs font-bold uppercase tracking-wide relative",
                         isActions && "px-1",
                         isRowNumber ? "text-center" : "text-left"
                       )}

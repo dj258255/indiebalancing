@@ -474,7 +474,7 @@ input[type="checkbox"]:checked::after {
 
 /* Glass Panel Header */
 .glass-panel-header {
-  @apply flex items-center justify-between px-5 py-4;
+  @apply flex items-center justify-between px-4 py-3 sm:px-5 sm:py-4;
   background: transparent;
   border-bottom: 1px solid rgba(0, 0, 0, 0.06);
 }
@@ -485,7 +485,7 @@ input[type="checkbox"]:checked::after {
 
 /* Glass Panel Content */
 .glass-panel-content {
-  @apply p-5;
+  @apply p-4 sm:p-5;
 }
 
 /* Glass Card - 패널 내부 카드 */

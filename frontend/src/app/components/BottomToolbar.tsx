@@ -555,54 +555,7 @@ export default function BottomToolbar({
         </div>
       </div>
 
-      {/* 모바일용 Liquid Glass 탭 바 */}
-      <div className="fixed bottom-2 left-2 right-2 z-[45] md:hidden">
-        <div className="liquid-glass-dock flex items-center gap-1 px-2 py-2 overflow-x-auto scrollbar-none">
-          {bottomTools.map((toolId) => {
-            const config = TOOL_CONFIG[toolId];
-            if (!config) return null;
-
-            const Icon = config.icon;
-            const isActive = isPanelTool(toolId)
-              ? show[toolId]
-              : (() => {
-                  const toolActiveMap: Record<string, boolean | undefined> = {
-                    calculator: activeTools.calculator,
-                    comparison: activeTools.comparison,
-                    chart: activeTools.chart,
-                    presetComparison: activeTools.presetComparison,
-                    imbalanceDetector: activeTools.imbalanceDetector,
-                    goalSolver: activeTools.goalSolver,
-                    balanceAnalysis: activeTools.balanceAnalysis,
-                    economy: activeTools.economy,
-                    dpsVariance: activeTools.dpsVariance,
-                    curveFitting: activeTools.curveFitting,
-                  };
-                  return toolActiveMap[toolId] ?? false;
-                })();
-
-            return (
-              <div
-                key={toolId}
-                className={cn(
-                  'relative flex items-center justify-center w-11 h-11 rounded-xl shrink-0 transition-all',
-                  isActive && 'bg-black/[0.08] dark:bg-white/[0.12]',
-                  isModalOpen && 'opacity-50'
-                )}
-                onClick={() => handleToolClick(toolId)}
-              >
-                <Icon className="w-5 h-5" style={{ color: config.color }} />
-                {isActive && (
-                  <div
-                    className="absolute -bottom-0.5 w-1.5 h-1.5 rounded-full"
-                    style={{ background: config.color }}
-                  />
-                )}
-              </div>
-            );
-          })}
-        </div>
-      </div>
+      {/* 모바일에서는 하단 독바 숨김 - 사이드바 메뉴 사용 */}
     </>
   );
 }

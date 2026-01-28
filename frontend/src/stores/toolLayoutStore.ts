@@ -78,6 +78,9 @@ interface ToolLayoutState {
   // 도구의 z-index 가져오기
   getToolZIndex: (toolId: AllToolId) => number;
 
+  // 모든 도구 목록 가져오기 (위치와 상관없이)
+  getAllTools: () => AllToolId[];
+
   // 초기화
   resetLayout: () => void;
 }
@@ -285,6 +288,37 @@ export const useToolLayoutStore = create<ToolLayoutState>()(
         const { bottomToolZOrder } = get();
         const index = bottomToolZOrder.indexOf(toolId);
         return index === -1 ? 0 : index + 30; // 기본 z-index 30부터 시작
+      },
+
+      getAllTools: () => {
+        const { sidebarToolOrder, bottomToolOrder, pinnedTools } = get();
+        // 사이드바 도구 + 하단 도구 순서대로, 중복 제거
+        const allTools: AllToolId[] = [];
+        const seen = new Set<AllToolId>();
+
+        // 사이드바 도구 먼저
+        for (const tool of sidebarToolOrder) {
+          if (!seen.has(tool)) {
+            seen.add(tool);
+            allTools.push(tool);
+          }
+        }
+        // 하단 도구
+        for (const tool of bottomToolOrder) {
+          if (!seen.has(tool)) {
+            seen.add(tool);
+            allTools.push(tool);
+          }
+        }
+
+        // 고정된 도구를 맨 앞으로 정렬
+        return allTools.sort((a, b) => {
+          const aPinned = pinnedTools.includes(a);
+          const bPinned = pinnedTools.includes(b);
+          if (aPinned && !bPinned) return -1;
+          if (!aPinned && bPinned) return 1;
+          return 0;
+        });
       },
 
       resetLayout: () => {

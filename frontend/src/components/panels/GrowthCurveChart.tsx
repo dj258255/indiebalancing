@@ -644,11 +644,11 @@ export default function GrowthCurveChart({
         {/* 그래프 확대 모달 */}
         {showChartModal && (
           <div
-            className="fixed inset-0 z-[1000] flex items-center justify-center p-6 bg-black/75 backdrop-blur-sm"
+            className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center p-0 sm:p-6 bg-black/75 backdrop-blur-sm"
             onClick={() => setShowChartModal(false)}
           >
             <div
-              className="glass-panel w-full max-w-6xl h-[80vh] flex flex-col"
+              className="glass-panel w-full max-w-6xl h-[90vh] sm:h-[80vh] flex flex-col rounded-t-2xl sm:rounded-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               <div className="glass-panel-header">

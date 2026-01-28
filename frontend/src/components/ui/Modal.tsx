@@ -59,12 +59,12 @@ export default function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
       onClick={handleBackdropClick}
     >
       <div
-        className={`rounded-xl shadow-2xl w-full mx-4 overflow-hidden ${sizeClasses[size]} ${className}`}
+        className={`rounded-t-xl sm:rounded-xl shadow-2xl w-full sm:mx-4 overflow-hidden max-h-[90vh] sm:max-h-[85vh] flex flex-col ${sizeClasses[size]} ${className}`}
         style={{
           backgroundColor: 'var(--bg-secondary)',
           border: '1px solid var(--border-color)',
@@ -72,16 +72,16 @@ export default function Modal({
       >
         {title && (
           <div
-            className="flex items-center justify-between px-5 py-4"
+            className="flex items-center justify-between px-4 sm:px-5 py-3 sm:py-4 flex-shrink-0"
             style={{ borderBottom: '1px solid var(--border-color)' }}
           >
-            <h2 className="text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
+            <h2 className="text-sm sm:text-base font-semibold" style={{ color: 'var(--text-primary)' }}>
               {title}
             </h2>
             {showCloseButton && (
               <button
                 onClick={onClose}
-                className="p-1 rounded-lg hover:bg-gray-500/20 transition-colors"
+                className="p-1.5 sm:p-1 rounded-lg hover:bg-gray-500/20 transition-colors"
                 style={{ color: 'var(--text-secondary)' }}
               >
                 <X className="w-5 h-5" />
@@ -89,7 +89,9 @@ export default function Modal({
             )}
           </div>
         )}
-        {children}
+        <div className="flex-1 overflow-y-auto">
+          {children}
+        </div>
       </div>
     </div>
   );

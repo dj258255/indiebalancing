@@ -226,19 +226,19 @@ export default function SheetToolbar({
   // 줌 퍼센트 표시
   const zoomPercent = Math.round(zoomLevel * 100);
 
-  // 버튼 스타일
-  const buttonClass = `p-1.5 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed`;
+  // 버튼 스타일 - 모바일에서 더 큰 터치 타겟
+  const buttonClass = `p-2 sm:p-1.5 rounded transition-colors disabled:opacity-40 disabled:cursor-not-allowed`;
   const activeClass = `bg-[var(--primary-blue-light)]`;
-  const hoverClass = `hover:bg-[var(--bg-hover)]`;
+  const hoverClass = `hover:bg-[var(--bg-hover)] active:bg-[var(--bg-hover)]`;
 
-  // 구분선 컴포넌트
+  // 구분선 컴포넌트 - 모바일에서 숨김
   const Divider = () => (
-    <div className="w-px h-6 mx-1" style={{ background: 'var(--border-primary)' }} />
+    <div className="hidden sm:block w-px h-6 mx-1" style={{ background: 'var(--border-primary)' }} />
   );
 
   return (
     <div
-      className="flex items-center gap-0.5 px-2 py-1.5 border-b flex-wrap"
+      className="flex items-center gap-1 sm:gap-0.5 px-2 sm:px-2 py-2 sm:py-1.5 border-b overflow-x-auto scrollbar-none"
       style={{
         background: 'var(--bg-secondary)',
         borderColor: 'var(--border-primary)',
@@ -252,7 +252,7 @@ export default function SheetToolbar({
           className={`${buttonClass} ${hoverClass}`}
           style={{ color: 'var(--text-secondary)' }}
         >
-          <Undo2 className="w-4 h-4" />
+          <Undo2 className="w-5 h-5 sm:w-4 sm:h-4" />
         </button>
       </Tooltip>
       <Tooltip label={t('toolbar.redo')} shortcut="Ctrl+Y">
@@ -262,7 +262,7 @@ export default function SheetToolbar({
           className={`${buttonClass} ${hoverClass}`}
           style={{ color: 'var(--text-secondary)' }}
         >
-          <Redo2 className="w-4 h-4" />
+          <Redo2 className="w-5 h-5 sm:w-4 sm:h-4" />
         </button>
       </Tooltip>
 
@@ -275,7 +275,7 @@ export default function SheetToolbar({
             className={`${buttonClass} ${hoverClass} flex items-center gap-0.5`}
             style={{ color: 'var(--text-secondary)' }}
           >
-            <History className="w-4 h-4" />
+            <History className="w-5 h-5 sm:w-4 sm:h-4" />
             <ChevronDown className="w-3 h-3" />
           </button>
         </Tooltip>
@@ -404,7 +404,7 @@ export default function SheetToolbar({
             className={`${buttonClass} ${hoverClass}`}
             style={{ color: 'var(--text-secondary)' }}
           >
-            <Minus className="w-4 h-4" />
+            <Minus className="w-5 h-5 sm:w-4 sm:h-4" />
           </button>
         </Tooltip>
         <Tooltip label={t('toolbar.fontSize')}>
@@ -439,7 +439,7 @@ export default function SheetToolbar({
             className={`${buttonClass} ${hoverClass}`}
             style={{ color: 'var(--text-secondary)' }}
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-5 h-5 sm:w-4 sm:h-4" />
           </button>
         </Tooltip>
       </div>
@@ -454,7 +454,7 @@ export default function SheetToolbar({
           className={`${buttonClass} ${hoverClass} ${currentCellStyle.bold ? activeClass : ''}`}
           style={{ color: currentCellStyle.bold ? 'var(--primary-blue)' : 'var(--text-secondary)' }}
         >
-          <Bold className="w-4 h-4" />
+          <Bold className="w-5 h-5 sm:w-4 sm:h-4" />
         </button>
       </Tooltip>
       <Tooltip label={t('toolbar.italic')} shortcut="Ctrl+I">
@@ -464,7 +464,7 @@ export default function SheetToolbar({
           className={`${buttonClass} ${hoverClass} ${currentCellStyle.italic ? activeClass : ''}`}
           style={{ color: currentCellStyle.italic ? 'var(--primary-blue)' : 'var(--text-secondary)' }}
         >
-          <Italic className="w-4 h-4" />
+          <Italic className="w-5 h-5 sm:w-4 sm:h-4" />
         </button>
       </Tooltip>
       <Tooltip label={t('toolbar.underline')} shortcut="Ctrl+U">
@@ -474,7 +474,7 @@ export default function SheetToolbar({
           className={`${buttonClass} ${hoverClass} ${currentCellStyle.underline ? activeClass : ''}`}
           style={{ color: currentCellStyle.underline ? 'var(--primary-blue)' : 'var(--text-secondary)' }}
         >
-          <Underline className="w-4 h-4" />
+          <Underline className="w-5 h-5 sm:w-4 sm:h-4" />
         </button>
       </Tooltip>
       <Tooltip label={t('toolbar.strikethrough')}>
@@ -484,7 +484,7 @@ export default function SheetToolbar({
           className={`${buttonClass} ${hoverClass} ${currentCellStyle.strikethrough ? activeClass : ''}`}
           style={{ color: currentCellStyle.strikethrough ? 'var(--primary-blue)' : 'var(--text-secondary)' }}
         >
-          <Strikethrough className="w-4 h-4" />
+          <Strikethrough className="w-5 h-5 sm:w-4 sm:h-4" />
         </button>
       </Tooltip>
 
@@ -498,7 +498,7 @@ export default function SheetToolbar({
           className={`${buttonClass} ${hoverClass} ${currentCellStyle.hAlign === 'left' ? activeClass : ''}`}
           style={{ color: currentCellStyle.hAlign === 'left' ? 'var(--primary-blue)' : 'var(--text-secondary)' }}
         >
-          <AlignLeft className="w-4 h-4" />
+          <AlignLeft className="w-5 h-5 sm:w-4 sm:h-4" />
         </button>
       </Tooltip>
       <Tooltip label={t('toolbar.alignCenter')}>
@@ -508,7 +508,7 @@ export default function SheetToolbar({
           className={`${buttonClass} ${hoverClass} ${currentCellStyle.hAlign === 'center' ? activeClass : ''}`}
           style={{ color: currentCellStyle.hAlign === 'center' ? 'var(--primary-blue)' : 'var(--text-secondary)' }}
         >
-          <AlignCenter className="w-4 h-4" />
+          <AlignCenter className="w-5 h-5 sm:w-4 sm:h-4" />
         </button>
       </Tooltip>
       <Tooltip label={t('toolbar.alignRight')}>
@@ -518,7 +518,7 @@ export default function SheetToolbar({
           className={`${buttonClass} ${hoverClass} ${currentCellStyle.hAlign === 'right' ? activeClass : ''}`}
           style={{ color: currentCellStyle.hAlign === 'right' ? 'var(--primary-blue)' : 'var(--text-secondary)' }}
         >
-          <AlignRight className="w-4 h-4" />
+          <AlignRight className="w-5 h-5 sm:w-4 sm:h-4" />
         </button>
       </Tooltip>
 
@@ -532,7 +532,7 @@ export default function SheetToolbar({
           className={`${buttonClass} ${hoverClass} ${currentCellStyle.vAlign === 'top' ? activeClass : ''}`}
           style={{ color: currentCellStyle.vAlign === 'top' ? 'var(--primary-blue)' : 'var(--text-secondary)' }}
         >
-          <AlignVerticalJustifyStart className="w-4 h-4" />
+          <AlignVerticalJustifyStart className="w-5 h-5 sm:w-4 sm:h-4" />
         </button>
       </Tooltip>
       <Tooltip label={t('toolbar.alignMiddle')}>
@@ -542,7 +542,7 @@ export default function SheetToolbar({
           className={`${buttonClass} ${hoverClass} ${currentCellStyle.vAlign === 'middle' ? activeClass : ''}`}
           style={{ color: currentCellStyle.vAlign === 'middle' ? 'var(--primary-blue)' : 'var(--text-secondary)' }}
         >
-          <AlignVerticalJustifyCenter className="w-4 h-4" />
+          <AlignVerticalJustifyCenter className="w-5 h-5 sm:w-4 sm:h-4" />
         </button>
       </Tooltip>
       <Tooltip label={t('toolbar.alignBottom')}>
@@ -552,7 +552,7 @@ export default function SheetToolbar({
           className={`${buttonClass} ${hoverClass} ${currentCellStyle.vAlign === 'bottom' ? activeClass : ''}`}
           style={{ color: currentCellStyle.vAlign === 'bottom' ? 'var(--primary-blue)' : 'var(--text-secondary)' }}
         >
-          <AlignVerticalJustifyEnd className="w-4 h-4" />
+          <AlignVerticalJustifyEnd className="w-5 h-5 sm:w-4 sm:h-4" />
         </button>
       </Tooltip>
 
@@ -614,7 +614,7 @@ export default function SheetToolbar({
             border: '1px solid var(--warning, #f59e0b)',
           }}
         >
-          <StickyNote className="w-4 h-4" />
+          <StickyNote className="w-5 h-5 sm:w-4 sm:h-4" />
         </button>
       </Tooltip>
 
@@ -630,7 +630,7 @@ export default function SheetToolbar({
             className={`${buttonClass} ${hoverClass}`}
             style={{ color: 'var(--text-secondary)' }}
           >
-            <Minus className="w-4 h-4" />
+            <Minus className="w-5 h-5 sm:w-4 sm:h-4" />
           </button>
         </Tooltip>
         <Tooltip label={t('toolbar.zoom')}>
@@ -666,7 +666,7 @@ export default function SheetToolbar({
             className={`${buttonClass} ${hoverClass}`}
             style={{ color: 'var(--text-secondary)' }}
           >
-            <Plus className="w-4 h-4" />
+            <Plus className="w-5 h-5 sm:w-4 sm:h-4" />
           </button>
         </Tooltip>
       </div>

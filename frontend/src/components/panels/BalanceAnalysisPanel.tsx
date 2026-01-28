@@ -190,12 +190,12 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
 
         return (
           <div
-            className="fixed inset-0 z-[1000] flex items-center justify-center p-6 backdrop-blur-sm"
+            className="fixed inset-0 z-[1000] flex items-end sm:items-center justify-center p-0 sm:p-6 backdrop-blur-sm"
             style={{ background: 'rgba(0,0,0,0.6)' }}
             onClick={() => setShowMatrixModal(false)}
           >
             <div
-              className="glass-panel rounded-2xl overflow-hidden flex flex-col w-[90vw] h-[90vh]"
+              className="glass-panel overflow-hidden flex flex-col w-full sm:w-[90vw] h-[95vh] sm:h-[90vh] rounded-t-2xl sm:rounded-2xl"
               onClick={(e) => e.stopPropagation()}
             >
               {/* 모달 헤더 */}
