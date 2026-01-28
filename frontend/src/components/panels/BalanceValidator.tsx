@@ -19,7 +19,7 @@ import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { useEscapeKey } from '@/hooks';
 
-const PANEL_COLOR = '#22c55e';
+const PANEL_COLOR = '#3db88a'; // 소프트 그린
 
 interface BalanceValidatorProps {
   onClose?: () => void;
@@ -31,7 +31,7 @@ const ROLE_EXPECTATIONS = {
   tank: {
     name: '탱커',
     icon: Shield,
-    color: '#3b82f6',
+    color: '#5a9cf5',
     dpsRange: [50, 90],
     ehpRange: [180, 250],
     description: '높은 생존력, 낮은 화력',
@@ -39,7 +39,7 @@ const ROLE_EXPECTATIONS = {
   dps: {
     name: '딜러',
     icon: Swords,
-    color: '#ef4444',
+    color: '#e86161',
     dpsRange: [130, 200],
     ehpRange: [60, 90],
     description: '높은 화력, 낮은 생존력',
@@ -47,7 +47,7 @@ const ROLE_EXPECTATIONS = {
   support: {
     name: '서포터',
     icon: Heart,
-    color: '#10b981',
+    color: '#3db88a',
     dpsRange: [40, 70],
     ehpRange: [90, 130],
     description: '유틸리티 중심, 중간 생존력',
@@ -55,7 +55,7 @@ const ROLE_EXPECTATIONS = {
   balanced: {
     name: '밸런스',
     icon: Target,
-    color: '#f59e0b',
+    color: '#e5a440',
     dpsRange: [90, 110],
     ehpRange: [90, 110],
     description: '균형잡힌 스탯',
@@ -204,24 +204,24 @@ export default function BalanceValidator({ onClose, showHelp = false, setShowHel
               </div>
               <div>
                 <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{t('tooltipTitle')}</p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{t('tooltipDesc')}</p>
+                <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{t('tooltipDesc')}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="glass-section p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <Zap className="w-3.5 h-3.5" style={{ color: '#f59e0b' }} />
-                  <span className="font-medium text-xs" style={{ color: 'var(--text-primary)' }}>DPS</span>
+                  <Zap className="w-3.5 h-3.5" style={{ color: '#e5a440' }} />
+                  <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>DPS</span>
                 </div>
-                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('tooltipFeature1')}</p>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('tooltipFeature1')}</p>
               </div>
               <div className="glass-section p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <Shield className="w-3.5 h-3.5" style={{ color: '#3b82f6' }} />
-                  <span className="font-medium text-xs" style={{ color: 'var(--text-primary)' }}>EHP</span>
+                  <Shield className="w-3.5 h-3.5" style={{ color: '#5a9cf5' }} />
+                  <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>EHP</span>
                 </div>
-                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('tooltipFeature2')}</p>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('tooltipFeature2')}</p>
               </div>
             </div>
           </div>
@@ -243,7 +243,7 @@ export default function BalanceValidator({ onClose, showHelp = false, setShowHel
               { label: t('atkSpeed'), value: BASE_STATS.attackSpeed },
             ].map(({ label, value }) => (
               <div key={label} className="glass-section p-2 text-center">
-                <div className="text-[10px] font-medium" style={{ color: 'var(--text-tertiary)' }}>{label}</div>
+                <div className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</div>
                 <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>{value}</div>
               </div>
             ))}
@@ -267,14 +267,14 @@ export default function BalanceValidator({ onClose, showHelp = false, setShowHel
                 >
                   <div className="flex items-center gap-2 mb-1.5">
                     <Icon className="w-4 h-4" style={{ color: role.color }} />
-                    <span className="font-semibold text-xs" style={{ color: 'var(--text-primary)' }}>
+                    <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
                       {t(`roles.${key}`)}
                     </span>
                   </div>
-                  <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                  <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                     DPS: {role.dpsRange[0]}-{role.dpsRange[1]}%
                   </div>
-                  <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                  <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                     EHP: {role.ehpRange[0]}-{role.ehpRange[1]}%
                   </div>
                 </div>
@@ -294,7 +294,7 @@ export default function BalanceValidator({ onClose, showHelp = false, setShowHel
             </div>
             <button
               onClick={addUnit}
-              className="glass-button-primary flex items-center gap-1.5 !px-3 !py-1.5 text-xs"
+              className="glass-button-primary flex items-center gap-1.5 !px-3 !py-1.5 text-sm"
               style={{ background: `linear-gradient(135deg, ${PANEL_COLOR}, ${PANEL_COLOR}dd)` }}
             >
               <Plus className="w-3.5 h-3.5" />
@@ -312,7 +312,7 @@ export default function BalanceValidator({ onClose, showHelp = false, setShowHel
                 key={index}
                 className="glass-card p-4"
                 style={{
-                  borderLeft: `3px solid ${validation.isBalanced ? '#22c55e' : '#f59e0b'}`,
+                  borderLeft: `3px solid ${validation.isBalanced ? '#3db88a' : '#e5a440'}`,
                 }}
               >
                 {/* 유닛 기본 정보 */}
@@ -326,7 +326,7 @@ export default function BalanceValidator({ onClose, showHelp = false, setShowHel
                   <select
                     value={unit.role}
                     onChange={(e) => updateUnit(index, 'role', e.target.value)}
-                    className="glass-select !py-2 text-xs"
+                    className="glass-select !py-2 text-sm"
                   >
                     {Object.entries(ROLE_EXPECTATIONS).map(([key]) => (
                       <option key={key} value={key}>{t(`roles.${key}`)}</option>
@@ -342,7 +342,7 @@ export default function BalanceValidator({ onClose, showHelp = false, setShowHel
                     <button
                       onClick={() => removeUnit(index)}
                       className="glass-button !p-2"
-                      style={{ color: '#ef4444' }}
+                      style={{ color: '#e86161' }}
                     >
                       <Trash2 className="w-4 h-4" />
                     </button>
@@ -360,7 +360,7 @@ export default function BalanceValidator({ onClose, showHelp = false, setShowHel
                     { key: 'critDamage', label: t('stats.critDmg'), step: '0.1' },
                   ].map(({ key, label, step }) => (
                     <div key={key}>
-                      <label className="text-[10px] block mb-1 font-medium" style={{ color: 'var(--text-tertiary)' }}>
+                      <label className="text-sm block mb-1 font-medium" style={{ color: 'var(--text-secondary)' }}>
                         {label}
                       </label>
                       <input
@@ -368,7 +368,7 @@ export default function BalanceValidator({ onClose, showHelp = false, setShowHel
                         step={step}
                         value={unit[key as keyof UnitData]}
                         onChange={(e) => updateUnit(index, key as keyof UnitData, e.target.value)}
-                        className="glass-input w-full !py-1.5 text-xs text-center"
+                        className="glass-input w-full !py-1.5 text-sm text-center"
                       />
                     </div>
                   ))}
@@ -379,32 +379,32 @@ export default function BalanceValidator({ onClose, showHelp = false, setShowHel
                   <div
                     className="glass-section p-3"
                     style={{
-                      background: validation.dpsInRange ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                      background: validation.dpsInRange ? 'rgba(61, 184, 138, 0.1)' : 'rgba(229, 164, 64, 0.1)',
                     }}
                   >
                     <div className="flex items-center gap-1.5 mb-1">
-                      <Zap className="w-3.5 h-3.5" style={{ color: validation.dpsInRange ? '#22c55e' : '#f59e0b' }} />
+                      <Zap className="w-3.5 h-3.5" style={{ color: validation.dpsInRange ? '#3db88a' : '#e5a440' }} />
                       <span className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
                         DPS: {validation.dps.toFixed(0)}
                       </span>
                     </div>
-                    <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                       {validation.dpsPercent.toFixed(0)}% ({t('expected')}: {role.dpsRange[0]}-{role.dpsRange[1]}%)
                     </div>
                   </div>
                   <div
                     className="glass-section p-3"
                     style={{
-                      background: validation.ehpInRange ? 'rgba(34, 197, 94, 0.1)' : 'rgba(245, 158, 11, 0.1)',
+                      background: validation.ehpInRange ? 'rgba(61, 184, 138, 0.1)' : 'rgba(229, 164, 64, 0.1)',
                     }}
                   >
                     <div className="flex items-center gap-1.5 mb-1">
-                      <Shield className="w-3.5 h-3.5" style={{ color: validation.ehpInRange ? '#22c55e' : '#f59e0b' }} />
+                      <Shield className="w-3.5 h-3.5" style={{ color: validation.ehpInRange ? '#3db88a' : '#e5a440' }} />
                       <span className="font-bold text-sm" style={{ color: 'var(--text-primary)' }}>
                         EHP: {validation.ehp.toFixed(0)}
                       </span>
                     </div>
-                    <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                       {validation.ehpPercent.toFixed(0)}% ({t('expected')}: {role.ehpRange[0]}-{role.ehpRange[1]}%)
                     </div>
                   </div>
@@ -412,14 +412,14 @@ export default function BalanceValidator({ onClose, showHelp = false, setShowHel
 
                 {/* 경고/성공 메시지 */}
                 {validation.isBalanced ? (
-                  <div className="flex items-center gap-1.5 text-xs" style={{ color: '#22c55e' }}>
+                  <div className="flex items-center gap-1.5 text-sm" style={{ color: '#3db88a' }}>
                     <CheckCircle className="w-4 h-4" />
                     <span className="font-medium">{t('roleBalanced')}</span>
                   </div>
                 ) : (
                   <div className="space-y-1">
                     {validation.issues.map((issue, i) => (
-                      <div key={i} className="flex items-center gap-1.5 text-xs" style={{ color: '#f59e0b' }}>
+                      <div key={i} className="flex items-center gap-1.5 text-sm" style={{ color: '#e5a440' }}>
                         <AlertTriangle className="w-3.5 h-3.5" />
                         <span>{issue}</span>
                       </div>
@@ -450,7 +450,7 @@ export default function BalanceValidator({ onClose, showHelp = false, setShowHel
                   <option key={i} value={i}>{u.name}</option>
                 ))}
               </select>
-              <span className="text-sm font-bold px-2" style={{ color: 'var(--text-tertiary)' }}>VS</span>
+              <span className="text-sm font-bold px-2" style={{ color: 'var(--text-secondary)' }}>VS</span>
               <select
                 value={selectedUnits[1]}
                 onChange={(e) => setSelectedUnits([selectedUnits[0], Number(e.target.value)])}
@@ -473,7 +473,7 @@ export default function BalanceValidator({ onClose, showHelp = false, setShowHel
                 <div className="font-bold text-sm mb-1" style={{ color: PANEL_COLOR }}>
                   {t('winner')}: {simResult.winner}
                 </div>
-                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                   {simResult.rounds}{t('afterSeconds')}: {simResult.hpRemaining.toFixed(0)}
                 </div>
               </div>
@@ -486,30 +486,30 @@ export default function BalanceValidator({ onClose, showHelp = false, setShowHel
           className="glass-card p-4"
           style={{
             background: overallBalance.isBalanced
-              ? 'linear-gradient(135deg, rgba(34, 197, 94, 0.15), rgba(34, 197, 94, 0.05))'
-              : 'linear-gradient(135deg, rgba(245, 158, 11, 0.15), rgba(245, 158, 11, 0.05))',
+              ? 'linear-gradient(135deg, rgba(61, 184, 138, 0.15), rgba(61, 184, 138, 0.05))'
+              : 'linear-gradient(135deg, rgba(229, 164, 64, 0.15), rgba(229, 164, 64, 0.05))',
           }}
         >
           <div className="flex items-center gap-2 mb-2">
-            <TrendingUp className="w-4 h-4" style={{ color: overallBalance.isBalanced ? '#22c55e' : '#f59e0b' }} />
+            <TrendingUp className="w-4 h-4" style={{ color: overallBalance.isBalanced ? '#3db88a' : '#e5a440' }} />
             <span className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
               {t('overallBalance')}
             </span>
           </div>
-          <div className="flex items-center gap-4 text-xs">
+          <div className="flex items-center gap-4 text-sm">
             <div>
-              <span style={{ color: 'var(--text-tertiary)' }}>{t('avgValue')}: </span>
+              <span style={{ color: 'var(--text-secondary)' }}>{t('avgValue')}: </span>
               <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{overallBalance.average.toFixed(1)}%</span>
             </div>
             <div>
-              <span style={{ color: 'var(--text-tertiary)' }}>{t('stdDev')}: </span>
+              <span style={{ color: 'var(--text-secondary)' }}>{t('stdDev')}: </span>
               <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{overallBalance.stdDev.toFixed(1)}%</span>
             </div>
             <span
               className="glass-badge ml-auto"
               style={{
-                background: overallBalance.isBalanced ? 'rgba(34, 197, 94, 0.2)' : 'rgba(245, 158, 11, 0.2)',
-                color: overallBalance.isBalanced ? '#22c55e' : '#f59e0b',
+                background: overallBalance.isBalanced ? 'rgba(61, 184, 138, 0.2)' : 'rgba(229, 164, 64, 0.2)',
+                color: overallBalance.isBalanced ? '#3db88a' : '#e5a440',
               }}
             >
               {overallBalance.isBalanced ? t('good') : t('needsAdjust')}

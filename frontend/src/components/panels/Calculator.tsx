@@ -9,7 +9,7 @@ import { useProjectStore } from '@/stores/projectStore';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { useEscapeKey } from '@/hooks';
 
-const PANEL_COLOR = '#8b5cf6';
+const PANEL_COLOR = '#9179f2'; // 소프트 퍼플
 
 function getRowDisplayName(rowId: string, currentSheet: { name: string; rows: { id: string }[] } | undefined, t: ReturnType<typeof useTranslations>): string {
   if (!currentSheet) return t('sheet.rows');
@@ -42,11 +42,11 @@ const getCurveTypeHelp = (t: ReturnType<typeof useTranslations>): Record<string,
 });
 
 const TAB_COLORS = {
-  dps: '#f59e0b',
-  ttk: '#ef4444',
-  ehp: '#3b82f6',
-  damage: '#ec4899',
-  scale: '#10b981',
+  dps: '#e5a440',
+  ttk: '#e86161',
+  ehp: '#5a9cf5',
+  damage: '#e87aa8',
+  scale: '#3db88a',
 };
 
 export default function Calculator({ onClose, isPanel = false, showHelp = false, setShowHelp }: CalculatorProps) {
@@ -136,10 +136,10 @@ export default function Calculator({ onClose, isPanel = false, showHelp = false,
               </div>
               <div>
                 <h2 className="text-base sm:text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{t('fullTitle')}</h2>
-                <p className="text-xs sm:text-sm hidden sm:block" style={{ color: 'var(--text-tertiary)' }}>{t('subtitle')}</p>
+                <p className="text-sm sm:text-sm hidden sm:block" style={{ color: 'var(--text-secondary)' }}>{t('subtitle')}</p>
               </div>
             </div>
-            <button onClick={onClose} className="rounded-lg transition-colors p-2" style={{ color: 'var(--text-tertiary)' }}><X className="w-5 h-5" /></button>
+            <button onClick={onClose} className="rounded-lg transition-colors p-2" style={{ color: 'var(--text-secondary)' }}><X className="w-5 h-5" /></button>
           </div>
         )}
 
@@ -158,8 +158,8 @@ export default function Calculator({ onClose, isPanel = false, showHelp = false,
                   <>
                     <Icon className="w-4 h-4" style={{ color: tabColor }} />
                     <span className="text-sm font-bold flex-1" style={{ color: 'var(--text-primary)' }}>{currentTab?.name}</span>
-                    <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{currentTab?.tooltip}</span>
-                    <ChevronDown className={cn("w-4 h-4 transition-transform duration-200 ml-1", showTabDropdown && "rotate-180")} style={{ color: 'var(--text-tertiary)' }} />
+                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{currentTab?.tooltip}</span>
+                    <ChevronDown className={cn("w-4 h-4 transition-transform duration-200 ml-1", showTabDropdown && "rotate-180")} style={{ color: 'var(--text-secondary)' }} />
                   </>
                 );
               })()}
@@ -180,7 +180,7 @@ export default function Calculator({ onClose, isPanel = false, showHelp = false,
                       >
                         <Icon className="w-4 h-4 shrink-0" style={{ color: TAB_COLORS[tab.id] }} />
                         <span className="text-sm font-semibold" style={{ color: isActive ? TAB_COLORS[tab.id] : 'var(--text-primary)' }}>{tab.name}</span>
-                        <span className="text-xs flex-1 text-right" style={{ color: 'var(--text-tertiary)' }}>{tab.tooltip}</span>
+                        <span className="text-sm flex-1 text-right" style={{ color: 'var(--text-secondary)' }}>{tab.tooltip}</span>
                       </button>
                     );
                   })}
@@ -194,18 +194,18 @@ export default function Calculator({ onClose, isPanel = false, showHelp = false,
         {selectedRows.length > 0 && (
           <div className="mx-4 mb-3 glass-card p-3" style={{ background: `${tabColor}10` }}>
             <div className="flex items-center justify-between mb-2">
-              <div className="flex items-center gap-2 text-xs font-medium" style={{ color: tabColor }}>
+              <div className="flex items-center gap-2 text-sm font-medium" style={{ color: tabColor }}>
                 <Download className="w-3.5 h-3.5" />
                 <span>{t('selectedData')} ({selectedRows.length})</span>
               </div>
-              <button onClick={clearSelectedRows} className="text-[10px] px-2 py-1 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5" style={{ color: 'var(--text-tertiary)' }}>{t('deselectAll')}</button>
+              <button onClick={clearSelectedRows} className="text-sm px-2 py-1 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5" style={{ color: 'var(--text-secondary)' }}>{t('deselectAll')}</button>
             </div>
             <div className="flex flex-wrap gap-1.5">
               {selectedRows.map((row) => (
                 <div key={row.rowId} className="glass-badge flex items-center gap-1.5 pr-1">
-                  <span className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>{getRowDisplayName(row.rowId, currentSheet, t)}</span>
-                  <button onClick={() => loadFromSelectedRow(row)} className="px-1.5 py-0.5 rounded-md text-[10px] font-semibold transition-colors" style={{ background: tabColor, color: 'white' }}>{t('load')}</button>
-                  <button onClick={() => deselectRow(row.rowId)} className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"><X className="w-3 h-3" style={{ color: 'var(--text-tertiary)' }} /></button>
+                  <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{getRowDisplayName(row.rowId, currentSheet, t)}</span>
+                  <button onClick={() => loadFromSelectedRow(row)} className="px-1.5 py-0.5 rounded-md text-sm font-semibold transition-colors" style={{ background: tabColor, color: 'white' }}>{t('load')}</button>
+                  <button onClick={() => deselectRow(row.rowId)} className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"><X className="w-3 h-3" style={{ color: 'var(--text-secondary)' }} /></button>
                 </div>
               ))}
             </div>
@@ -227,8 +227,8 @@ export default function Calculator({ onClose, isPanel = false, showHelp = false,
                   { key: 'SCALE', desc: 'Level Scaling', color: TAB_COLORS.scale },
                 ].map(item => (
                   <div key={item.key} className="glass-section p-2 flex items-center gap-2">
-                    <span className="font-mono font-bold text-xs" style={{ color: item.color }}>{item.key}</span>
-                    <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>{item.desc}</span>
+                    <span className="font-mono font-bold text-sm" style={{ color: item.color }}>{item.key}</span>
+                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{item.desc}</span>
                   </div>
                 ))}
               </div>
@@ -240,7 +240,7 @@ export default function Calculator({ onClose, isPanel = false, showHelp = false,
             <div className="space-y-4">
               <div className="glass-card p-4" style={{ borderLeft: `3px solid ${tabColor}` }}>
                 <div className="font-semibold text-sm mb-1" style={{ color: 'var(--text-primary)' }}>{TAB_HELP.dps.title}</div>
-                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{TAB_HELP.dps.description}</div>
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{TAB_HELP.dps.description}</div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <GlassInputField label={t('damage1hit')} value={dpsInputs.damage} onChange={(v) => setDpsInputs({ ...dpsInputs, damage: v })} />
@@ -258,7 +258,7 @@ export default function Calculator({ onClose, isPanel = false, showHelp = false,
             <div className="space-y-4">
               <div className="glass-card p-4" style={{ borderLeft: `3px solid ${tabColor}` }}>
                 <div className="font-semibold text-sm mb-1" style={{ color: 'var(--text-primary)' }}>{TAB_HELP.ttk.title}</div>
-                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{TAB_HELP.ttk.description}</div>
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{TAB_HELP.ttk.description}</div>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <GlassInputField label={t('targetHp')} value={ttkInputs.targetHP} onChange={(v) => setTtkInputs({ ...ttkInputs, targetHP: v })} />
@@ -267,7 +267,7 @@ export default function Calculator({ onClose, isPanel = false, showHelp = false,
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <GlassResultCard label={t('ttkResult')} value={ttkResult.ttk === Infinity ? '-' : `${ttkResult.ttk.toFixed(2)}s`} color={tabColor} />
-                <GlassResultCard label={t('hitsRequired')} value={`${ttkResult.hitsNeeded}`} color="#f59e0b" />
+                <GlassResultCard label={t('hitsRequired')} value={`${ttkResult.hitsNeeded}`} color="#e5a440" />
               </div>
               <GlassFormulaBox formula="(ceil(targetHP / damage) - 1) / attackSpeed" hint={t('ttkFormulaHint')} color={tabColor} />
             </div>
@@ -278,7 +278,7 @@ export default function Calculator({ onClose, isPanel = false, showHelp = false,
             <div className="space-y-4">
               <div className="glass-card p-4" style={{ borderLeft: `3px solid ${tabColor}` }}>
                 <div className="font-semibold text-sm mb-1" style={{ color: 'var(--text-primary)' }}>{TAB_HELP.ehp.title}</div>
-                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{TAB_HELP.ehp.description}</div>
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{TAB_HELP.ehp.description}</div>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <GlassInputField label={t('hp')} value={ehpInputs.hp} onChange={(v) => setEhpInputs({ ...ehpInputs, hp: v })} />
@@ -295,7 +295,7 @@ export default function Calculator({ onClose, isPanel = false, showHelp = false,
             <div className="space-y-4">
               <div className="glass-card p-4" style={{ borderLeft: `3px solid ${tabColor}` }}>
                 <div className="font-semibold text-sm mb-1" style={{ color: 'var(--text-primary)' }}>{TAB_HELP.damage.title}</div>
-                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{TAB_HELP.damage.description}</div>
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{TAB_HELP.damage.description}</div>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <GlassInputField label={t('atk')} value={damageInputs.atk} onChange={(v) => setDamageInputs({ ...damageInputs, atk: v })} />
@@ -315,14 +315,14 @@ export default function Calculator({ onClose, isPanel = false, showHelp = false,
             <div className="space-y-4">
               <div className="glass-card p-4" style={{ borderLeft: `3px solid ${tabColor}` }}>
                 <div className="font-semibold text-sm mb-1" style={{ color: 'var(--text-primary)' }}>{TAB_HELP.scale.title}</div>
-                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{TAB_HELP.scale.description}</div>
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{TAB_HELP.scale.description}</div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <GlassInputField label={t('baseValue')} value={scaleInputs.base} onChange={(v) => setScaleInputs({ ...scaleInputs, base: v })} />
                 <GlassInputField label={t('level')} value={scaleInputs.level} onChange={(v) => setScaleInputs({ ...scaleInputs, level: v })} />
                 <GlassInputField label={t('growthRate')} value={scaleInputs.rate} onChange={(v) => setScaleInputs({ ...scaleInputs, rate: v })} step={0.01} />
                 <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>{t('curveType')}</label>
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>{t('curveType')}</label>
                   <select value={scaleInputs.curveType} onChange={(e) => setScaleInputs({ ...scaleInputs, curveType: e.target.value })} className="glass-select w-full">
                     <option value="linear">{t('curveLinear')}</option>
                     <option value="exponential">{t('curveExponential')}</option>
@@ -334,15 +334,15 @@ export default function Calculator({ onClose, isPanel = false, showHelp = false,
               {CURVE_TYPE_HELP[scaleInputs.curveType] && (
                 <div className="glass-section p-3">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="font-semibold text-xs" style={{ color: tabColor }}>{CURVE_TYPE_HELP[scaleInputs.curveType].name}</span>
-                    <code className="text-[10px] px-2 py-0.5 rounded-lg" style={{ background: `${tabColor}15`, color: tabColor }}>{CURVE_TYPE_HELP[scaleInputs.curveType].formula}</code>
+                    <span className="font-semibold text-sm" style={{ color: tabColor }}>{CURVE_TYPE_HELP[scaleInputs.curveType].name}</span>
+                    <code className="text-sm px-2 py-0.5 rounded-lg" style={{ background: `${tabColor}15`, color: tabColor }}>{CURVE_TYPE_HELP[scaleInputs.curveType].formula}</code>
                   </div>
-                  <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{CURVE_TYPE_HELP[scaleInputs.curveType].description}</p>
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{CURVE_TYPE_HELP[scaleInputs.curveType].description}</p>
                 </div>
               )}
               <GlassResultCard label={t('levelStat', { level: scaleInputs.level })} value={scaleResult.toFixed(1)} color={tabColor} />
               <div className="glass-card overflow-hidden">
-                <table className="w-full text-xs">
+                <table className="w-full text-sm">
                   <thead>
                     <tr style={{ background: 'rgba(0,0,0,0.03)' }}>
                       <th className="px-3 py-2 text-left font-medium" style={{ color: 'var(--text-secondary)' }}>{t('level')}</th>
@@ -382,7 +382,7 @@ function GlassInputField({ label, value, onChange, step = 1, min, max }: { label
 
   return (
     <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
-      <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>{label}</label>
+      <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>{label}</label>
       <div className="relative">
         <input
           type="text"
@@ -395,7 +395,7 @@ function GlassInputField({ label, value, onChange, step = 1, min, max }: { label
         {isHovered && !cellSelectionMode.active && (
           <Tooltip content="Select from cell" position="top">
             <button onClick={handleCellSelect} className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5">
-              <Grid3X3 className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+              <Grid3X3 className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
             </button>
           </Tooltip>
         )}
@@ -407,9 +407,9 @@ function GlassInputField({ label, value, onChange, step = 1, min, max }: { label
 function GlassResultCard({ label, value, color, extra }: { label: string; value: string; color: string; extra?: string }) {
   return (
     <div className="glass-stat">
-      <div className="text-xs mb-1 font-medium" style={{ color: 'var(--text-tertiary)' }}>{label}</div>
+      <div className="text-sm mb-1 font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</div>
       <div className="text-2xl font-bold" style={{ color }}>{value}</div>
-      {extra && <div className="text-[10px] mt-1.5" style={{ color: 'var(--text-tertiary)' }}>{extra}</div>}
+      {extra && <div className="text-sm mt-1.5" style={{ color: 'var(--text-secondary)' }}>{extra}</div>}
     </div>
   );
 }
@@ -417,9 +417,9 @@ function GlassResultCard({ label, value, color, extra }: { label: string; value:
 function GlassFormulaBox({ formula, hint, color }: { formula: string; hint?: string; color: string }) {
   return (
     <div className="glass-section p-3" style={{ borderLeft: `3px solid ${color}` }}>
-      <div className="text-[10px] mb-1 font-medium" style={{ color: 'var(--text-tertiary)' }}>Formula</div>
-      <code className="text-xs font-mono font-semibold" style={{ color }}>{formula}</code>
-      {hint && <div className="text-[10px] mt-2" style={{ color: 'var(--text-tertiary)' }}>{hint}</div>}
+      <div className="text-sm mb-1 font-medium" style={{ color: 'var(--text-secondary)' }}>Formula</div>
+      <code className="text-sm font-mono font-semibold" style={{ color }}>{formula}</code>
+      {hint && <div className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>{hint}</div>}
     </div>
   );
 }

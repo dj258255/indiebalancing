@@ -42,15 +42,15 @@ function hermiteInterpolate(t: number): number {
   return t * t * (3 - 2 * t);
 }
 
-const PANEL_COLOR = '#10b981';
+const PANEL_COLOR = '#3db88a'; // 소프트 에메랄드
 
 const CURVE_COLORS = {
-  linear: '#3b82f6',
-  exponential: '#ef4444',
-  logarithmic: '#22c55e',
-  quadratic: '#f59e0b',
-  custom: '#8b5cf6',
-  segmented: '#ec4899',
+  linear: '#5a9cf5',
+  exponential: '#e86161',
+  logarithmic: '#3db88a',
+  quadratic: '#e5a440',
+  custom: '#9179f2',
+  segmented: '#e87aa8',
 };
 
 const CURVE_KEYS = ['linear', 'exponential', 'logarithmic', 'quadratic'] as const;
@@ -276,7 +276,7 @@ export default function GrowthCurveChart({
               </div>
               <div>
                 <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{t('title')}</p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{t('helpDesc')}</p>
+                <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{t('helpDesc')}</p>
               </div>
             </div>
 
@@ -290,17 +290,17 @@ export default function GrowthCurveChart({
               ].map(({ key, color }) => (
                 <div key={key} className="glass-section p-2.5" style={{ borderLeft: `3px solid ${color}` }}>
                   <div className="flex items-center justify-between mb-0.5">
-                    <span className="font-medium text-xs" style={{ color }}>{t(`${key}Help.name`)}</span>
-                    <code className="text-[10px] px-1.5 py-0.5 rounded" style={{ background: 'rgba(0,0,0,0.05)', color: 'var(--text-tertiary)' }}>
+                    <span className="font-medium text-sm" style={{ color }}>{t(`${key}Help.name`)}</span>
+                    <code className="text-sm px-1.5 py-0.5 rounded" style={{ background: 'rgba(0,0,0,0.05)', color: 'var(--text-secondary)' }}>
                       {t(`${key}Help.formula`)}
                     </code>
                   </div>
-                  <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{t(`${key}Help.desc`)}</p>
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t(`${key}Help.desc`)}</p>
                 </div>
               ))}
             </div>
 
-            <div className="glass-section p-2.5 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+            <div className="glass-section p-2.5 text-sm" style={{ color: 'var(--text-secondary)' }}>
               {t('helpTip')}
             </div>
           </div>
@@ -316,7 +316,7 @@ export default function GrowthCurveChart({
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>{t('baseValue')}</label>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>{t('baseValue')}</label>
                 <NumberInput
                   value={base}
                   onChange={setBase}
@@ -324,7 +324,7 @@ export default function GrowthCurveChart({
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>{t('rate')}</label>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>{t('rate')}</label>
                 <NumberInput
                   value={rate}
                   onChange={setRate}
@@ -332,7 +332,7 @@ export default function GrowthCurveChart({
                 />
               </div>
               <div>
-                <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>{t('maxLevel')}</label>
+                <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>{t('maxLevel')}</label>
                 <NumberInput
                   value={maxLevel}
                   onChange={setMaxLevel}
@@ -399,7 +399,7 @@ export default function GrowthCurveChart({
             {showCustom && (
               <div className="glass-section p-3 space-y-3 mt-2" style={{ borderLeft: `3px solid ${CURVE_COLORS.custom}` }}>
                 <div>
-                  <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>{t('curveTypeLabel')}</label>
+                  <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>{t('curveTypeLabel')}</label>
                   <select
                     value={customCurve}
                     onChange={(e) => setCustomCurve(e.target.value as CurveType)}
@@ -414,11 +414,11 @@ export default function GrowthCurveChart({
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>{t('baseValue')}</label>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>{t('baseValue')}</label>
                     <NumberInput value={customBase} onChange={setCustomBase} className="glass-input w-full text-sm" />
                   </div>
                   <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>{t('rate')}</label>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>{t('rate')}</label>
                     <NumberInput value={customRate} onChange={setCustomRate} className="glass-input w-full text-sm" />
                   </div>
                 </div>
@@ -449,10 +449,10 @@ export default function GrowthCurveChart({
             {showSegmented && (
               <div className="space-y-3 mt-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{t('segmentSettings')}</span>
+                  <span className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>{t('segmentSettings')}</span>
                   <button
                     onClick={addSegment}
-                    className="glass-button flex items-center gap-1.5 !px-2.5 !py-1 text-xs"
+                    className="glass-button flex items-center gap-1.5 !px-2.5 !py-1 text-sm"
                     style={{ color: CURVE_COLORS.segmented }}
                   >
                     <Plus className="w-3 h-3" />
@@ -468,14 +468,14 @@ export default function GrowthCurveChart({
                       style={{ borderLeft: `3px solid ${CURVE_COLORS.segmented}` }}
                     >
                       <div className="flex items-center justify-between">
-                        <span className="text-xs font-semibold" style={{ color: CURVE_COLORS.segmented }}>
+                        <span className="text-sm font-semibold" style={{ color: CURVE_COLORS.segmented }}>
                           {t('segment')} {idx + 1}
                         </span>
                         {segments.length > 1 && (
                           <button
                             onClick={() => removeSegment(segment.id)}
                             className="p-1 rounded-lg hover:bg-red-500/10 transition-colors"
-                            style={{ color: '#ef4444' }}
+                            style={{ color: '#e86161' }}
                           >
                             <Trash2 className="w-3 h-3" />
                           </button>
@@ -484,34 +484,34 @@ export default function GrowthCurveChart({
 
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-[10px] font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('startLevel')}</label>
+                          <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('startLevel')}</label>
                           <NumberInput
                             value={segment.startLevel}
                             onChange={(v) => updateSegment(segment.id, { startLevel: v })}
                             min={1}
                             max={maxLevel}
-                            className="glass-input w-full text-xs"
+                            className="glass-input w-full text-sm"
                           />
                         </div>
                         <div>
-                          <label className="block text-[10px] font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('endLevel')}</label>
+                          <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('endLevel')}</label>
                           <NumberInput
                             value={segment.endLevel}
                             onChange={(v) => updateSegment(segment.id, { endLevel: v })}
                             min={segment.startLevel}
                             max={maxLevel}
-                            className="glass-input w-full text-xs"
+                            className="glass-input w-full text-sm"
                           />
                         </div>
                       </div>
 
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="block text-[10px] font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('curveTypeLabel')}</label>
+                          <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('curveTypeLabel')}</label>
                           <select
                             value={segment.curveType}
                             onChange={(e) => updateSegment(segment.id, { curveType: e.target.value as CurveType })}
-                            className="glass-select w-full text-xs"
+                            className="glass-select w-full text-sm"
                           >
                             <option value="linear">{t('linear')}</option>
                             <option value="exponential">{t('exponential')}</option>
@@ -520,11 +520,11 @@ export default function GrowthCurveChart({
                           </select>
                         </div>
                         <div>
-                          <label className="block text-[10px] font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('rate')}</label>
+                          <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('rate')}</label>
                           <NumberInput
                             value={segment.rate}
                             onChange={(v) => updateSegment(segment.id, { rate: v })}
-                            className="glass-input w-full text-xs"
+                            className="glass-input w-full text-sm"
                           />
                         </div>
                       </div>
@@ -534,7 +534,7 @@ export default function GrowthCurveChart({
 
                 {/* 보간 설정 */}
                 <div className="glass-section p-3 space-y-3">
-                  <h5 className="text-xs font-semibold" style={{ color: 'var(--text-secondary)' }}>{t('interpolationSettings')}</h5>
+                  <h5 className="text-sm font-semibold" style={{ color: 'var(--text-secondary)' }}>{t('interpolationSettings')}</h5>
 
                   <div className="flex gap-1">
                     {(['none', 'linear', 'smooth'] as const).map((type) => (
@@ -542,7 +542,7 @@ export default function GrowthCurveChart({
                         key={type}
                         onClick={() => setInterpolation(type)}
                         className={cn(
-                          'flex-1 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-all',
+                          'flex-1 px-2.5 py-1.5 rounded-lg text-sm font-medium transition-all',
                           interpolation === type && 'shadow-sm'
                         )}
                         style={{
@@ -558,19 +558,19 @@ export default function GrowthCurveChart({
 
                   {interpolation !== 'none' && (
                     <div>
-                      <label className="block text-[10px] font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('transitionWidth')}</label>
+                      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('transitionWidth')}</label>
                       <NumberInput
                         value={transitionWidth}
                         onChange={setTransitionWidth}
                         min={1}
                         max={10}
-                        className="glass-input w-full text-xs"
+                        className="glass-input w-full text-sm"
                       />
                     </div>
                   )}
                 </div>
 
-                <div className="text-[11px] p-2 rounded-lg" style={{ background: 'rgba(0,0,0,0.03)', color: 'var(--text-tertiary)' }}>
+                <div className="text-sm p-2 rounded-lg" style={{ background: 'rgba(0,0,0,0.03)', color: 'var(--text-secondary)' }}>
                   {t('segmentedDesc')}
                 </div>
               </div>
@@ -593,11 +593,11 @@ export default function GrowthCurveChart({
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
                 <XAxis
                   dataKey="level"
-                  label={{ value: t('levelUnit'), position: 'insideBottomRight', offset: -5, fill: 'var(--text-tertiary)' }}
+                  label={{ value: t('levelUnit'), position: 'insideBottomRight', offset: -5, fill: 'var(--text-secondary)' }}
                   tick={{ fontSize: 11, fill: 'var(--text-secondary)' }}
                 />
                 <YAxis
-                  label={{ value: '값', angle: -90, position: 'insideLeft', fill: 'var(--text-tertiary)' }}
+                  label={{ value: '값', angle: -90, position: 'insideLeft', fill: 'var(--text-secondary)' }}
                   tick={{ fontSize: 11, fill: 'var(--text-secondary)' }}
                   tickFormatter={(value) => value.toLocaleString()}
                 />
@@ -671,11 +671,11 @@ export default function GrowthCurveChart({
                     <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
                     <XAxis
                       dataKey="level"
-                      label={{ value: t('levelUnit'), position: 'insideBottomRight', offset: -10, fill: 'var(--text-tertiary)', fontSize: 14 }}
+                      label={{ value: t('levelUnit'), position: 'insideBottomRight', offset: -10, fill: 'var(--text-secondary)', fontSize: 14 }}
                       tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
                     />
                     <YAxis
-                      label={{ value: '값', angle: -90, position: 'insideLeft', fill: 'var(--text-tertiary)', fontSize: 14 }}
+                      label={{ value: '값', angle: -90, position: 'insideLeft', fill: 'var(--text-secondary)', fontSize: 14 }}
                       tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
                       tickFormatter={(value) => value.toLocaleString()}
                     />
@@ -731,7 +731,7 @@ export default function GrowthCurveChart({
               max={maxLevel}
               className="glass-input w-20 text-sm text-center"
             />
-            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('levelUnit')}</span>
+            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('levelUnit')}</span>
           </div>
           <div className="grid grid-cols-2 gap-2">
             {showCurves.linear && (
@@ -778,7 +778,7 @@ function ToggleSwitch({ checked, color }: { checked: boolean; color: string }) {
 function PreviewCard({ color, label, value }: { color: string; label: string; value: number }) {
   return (
     <div className="glass-section flex items-center justify-between px-3 py-2" style={{ borderLeft: `3px solid ${color}` }}>
-      <span className="text-xs font-medium" style={{ color }}>{label}</span>
+      <span className="text-sm font-medium" style={{ color }}>{label}</span>
       <span className="text-sm font-bold tabular-nums" style={{ color: 'var(--text-primary)' }}>
         {value.toLocaleString(undefined, { maximumFractionDigits: 2 })}
       </span>

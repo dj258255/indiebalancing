@@ -43,7 +43,7 @@ const hideSpinnerStyle = `
   }
 `;
 
-const PANEL_COLOR = '#8b5cf6';
+const PANEL_COLOR = '#9179f2'; // 소프트 퍼플
 
 interface DifficultyCurveProps {
   onClose?: () => void;
@@ -338,24 +338,24 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
               </div>
               <div>
                 <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{t('helpTitle')}</p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{t('helpOverviewDesc')}</p>
+                <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{t('helpOverviewDesc')}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="glass-section p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <AlertTriangle className="w-3.5 h-3.5" style={{ color: '#ef4444' }} />
-                  <span className="font-medium text-xs" style={{ color: 'var(--text-primary)' }}>{t('helpWall')}</span>
+                  <AlertTriangle className="w-3.5 h-3.5" style={{ color: '#e86161' }} />
+                  <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{t('helpWall')}</span>
                 </div>
-                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('helpWallDesc')}</p>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('helpWallDesc')}</p>
               </div>
               <div className="glass-section p-3">
                 <div className="flex items-center gap-2 mb-1">
-                  <Target className="w-3.5 h-3.5" style={{ color: '#10b981' }} />
-                  <span className="font-medium text-xs" style={{ color: 'var(--text-primary)' }}>{t('helpMilestone')}</span>
+                  <Target className="w-3.5 h-3.5" style={{ color: '#3db88a' }} />
+                  <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{t('helpMilestone')}</span>
                 </div>
-                <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('helpMilestoneDesc')}</p>
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('helpMilestoneDesc')}</p>
               </div>
             </div>
 
@@ -363,19 +363,19 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
             <div className="glass-section p-3 space-y-2">
               <div className="flex items-center gap-2 mb-2">
                 <TrendingUp className="w-3.5 h-3.5" style={{ color: PANEL_COLOR }} />
-                <span className="font-medium text-xs" style={{ color: 'var(--text-primary)' }}>{t('helpGraphTitle')}</span>
+                <span className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{t('helpGraphTitle')}</span>
               </div>
-              <div className="space-y-1.5 text-[11px]" style={{ color: 'var(--text-tertiary)' }}>
+              <div className="space-y-1.5 text-sm" style={{ color: 'var(--text-secondary)' }}>
                 <div className="flex items-start gap-2">
-                  <div className="w-2 h-2 rounded-full mt-1 shrink-0" style={{ background: '#3b82f6' }} />
+                  <div className="w-2 h-2 rounded-full mt-1 shrink-0" style={{ background: '#5a9cf5' }} />
                   <span>{t('helpGraphPlayer')}</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <div className="w-2 h-2 rounded-full mt-1 shrink-0" style={{ background: '#ef4444' }} />
+                  <div className="w-2 h-2 rounded-full mt-1 shrink-0" style={{ background: '#e86161' }} />
                   <span>{t('helpGraphEnemy')}</span>
                 </div>
                 <div className="flex items-start gap-2">
-                  <div className="w-2 h-2 rounded-full mt-1 shrink-0" style={{ background: '#22c55e' }} />
+                  <div className="w-2 h-2 rounded-full mt-1 shrink-0" style={{ background: '#3db88a' }} />
                   <span>{t('helpGraphRatio')}</span>
                 </div>
                 <div className="flex items-start gap-2">
@@ -387,11 +387,11 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
 
             <div className="glass-divider" />
 
-            <div className="grid grid-cols-2 gap-2 text-xs">
+            <div className="grid grid-cols-2 gap-2 text-sm">
               {[1, 2, 3, 4].map(num => (
                 <div key={num} className="flex gap-2 items-start">
                   <span
-                    className="w-5 h-5 rounded-lg flex items-center justify-center text-[10px] font-bold shrink-0"
+                    className="w-5 h-5 rounded-lg flex items-center justify-center text-sm font-bold shrink-0"
                     style={{ background: `${PANEL_COLOR}20`, color: PANEL_COLOR }}
                   >
                     {num}
@@ -426,10 +426,10 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
                   background: preset === key ? `${PANEL_COLOR}10` : undefined,
                 }}
               >
-                <div className="font-semibold text-xs" style={{ color: 'var(--text-primary)' }}>
+                <div className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
                   {t(`presets.${key}`)}
                 </div>
-                <div className="text-[10px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                <div className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
                   {t(`presets.${key}Desc`)}
                 </div>
               </button>
@@ -448,7 +448,7 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
             </div>
             <button
               onClick={generateRecommendedWalls}
-              className="glass-button-primary flex items-center gap-1.5 !px-3 !py-1.5 text-xs"
+              className="glass-button-primary flex items-center gap-1.5 !px-3 !py-1.5 text-sm"
               style={{ background: `linear-gradient(135deg, ${PANEL_COLOR}, ${PANEL_COLOR}dd)` }}
             >
               <Wand2 className="w-3.5 h-3.5" />
@@ -462,8 +462,8 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
                 onClick={() => setPlaytime(key as keyof typeof PLAYTIME_TARGETS)}
                 className={cn('glass-tab flex-1 text-center', playtime === key && 'active')}
               >
-                <div className="text-xs font-medium">{t(`playtime.${key}`)}</div>
-                <div className="text-[10px] opacity-60 mt-0.5">
+                <div className="text-sm font-medium">{t(`playtime.${key}`)}</div>
+                <div className="text-sm opacity-60 mt-0.5">
                   {t('playtime.wallInterval', { interval: value.wallInterval })}
                 </div>
               </button>
@@ -476,27 +476,27 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
             style={{ background: `${PANEL_COLOR}08` }}
           >
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
                 {t('estimatedTime')}
               </span>
-              <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                 ({t(`playtime.${playtime}`)} {t('basis')})
               </span>
             </div>
             <div className="flex flex-wrap gap-2">
               {wallStages.slice(0, 4).map((stage) => (
-                <div key={stage} className="flex items-center gap-1.5 text-xs">
-                  <span style={{ color: 'var(--text-tertiary)' }}>{t('stage')} {stage}:</span>
+                <div key={stage} className="flex items-center gap-1.5 text-sm">
+                  <span style={{ color: 'var(--text-secondary)' }}>{t('stage')} {stage}:</span>
                   <span className="font-semibold" style={{ color: PANEL_COLOR }}>
                     {t('approxDays', { days: estimatedDays[stage] || 0 })}
                   </span>
                 </div>
               ))}
               {wallStages.length > 4 && (
-                <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>+{wallStages.length - 4}</span>
+                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>+{wallStages.length - 4}</span>
               )}
-              <div className="flex items-center gap-1.5 text-xs ml-auto">
-                <span style={{ color: 'var(--text-tertiary)' }}>{t('finalStage')}:</span>
+              <div className="flex items-center gap-1.5 text-sm ml-auto">
+                <span style={{ color: 'var(--text-secondary)' }}>{t('finalStage')}:</span>
                 <span className="font-bold" style={{ color: PANEL_COLOR }}>
                   {t('approxDays', { days: estimatedDays[maxStage] || 0 })}
                 </span>
@@ -531,7 +531,7 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
                 background: `linear-gradient(to right, ${PANEL_COLOR} 0%, ${PANEL_COLOR} ${((maxStage - 50) / 450) * 100}%, var(--bg-tertiary) ${((maxStage - 50) / 450) * 100}%, var(--bg-tertiary) 100%)`,
               }}
             />
-            <div className="flex justify-between mt-2 text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+            <div className="flex justify-between mt-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
               <span>50</span>
               <span>500</span>
             </div>
@@ -568,12 +568,12 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
                   <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
                   <XAxis
                     dataKey="stage"
-                    tick={{ fontSize: 10, fill: 'var(--text-tertiary)' }}
+                    tick={{ fontSize: 10, fill: 'var(--text-secondary)' }}
                     tickLine={false}
                     axisLine={{ stroke: 'var(--border-primary)' }}
                   />
                   <YAxis
-                    tick={{ fontSize: 10, fill: 'var(--text-tertiary)' }}
+                    tick={{ fontSize: 10, fill: 'var(--text-secondary)' }}
                     tickLine={false}
                     axisLine={{ stroke: 'var(--border-primary)' }}
                     tickFormatter={(value) => value >= 1000 ? `${(value / 1000).toFixed(0)}k` : value}
@@ -594,14 +594,14 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
                           <div style={{ fontWeight: 600, marginBottom: 4, color: 'var(--text-primary)' }}>
                             {t('stage')} {label}
                           </div>
-                          <div style={{ color: '#3b82f6' }}>{t('player')}: {segment?.playerPower.toLocaleString()}</div>
-                          <div style={{ color: '#ef4444' }}>{t('enemy')}: {segment?.enemyPower.toLocaleString()}</div>
+                          <div style={{ color: '#5a9cf5' }}>{t('player')}: {segment?.playerPower.toLocaleString()}</div>
+                          <div style={{ color: '#e86161' }}>{t('enemy')}: {segment?.enemyPower.toLocaleString()}</div>
                           <div style={{
                             marginTop: 4,
                             paddingTop: 4,
                             borderTop: '1px solid var(--border-primary)',
                             fontWeight: 600,
-                            color: segment && segment.ratio >= 1 ? '#22c55e' : '#ef4444'
+                            color: segment && segment.ratio >= 1 ? '#3db88a' : '#e86161'
                           }}>
                             {t('ratio')}: {segment?.ratio.toFixed(2)}x {segment && segment.ratio >= 1 ? '(Clear)' : '(Wall)'}
                           </div>
@@ -620,7 +620,7 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
                     <ReferenceLine
                       key={stage}
                       x={stage}
-                      stroke="#ef4444"
+                      stroke="#e86161"
                       strokeDasharray="4 4"
                       strokeWidth={1.5}
                     />
@@ -628,18 +628,18 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
                   <Line
                     type="monotone"
                     dataKey="playerPower"
-                    stroke="#3b82f6"
+                    stroke="#5a9cf5"
                     strokeWidth={2}
                     dot={false}
-                    activeDot={{ r: 4, fill: '#3b82f6' }}
+                    activeDot={{ r: 4, fill: '#5a9cf5' }}
                   />
                   <Line
                     type="monotone"
                     dataKey="enemyPower"
-                    stroke="#ef4444"
+                    stroke="#e86161"
                     strokeWidth={2}
                     dot={false}
-                    activeDot={{ r: 4, fill: '#ef4444' }}
+                    activeDot={{ r: 4, fill: '#e86161' }}
                   />
                 </LineChart>
               </ResponsiveContainer>
@@ -647,23 +647,23 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
 
             {/* 비율 그래프 - 높이로 비율 표현 */}
             <div className="mt-3 space-y-1">
-              <div className="flex items-center justify-between text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+              <div className="flex items-center justify-between text-sm" style={{ color: 'var(--text-secondary)' }}>
                 <span>{t('ratio')} ({t('player')}/{t('enemy')})</span>
                 <div className="flex items-center gap-3">
                   <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full" style={{ background: '#22c55e' }} />
+                    <span className="w-2 h-2 rounded-full" style={{ background: '#3db88a' }} />
                     1.3+
                   </span>
                   <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full" style={{ background: '#3b82f6' }} />
+                    <span className="w-2 h-2 rounded-full" style={{ background: '#5a9cf5' }} />
                     1.0-1.3
                   </span>
                   <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full" style={{ background: '#eab308' }} />
+                    <span className="w-2 h-2 rounded-full" style={{ background: '#e5a440' }} />
                     0.8-1.0
                   </span>
                   <span className="flex items-center gap-1">
-                    <span className="w-2 h-2 rounded-full" style={{ background: '#ef4444' }} />
+                    <span className="w-2 h-2 rounded-full" style={{ background: '#e86161' }} />
                     &lt;0.8
                   </span>
                 </div>
@@ -677,11 +677,11 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
                 {/* 기준선 (비율 1.0) */}
                 <div
                   className="absolute left-0 right-0 border-t border-dashed z-10 pointer-events-none"
-                  style={{ top: '33.3%', borderColor: 'var(--text-tertiary)', opacity: 0.5 }}
+                  style={{ top: '33.3%', borderColor: 'var(--text-secondary)', opacity: 0.5 }}
                 />
                 <div
                   className="absolute right-1 text-[9px] z-10 pointer-events-none"
-                  style={{ top: '33.3%', transform: 'translateY(-50%)', color: 'var(--text-tertiary)' }}
+                  style={{ top: '33.3%', transform: 'translateY(-50%)', color: 'var(--text-secondary)' }}
                 >
                   1.0
                 </div>
@@ -695,10 +695,10 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
 
                     // 색상 결정
                     let color: string;
-                    if (d.ratio >= 1.3) color = '#22c55e';
-                    else if (d.ratio >= 1.0) color = '#3b82f6';
-                    else if (d.ratio >= 0.8) color = '#eab308';
-                    else color = '#ef4444';
+                    if (d.ratio >= 1.3) color = '#3db88a';
+                    else if (d.ratio >= 1.0) color = '#5a9cf5';
+                    else if (d.ratio >= 0.8) color = '#e5a440';
+                    else color = '#e86161';
 
                     const isHovered = hoveredStage === d.stage;
 
@@ -729,8 +729,8 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
               </div>
               {/* 호버 정보 표시 영역 */}
               <div
-                className="flex items-center justify-between text-[10px] h-5"
-                style={{ color: 'var(--text-tertiary)' }}
+                className="flex items-center justify-between text-sm h-5"
+                style={{ color: 'var(--text-secondary)' }}
               >
                 {hoveredData ? (
                   <div className="flex items-center gap-3 w-full">
@@ -738,9 +738,9 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
                       {t('stage')} {hoveredData.stage}
                     </span>
                     <span style={{
-                      color: hoveredData.ratio >= 1.3 ? '#22c55e' :
-                             hoveredData.ratio >= 1.0 ? '#3b82f6' :
-                             hoveredData.ratio >= 0.8 ? '#eab308' : '#ef4444',
+                      color: hoveredData.ratio >= 1.3 ? '#3db88a' :
+                             hoveredData.ratio >= 1.0 ? '#5a9cf5' :
+                             hoveredData.ratio >= 0.8 ? '#e5a440' : '#e86161',
                       fontWeight: 600
                     }}>
                       {hoveredData.ratio.toFixed(2)}x
@@ -791,7 +791,7 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
                     <h3 className="font-semibold" style={{ color: 'var(--text-primary)' }}>
                       {t('curveLabel')}
                     </h3>
-                    <p className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                    <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                       {t('stage')} 1 ~ {maxStage}
                     </p>
                   </div>
@@ -806,7 +806,7 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
                     >
                       <ZoomOut className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
                     </button>
-                    <span className="text-xs font-medium px-2 min-w-[50px] text-center" style={{ color: 'var(--text-secondary)' }}>
+                    <span className="text-sm font-medium px-2 min-w-[50px] text-center" style={{ color: 'var(--text-secondary)' }}>
                       {Math.round(zoomLevel * 100)}%
                     </span>
                     <button
@@ -866,14 +866,14 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
                         tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
                         tickLine={false}
                         axisLine={{ stroke: 'var(--border-secondary)' }}
-                        label={{ value: t('stage'), position: 'insideBottom', offset: -10, fontSize: 12, fill: 'var(--text-tertiary)' }}
+                        label={{ value: t('stage'), position: 'insideBottom', offset: -10, fontSize: 12, fill: 'var(--text-secondary)' }}
                       />
                       <YAxis
                         tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
                         tickLine={false}
                         axisLine={{ stroke: 'var(--border-secondary)' }}
                         tickFormatter={(value) => value >= 1000 ? `${(value / 1000).toFixed(1)}k` : value}
-                        label={{ value: 'Power', angle: -90, position: 'insideLeft', fontSize: 12, fill: 'var(--text-tertiary)' }}
+                        label={{ value: 'Power', angle: -90, position: 'insideLeft', fontSize: 12, fill: 'var(--text-secondary)' }}
                       />
                       <Tooltip
                         contentStyle={{
@@ -905,12 +905,12 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
                                 {t('stage')} {label}
                               </div>
                               {segment?.milestone && (
-                                <div style={{ fontSize: 11, color: '#10b981', marginBottom: 4 }}>
+                                <div style={{ fontSize: 11, color: '#3db88a', marginBottom: 4 }}>
                                   {segment.milestone}
                                 </div>
                               )}
                               {segment?.type === 'wall' && (
-                                <div style={{ fontSize: 11, color: '#ef4444', marginBottom: 4 }}>
+                                <div style={{ fontSize: 11, color: '#e86161', marginBottom: 4 }}>
                                   {t('wallStage')}
                                 </div>
                               )}
@@ -920,7 +920,7 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
                                 </div>
                               ))}
                               {segment && (
-                                <div style={{ fontSize: 11, color: ratio >= 1 ? '#22c55e' : '#ef4444', marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--border-primary)' }}>
+                                <div style={{ fontSize: 11, color: ratio >= 1 ? '#3db88a' : '#e86161', marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--border-primary)' }}>
                                   {t('player')}/{t('enemy')}: {ratio.toFixed(2)}x
                                 </div>
                               )}
@@ -939,14 +939,14 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
                         <ReferenceLine
                           key={stage}
                           x={stage}
-                          stroke="#ef4444"
+                          stroke="#e86161"
                           strokeDasharray="5 5"
                           strokeWidth={2}
                           label={{
                             value: `Wall`,
                             position: 'top',
                             fontSize: 10,
-                            fill: '#ef4444',
+                            fill: '#e86161',
                           }}
                         />
                       ))}
@@ -955,7 +955,7 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
                         <ReferenceLine
                           key={`milestone-${stage}`}
                           x={Number(stage)}
-                          stroke="#10b981"
+                          stroke="#3db88a"
                           strokeDasharray="3 3"
                           strokeWidth={1.5}
                         />
@@ -963,18 +963,18 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
                       <Line
                         type="monotone"
                         dataKey="playerPower"
-                        stroke="#3b82f6"
+                        stroke="#5a9cf5"
                         strokeWidth={3}
                         dot={false}
-                        activeDot={{ r: 6, fill: '#3b82f6', stroke: '#fff', strokeWidth: 2 }}
+                        activeDot={{ r: 6, fill: '#5a9cf5', stroke: '#fff', strokeWidth: 2 }}
                       />
                       <Line
                         type="monotone"
                         dataKey="enemyPower"
-                        stroke="#ef4444"
+                        stroke="#e86161"
                         strokeWidth={3}
                         dot={false}
-                        activeDot={{ r: 6, fill: '#ef4444', stroke: '#fff', strokeWidth: 2 }}
+                        activeDot={{ r: 6, fill: '#e86161', stroke: '#fff', strokeWidth: 2 }}
                       />
                     </LineChart>
                   </ResponsiveContainer>
@@ -983,8 +983,8 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
 
               {/* 모달 푸터 - 조작 안내 */}
               <div
-                className="px-5 py-3 border-t flex items-center justify-center gap-6 text-xs shrink-0"
-                style={{ borderColor: 'var(--border-primary)', background: 'var(--bg-secondary)', color: 'var(--text-tertiary)' }}
+                className="px-5 py-3 border-t flex items-center justify-center gap-6 text-sm shrink-0"
+                style={{ borderColor: 'var(--border-primary)', background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
               >
                 <div className="flex items-center gap-1.5">
                   <Move className="w-3.5 h-3.5" />
@@ -1002,7 +1002,7 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
         {/* 벽 스테이지 설정 */}
         <div className="space-y-3">
           <div className="flex items-center gap-2">
-            <AlertTriangle className="w-4 h-4" style={{ color: '#ef4444' }} />
+            <AlertTriangle className="w-4 h-4" style={{ color: '#e86161' }} />
             <label className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
               {t('wallStages')}
             </label>
@@ -1012,7 +1012,7 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
               <div
                 key={stage}
                 className="glass-badge flex items-center gap-1.5 pr-1"
-                style={{ background: 'rgba(239, 68, 68, 0.1)', color: '#ef4444' }}
+                style={{ background: 'rgba(232, 97, 97, 0.1)', color: '#e86161' }}
               >
                 <AlertTriangle className="w-3 h-3" />
                 <span className="font-medium">{t('stage')} {stage}</span>
@@ -1027,7 +1027,7 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
             <input
               type="number"
               placeholder={`${t('add')}...`}
-              className="glass-input hide-spinner !w-20 !px-2 !py-1 text-xs"
+              className="glass-input hide-spinner !w-20 !px-2 !py-1 text-sm"
               onKeyDown={(e) => {
                 if (e.key === 'Enter') {
                   const value = Number((e.target as HTMLInputElement).value);
@@ -1045,12 +1045,12 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Zap className="w-4 h-4" style={{ color: '#10b981' }} />
+              <Zap className="w-4 h-4" style={{ color: '#3db88a' }} />
               <label className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
                 {t('milestones')}
               </label>
             </div>
-            <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               {t('powerBonusNote')}
             </span>
           </div>
@@ -1059,7 +1059,7 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
               <div key={stage} className="glass-card p-2.5 flex items-center gap-2">
                 <span
                   className="glass-badge shrink-0 font-bold"
-                  style={{ background: 'rgba(16, 185, 129, 0.1)', color: '#10b981' }}
+                  style={{ background: 'rgba(61, 184, 138, 0.1)', color: '#3db88a' }}
                 >
                   {stage}
                 </span>
@@ -1067,25 +1067,25 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
                   type="text"
                   value={data.name}
                   onChange={(e) => updateMilestone(Number(stage), e.target.value)}
-                  className="glass-input flex-1 !py-1.5 text-xs"
+                  className="glass-input flex-1 !py-1.5 text-sm"
                   placeholder={t('contentName')}
                 />
                 <div className="flex items-center gap-1 shrink-0">
-                  <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>+</span>
+                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>+</span>
                   <input
                     type="number"
                     value={data.powerBonus}
                     onChange={(e) => updateMilestonePowerBonus(Number(stage), Number(e.target.value))}
-                    className="glass-input hide-spinner !w-14 !px-2 !py-1.5 text-xs text-center"
+                    className="glass-input hide-spinner !w-14 !px-2 !py-1.5 text-sm text-center"
                     min={0}
                     max={200}
                   />
-                  <span className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>%</span>
+                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>%</span>
                 </div>
                 <button
                   onClick={() => updateMilestone(Number(stage), '')}
                   className="w-6 h-6 rounded-lg flex items-center justify-center hover:bg-red-500/10 transition-colors"
-                  style={{ color: '#ef4444' }}
+                  style={{ color: '#e86161' }}
                 >
                   ×
                 </button>
@@ -1095,19 +1095,19 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
               <input
                 type="number"
                 placeholder={t('stage')}
-                className="glass-input hide-spinner !w-16 !px-2 !py-1.5 text-xs"
+                className="glass-input hide-spinner !w-16 !px-2 !py-1.5 text-sm"
                 id="newMilestoneStage"
               />
               <input
                 type="text"
                 placeholder={`${t('unlockContent')}`}
-                className="glass-input flex-1 !py-1.5 text-xs"
+                className="glass-input flex-1 !py-1.5 text-sm"
                 id="newMilestoneText"
               />
               <input
                 type="number"
                 placeholder="%"
-                className="glass-input hide-spinner !w-14 !px-2 !py-1.5 text-xs text-center"
+                className="glass-input hide-spinner !w-14 !px-2 !py-1.5 text-sm text-center"
                 id="newMilestoneBonus"
                 defaultValue={30}
               />
@@ -1124,8 +1124,8 @@ export default function DifficultyCurve({ onClose, showHelp = false, setShowHelp
                     bonusInput.value = '30';
                   }
                 }}
-                className="glass-button-primary !px-3 !py-1.5 text-xs"
-                style={{ background: `linear-gradient(135deg, #10b981, #059669)` }}
+                className="glass-button-primary !px-3 !py-1.5 text-sm"
+                style={{ background: `linear-gradient(135deg, #3db88a, #2f9e75)` }}
               >
                 {t('add')}
               </button>

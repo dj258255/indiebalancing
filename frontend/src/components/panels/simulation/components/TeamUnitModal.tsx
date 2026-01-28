@@ -80,7 +80,7 @@ export function TeamUnitModal({
             {unit ? t('edit') || '유닛 편집' : t('newUnit') || '새 유닛 추가'} (Team {teamNumber})
           </h3>
           <button onClick={onClose} className="p-1 rounded hover:bg-[var(--bg-tertiary)]">
-            <X className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+            <X className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
           </button>
         </div>
 
@@ -89,7 +89,7 @@ export function TeamUnitModal({
           {/* 시트에서 불러오기 */}
           {units.length > 0 && (
             <div>
-              <label className="block text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>{t('loadFromSheet')}</label>
+              <label className="block text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>{t('loadFromSheet')}</label>
               <select
                 onChange={(e) => {
                   const selected = units.find(u => u.id === e.target.value);
@@ -115,7 +115,7 @@ export function TeamUnitModal({
 
           {/* 이름 */}
           <div>
-            <label className="block text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>{t('colName') || '이름'}</label>
+            <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>{t('colName') || '이름'}</label>
             <input
               type="text"
               value={editUnit.name}
@@ -129,7 +129,7 @@ export function TeamUnitModal({
           {/* 스탯 그리드 */}
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="flex items-center gap-1 text-xs mb-1" style={{ color: '#ef4444' }}>
+              <label className="flex items-center gap-1 text-sm mb-1" style={{ color: '#e86161' }}>
                 <Heart className="w-3 h-3" /> HP
               </label>
               <input
@@ -144,7 +144,7 @@ export function TeamUnitModal({
               />
             </div>
             <div>
-              <label className="flex items-center gap-1 text-xs mb-1" style={{ color: '#f59e0b' }}>
+              <label className="flex items-center gap-1 text-sm mb-1" style={{ color: '#e5a440' }}>
                 <Swords className="w-3 h-3" /> ATK
               </label>
               <input
@@ -156,7 +156,7 @@ export function TeamUnitModal({
               />
             </div>
             <div>
-              <label className="flex items-center gap-1 text-xs mb-1" style={{ color: '#3b82f6' }}>
+              <label className="flex items-center gap-1 text-sm mb-1" style={{ color: '#5a9cf5' }}>
                 <Shield className="w-3 h-3" /> DEF
               </label>
               <input
@@ -168,7 +168,7 @@ export function TeamUnitModal({
               />
             </div>
             <div>
-              <label className="flex items-center gap-1 text-xs mb-1" style={{ color: '#8b5cf6' }}>
+              <label className="flex items-center gap-1 text-sm mb-1" style={{ color: '#9179f2' }}>
                 <Zap className="w-3 h-3" /> SPD
               </label>
               <input
@@ -184,40 +184,40 @@ export function TeamUnitModal({
 
           {/* 선택적 스탯 */}
           <details className="group">
-            <summary className="text-xs cursor-pointer" style={{ color: 'var(--text-tertiary)' }}>
+            <summary className="text-sm cursor-pointer" style={{ color: 'var(--text-secondary)' }}>
               고급 옵션 (크리티컬, 명중, 회피)
             </summary>
             <div className="grid grid-cols-3 gap-2 mt-2">
               <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('colCritRate') || '크리율'} %</label>
+                <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>{t('colCritRate') || '크리율'} %</label>
                 <input
                   type="number"
                   value={(editUnit.critRate || 0) * 100}
                   onChange={(e) => setEditUnit(prev => ({ ...prev, critRate: Number(e.target.value) / 100 }))}
-                  className="w-full px-2 py-1.5 rounded text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="w-full px-2 py-1.5 rounded text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
                   min="0"
                   max="100"
                 />
               </div>
               <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('colCritDmg') || '크리뎀'} x</label>
+                <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>{t('colCritDmg') || '크리뎀'} x</label>
                 <input
                   type="number"
                   value={editUnit.critDamage || 1.5}
                   onChange={(e) => setEditUnit(prev => ({ ...prev, critDamage: Number(e.target.value) }))}
-                  className="w-full px-2 py-1.5 rounded text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="w-full px-2 py-1.5 rounded text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
                   step="0.1"
                 />
               </div>
               <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>회피 %</label>
+                <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>회피 %</label>
                 <input
                   type="number"
                   value={(editUnit.evasion || 0) * 100}
                   onChange={(e) => setEditUnit(prev => ({ ...prev, evasion: Number(e.target.value) / 100 }))}
-                  className="w-full px-2 py-1.5 rounded text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  className="w-full px-2 py-1.5 rounded text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                   style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
                   min="0"
                   max="100"
@@ -233,14 +233,14 @@ export function TeamUnitModal({
           >
             <button
               onClick={() => setShowSkills(!showSkills)}
-              className="w-full flex items-center justify-between px-3 py-2 text-xs font-medium transition-colors hover:bg-black/5"
+              className="w-full flex items-center justify-between px-3 py-2 text-sm font-medium transition-colors hover:bg-black/5"
               style={{ background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
             >
               <span className="flex items-center gap-2">
                 {t('skills')}
                 {editUnit.skills && editUnit.skills.length > 0 && (
                   <span
-                    className="px-1.5 py-0.5 rounded text-[10px]"
+                    className="px-1.5 py-0.5 rounded text-sm"
                     style={{ background: `${color}20`, color }}
                   >
                     {editUnit.skills.length}

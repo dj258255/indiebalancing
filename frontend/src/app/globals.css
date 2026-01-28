@@ -13,111 +13,121 @@
   display: none;
 }
 
-/* 라이트 모드 - 기본 */
+/* 라이트 모드 - 눈에 편한 소프트 팔레트 (2025 트렌드) */
 :root {
-  --bg-primary: #ffffff;
-  --bg-secondary: #f8fafc;
-  --bg-tertiary: #f1f5f9;
-  --bg-hover: #e2e8f0;
-  --bg-sidebar: #1e293b;
-  --bg-sidebar-hover: #334155;
-  --bg-sidebar-active: #0ea5e9;
+  /* 배경 - 순백색 대신 따뜻한 오프화이트 */
+  --bg-primary: #fefefe;
+  --bg-secondary: #f8f9fb;
+  --bg-tertiary: #f0f2f5;
+  --bg-hover: #e8ebef;
+  --bg-sidebar: #1a1f2e;
+  --bg-sidebar-hover: #2d3548;
+  --bg-sidebar-active: #4f8cdb;
 
-  --text-primary: #0f172a;
-  --text-secondary: #475569;
-  --text-tertiary: #64748b;
-  --text-sidebar: #f8fafc;
-  --text-sidebar-muted: rgba(248, 250, 252, 0.7);
+  /* 텍스트 - 순흑색 대신 부드러운 다크그레이 */
+  --text-primary: #1a1f2e;
+  --text-secondary: #4a5568;
+  --text-tertiary: #718096;
+  --text-sidebar: #f7fafc;
+  --text-sidebar-muted: rgba(247, 250, 252, 0.75);
 
-  --border-primary: #e2e8f0;
-  --border-secondary: #cbd5e1;
+  /* 테두리 - 부드러운 그레이 */
+  --border-primary: #e2e6ec;
+  --border-secondary: #ccd3dc;
 
-  /* 메인 액센트 - 청록/민트 계열 */
-  --accent: #0ea5e9;
-  --accent-hover: #0284c7;
-  --accent-light: rgba(14, 165, 233, 0.1);
-  --accent-text: #0284c7;
+  /* 메인 액센트 - 부드러운 블루 (눈 피로 감소) */
+  --accent: #4f8cdb;
+  --accent-hover: #3d7bc9;
+  --accent-light: rgba(79, 140, 219, 0.12);
+  --accent-text: #3d7bc9;
 
-  /* 보조 컬러 */
-  --primary-green: #10b981;
-  --primary-green-light: rgba(16, 185, 129, 0.1);
-  --primary-blue: #3b82f6;
-  --primary-blue-light: rgba(59, 130, 246, 0.1);
-  --primary-purple: #8b5cf6;
-  --primary-purple-light: rgba(139, 92, 246, 0.1);
-  --primary-red: #ef4444;
-  --primary-red-light: rgba(239, 68, 68, 0.1);
-  --primary-yellow: #f59e0b;
-  --primary-yellow-light: rgba(245, 158, 11, 0.1);
+  /* 보조 컬러 - 채도를 낮춘 소프트 톤 */
+  --primary-green: #3db88a;
+  --primary-green-light: rgba(61, 184, 138, 0.12);
+  --primary-blue: #5a9cf5;
+  --primary-blue-light: rgba(90, 156, 245, 0.12);
+  --primary-purple: #9179f2;
+  --primary-purple-light: rgba(145, 121, 242, 0.12);
+  --primary-red: #e86161;
+  --primary-red-light: rgba(232, 97, 97, 0.12);
+  --primary-yellow: #e5a440;
+  --primary-yellow-light: rgba(229, 164, 64, 0.12);
 
-  --success: #10b981;
-  --success-light: rgba(16, 185, 129, 0.1);
-  --warning: #f59e0b;
-  --warning-light: rgba(245, 158, 11, 0.1);
-  --error: #ef4444;
-  --error-light: rgba(239, 68, 68, 0.1);
+  --success: #3db88a;
+  --success-light: rgba(61, 184, 138, 0.12);
+  --warning: #e5a440;
+  --warning-light: rgba(229, 164, 64, 0.12);
+  --error: #e86161;
+  --error-light: rgba(232, 97, 97, 0.12);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+  /* 그림자 - 더 부드럽게 */
+  --shadow-sm: 0 1px 3px rgba(26, 31, 46, 0.04);
+  --shadow-md: 0 4px 12px rgba(26, 31, 46, 0.06);
+  --shadow-lg: 0 8px 24px rgba(26, 31, 46, 0.08);
 
   /* 행/열 하이라이트 */
-  --row-col-highlight: rgba(59, 130, 246, 0.3);
-  --row-col-highlight-text: #1e40af;
-  --row-col-highlight-border: #3b82f6;
+  --row-col-highlight: rgba(90, 156, 245, 0.25);
+  --row-col-highlight-text: #2563a8;
+  --row-col-highlight-border: #5a9cf5;
 }
 
-/* 다크 모드 */
+/* 다크 모드 - 눈에 편한 소프트 다크 팔레트 (2025 트렌드) */
+/* 순수 검정 대신 부드러운 다크그레이 사용 - 눈 피로 감소 */
 .dark {
-  --bg-primary: #0f172a;
-  --bg-secondary: #1e293b;
-  --bg-tertiary: #334155;
-  --bg-hover: #475569;
-  --bg-sidebar: #0f172a;
-  --bg-sidebar-hover: #1e293b;
-  --bg-sidebar-active: #0ea5e9;
+  /* 배경 - #000000 대신 부드러운 다크블루그레이 */
+  --bg-primary: #151921;
+  --bg-secondary: #1c2028;
+  --bg-tertiary: #262b36;
+  --bg-hover: #323844;
+  --bg-sidebar: #12151c;
+  --bg-sidebar-hover: #1c2028;
+  --bg-sidebar-active: #5a9cf5;
 
-  --text-primary: #f1f5f9;
-  --text-secondary: #cbd5e1;
-  --text-tertiary: #94a3b8;
-  --text-sidebar: #f1f5f9;
-  --text-sidebar-muted: rgba(241, 245, 249, 0.7);
+  /* 텍스트 - 순백색 대신 소프트 화이트 (할레이션 효과 방지) */
+  --text-primary: #e8ecf2;
+  --text-secondary: #a8b4c4;
+  --text-tertiary: #7d8a9d;
+  --text-sidebar: #e8ecf2;
+  --text-sidebar-muted: rgba(232, 236, 242, 0.72);
 
-  --border-primary: #334155;
-  --border-secondary: #475569;
+  /* 테두리 - 부드러운 다크그레이 */
+  --border-primary: #2e3440;
+  --border-secondary: #3d4451;
 
-  --accent: #38bdf8;
-  --accent-hover: #0ea5e9;
-  --accent-light: rgba(56, 189, 248, 0.15);
-  --accent-text: #38bdf8;
+  /* 메인 액센트 - 채도 20% 낮춘 소프트 블루 */
+  --accent: #6ba8f5;
+  --accent-hover: #5a9cf5;
+  --accent-light: rgba(107, 168, 245, 0.18);
+  --accent-text: #7bb4f7;
 
-  /* 보조 컬러 - 다크 모드 */
-  --primary-green: #34d399;
-  --primary-green-light: rgba(52, 211, 153, 0.15);
-  --primary-blue: #60a5fa;
-  --primary-blue-light: rgba(96, 165, 250, 0.15);
-  --primary-purple: #a78bfa;
-  --primary-purple-light: rgba(167, 139, 250, 0.15);
-  --primary-red: #f87171;
-  --primary-red-light: rgba(248, 113, 113, 0.15);
-  --primary-yellow: #fbbf24;
-  --primary-yellow-light: rgba(251, 191, 36, 0.15);
+  /* 보조 컬러 - 다크 모드용 (채도 낮춤, 광학 진동 방지) */
+  --primary-green: #5cc9a0;
+  --primary-green-light: rgba(92, 201, 160, 0.18);
+  --primary-blue: #7bb4f7;
+  --primary-blue-light: rgba(123, 180, 247, 0.18);
+  --primary-purple: #a896f5;
+  --primary-purple-light: rgba(168, 150, 245, 0.18);
+  --primary-red: #f08080;
+  --primary-red-light: rgba(240, 128, 128, 0.18);
+  --primary-yellow: #f0c060;
+  --primary-yellow-light: rgba(240, 192, 96, 0.18);
 
-  --success: #34d399;
-  --success-light: rgba(52, 211, 153, 0.15);
-  --warning: #fbbf24;
-  --warning-light: rgba(251, 191, 36, 0.15);
-  --error: #f87171;
-  --error-light: rgba(248, 113, 113, 0.15);
+  --success: #5cc9a0;
+  --success-light: rgba(92, 201, 160, 0.18);
+  --warning: #f0c060;
+  --warning-light: rgba(240, 192, 96, 0.18);
+  --error: #f08080;
+  --error-light: rgba(240, 128, 128, 0.18);
 
-  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.4);
+  /* 그림자 - 다크모드에 맞게 */
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.35);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.45);
 
   /* 행/열 하이라이트 */
-  --row-col-highlight: rgba(96, 165, 250, 0.35);
-  --row-col-highlight-text: #93c5fd;
-  --row-col-highlight-border: #60a5fa;
+  --row-col-highlight: rgba(123, 180, 247, 0.3);
+  --row-col-highlight-text: #a8c8f7;
+  --row-col-highlight-border: #7bb4f7;
 }
 
 * {

@@ -445,25 +445,25 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                 </div>
                 <div>
                   <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{tCommon('help.simulation.title')}</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{tCommon('help.simulation.desc')}</p>
+                  <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>{tCommon('help.simulation.desc')}</p>
                 </div>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-sm">
                 <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
                   <span className="font-medium" style={{ color: PANEL_COLOR }}>DPS</span>
-                  <span className="ml-1" style={{ color: 'var(--text-tertiary)' }}>{tCommon('help.simulation.dps')}</span>
+                  <span className="ml-1" style={{ color: 'var(--text-secondary)' }}>{tCommon('help.simulation.dps')}</span>
                 </div>
                 <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
                   <span className="font-medium" style={{ color: PANEL_COLOR }}>TTK</span>
-                  <span className="ml-1" style={{ color: 'var(--text-tertiary)' }}>{tCommon('help.simulation.ttk')}</span>
+                  <span className="ml-1" style={{ color: 'var(--text-secondary)' }}>{tCommon('help.simulation.ttk')}</span>
                 </div>
                 <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
                   <span className="font-medium" style={{ color: PANEL_COLOR }}>{tCommon('help.simulation.winRate')}</span>
-                  <span className="ml-1" style={{ color: 'var(--text-tertiary)' }}>{tCommon('help.simulation.winRateDesc')}</span>
+                  <span className="ml-1" style={{ color: 'var(--text-secondary)' }}>{tCommon('help.simulation.winRateDesc')}</span>
                 </div>
                 <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
                   <span className="font-medium" style={{ color: PANEL_COLOR }}>{tCommon('help.simulation.monteCarlo')}</span>
-                  <span className="ml-1" style={{ color: 'var(--text-tertiary)' }}>{tCommon('help.simulation.monteCarloDesc')}</span>
+                  <span className="ml-1" style={{ color: 'var(--text-secondary)' }}>{tCommon('help.simulation.monteCarloDesc')}</span>
                 </div>
               </div>
             </div>
@@ -477,7 +477,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
             className="flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2"
             style={{
               background: battleMode === '1v1' ? 'var(--bg-primary)' : 'transparent',
-              color: battleMode === '1v1' ? 'var(--accent)' : 'var(--text-tertiary)',
+              color: battleMode === '1v1' ? 'var(--accent)' : 'var(--text-secondary)',
               boxShadow: battleMode === '1v1' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
             }}
           >
@@ -489,7 +489,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
             className="flex-1 py-2 px-3 rounded-md text-sm font-medium transition-colors flex items-center justify-center gap-2"
             style={{
               background: battleMode === 'team' ? 'var(--bg-primary)' : 'transparent',
-              color: battleMode === 'team' ? 'var(--accent)' : 'var(--text-tertiary)',
+              color: battleMode === 'team' ? 'var(--accent)' : 'var(--text-secondary)',
               boxShadow: battleMode === 'team' ? '0 1px 3px rgba(0,0,0,0.1)' : 'none'
             }}
           >
@@ -531,7 +531,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                   const num = Number(value);
                   if (!isNaN(num)) setUnit1Stats(prev => ({ ...prev, maxHp: num, hp: num }));
                 })}
-                color="#ef4444"
+                color="#e86161"
               />
               <StatInput
                 icon={Swords}
@@ -542,7 +542,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                   const num = Number(value);
                   if (!isNaN(num)) setUnit1Stats(prev => ({ ...prev, atk: num }));
                 })}
-                color="#f59e0b"
+                color="#e5a440"
               />
               <StatInput
                 icon={Shield}
@@ -553,7 +553,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                   const num = Number(value);
                   if (!isNaN(num)) setUnit1Stats(prev => ({ ...prev, def: num }));
                 })}
-                color="#3b82f6"
+                color="#5a9cf5"
               />
               <StatInput
                 icon={Zap}
@@ -564,20 +564,20 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                   const num = Number(value);
                   if (!isNaN(num)) setUnit1Stats(prev => ({ ...prev, speed: num }));
                 })}
-                color="#8b5cf6"
+                color="#9179f2"
               />
             </div>
             {/* 스킬 섹션 */}
             <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border-primary)' }}>
               <button
                 onClick={() => setShowUnit1Skills(!showUnit1Skills)}
-                className="w-full flex items-center justify-between text-xs font-medium transition-colors"
+                className="w-full flex items-center justify-between text-sm font-medium transition-colors"
                 style={{ color: 'var(--text-secondary)' }}
               >
                 <span className="flex items-center gap-2">
                   {t('skills')}
                   {unit1Skills.length > 0 && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: 'var(--primary-blue)20', color: 'var(--primary-blue)' }}>
+                    <span className="px-1.5 py-0.5 rounded text-sm" style={{ background: 'var(--primary-blue)20', color: 'var(--primary-blue)' }}>
                       {unit1Skills.length}
                     </span>
                   )}
@@ -624,7 +624,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                   const num = Number(value);
                   if (!isNaN(num)) setUnit2Stats(prev => ({ ...prev, maxHp: num, hp: num }));
                 })}
-                color="#ef4444"
+                color="#e86161"
               />
               <StatInput
                 icon={Swords}
@@ -635,7 +635,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                   const num = Number(value);
                   if (!isNaN(num)) setUnit2Stats(prev => ({ ...prev, atk: num }));
                 })}
-                color="#f59e0b"
+                color="#e5a440"
               />
               <StatInput
                 icon={Shield}
@@ -646,7 +646,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                   const num = Number(value);
                   if (!isNaN(num)) setUnit2Stats(prev => ({ ...prev, def: num }));
                 })}
-                color="#3b82f6"
+                color="#5a9cf5"
               />
               <StatInput
                 icon={Zap}
@@ -657,20 +657,20 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                   const num = Number(value);
                   if (!isNaN(num)) setUnit2Stats(prev => ({ ...prev, speed: num }));
                 })}
-                color="#8b5cf6"
+                color="#9179f2"
               />
             </div>
             {/* 스킬 섹션 */}
             <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border-primary)' }}>
               <button
                 onClick={() => setShowUnit2Skills(!showUnit2Skills)}
-                className="w-full flex items-center justify-between text-xs font-medium transition-colors"
+                className="w-full flex items-center justify-between text-sm font-medium transition-colors"
                 style={{ color: 'var(--text-secondary)' }}
               >
                 <span className="flex items-center gap-2">
                   {t('skills')}
                   {unit2Skills.length > 0 && (
-                    <span className="px-1.5 py-0.5 rounded text-[10px]" style={{ background: 'var(--primary-red)20', color: 'var(--primary-red)' }}>
+                    <span className="px-1.5 py-0.5 rounded text-sm" style={{ background: 'var(--primary-red)20', color: 'var(--primary-red)' }}>
                       {unit2Skills.length}
                     </span>
                   )}
@@ -697,7 +697,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>{t('runs')}</label>
+                <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>{t('runs')}</label>
                 <select
                   value={runs}
                   onChange={(e) => setRuns(Number(e.target.value))}
@@ -717,7 +717,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
               </div>
 
               <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>{t('damageFormula')}</label>
+                <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>{t('damageFormula')}</label>
                 <select
                   value={damageFormula}
                   onChange={(e) => setDamageFormula(e.target.value as BattleConfig['damageFormula'])}
@@ -737,7 +737,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
               </div>
 
               <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>{t('defenseFormula')}</label>
+                <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>{t('defenseFormula')}</label>
                 <select
                   value={defenseFormula}
                   onChange={(e) => setDefenseFormula(e.target.value as DefenseFormulaType)}
@@ -756,7 +756,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
               </div>
 
               <div>
-                <label className="block text-xs mb-1" style={{ color: 'var(--text-secondary)' }}>{t('maxBattleTime')}</label>
+                <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>{t('maxBattleTime')}</label>
                 <input
                   type="number"
                   value={maxDuration}
@@ -781,7 +781,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                   className="w-4 h-4 rounded"
                   style={{ accentColor: 'var(--accent)' }}
                 />
-                <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                   {t('useArmorPen')}
                 </span>
               </label>
@@ -789,7 +789,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
               {useArmorPen && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mt-2">
                   <div>
-                    <label className="block text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>
+                    <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
                       {t('flatPen')}
                     </label>
                     <input
@@ -806,7 +806,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                     />
                   </div>
                   <div>
-                    <label className="block text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>
+                    <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
                       {t('percentPen')}
                     </label>
                     <input
@@ -831,7 +831,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
             {/* 컬럼 매핑 설정 */}
             {currentSheet && (
               <div className="pt-3 border-t" style={{ borderColor: 'var(--border-primary)' }}>
-                <div className="text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
+                <div className="text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
                   {t('columnMapping')}
                 </div>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -845,13 +845,13 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                     { key: 'critDamage' as const, label: t('colCritDmg') },
                   ].map(({ key, label }) => (
                     <div key={key}>
-                      <label className="block text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>
+                      <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
                         {label}
                       </label>
                       <select
                         value={columnMapping[key]}
                         onChange={(e) => setColumnMapping(prev => ({ ...prev, [key]: e.target.value }))}
-                        className="w-full px-2 py-1 rounded text-xs"
+                        className="w-full px-2 py-1 rounded text-sm"
                         style={{
                           background: 'var(--bg-primary)',
                           border: '1px solid var(--border-primary)',
@@ -936,14 +936,14 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
             <div className="p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
               <div className="flex items-center justify-between mb-4">
                 <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('winRate')}</div>
-                <div className="text-xs px-2 py-1 rounded-full" style={{ background: 'var(--bg-primary)', color: 'var(--text-tertiary)' }}>
+                <div className="text-sm px-2 py-1 rounded-full" style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
                   {result.totalRuns.toLocaleString()}전
                 </div>
               </div>
 
               <div className="space-y-4">
                 <div>
-                  <div className="flex items-center justify-between text-xs mb-2">
+                  <div className="flex items-center justify-between text-sm mb-2">
                     <span className="font-medium" style={{ color: 'var(--primary-blue)' }}>{unit1Stats.name}</span>
                     <span className="px-2 py-0.5 rounded" style={{ background: 'var(--primary-blue)15', color: 'var(--primary-blue)' }}>
                       {result.unit1Wins.toLocaleString()}승
@@ -959,7 +959,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                 </div>
 
                 <div>
-                  <div className="flex items-center justify-between text-xs mb-2">
+                  <div className="flex items-center justify-between text-sm mb-2">
                     <span className="font-medium" style={{ color: 'var(--primary-red)' }}>{unit2Stats.name}</span>
                     <span className="px-2 py-0.5 rounded" style={{ background: 'var(--primary-red)15', color: 'var(--primary-red)' }}>
                       {result.unit2Wins.toLocaleString()}승
@@ -976,8 +976,8 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
 
                 {result.draws > 0 && (
                   <div className="flex items-center justify-center gap-2 pt-2 border-t" style={{ borderColor: 'var(--border-primary)' }}>
-                    <div className="w-3 h-3 rounded-full" style={{ background: 'var(--text-tertiary)' }} />
-                    <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="w-3 h-3 rounded-full" style={{ background: 'var(--text-secondary)' }} />
+                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                       {t('draw')}: {result.draws.toLocaleString()} ({((result.draws / result.totalRuns) * 100).toFixed(1)}%)
                     </span>
                   </div>
@@ -997,7 +997,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                 </div>
                 <div className="space-y-3">
                   <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                    <div className="text-xs mb-1 font-medium" style={{ color: 'var(--primary-blue)' }}>
+                    <div className="text-sm mb-1 font-medium" style={{ color: 'var(--primary-blue)' }}>
                       {unit1Stats.name}
                     </div>
                     {result.ttkStats?.unit1 && result.ttkStats.unit1.avg > 0 ? (
@@ -1005,16 +1005,16 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                         <span className="text-xl font-bold" style={{ color: 'var(--primary-blue)' }}>
                           {result.ttkStats.unit1.avg.toFixed(1)}s
                         </span>
-                        <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                        <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                           ({result.ttkStats.unit1.min.toFixed(1)}~{result.ttkStats.unit1.max.toFixed(1)}s)
                         </span>
                       </div>
                     ) : (
-                      <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('noWin')}</span>
+                      <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('noWin')}</span>
                     )}
                   </div>
                   <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                    <div className="text-xs mb-1 font-medium" style={{ color: 'var(--primary-red)' }}>
+                    <div className="text-sm mb-1 font-medium" style={{ color: 'var(--primary-red)' }}>
                       {unit2Stats.name}
                     </div>
                     {result.ttkStats?.unit2 && result.ttkStats.unit2.avg > 0 ? (
@@ -1022,12 +1022,12 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                         <span className="text-xl font-bold" style={{ color: 'var(--primary-red)' }}>
                           {result.ttkStats.unit2.avg.toFixed(1)}s
                         </span>
-                        <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                        <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                           ({result.ttkStats.unit2.min.toFixed(1)}~{result.ttkStats.unit2.max.toFixed(1)}s)
                         </span>
                       </div>
                     ) : (
-                      <span className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('noWin')}</span>
+                      <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('noWin')}</span>
                     )}
                   </div>
                 </div>
@@ -1043,28 +1043,28 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                 </div>
                 <div className="space-y-3">
                   <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                    <div className="text-xs mb-1 font-medium" style={{ color: 'var(--primary-blue)' }}>{unit1Stats.name}</div>
+                    <div className="text-sm mb-1 font-medium" style={{ color: 'var(--primary-blue)' }}>{unit1Stats.name}</div>
                     <div className="flex items-baseline gap-2">
                       <span className="text-xl font-bold" style={{ color: 'var(--primary-blue)' }}>
                         {result.unit1AvgDps.toFixed(1)}
                       </span>
-                      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>DPS</span>
+                      <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>DPS</span>
                       {result.theoreticalDps && result.unit1AvgDps < result.theoreticalDps.unit1 * 0.9 && (
-                        <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: '#fef3c720', color: '#eab308' }}>
+                        <span className="text-sm px-1.5 py-0.5 rounded" style={{ background: '#fef3c720', color: '#eab308' }}>
                           -{((1 - result.unit1AvgDps / result.theoreticalDps.unit1) * 100).toFixed(0)}%
                         </span>
                       )}
                     </div>
                   </div>
                   <div className="p-2 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                    <div className="text-xs mb-1 font-medium" style={{ color: 'var(--primary-red)' }}>{unit2Stats.name}</div>
+                    <div className="text-sm mb-1 font-medium" style={{ color: 'var(--primary-red)' }}>{unit2Stats.name}</div>
                     <div className="flex items-baseline gap-2">
                       <span className="text-xl font-bold" style={{ color: 'var(--primary-red)' }}>
                         {result.unit2AvgDps.toFixed(1)}
                       </span>
-                      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>DPS</span>
+                      <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>DPS</span>
                       {result.theoreticalDps && result.unit2AvgDps < result.theoreticalDps.unit2 * 0.9 && (
-                        <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: '#fef3c720', color: '#eab308' }}>
+                        <span className="text-sm px-1.5 py-0.5 rounded" style={{ background: '#fef3c720', color: '#eab308' }}>
                           -{((1 - result.unit2AvgDps / result.theoreticalDps.unit2) * 100).toFixed(0)}%
                         </span>
                       )}
@@ -1077,21 +1077,21 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
             {/* 통계 요약 - 개선된 카드 */}
             <div className="grid grid-cols-3 gap-2">
               <div className="p-3 rounded-xl text-center transition-transform hover:scale-105" style={{ background: 'linear-gradient(135deg, var(--bg-tertiary), var(--bg-primary))', border: '1px solid var(--border-primary)' }}>
-                <div className="text-xs mb-1 font-medium" style={{ color: 'var(--text-tertiary)' }}>{t('avgBattleTime')}</div>
+                <div className="text-sm mb-1 font-medium" style={{ color: 'var(--text-secondary)' }}>{t('avgBattleTime')}</div>
                 <div className="text-xl font-bold" style={{ color: 'var(--accent)' }}>
                   {result.avgDuration.toFixed(1)}<span className="text-sm font-normal">s</span>
                 </div>
               </div>
               <div className="p-3 rounded-xl text-center transition-transform hover:scale-105" style={{ background: 'linear-gradient(135deg, var(--bg-tertiary), var(--bg-primary))', border: '1px solid var(--border-primary)' }}>
-                <div className="text-xs mb-1 font-medium" style={{ color: 'var(--text-tertiary)' }}>{t('totalSimulations')}</div>
+                <div className="text-sm mb-1 font-medium" style={{ color: 'var(--text-secondary)' }}>{t('totalSimulations')}</div>
                 <div className="text-xl font-bold" style={{ color: 'var(--text-primary)' }}>
                   {result.totalRuns >= 1000 ? `${(result.totalRuns / 1000).toFixed(0)}K` : result.totalRuns}
                 </div>
               </div>
               <div className="p-3 rounded-xl text-center transition-transform hover:scale-105" style={{ background: 'linear-gradient(135deg, var(--bg-tertiary), var(--bg-primary))', border: '1px solid var(--border-primary)' }}>
-                <div className="text-xs mb-1 font-medium" style={{ color: 'var(--text-tertiary)' }}>{t('timeRange')}</div>
+                <div className="text-sm mb-1 font-medium" style={{ color: 'var(--text-secondary)' }}>{t('timeRange')}</div>
                 <div className="text-sm font-bold" style={{ color: 'var(--text-primary)' }}>
-                  {result.minDuration.toFixed(1)}~{result.maxDuration.toFixed(1)}<span className="text-xs font-normal">s</span>
+                  {result.minDuration.toFixed(1)}~{result.maxDuration.toFixed(1)}<span className="text-sm font-normal">s</span>
                 </div>
               </div>
             </div>
@@ -1132,9 +1132,9 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
             >
               <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t('detailedStats')}</span>
               {showDetailedStats ? (
-                <ChevronUp className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+                <ChevronUp className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
               ) : (
-                <ChevronDown className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+                <ChevronDown className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
               )}
             </button>
 
@@ -1143,22 +1143,22 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
                   <div>
                     <div className="font-medium mb-2" style={{ color: 'var(--primary-blue)' }}>{unit1Stats.name}</div>
-                    <div className="space-y-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="space-y-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
                       <div>{t('wins')}: {result.unit1Wins}</div>
                       <div>{t('avgDamage')}: {result.unit1AvgDamage.toFixed(0)}</div>
                       <div>{t('avgSurvivalHp')}: {result.unit1AvgSurvivalHp.toFixed(0)}</div>
                     </div>
                   </div>
                   <div>
-                    <div className="font-medium mb-2" style={{ color: 'var(--text-tertiary)' }}>{t('draw')}</div>
-                    <div className="space-y-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>{t('draw')}</div>
+                    <div className="space-y-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
                       <div>{result.draws.toLocaleString()}</div>
                       <div>({((result.draws / result.totalRuns) * 100).toFixed(1)}%)</div>
                     </div>
                   </div>
                   <div>
                     <div className="font-medium mb-2" style={{ color: 'var(--primary-red)' }}>{unit2Stats.name}</div>
-                    <div className="space-y-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="space-y-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
                       <div>{t('wins')}: {result.unit2Wins}</div>
                       <div>{t('avgDamage')}: {result.unit2AvgDamage.toFixed(0)}</div>
                       <div>{t('avgSurvivalHp')}: {result.unit2AvgSurvivalHp.toFixed(0)}</div>
@@ -1167,7 +1167,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                 </div>
 
                 <div className="pt-3 border-t" style={{ borderColor: 'var(--border-primary)' }}>
-                  <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                  <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                     {t('battleTimeRange')}: {result.minDuration.toFixed(1)}s ~ {result.maxDuration.toFixed(1)}s
                   </div>
                 </div>
@@ -1185,7 +1185,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                   <select
                     value={selectedBattleIndex}
                     onChange={(e) => setSelectedBattleIndex(Number(e.target.value))}
-                    className="px-2 py-1 rounded text-xs"
+                    className="px-2 py-1 rounded text-sm"
                     style={{
                       background: 'var(--bg-primary)',
                       border: '1px solid var(--border-primary)',
@@ -1201,7 +1201,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                 {/* HP 타임라인 그래프 */}
                 {result.sampleBattles[selectedBattleIndex]?.log && (
                   <div className="pt-2">
-                    <div className="text-xs mb-2 font-medium" style={{ color: 'var(--text-secondary)' }}>{t('hpTimeline')}</div>
+                    <div className="text-sm mb-2 font-medium" style={{ color: 'var(--text-secondary)' }}>{t('hpTimeline')}</div>
                     <HpTimelineGraph
                       log={result.sampleBattles[selectedBattleIndex].log}
                       unit1Name={unit1Stats.name}
@@ -1216,12 +1216,12 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                   {result.sampleBattles[selectedBattleIndex]?.log.map((entry, i) => (
                     <div
                       key={i}
-                      className="flex items-center gap-2 text-xs py-1 px-2 rounded"
+                      className="flex items-center gap-2 text-sm py-1 px-2 rounded"
                       style={{
                         background: entry.action === 'death' ? 'rgba(255, 0, 0, 0.1)' : 'transparent'
                       }}
                     >
-                      <span className="w-12 text-right" style={{ color: 'var(--text-tertiary)' }}>
+                      <span className="w-12 text-right" style={{ color: 'var(--text-secondary)' }}>
                         {entry.time.toFixed(1)}s
                       </span>
                       <span
@@ -1234,7 +1234,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                       </span>
                       {entry.action === 'attack' && (
                         <>
-                          <span style={{ color: 'var(--text-tertiary)' }}>→</span>
+                          <span style={{ color: 'var(--text-secondary)' }}>→</span>
                           <span style={{ color: 'var(--text-secondary)' }}>
                             {entry.isMiss ? (
                               <span className="text-yellow-500">MISS</span>
@@ -1245,7 +1245,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                               </>
                             )}
                           </span>
-                          <span style={{ color: 'var(--text-tertiary)' }}>
+                          <span style={{ color: 'var(--text-secondary)' }}>
                             ({entry.target} HP: {entry.remainingHp?.toFixed(0)})
                           </span>
                         </>
@@ -1257,7 +1257,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                   ))}
                 </div>
 
-                <div className="text-xs pt-2 border-t" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
+                <div className="text-sm pt-2 border-t" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-secondary)' }}>
                   {t('winner')}: <span className="font-medium" style={{
                     color: result.sampleBattles[selectedBattleIndex]?.winner === 'unit1'
                       ? 'var(--primary-blue)'
@@ -1280,18 +1280,18 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
             {result.critStats && result.reversalAnalysis && (
               <div className="p-4 rounded-xl space-y-4" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
                 <div className="flex items-center gap-2">
-                  <TrendingUp className="w-4 h-4" style={{ color: '#f59e0b' }} />
+                  <TrendingUp className="w-4 h-4" style={{ color: '#e5a440' }} />
                   <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('critAnalysis')}</span>
                 </div>
 
                 {/* 치명타 통계 */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                    <div className="text-xs font-medium mb-2" style={{ color: 'var(--primary-blue)' }}>{unit1Stats.name}</div>
-                    <div className="space-y-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="text-sm font-medium mb-2" style={{ color: 'var(--primary-blue)' }}>{unit1Stats.name}</div>
+                    <div className="space-y-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
                       <div className="flex justify-between">
                         <span>{t('totalCrits')}</span>
-                        <span className="font-medium" style={{ color: '#f59e0b' }}>{result.critStats.unit1.totalCrits.toLocaleString()}</span>
+                        <span className="font-medium" style={{ color: '#e5a440' }}>{result.critStats.unit1.totalCrits.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>{t('totalHits')}</span>
@@ -1299,18 +1299,18 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                       </div>
                       <div className="flex justify-between">
                         <span>{t('actualCritRate')}</span>
-                        <span className="font-medium" style={{ color: result.critStats.unit1.avgCritRate > (unit1Stats.critRate || 0) ? '#22c55e' : 'var(--text-secondary)' }}>
+                        <span className="font-medium" style={{ color: result.critStats.unit1.avgCritRate > (unit1Stats.critRate || 0) ? '#3db88a' : 'var(--text-secondary)' }}>
                           {(result.critStats.unit1.avgCritRate * 100).toFixed(1)}%
                         </span>
                       </div>
                     </div>
                   </div>
                   <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
-                    <div className="text-xs font-medium mb-2" style={{ color: 'var(--primary-red)' }}>{unit2Stats.name}</div>
-                    <div className="space-y-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="text-sm font-medium mb-2" style={{ color: 'var(--primary-red)' }}>{unit2Stats.name}</div>
+                    <div className="space-y-1 text-sm" style={{ color: 'var(--text-secondary)' }}>
                       <div className="flex justify-between">
                         <span>{t('totalCrits')}</span>
-                        <span className="font-medium" style={{ color: '#f59e0b' }}>{result.critStats.unit2.totalCrits.toLocaleString()}</span>
+                        <span className="font-medium" style={{ color: '#e5a440' }}>{result.critStats.unit2.totalCrits.toLocaleString()}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>{t('totalHits')}</span>
@@ -1318,7 +1318,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                       </div>
                       <div className="flex justify-between">
                         <span>{t('actualCritRate')}</span>
-                        <span className="font-medium" style={{ color: result.critStats.unit2.avgCritRate > (unit2Stats.critRate || 0) ? '#22c55e' : 'var(--text-secondary)' }}>
+                        <span className="font-medium" style={{ color: result.critStats.unit2.avgCritRate > (unit2Stats.critRate || 0) ? '#3db88a' : 'var(--text-secondary)' }}>
                           {(result.critStats.unit2.avgCritRate * 100).toFixed(1)}%
                         </span>
                       </div>
@@ -1328,27 +1328,27 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
 
                 {/* 역전 분석 */}
                 <div className="pt-3 border-t" style={{ borderColor: 'var(--border-primary)' }}>
-                  <div className="text-xs font-medium mb-3" style={{ color: 'var(--text-secondary)' }}>{t('reversalAnalysis')}</div>
+                  <div className="text-sm font-medium mb-3" style={{ color: 'var(--text-secondary)' }}>{t('reversalAnalysis')}</div>
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                     <div className="p-2 rounded-lg text-center" style={{ background: 'var(--bg-primary)' }}>
                       <div className="text-lg font-bold" style={{ color: 'var(--primary-blue)' }}>{result.reversalAnalysis.unit1Reversals}</div>
-                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{unit1Stats.name} {t('reversalWins')}</div>
+                      <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{unit1Stats.name} {t('reversalWins')}</div>
                     </div>
                     <div className="p-2 rounded-lg text-center" style={{ background: 'var(--bg-primary)' }}>
                       <div className="text-lg font-bold" style={{ color: 'var(--primary-red)' }}>{result.reversalAnalysis.unit2Reversals}</div>
-                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{unit2Stats.name} {t('reversalWins')}</div>
+                      <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{unit2Stats.name} {t('reversalWins')}</div>
                     </div>
                     <div className="p-2 rounded-lg text-center" style={{ background: 'var(--bg-primary)' }}>
-                      <div className="text-lg font-bold" style={{ color: '#f59e0b' }}>{result.reversalAnalysis.critCausedReversals}</div>
-                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('critReversals')}</div>
+                      <div className="text-lg font-bold" style={{ color: '#e5a440' }}>{result.reversalAnalysis.critCausedReversals}</div>
+                      <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('critReversals')}</div>
                     </div>
                     <div className="p-2 rounded-lg text-center" style={{ background: 'var(--bg-primary)' }}>
-                      <div className="text-lg font-bold" style={{ color: '#8b5cf6' }}>{result.reversalAnalysis.closeMatches}</div>
-                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('closeMatches')}</div>
+                      <div className="text-lg font-bold" style={{ color: '#9179f2' }}>{result.reversalAnalysis.closeMatches}</div>
+                      <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('closeMatches')}</div>
                     </div>
                   </div>
                   {(result.reversalAnalysis.unit1Reversals > 0 || result.reversalAnalysis.unit2Reversals > 0) && (
-                    <div className="mt-2 text-xs text-center" style={{ color: 'var(--text-tertiary)' }}>
+                    <div className="mt-2 text-sm text-center" style={{ color: 'var(--text-secondary)' }}>
                       {t('reversalRate')}: {(((result.reversalAnalysis.unit1Reversals + result.reversalAnalysis.unit2Reversals) / result.totalRuns) * 100).toFixed(1)}%
                     </div>
                   )}
@@ -1381,10 +1381,10 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
         {/* 유닛이 없을 때 안내 (1v1 모드) */}
         {battleMode === '1v1' && units.length === 0 && (
           <div className="text-center py-8">
-            <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+            <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
               {t('noUnitData')}
             </div>
-            <div className="text-xs mt-2" style={{ color: 'var(--text-tertiary)' }}>
+            <div className="text-sm mt-2" style={{ color: 'var(--text-secondary)' }}>
               {t('noUnitDataDesc')}
             </div>
           </div>
@@ -1401,14 +1401,14 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="text-sm font-medium" style={{ color: 'var(--primary-blue)' }}>Team 1</div>
-                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--primary-blue)20', color: 'var(--primary-blue)' }}>
+                    <span className="text-sm px-1.5 py-0.5 rounded" style={{ background: 'var(--primary-blue)20', color: 'var(--primary-blue)' }}>
                       {team1Units.length}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => setTeamUnitModal({ isOpen: true, teamNumber: 1, editUnit: null })}
-                      className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105"
+                      className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm font-medium transition-all hover:scale-105"
                       style={{ background: 'var(--primary-blue)15', color: 'var(--primary-blue)', border: '1.5px solid var(--primary-blue)' }}
                     >
                       <User className="w-3 h-3" />
@@ -1433,12 +1433,12 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                       onClick={() => setTeamUnitModal({ isOpen: true, teamNumber: 1, editUnit: unit })}
                     >
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded flex items-center justify-center text-xs font-bold" style={{ background: 'var(--primary-blue)20', color: 'var(--primary-blue)' }}>
+                        <div className="w-6 h-6 rounded flex items-center justify-center text-sm font-bold" style={{ background: 'var(--primary-blue)20', color: 'var(--primary-blue)' }}>
                           {i + 1}
                         </div>
                         <div>
                           <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{unit.name}</div>
-                          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                          <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
                             <span>HP:{unit.maxHp}</span>
                             <span>ATK:{unit.atk}</span>
                             <span>DEF:{unit.def}</span>
@@ -1449,12 +1449,12 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                         onClick={(e) => { e.stopPropagation(); removeFromTeam(1, unit.id); }}
                         className="p-1 rounded hover:bg-[var(--bg-tertiary)] transition-colors"
                       >
-                        <X className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+                        <X className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
                       </button>
                     </div>
                   ))}
                   {team1Units.length === 0 && (
-                    <div className="text-center py-4 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                    <div className="text-center py-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
                       {t('clickNewUnitOrSheet')}
                     </div>
                   )}
@@ -1466,14 +1466,14 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
                     <div className="text-sm font-medium" style={{ color: 'var(--primary-red)' }}>Team 2</div>
-                    <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--primary-red)20', color: 'var(--primary-red)' }}>
+                    <span className="text-sm px-1.5 py-0.5 rounded" style={{ background: 'var(--primary-red)20', color: 'var(--primary-red)' }}>
                       {team2Units.length}
                     </span>
                   </div>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => setTeamUnitModal({ isOpen: true, teamNumber: 2, editUnit: null })}
-                      className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105"
+                      className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm font-medium transition-all hover:scale-105"
                       style={{ background: 'var(--primary-red)15', color: 'var(--primary-red)', border: '1.5px solid var(--primary-red)' }}
                     >
                       <User className="w-3 h-3" />
@@ -1498,12 +1498,12 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                       onClick={() => setTeamUnitModal({ isOpen: true, teamNumber: 2, editUnit: unit })}
                     >
                       <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded flex items-center justify-center text-xs font-bold" style={{ background: 'var(--primary-red)20', color: 'var(--primary-red)' }}>
+                        <div className="w-6 h-6 rounded flex items-center justify-center text-sm font-bold" style={{ background: 'var(--primary-red)20', color: 'var(--primary-red)' }}>
                           {i + 1}
                         </div>
                         <div>
                           <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{unit.name}</div>
-                          <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                          <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
                             <span>HP:{unit.maxHp}</span>
                             <span>ATK:{unit.atk}</span>
                             <span>DEF:{unit.def}</span>
@@ -1514,12 +1514,12 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                         onClick={(e) => { e.stopPropagation(); removeFromTeam(2, unit.id); }}
                         className="p-1 rounded hover:bg-[var(--bg-tertiary)] transition-colors"
                       >
-                        <X className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+                        <X className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
                       </button>
                     </div>
                   ))}
                   {team2Units.length === 0 && (
-                    <div className="text-center py-4 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                    <div className="text-center py-4 text-sm" style={{ color: 'var(--text-secondary)' }}>
                       {t('clickNewUnitOrSheet')}
                     </div>
                   )}
@@ -1529,13 +1529,13 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
 
             {/* 타겟팅 모드 선택 */}
             <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)' }}>
-              <label className="block text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>{t('targetingMode')}</label>
+              <label className="block text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>{t('targetingMode')}</label>
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                 {(['random', 'lowest_hp', 'highest_atk', 'focused'] as const).map(mode => (
                   <button
                     key={mode}
                     onClick={() => setTargetingMode(mode)}
-                    className="px-3 py-2 rounded-lg text-xs font-medium transition-colors"
+                    className="px-3 py-2 rounded-lg text-sm font-medium transition-colors"
                     style={{
                       background: targetingMode === mode ? 'var(--accent)' : 'var(--bg-primary)',
                       color: targetingMode === mode ? 'white' : 'var(--text-secondary)',
@@ -1595,14 +1595,14 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                 <div className="p-4 rounded-xl" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
                   <div className="flex items-center justify-between mb-4">
                     <div className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('teamWinRate')}</div>
-                    <div className="text-xs px-2 py-1 rounded-full" style={{ background: 'var(--bg-primary)', color: 'var(--text-tertiary)' }}>
+                    <div className="text-sm px-2 py-1 rounded-full" style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}>
                       {teamResult.totalRuns.toLocaleString()}전
                     </div>
                   </div>
 
                   <div className="space-y-4">
                     <div>
-                      <div className="flex items-center justify-between text-xs mb-2">
+                      <div className="flex items-center justify-between text-sm mb-2">
                         <span className="font-medium" style={{ color: 'var(--primary-blue)' }}>Team 1 ({team1Units.length}명)</span>
                         <span className="px-2 py-0.5 rounded" style={{ background: 'var(--primary-blue)15', color: 'var(--primary-blue)' }}>
                           {teamResult.team1Wins.toLocaleString()}승
@@ -1623,7 +1623,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                     </div>
 
                     <div>
-                      <div className="flex items-center justify-between text-xs mb-2">
+                      <div className="flex items-center justify-between text-sm mb-2">
                         <span className="font-medium" style={{ color: 'var(--primary-red)' }}>Team 2 ({team2Units.length}명)</span>
                         <span className="px-2 py-0.5 rounded" style={{ background: 'var(--primary-red)15', color: 'var(--primary-red)' }}>
                           {teamResult.team2Wins.toLocaleString()}승
@@ -1645,7 +1645,7 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
 
                     {teamResult.draws > 0 && (
                       <div className="flex items-center justify-center gap-2 pt-2 border-t" style={{ borderColor: 'var(--border-primary)' }}>
-                        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                        <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                           {t('draw')}: {teamResult.draws.toLocaleString()} ({((teamResult.draws / teamResult.totalRuns) * 100).toFixed(1)}%)
                         </span>
                       </div>
@@ -1656,19 +1656,19 @@ export default function SimulationPanel({ onClose, showHelp = false, setShowHelp
                 {/* 통계 */}
                 <div className="grid grid-cols-3 gap-2">
                   <div className="p-3 rounded-xl text-center" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
-                    <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('avgBattleTime')}</div>
+                    <div className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>{t('avgBattleTime')}</div>
                     <div className="text-xl font-bold" style={{ color: 'var(--accent)' }}>
                       {teamResult.avgDuration.toFixed(1)}s
                     </div>
                   </div>
                   <div className="p-3 rounded-xl text-center" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
-                    <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('avgSurvivors')} (T1)</div>
+                    <div className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>{t('avgSurvivors')} (T1)</div>
                     <div className="text-xl font-bold" style={{ color: 'var(--primary-blue)' }}>
                       {teamResult.avgTeam1Survivors.toFixed(1)}
                     </div>
                   </div>
                   <div className="p-3 rounded-xl text-center" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
-                    <div className="text-xs mb-1" style={{ color: 'var(--text-tertiary)' }}>{t('avgSurvivors')} (T2)</div>
+                    <div className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>{t('avgSurvivors')} (T2)</div>
                     <div className="text-xl font-bold" style={{ color: 'var(--primary-red)' }}>
                       {teamResult.avgTeam2Survivors.toFixed(1)}
                     </div>

@@ -5,7 +5,7 @@ import { X, TrendingUp, GitBranch, Target, AlertTriangle, BarChart2, HelpCircle,
 import { cn } from '@/lib/utils';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 
-const PANEL_COLOR = '#6366f1';
+const PANEL_COLOR = '#7c7ff2'; // 소프트 인디고
 
 // 커스텀 스크롤바 스타일
 const customScrollStyle = `
@@ -20,7 +20,7 @@ const customScrollStyle = `
     border-radius: 3px;
   }
   .custom-tab-scroll::-webkit-scrollbar-thumb:hover {
-    background: var(--text-tertiary);
+    background: var(--text-secondary);
   }
   .custom-tab-scroll {
     scrollbar-width: thin;
@@ -158,16 +158,16 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
   };
 
   const tabs: { id: AnalysisTab; label: string; icon: React.ReactNode; tooltip: string; color: string }[] = [
-    { id: 'matchup', label: '상성 분석', icon: <GitBranch className="w-4 h-4" />, tooltip: '가위바위보 상성 관계 분석', color: '#6366f1' },
-    { id: 'power', label: '파워 커브', icon: <TrendingUp className="w-4 h-4" />, tooltip: '레벨별 스탯 성장 패턴 분석', color: '#22c55e' },
-    { id: 'correlation', label: '상관관계', icon: <BarChart2 className="w-4 h-4" />, tooltip: '스탯 간 상관계수 분석', color: '#3b82f6' },
-    { id: 'deadzone', label: '데드존', icon: <AlertTriangle className="w-4 h-4" />, tooltip: '활용되지 않는 스탯 구간 탐지', color: '#f59e0b' },
-    { id: 'curve', label: '커브 생성', icon: <Target className="w-4 h-4" />, tooltip: '밸런스 곡선 자동 생성', color: '#8b5cf6' },
+    { id: 'matchup', label: '상성 분석', icon: <GitBranch className="w-4 h-4" />, tooltip: '가위바위보 상성 관계 분석', color: '#7c7ff2' },
+    { id: 'power', label: '파워 커브', icon: <TrendingUp className="w-4 h-4" />, tooltip: '레벨별 스탯 성장 패턴 분석', color: '#3db88a' },
+    { id: 'correlation', label: '상관관계', icon: <BarChart2 className="w-4 h-4" />, tooltip: '스탯 간 상관계수 분석', color: '#5a9cf5' },
+    { id: 'deadzone', label: '데드존', icon: <AlertTriangle className="w-4 h-4" />, tooltip: '활용되지 않는 스탯 구간 탐지', color: '#e5a440' },
+    { id: 'curve', label: '커브 생성', icon: <Target className="w-4 h-4" />, tooltip: '밸런스 곡선 자동 생성', color: '#9179f2' },
   ];
 
   // 승률 매트릭스 색상 함수 (모달과 공유)
   const getMatrixColor = (rate: number, isSelf: boolean) => {
-    if (isSelf) return { bg: 'var(--bg-primary)', text: 'var(--text-tertiary)' };
+    if (isSelf) return { bg: 'var(--bg-primary)', text: 'var(--text-secondary)' };
 
     // 우세 (부드러운 민트/청록)
     if (rate >= 0.7) return { bg: '#6ec9b8', text: '#1a4a42' }; // 진한 민트
@@ -202,10 +202,10 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
               <div className="glass-panel-header flex items-center justify-between px-6 py-4 shrink-0">
                 <div>
                   <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>승률 매트릭스</h2>
-                  <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>행 유닛이 열 유닛을 상대로 한 승률</p>
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>행 유닛이 열 유닛을 상대로 한 승률</p>
                 </div>
                 <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-3 text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                  <div className="flex items-center gap-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
                     <div className="flex items-center gap-1.5">
                       <div className="w-4 h-4 rounded" style={{ background: '#e8a9a9' }} />
                       <span>열세</span>
@@ -222,7 +222,7 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                   <button
                     onClick={() => setShowMatrixModal(false)}
                     className="glass-button p-2 rounded-lg"
-                    style={{ color: 'var(--text-tertiary)' }}
+                    style={{ color: 'var(--text-secondary)' }}
                   >
                     <X className="w-5 h-5" />
                   </button>
@@ -244,7 +244,7 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                     className="flex items-center justify-center rounded-tl-lg"
                     style={{ background: 'var(--bg-tertiary)' }}
                   >
-                    <span className="text-sm font-medium" style={{ color: 'var(--text-tertiary)' }}>vs</span>
+                    <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>vs</span>
                   </div>
 
                   {/* 헤더 행 */}
@@ -331,8 +331,8 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                 <>
                   <span style={{ color: currentTab?.color }}>{currentTab?.icon}</span>
                   <span className="text-sm font-medium flex-1" style={{ color: currentTab?.color }}>{currentTab?.label}</span>
-                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{currentTab?.tooltip}</span>
-                  <ChevronDown className={cn("w-4 h-4 transition-transform duration-200 ml-1", showTabDropdown && "rotate-180")} style={{ color: 'var(--text-tertiary)' }} />
+                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{currentTab?.tooltip}</span>
+                  <ChevronDown className={cn("w-4 h-4 transition-transform duration-200 ml-1", showTabDropdown && "rotate-180")} style={{ color: 'var(--text-secondary)' }} />
                 </>
               );
             })()}
@@ -371,7 +371,7 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                         <span className="text-sm font-medium" style={{ color: isActive ? tab.color : 'var(--text-primary)' }}>
                           {tab.label}
                         </span>
-                        <span className="text-xs flex-1 text-right" style={{ color: 'var(--text-tertiary)' }}>
+                        <span className="text-sm flex-1 text-right" style={{ color: 'var(--text-secondary)' }}>
                           {tab.tooltip}
                         </span>
                       </button>
@@ -394,65 +394,65 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
 
             <div className="space-y-3">
               {/* 상성 분석 */}
-              <div className="glass-section p-3 rounded-lg" style={{ borderLeft: '3px solid #6366f1' }}>
+              <div className="glass-section p-3 rounded-lg" style={{ borderLeft: '3px solid #7c7ff2' }}>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <GitBranch className="w-4 h-4" style={{ color: '#6366f1' }} />
-                  <span className="font-semibold text-sm" style={{ color: '#6366f1' }}>상성 분석</span>
+                  <GitBranch className="w-4 h-4" style={{ color: '#7c7ff2' }} />
+                  <span className="font-semibold text-sm" style={{ color: '#7c7ff2' }}>상성 분석</span>
                 </div>
                 <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>유닛 간 1:1 전투 시뮬레이션으로 승률 매트릭스 생성</p>
-                <div className="mt-2 text-xs space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                <div className="mt-2 text-sm space-y-0.5" style={{ color: 'var(--text-secondary)' }}>
                   <div>- 필요 컬럼: name, hp, atk, def, speed</div>
                   <div>- 결과: 승률표, OP/약캐 감지, 가위바위보 순환 탐지</div>
                 </div>
               </div>
 
               {/* 파워 커브 */}
-              <div className="glass-section p-3 rounded-lg" style={{ borderLeft: '3px solid #22c55e' }}>
+              <div className="glass-section p-3 rounded-lg" style={{ borderLeft: '3px solid #3db88a' }}>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <TrendingUp className="w-4 h-4" style={{ color: '#22c55e' }} />
-                  <span className="font-semibold text-sm" style={{ color: '#22c55e' }}>파워 커브</span>
+                  <TrendingUp className="w-4 h-4" style={{ color: '#3db88a' }} />
+                  <span className="font-semibold text-sm" style={{ color: '#3db88a' }}>파워 커브</span>
                 </div>
                 <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>레벨별 파워가 어떤 패턴으로 성장하는지 분석</p>
-                <div className="mt-2 text-xs space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                <div className="mt-2 text-sm space-y-0.5" style={{ color: 'var(--text-secondary)' }}>
                   <div>- 필요 컬럼: level + 스탯들</div>
                   <div>- 결과: 선형/지수/로그 타입, 이상치 감지</div>
                 </div>
               </div>
 
               {/* 상관관계 */}
-              <div className="glass-section p-3 rounded-lg" style={{ borderLeft: '3px solid #3b82f6' }}>
+              <div className="glass-section p-3 rounded-lg" style={{ borderLeft: '3px solid #5a9cf5' }}>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <BarChart2 className="w-4 h-4" style={{ color: '#3b82f6' }} />
-                  <span className="font-semibold text-sm" style={{ color: '#3b82f6' }}>상관관계</span>
+                  <BarChart2 className="w-4 h-4" style={{ color: '#5a9cf5' }} />
+                  <span className="font-semibold text-sm" style={{ color: '#5a9cf5' }}>상관관계</span>
                 </div>
                 <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>스탯 간 상관계수 분석 (HP-DEF 등)</p>
-                <div className="mt-2 text-xs space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                <div className="mt-2 text-sm space-y-0.5" style={{ color: 'var(--text-secondary)' }}>
                   <div>- 필요: 3개 이상 유닛</div>
                   <div>- 결과: 강한 상관(-1~1), 밸런스 의도 확인</div>
                 </div>
               </div>
 
               {/* 데드존 */}
-              <div className="glass-section p-3 rounded-lg" style={{ borderLeft: '3px solid #f59e0b' }}>
+              <div className="glass-section p-3 rounded-lg" style={{ borderLeft: '3px solid #e5a440' }}>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <AlertTriangle className="w-4 h-4" style={{ color: '#f59e0b' }} />
-                  <span className="font-semibold text-sm" style={{ color: '#f59e0b' }}>데드존</span>
+                  <AlertTriangle className="w-4 h-4" style={{ color: '#e5a440' }} />
+                  <span className="font-semibold text-sm" style={{ color: '#e5a440' }}>데드존</span>
                 </div>
                 <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>사용되지 않는 스탯 구간 자동 탐지</p>
-                <div className="mt-2 text-xs space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                <div className="mt-2 text-sm space-y-0.5" style={{ color: 'var(--text-secondary)' }}>
                   <div>- 자동 분석 (버튼 없음)</div>
                   <div>- 결과: 비어있는 구간, 밀집/분산 경고</div>
                 </div>
               </div>
 
               {/* 커브 생성 */}
-              <div className="glass-section p-3 rounded-lg" style={{ borderLeft: '3px solid #8b5cf6' }}>
+              <div className="glass-section p-3 rounded-lg" style={{ borderLeft: '3px solid #9179f2' }}>
                 <div className="flex items-center gap-2 mb-1.5">
-                  <Target className="w-4 h-4" style={{ color: '#8b5cf6' }} />
-                  <span className="font-semibold text-sm" style={{ color: '#8b5cf6' }}>커브 생성</span>
+                  <Target className="w-4 h-4" style={{ color: '#9179f2' }} />
+                  <span className="font-semibold text-sm" style={{ color: '#9179f2' }}>커브 생성</span>
                 </div>
                 <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>레벨별 스탯 성장표를 자동 생성</p>
-                <div className="mt-2 text-xs space-y-0.5" style={{ color: 'var(--text-tertiary)' }}>
+                <div className="mt-2 text-sm space-y-0.5" style={{ color: 'var(--text-secondary)' }}>
                   <div>- 입력: 기본스탯, 최대레벨, 성장률, 타입</div>
                   <div>- 결과: 복사해서 시트에 붙여넣기 가능</div>
                 </div>
@@ -466,11 +466,11 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
             {/* 탭 설명 */}
             <div className="glass-section p-3 rounded-lg" style={{ borderLeft: `3px solid ${PANEL_COLOR}` }}>
               <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>상성 분석 (Perfect Imbalance)</div>
-              <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>모든 유닛 조합의 전투를 시뮬레이션하여 상성 관계와 밸런스를 분석합니다. 지배적/약한 유닛과 가위바위보 순환 관계를 탐지합니다.</div>
+              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>모든 유닛 조합의 전투를 시뮬레이션하여 상성 관계와 밸런스를 분석합니다. 지배적/약한 유닛과 가위바위보 순환 관계를 탐지합니다.</div>
             </div>
             <div className="flex items-end gap-3">
               <div className="flex-1">
-                <label className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                <label className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                   매치당 시뮬레이션 횟수
                 </label>
                 <select
@@ -502,7 +502,7 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                       <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
                         밸런스 점수
                       </span>
-                      <span className="glass-badge text-xs px-2 py-0.5 rounded-full font-medium" style={{
+                      <span className="glass-badge text-sm px-2 py-0.5 rounded-full font-medium" style={{
                         background: matchupResult.balanceScore >= 70
                           ? 'rgba(34, 197, 94, 0.15)'
                           : matchupResult.balanceScore >= 40
@@ -530,7 +530,7 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                       >
                         {matchupResult.balanceScore.toFixed(0)}
                       </span>
-                      <span className="text-sm mb-1" style={{ color: 'var(--text-tertiary)' }}>/ 100</span>
+                      <span className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>/ 100</span>
                     </div>
                     <div className="glass-progress mt-3 h-3 rounded-full overflow-hidden">
                       <div
@@ -538,10 +538,10 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                         style={{
                           width: `${matchupResult.balanceScore}%`,
                           background: matchupResult.balanceScore >= 70
-                            ? 'linear-gradient(90deg, #22c55e, #4ade80)'
+                            ? 'linear-gradient(90deg, #3db88a, #5cc9a0)'
                             : matchupResult.balanceScore >= 40
-                              ? 'linear-gradient(90deg, #f59e0b, #fbbf24)'
-                              : 'linear-gradient(90deg, #ef4444, #f87171)'
+                              ? 'linear-gradient(90deg, #e5a440, #f5c76a)'
+                              : 'linear-gradient(90deg, #e86161, #f08080)'
                         }}
                       />
                     </div>
@@ -554,16 +554,16 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                     {matchupResult.dominantUnits.length > 0 && (
                       <div className="p-4" style={{ background: 'rgba(239, 68, 68, 0.05)', borderBottom: matchupResult.weakUnits.length > 0 ? '1px solid var(--border-primary)' : 'none' }}>
                         <div className="flex items-center gap-2 mb-2">
-                          <div className="w-5 h-5 rounded flex items-center justify-center" style={{ background: 'rgba(239, 68, 68, 0.15)' }}>
-                            <AlertTriangle className="w-3 h-3" style={{ color: '#dc2626' }} />
+                          <div className="w-5 h-5 rounded flex items-center justify-center" style={{ background: 'rgba(232, 97, 97, 0.15)' }}>
+                            <AlertTriangle className="w-3 h-3" style={{ color: '#e86161' }} />
                           </div>
-                          <span className="text-xs font-semibold" style={{ color: '#dc2626' }}>
+                          <span className="text-sm font-semibold" style={{ color: '#e86161' }}>
                             지배적 유닛 (OP) - 너프 고려
                           </span>
                         </div>
                         <div className="flex flex-wrap gap-1.5">
                           {matchupResult.dominantUnits.map(u => (
-                            <span key={u} className="glass-badge px-2.5 py-1 rounded-lg text-xs font-medium" style={{ background: 'rgba(239, 68, 68, 0.12)', color: '#dc2626' }}>
+                            <span key={u} className="glass-badge px-2.5 py-1 rounded-lg text-sm font-medium" style={{ background: 'rgba(232, 97, 97, 0.12)', color: '#e86161' }}>
                               {u}
                             </span>
                           ))}
@@ -571,18 +571,18 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                       </div>
                     )}
                     {matchupResult.weakUnits.length > 0 && (
-                      <div className="p-4" style={{ background: 'rgba(59, 130, 246, 0.05)' }}>
+                      <div className="p-4" style={{ background: 'rgba(90, 156, 245, 0.05)' }}>
                         <div className="flex items-center gap-2 mb-2">
-                          <div className="w-5 h-5 rounded flex items-center justify-center" style={{ background: 'rgba(59, 130, 246, 0.15)' }}>
-                            <TrendingUp className="w-3 h-3 rotate-180" style={{ color: '#2563eb' }} />
+                          <div className="w-5 h-5 rounded flex items-center justify-center" style={{ background: 'rgba(90, 156, 245, 0.15)' }}>
+                            <TrendingUp className="w-3 h-3 rotate-180" style={{ color: '#5a9cf5' }} />
                           </div>
-                          <span className="text-xs font-semibold" style={{ color: '#2563eb' }}>
+                          <span className="text-sm font-semibold" style={{ color: '#5a9cf5' }}>
                             약한 유닛 - 버프 고려
                           </span>
                         </div>
                         <div className="flex flex-wrap gap-1.5">
                           {matchupResult.weakUnits.map(u => (
-                            <span key={u} className="glass-badge px-2.5 py-1 rounded-lg text-xs font-medium" style={{ background: 'rgba(59, 130, 246, 0.12)', color: '#2563eb' }}>
+                            <span key={u} className="glass-badge px-2.5 py-1 rounded-lg text-sm font-medium" style={{ background: 'rgba(90, 156, 245, 0.12)', color: '#5a9cf5' }}>
                               {u}
                             </span>
                           ))}
@@ -595,33 +595,33 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                 {/* 가위바위보 순환 - 개선된 카드 */}
                 {matchupResult.cycles.length > 0 && (
                   <div className="glass-card rounded-xl overflow-hidden">
-                    <div className="p-4" style={{ background: 'rgba(139, 92, 246, 0.05)' }}>
+                    <div className="p-4" style={{ background: 'rgba(145, 121, 242, 0.05)' }}>
                       <div className="flex items-center gap-2 mb-3">
-                        <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(139, 92, 246, 0.15)' }}>
-                          <GitBranch className="w-3.5 h-3.5" style={{ color: '#7c3aed' }} />
+                        <div className="w-6 h-6 rounded-lg flex items-center justify-center" style={{ background: 'rgba(145, 121, 242, 0.15)' }}>
+                          <GitBranch className="w-3.5 h-3.5" style={{ color: '#9179f2' }} />
                         </div>
                         <div>
-                          <div className="text-sm font-semibold" style={{ color: '#7c3aed' }}>
+                          <div className="text-sm font-semibold" style={{ color: '#9179f2' }}>
                             Perfect Imbalance 감지
                           </div>
-                          <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                          <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                             가위바위보처럼 순환하는 상성 관계
                           </div>
                         </div>
                       </div>
                       <div className="space-y-2">
                         {matchupResult.cycles.slice(0, 5).map((cycle, i) => (
-                          <div key={i} className="glass-section flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
-                            <span className="w-5 h-5 rounded-full flex items-center justify-center text-[10px]" style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#7c3aed' }}>
+                          <div key={i} className="glass-section flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
+                            <span className="w-5 h-5 rounded-full flex items-center justify-center text-sm" style={{ background: 'rgba(145, 121, 242, 0.15)', color: '#9179f2' }}>
                               {i + 1}
                             </span>
                             {cycle.map((unit, j) => (
                               <span key={j} className="flex items-center gap-1.5">
                                 <span>{unit}</span>
-                                {j < cycle.length - 1 && <span style={{ color: '#7c3aed' }}>→</span>}
+                                {j < cycle.length - 1 && <span style={{ color: '#9179f2' }}>→</span>}
                               </span>
                             ))}
-                            <span style={{ color: '#7c3aed' }}>→ {cycle[0]}</span>
+                            <span style={{ color: '#9179f2' }}>→ {cycle[0]}</span>
                           </div>
                         ))}
                       </div>
@@ -635,7 +635,7 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                     <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                       승률 매트릭스
                     </div>
-                    <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                    <div className="flex items-center gap-3 text-sm" style={{ color: 'var(--text-secondary)' }}>
                       <div className="flex items-center gap-1">
                         <div className="w-3 h-3 rounded" style={{ background: '#e8a9a9' }} />
                         <span>열세</span>
@@ -662,7 +662,7 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                       {/* 헤더 */}
                       <div className="flex">
                         <div className="w-20 h-10 flex items-center justify-center shrink-0" style={{ background: 'var(--bg-secondary)' }}>
-                          <span className="text-xs font-medium" style={{ color: 'var(--text-tertiary)' }}>vs</span>
+                          <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>vs</span>
                         </div>
                         {matchupResult.matrix.units.map((u, idx) => (
                           <div
@@ -670,7 +670,7 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                             className="w-14 h-10 flex items-center justify-center shrink-0 border-l"
                             style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}
                           >
-                            <span className="text-xs font-medium truncate px-1" style={{ color: 'var(--text-secondary)' }} title={u}>
+                            <span className="text-sm font-medium truncate px-1" style={{ color: 'var(--text-secondary)' }} title={u}>
                               {u.length > 5 ? u.slice(0, 4) + '..' : u}
                             </span>
                           </div>
@@ -680,7 +680,7 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                       {matchupResult.matrix.units.map((u, i) => (
                         <div key={u} className="flex border-t" style={{ borderColor: 'var(--border-primary)' }}>
                           <div className="w-20 h-10 flex items-center px-2 shrink-0" style={{ background: 'var(--bg-secondary)' }}>
-                            <span className="text-xs font-medium truncate" style={{ color: 'var(--text-secondary)' }} title={u}>
+                            <span className="text-sm font-medium truncate" style={{ color: 'var(--text-secondary)' }} title={u}>
                               {u.length > 8 ? u.slice(0, 7) + '..' : u}
                             </span>
                           </div>
@@ -698,7 +698,7 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                                 }}
                                 title={i === j ? '자기 자신' : `${u} vs ${matchupResult.matrix.units[j]}: ${(rate * 100).toFixed(1)}%`}
                               >
-                                <span className="text-xs font-medium">
+                                <span className="text-sm font-medium">
                                   {i === j ? '-' : `${(rate * 100).toFixed(0)}%`}
                                 </span>
                               </div>
@@ -709,7 +709,7 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                     </div>
                   </div>
                   {/* 범례 설명 */}
-                  <div className="mt-3 pt-3 border-t text-xs" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
+                  <div className="mt-3 pt-3 border-t text-sm" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-secondary)' }}>
                     행 유닛이 열 유닛을 상대로 한 승률입니다. 70% 이상은 강한 카운터 관계를 의미합니다.
                   </div>
                 </div>
@@ -717,7 +717,7 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
             )}
 
             {units.length < 2 && (
-              <div className="text-center py-8" style={{ color: 'var(--text-tertiary)' }}>
+              <div className="text-center py-8" style={{ color: 'var(--text-secondary)' }}>
                 최소 2개 이상의 유닛이 필요합니다.
               </div>
             )}
@@ -727,16 +727,16 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
         {activeTab === 'power' && (
           <div className="space-y-4">
             {/* 탭 설명 */}
-            <div className="glass-section p-3 rounded-lg" style={{ borderLeft: '3px solid #22c55e' }}>
+            <div className="glass-section p-3 rounded-lg" style={{ borderLeft: '3px solid #3db88a' }}>
               <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>파워 커브 분석</div>
-              <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>레벨별 스탯 성장이 선형/지수/로그 중 어떤 패턴인지 분석합니다. R² 값으로 피팅 정확도를 확인하세요. <strong style={{ color: '#22c55e' }}>level 컬럼 필수</strong></div>
+              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>레벨별 스탯 성장이 선형/지수/로그 중 어떤 패턴인지 분석합니다. R² 값으로 피팅 정확도를 확인하세요. <strong style={{ color: '#3db88a' }}>level 컬럼 필수</strong></div>
             </div>
 
             <button
               onClick={runPowerAnalysis}
               disabled={units.length < 2}
               className="glass-button-primary w-full px-4 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50"
-              style={{ background: '#10b981' }}
+              style={{ background: '#3db88a' }}
             >
               <div className="flex items-center justify-center gap-2">
                 <TrendingUp className="w-4 h-4" />
@@ -750,29 +750,29 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                 <div className="glass-card rounded-xl overflow-hidden">
                   <div className="grid grid-cols-2">
                     <div className="glass-stat p-4 text-center" style={{ borderRight: '1px solid var(--border-primary)' }}>
-                      <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>커브 타입</div>
-                      <div className="text-xl font-bold" style={{ color: '#10b981' }}>
+                      <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>커브 타입</div>
+                      <div className="text-xl font-bold" style={{ color: '#3db88a' }}>
                         {powerResult.curveType === 'linear' ? '선형' :
                           powerResult.curveType === 'exponential' ? '지수' : '로그'}
                       </div>
-                      <div className="text-[10px] mt-1" style={{ color: 'var(--text-tertiary)' }}>
+                      <div className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
                         {powerResult.curveType === 'linear' ? '일정한 성장' :
                           powerResult.curveType === 'exponential' ? '후반 급성장' : '초반 급성장'}
                       </div>
                     </div>
                     <div className="glass-stat p-4 text-center">
-                      <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>피팅 정확도</div>
+                      <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>피팅 정확도</div>
                       <div className="text-xl font-bold" style={{ color: powerResult.r2 >= 0.9 ? '#16a34a' : powerResult.r2 >= 0.7 ? '#d97706' : '#dc2626' }}>
                         {(powerResult.r2 * 100).toFixed(1)}%
                       </div>
-                      <div className="text-[10px] mt-1" style={{ color: 'var(--text-tertiary)' }}>
+                      <div className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
                         R² = {powerResult.r2.toFixed(3)}
                       </div>
                     </div>
                   </div>
                   <div className="glass-divider px-4 py-3 border-t" style={{ borderColor: 'var(--border-primary)' }}>
-                    <div className="text-[10px] mb-1" style={{ color: 'var(--text-tertiary)' }}>수식</div>
-                    <div className="glass-section text-xs font-mono px-2 py-1.5 rounded" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>수식</div>
+                    <div className="glass-section text-sm font-mono px-2 py-1.5 rounded" style={{ color: 'var(--text-secondary)' }}>
                       {powerResult.formula}
                     </div>
                   </div>
@@ -789,13 +789,13 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                     </div>
                     <div className="p-4 space-y-2">
                       {powerResult.outliers.map((o, i) => (
-                        <div key={i} className="glass-section flex items-center justify-between p-2.5 rounded-lg text-xs">
+                        <div key={i} className="glass-section flex items-center justify-between p-2.5 rounded-lg text-sm">
                           <span className="font-medium" style={{ color: 'var(--text-primary)' }}>레벨 {o.level}</span>
                           <div className="flex items-center gap-3">
                             <span style={{ color: 'var(--text-secondary)' }}>
                               실제: <strong>{o.power.toFixed(0)}</strong>
                             </span>
-                            <span style={{ color: 'var(--text-tertiary)' }}>
+                            <span style={{ color: 'var(--text-secondary)' }}>
                               예상: {o.expectedPower?.toFixed(0)}
                             </span>
                             <span className="glass-badge px-2 py-0.5 rounded-full font-medium" style={{
@@ -819,8 +819,8 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                     </div>
                     <div className="p-4 space-y-2">
                       {powerResult.recommendations.map((r, i) => (
-                        <div key={i} className="flex items-start gap-2 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                          <span className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 text-[10px] font-medium" style={{ background: 'rgba(16, 185, 129, 0.15)', color: '#10b981' }}>
+                        <div key={i} className="flex items-start gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
+                          <span className="w-4 h-4 rounded-full flex items-center justify-center shrink-0 text-sm font-medium" style={{ background: 'rgba(61, 184, 138, 0.15)', color: '#3db88a' }}>
                             {i + 1}
                           </span>
                           <span>{r}</span>
@@ -837,12 +837,12 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
         {activeTab === 'correlation' && (
           <div className="space-y-4">
             {/* 탭 설명 */}
-            <div className="glass-section p-3 rounded-lg" style={{ borderLeft: '3px solid #3b82f6' }}>
+            <div className="glass-section p-3 rounded-lg" style={{ borderLeft: '3px solid #5a9cf5' }}>
               <div className="font-medium text-sm mb-1" style={{ color: 'var(--text-primary)' }}>스탯 상관관계 분석</div>
-              <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                스탯 간의 통계적 연관성을 분석합니다. <strong style={{ color: '#22c55e' }}>+1에 가까우면 양의 상관</strong>(함께 증가), <strong style={{ color: '#ef4444' }}>-1에 가까우면 음의 상관</strong>(반대로 변화)입니다.
+              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+                스탯 간의 통계적 연관성을 분석합니다. <strong style={{ color: '#3db88a' }}>+1에 가까우면 양의 상관</strong>(함께 증가), <strong style={{ color: '#e86161' }}>-1에 가까우면 음의 상관</strong>(반대로 변화)입니다.
               </div>
-              <div className="text-xs mt-1.5" style={{ color: 'var(--text-tertiary)' }}>
+              <div className="text-sm mt-1.5" style={{ color: 'var(--text-secondary)' }}>
                 <strong>사용법:</strong> 분석 버튼을 클릭하면 모든 스탯 쌍의 상관계수를 계산합니다. 강한 상관관계(|r| &gt; 0.7)가 있으면 스탯 설계를 재검토하세요.
               </div>
             </div>
@@ -851,7 +851,7 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
               onClick={runCorrelationAnalysis}
               disabled={units.length < 3}
               className="glass-button-primary w-full px-4 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50"
-              style={{ background: '#3b82f6' }}
+              style={{ background: '#5a9cf5' }}
             >
               <div className="flex items-center justify-center gap-2">
                 <BarChart2 className="w-4 h-4" />
@@ -871,8 +871,8 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                     const strengthConfig = {
                       strong: { label: '강함', bg: 'rgba(239, 68, 68, 0.12)', color: '#dc2626' },
                       moderate: { label: '중간', bg: 'rgba(251, 191, 36, 0.12)', color: '#d97706' },
-                      weak: { label: '약함', bg: 'rgba(156, 163, 175, 0.15)', color: 'var(--text-tertiary)' },
-                      none: { label: '없음', bg: 'rgba(156, 163, 175, 0.1)', color: 'var(--text-tertiary)' },
+                      weak: { label: '약함', bg: 'rgba(156, 163, 175, 0.15)', color: 'var(--text-secondary)' },
+                      none: { label: '없음', bg: 'rgba(156, 163, 175, 0.1)', color: 'var(--text-secondary)' },
                     };
                     const config = strengthConfig[r.strength];
 
@@ -883,14 +883,14 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                             <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                               {r.stat1}
                             </span>
-                            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>↔</span>
+                            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>↔</span>
                             <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                               {r.stat2}
                             </span>
                           </div>
                           <div className="flex items-center gap-2">
                             <span
-                              className="glass-badge text-xs px-2 py-0.5 rounded-full font-medium"
+                              className="glass-badge text-sm px-2 py-0.5 rounded-full font-medium"
                               style={{ background: config.bg, color: config.color }}
                             >
                               {config.label}
@@ -938,8 +938,8 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
 
             {units.length < 3 && (
               <div className="glass-card text-center py-8 rounded-xl">
-                <BarChart2 className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--text-tertiary)' }} />
-                <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                <BarChart2 className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--text-secondary)' }} />
+                <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                   최소 3개 이상의 유닛이 필요합니다
                 </p>
               </div>
@@ -950,12 +950,12 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
         {activeTab === 'deadzone' && (
           <div className="space-y-4">
             {/* 탭 설명 */}
-            <div className="glass-section p-3 rounded-lg" style={{ borderLeft: '3px solid #f59e0b' }}>
+            <div className="glass-section p-3 rounded-lg" style={{ borderLeft: '3px solid #e5a440' }}>
               <div className="font-medium text-sm mb-1" style={{ color: 'var(--text-primary)' }}>데드존 탐지</div>
-              <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                 활용되지 않는 스탯 구간(데드존)을 탐지합니다. 유닛들이 특정 구간에만 몰려있거나 빈 구간이 있으면 밸런스 문제일 수 있습니다.
               </div>
-              <div className="text-xs mt-1.5" style={{ color: 'var(--text-tertiary)' }}>
+              <div className="text-sm mt-1.5" style={{ color: 'var(--text-secondary)' }}>
                 <strong>사용법:</strong> 각 스탯별로 분포 상태를 자동 분석합니다. 경고가 표시된 스탯은 값 범위를 재조정하거나 중간 구간의 유닛을 추가하세요.
               </div>
             </div>
@@ -987,12 +987,12 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                         </span>
                       </div>
                       {hasIssue ? (
-                        <span className="glass-badge flex items-center gap-1 text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: 'rgba(245, 158, 11, 0.15)', color: '#d97706' }}>
+                        <span className="glass-badge flex items-center gap-1 text-sm px-2 py-0.5 rounded-full font-medium" style={{ background: 'rgba(229, 164, 64, 0.15)', color: '#e5a440' }}>
                           <AlertTriangle className="w-3 h-3" />
                           {deadZones.length}개 이슈
                         </span>
                       ) : (
-                        <span className="glass-badge text-xs px-2 py-0.5 rounded-full font-medium" style={{ background: 'rgba(34, 197, 94, 0.1)', color: '#16a34a' }}>
+                        <span className="glass-badge text-sm px-2 py-0.5 rounded-full font-medium" style={{ background: 'rgba(61, 184, 138, 0.1)', color: '#3db88a' }}>
                           정상
                         </span>
                       )}
@@ -1000,14 +1000,14 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
                     {hasIssue ? (
                       <div className="space-y-1.5 mt-2">
                         {deadZones.map((dz, i) => (
-                          <div key={i} className="glass-section flex items-start gap-2 text-xs p-2 rounded-lg" style={{ background: 'rgba(245, 158, 11, 0.08)' }}>
-                            <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" style={{ color: '#d97706' }} />
+                          <div key={i} className="glass-section flex items-start gap-2 text-sm p-2 rounded-lg" style={{ background: 'rgba(245, 158, 11, 0.08)' }}>
+                            <AlertTriangle className="w-3 h-3 shrink-0 mt-0.5" style={{ color: '#e5a440' }} />
                             <span style={{ color: 'var(--text-secondary)' }}>{dz.reason}</span>
                           </div>
                         ))}
                       </div>
                     ) : (
-                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                      <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                         스탯 분포가 적절합니다
                       </div>
                     )}
@@ -1021,12 +1021,12 @@ export default function BalanceAnalysisPanel({ onClose, showHelp: externalShowHe
         {activeTab === 'curve' && (
           <div className="space-y-4">
             {/* 탭 설명 */}
-            <div className="glass-section p-3 rounded-lg" style={{ borderLeft: '3px solid #8b5cf6' }}>
+            <div className="glass-section p-3 rounded-lg" style={{ borderLeft: '3px solid #9179f2' }}>
               <div className="font-medium text-sm mb-1" style={{ color: 'var(--text-primary)' }}>밸런스 커브 생성</div>
-              <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+              <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                 레벨별 스탯 성장 곡선을 자동으로 생성합니다. 선형, 지수, 로그 등 다양한 성장 패턴을 지원합니다.
               </div>
-              <div className="text-xs mt-1.5" style={{ color: 'var(--text-tertiary)' }}>
+              <div className="text-sm mt-1.5" style={{ color: 'var(--text-secondary)' }}>
                 <strong>사용법:</strong> 기본 스탯, 최대 레벨, 성장률을 입력하고 성장 타입을 선택하세요. 생성된 테이블을 복사하여 스프레드시트에 붙여넣을 수 있습니다.
               </div>
             </div>
@@ -1065,11 +1065,11 @@ function CurveGenerator() {
       {/* 기본 스탯 입력 */}
       <div className="glass-card rounded-xl overflow-hidden">
         <div className="glass-panel-header px-4 py-2.5">
-          <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>기본 스탯 (레벨 1)</span>
+          <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>기본 스탯 (레벨 1)</span>
         </div>
         <div className="grid grid-cols-2 gap-3 p-4">
           <div>
-            <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>HP</label>
+            <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>HP</label>
             <input
               type="number"
               value={baseHp}
@@ -1078,7 +1078,7 @@ function CurveGenerator() {
             />
           </div>
           <div>
-            <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>ATK</label>
+            <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>ATK</label>
             <input
               type="number"
               value={baseAtk}
@@ -1087,7 +1087,7 @@ function CurveGenerator() {
             />
           </div>
           <div>
-            <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>DEF</label>
+            <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>DEF</label>
             <input
               type="number"
               value={baseDef}
@@ -1096,7 +1096,7 @@ function CurveGenerator() {
             />
           </div>
           <div>
-            <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>Speed</label>
+            <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Speed</label>
             <input
               type="number"
               value={baseSpeed}
@@ -1111,12 +1111,12 @@ function CurveGenerator() {
       {/* 성장 설정 */}
       <div className="glass-card rounded-xl overflow-hidden">
         <div className="glass-panel-header px-4 py-2.5">
-          <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>성장 설정</span>
+          <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>성장 설정</span>
         </div>
         <div className="p-4 space-y-3">
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>최대 레벨</label>
+              <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>최대 레벨</label>
               <input
                 type="number"
                 value={maxLevel}
@@ -1125,7 +1125,7 @@ function CurveGenerator() {
               />
             </div>
             <div>
-              <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>레벨당 성장률</label>
+              <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>레벨당 성장률</label>
               <input
                 type="number"
                 value={growthRate}
@@ -1136,7 +1136,7 @@ function CurveGenerator() {
             </div>
           </div>
           <div>
-            <label className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>성장 타입</label>
+            <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>성장 타입</label>
             <div className="glass-tabs grid grid-cols-3 gap-2 mt-1 p-1 rounded-lg">
               {[
                 { value: 'linear', label: '선형', desc: '일정한 성장' },
@@ -1149,13 +1149,13 @@ function CurveGenerator() {
                   className="p-2.5 rounded-lg text-center transition-all"
                   style={{
                     background: growthType === opt.value ? 'rgba(139, 92, 246, 0.15)' : 'transparent',
-                    border: growthType === opt.value ? '1px solid #8b5cf6' : '1px solid transparent',
+                    border: growthType === opt.value ? '1px solid #9179f2' : '1px solid transparent',
                   }}
                 >
-                  <div className="text-xs font-semibold" style={{ color: growthType === opt.value ? '#8b5cf6' : 'var(--text-primary)' }}>
+                  <div className="text-sm font-semibold" style={{ color: growthType === opt.value ? '#9179f2' : 'var(--text-primary)' }}>
                     {opt.label}
                   </div>
-                  <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                  <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                     {opt.desc}
                   </div>
                 </button>
@@ -1168,7 +1168,7 @@ function CurveGenerator() {
       <button
         onClick={generate}
         className="glass-button-primary w-full px-4 py-2.5 rounded-lg text-sm font-medium"
-        style={{ background: '#8b5cf6' }}
+        style={{ background: '#9179f2' }}
       >
         <div className="flex items-center justify-center gap-2">
           <Target className="w-4 h-4" />
@@ -1179,20 +1179,20 @@ function CurveGenerator() {
       {curve && (
         <div className="glass-card rounded-xl overflow-hidden">
           <div className="glass-panel-header px-4 py-2.5 flex items-center justify-between">
-            <span className="text-xs font-semibold" style={{ color: 'var(--text-primary)' }}>생성된 성장표</span>
-            <span className="glass-badge text-[10px] px-2 py-0.5 rounded-full" style={{ background: 'rgba(139, 92, 246, 0.15)', color: '#8b5cf6' }}>
+            <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>생성된 성장표</span>
+            <span className="glass-badge text-sm px-2 py-0.5 rounded-full" style={{ background: 'rgba(145, 121, 242, 0.15)', color: '#9179f2' }}>
               {curve.levels.length} 레벨
             </span>
           </div>
           <div className="overflow-x-auto">
-            <table className="w-full text-xs">
+            <table className="w-full text-sm">
               <thead>
                 <tr className="glass-section">
                   <th className="px-3 py-2 text-left font-semibold" style={{ color: 'var(--text-secondary)' }}>Lv</th>
-                  <th className="px-3 py-2 text-right font-semibold" style={{ color: '#ef4444' }}>HP</th>
-                  <th className="px-3 py-2 text-right font-semibold" style={{ color: '#f59e0b' }}>ATK</th>
-                  <th className="px-3 py-2 text-right font-semibold" style={{ color: '#3b82f6' }}>DEF</th>
-                  <th className="px-3 py-2 text-right font-semibold" style={{ color: '#10b981' }}>SPD</th>
+                  <th className="px-3 py-2 text-right font-semibold" style={{ color: '#e86161' }}>HP</th>
+                  <th className="px-3 py-2 text-right font-semibold" style={{ color: '#e5a440' }}>ATK</th>
+                  <th className="px-3 py-2 text-right font-semibold" style={{ color: '#5a9cf5' }}>DEF</th>
+                  <th className="px-3 py-2 text-right font-semibold" style={{ color: '#3db88a' }}>SPD</th>
                 </tr>
               </thead>
               <tbody>

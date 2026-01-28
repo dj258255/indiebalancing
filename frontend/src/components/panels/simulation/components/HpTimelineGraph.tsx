@@ -109,7 +109,7 @@ export function HpTimelineGraph({
               <line
                 x1={getX(hoveredPoint.time)} y1="0"
                 x2={getX(hoveredPoint.time)} y2="100"
-                stroke="var(--text-tertiary)" strokeWidth="1" strokeDasharray="2,2" vectorEffect="non-scaling-stroke"
+                stroke="var(--text-secondary)" strokeWidth="1" strokeDasharray="2,2" vectorEffect="non-scaling-stroke"
               />
               <circle
                 cx={getX(hoveredPoint.time)}
@@ -130,10 +130,10 @@ export function HpTimelineGraph({
         {/* Hover tooltip */}
         {hoveredPoint && (
           <div
-            className="absolute top-2 left-2 px-2 py-1 rounded text-xs z-10"
+            className="absolute top-2 left-2 px-2 py-1 rounded text-sm z-10"
             style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)' }}
           >
-            <div style={{ color: 'var(--text-tertiary)' }}>{hoveredPoint.time.toFixed(1)}s</div>
+            <div style={{ color: 'var(--text-secondary)' }}>{hoveredPoint.time.toFixed(1)}s</div>
             <div style={{ color: 'var(--primary-blue)' }}>{unit1Name}: {hoveredPoint.unit1Hp.toFixed(0)} HP</div>
             <div style={{ color: 'var(--primary-red)' }}>{unit2Name}: {hoveredPoint.unit2Hp.toFixed(0)} HP</div>
           </div>
@@ -141,7 +141,7 @@ export function HpTimelineGraph({
       </div>
 
       {/* Legend */}
-      <div className="flex justify-between text-xs" style={{ color: 'var(--text-tertiary)' }}>
+      <div className="flex justify-between text-sm" style={{ color: 'var(--text-secondary)' }}>
         <span>0s</span>
         <div className="flex gap-4">
           <span className="flex items-center gap-1">

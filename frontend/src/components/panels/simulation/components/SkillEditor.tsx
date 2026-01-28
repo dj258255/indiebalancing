@@ -13,13 +13,13 @@ interface SkillEditorProps {
 }
 
 const SKILL_TYPES: { type: SkillType; icon: typeof Zap; label: string; desc: string; color: string }[] = [
-  { type: 'damage', icon: Zap, label: 'skillDamage', desc: 'skillDamageDesc', color: '#f97316' },
-  { type: 'heal', icon: Heart, label: 'skillHeal', desc: 'skillHealDesc', color: '#22c55e' },
-  { type: 'hot', icon: Heart, label: 'skillHoT', desc: 'skillHoTDesc', color: '#10b981' },
-  { type: 'invincible', icon: Shield, label: 'skillInvincible', desc: 'skillInvincibleDesc', color: '#3b82f6' },
-  { type: 'revive', icon: RotateCcw, label: 'skillRevive', desc: 'skillReviveDesc', color: '#a855f7' },
-  { type: 'aoe_damage', icon: Target, label: 'skillAoeDamage', desc: 'skillAoeDamageDesc', color: '#ef4444' },
-  { type: 'aoe_heal', icon: Users, label: 'skillAoeHeal', desc: 'skillAoeHealDesc', color: '#14b8a6' },
+  { type: 'damage', icon: Zap, label: 'skillDamage', desc: 'skillDamageDesc', color: '#e5944a' },
+  { type: 'heal', icon: Heart, label: 'skillHeal', desc: 'skillHealDesc', color: '#3db88a' },
+  { type: 'hot', icon: Heart, label: 'skillHoT', desc: 'skillHoTDesc', color: '#3db88a' },
+  { type: 'invincible', icon: Shield, label: 'skillInvincible', desc: 'skillInvincibleDesc', color: '#5a9cf5' },
+  { type: 'revive', icon: RotateCcw, label: 'skillRevive', desc: 'skillReviveDesc', color: '#a896f5' },
+  { type: 'aoe_damage', icon: Target, label: 'skillAoeDamage', desc: 'skillAoeDamageDesc', color: '#e86161' },
+  { type: 'aoe_heal', icon: Users, label: 'skillAoeHeal', desc: 'skillAoeHealDesc', color: '#3db8a8' },
 ];
 
 interface TooltipProps {
@@ -67,7 +67,7 @@ function Tooltip({ children, content, color }: TooltipProps) {
       {isHovered && (
         <div
           ref={tooltipRef}
-          className="fixed z-[9999] px-3 py-2 rounded-lg shadow-lg text-xs max-w-[200px] pointer-events-none transition-opacity duration-150"
+          className="fixed z-[9999] px-3 py-2 rounded-lg shadow-lg text-sm max-w-[200px] pointer-events-none transition-opacity duration-150"
           style={{
             left: position.x,
             top: position.y,
@@ -129,7 +129,7 @@ function NumberInputWithCell({ label, value, onChange, min, max, step = 1, place
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <label className="text-[10px] font-medium mb-1 block" style={{ color: 'var(--text-tertiary)' }}>
+      <label className="text-sm font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>
         {label}
       </label>
       <div className="relative">
@@ -138,7 +138,7 @@ function NumberInputWithCell({ label, value, onChange, min, max, step = 1, place
           value={value}
           placeholder={placeholder}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full px-2 py-1.5 pr-7 rounded text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          className="w-full px-2 py-1.5 pr-7 rounded text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
           style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
           min={min}
           max={max}
@@ -150,7 +150,7 @@ function NumberInputWithCell({ label, value, onChange, min, max, step = 1, place
             className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors hover:bg-[var(--bg-tertiary)]"
             title="셀에서 값 가져오기"
           >
-            <Grid3X3 className="w-3.5 h-3.5" style={{ color: 'var(--text-tertiary)' }} />
+            <Grid3X3 className="w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} />
           </button>
         )}
       </div>
@@ -208,7 +208,7 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
           >
             <button
               onClick={() => addSkill(type)}
-              className="flex items-center gap-1 px-2 py-1 rounded text-xs transition-all hover:scale-105"
+              className="flex items-center gap-1 px-2 py-1 rounded text-sm transition-all hover:scale-105"
               style={{
                 background: `${skillColor}20`,
                 color: skillColor,
@@ -249,10 +249,10 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
                       <Icon className="w-3.5 h-3.5" style={{ color: typeInfo.color }} />
                     </div>
                     <div>
-                      <div className="text-xs font-medium" style={{ color: 'var(--text-primary)' }}>
+                      <div className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>
                         {skill.name}
                       </div>
-                      <div className="text-[10px]" style={{ color: 'var(--text-tertiary)' }}>
+                      <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                         CD: {skill.cooldown}s
                         {skill.trigger?.chance && skill.trigger.chance < 1 && ` | ${Math.round(skill.trigger.chance * 100)}%`}
                       </div>
@@ -262,7 +262,7 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
                     onClick={(e) => { e.stopPropagation(); removeSkill(skill.id); }}
                     className="p-1 rounded hover:bg-red-500/20 transition-colors"
                   >
-                    <Trash2 className="w-3.5 h-3.5" style={{ color: 'var(--text-tertiary)' }} />
+                    <Trash2 className="w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} />
                   </button>
                 </div>
 
@@ -271,14 +271,14 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
                   <div className="p-3 border-t space-y-3" style={{ borderColor: 'var(--border-primary)' }}>
                     {/* 스킬 이름 */}
                     <div>
-                      <label className="text-[10px] font-medium mb-1 block" style={{ color: 'var(--text-tertiary)' }}>
+                      <label className="text-sm font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>
                         {t('skillName')}
                       </label>
                       <input
                         type="text"
                         value={skill.name}
                         onChange={(e) => updateSkill(skill.id, { name: e.target.value })}
-                        className="w-full px-2 py-1.5 rounded text-xs"
+                        className="w-full px-2 py-1.5 rounded text-sm"
                         style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
                       />
                     </div>
@@ -307,7 +307,7 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
 
                     {/* 트리거 타입 */}
                     <div>
-                      <label className="text-[10px] font-medium mb-1 block" style={{ color: 'var(--text-tertiary)' }}>
+                      <label className="text-sm font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>
                         {t('triggerCondition')}
                       </label>
                       <div className="flex flex-wrap gap-1">
@@ -317,10 +317,10 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
                             onClick={() => updateSkill(skill.id, {
                               trigger: { ...skill.trigger, type, chance: skill.trigger?.chance || 1 }
                             })}
-                            className="px-2 py-1 rounded text-[10px] transition-colors"
+                            className="px-2 py-1 rounded text-sm transition-colors"
                             style={{
                               background: skill.trigger?.type === type ? `${color}30` : 'var(--bg-secondary)',
-                              color: skill.trigger?.type === type ? color : 'var(--text-tertiary)',
+                              color: skill.trigger?.type === type ? color : 'var(--text-secondary)',
                               border: `1px solid ${skill.trigger?.type === type ? color : 'var(--border-primary)'}`
                             }}
                           >
@@ -347,13 +347,13 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
                     {(skill.skillType === 'damage' || skill.skillType === 'aoe_damage') && (
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="text-[10px] font-medium mb-1 block" style={{ color: 'var(--text-tertiary)' }}>
+                          <label className="text-sm font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>
                             {t('damageType')}
                           </label>
                           <select
                             value={skill.damageType}
                             onChange={(e) => updateSkill(skill.id, { damageType: e.target.value as 'flat' | 'multiplier' })}
-                            className="w-full px-2 py-1.5 rounded text-xs"
+                            className="w-full px-2 py-1.5 rounded text-sm"
                             style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
                           >
                             <option value="multiplier">{t('atkMultiplier')}</option>
@@ -373,13 +373,13 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
                     {(skill.skillType === 'heal' || skill.skillType === 'aoe_heal') && (
                       <div className="grid grid-cols-2 gap-2">
                         <div>
-                          <label className="text-[10px] font-medium mb-1 block" style={{ color: 'var(--text-tertiary)' }}>
+                          <label className="text-sm font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>
                             {t('healType')}
                           </label>
                           <select
                             value={skill.healType || 'percent'}
                             onChange={(e) => updateSkill(skill.id, { healType: e.target.value as 'flat' | 'percent' })}
-                            className="w-full px-2 py-1.5 rounded text-xs"
+                            className="w-full px-2 py-1.5 rounded text-sm"
                             style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
                           >
                             <option value="percent">{t('percentHeal')}</option>
@@ -453,13 +453,13 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
                           placeholder={t('all')}
                         />
                         <div>
-                          <label className="text-[10px] font-medium mb-1 block" style={{ color: 'var(--text-tertiary)' }}>
+                          <label className="text-sm font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>
                             {t('aoeTargetMode')}
                           </label>
                           <select
                             value={skill.aoeTargetMode || 'all'}
                             onChange={(e) => updateSkill(skill.id, { aoeTargetMode: e.target.value as Skill['aoeTargetMode'] })}
-                            className="w-full px-2 py-1.5 rounded text-xs"
+                            className="w-full px-2 py-1.5 rounded text-sm"
                             style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
                           >
                             <option value="all">{t('targetAll')}</option>
@@ -480,8 +480,8 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
 
       {skills.length === 0 && (
         <div
-          className="text-center py-4 rounded-lg text-xs"
-          style={{ background: 'var(--bg-primary)', color: 'var(--text-tertiary)' }}
+          className="text-center py-4 rounded-lg text-sm"
+          style={{ background: 'var(--bg-primary)', color: 'var(--text-secondary)' }}
         >
           {t('noSkills')}
         </div>

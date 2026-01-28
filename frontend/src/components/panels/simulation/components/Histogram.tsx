@@ -18,9 +18,9 @@ export function Histogram({ data, label, color, unit = '', rangeLabels }: Histog
   if (!data || data.length === 0) {
     return (
       <div className="space-y-2">
-        <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</div>
+        <div className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</div>
         <div className="h-20 rounded-lg flex items-center justify-center" style={{ background: 'var(--bg-primary)' }}>
-          <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>데이터 없음</span>
+          <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>데이터 없음</span>
         </div>
       </div>
     );
@@ -52,9 +52,9 @@ export function Histogram({ data, label, color, unit = '', rangeLabels }: Histog
   return (
     <div className="space-y-2">
       <div className="flex items-center justify-between">
-        <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</div>
+        <div className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</div>
         {hoveredIndex !== null && (
-          <div className="text-xs px-2 py-0.5 rounded" style={{ background: `${color}20`, color }}>
+          <div className="text-sm px-2 py-0.5 rounded" style={{ background: `${color}20`, color }}>
             {data[hoveredIndex].toLocaleString()}회 ({((data[hoveredIndex] / total) * 100).toFixed(1)}%)
           </div>
         )}
@@ -85,7 +85,7 @@ export function Histogram({ data, label, color, unit = '', rangeLabels }: Histog
         {/* 툴팁 */}
         {hoveredIndex !== null && (
           <div
-            className="absolute z-50 px-2 py-1.5 rounded-lg text-xs pointer-events-none whitespace-nowrap"
+            className="absolute z-50 px-2 py-1.5 rounded-lg text-sm pointer-events-none whitespace-nowrap"
             style={{
               left: Math.min(tooltipPosition.x, (containerRef.current?.clientWidth || 200) - 120),
               top: Math.max(tooltipPosition.y - 50, 0),
@@ -103,7 +103,7 @@ export function Histogram({ data, label, color, unit = '', rangeLabels }: Histog
       </div>
       {/* X축 레이블 */}
       {rangeLabels && (
-        <div className="flex justify-between text-xs" style={{ color: 'var(--text-tertiary)' }}>
+        <div className="flex justify-between text-sm" style={{ color: 'var(--text-secondary)' }}>
           <span>{rangeLabels.min.toFixed(1)}{unit}</span>
           <span>{rangeLabels.max.toFixed(1)}{unit}</span>
         </div>

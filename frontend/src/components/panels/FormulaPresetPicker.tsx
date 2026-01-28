@@ -96,13 +96,13 @@ export default function FormulaPresetPicker({ onSelect, onClose }: FormulaPreset
             </div>
             <div>
               <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{t('formulaPreset.title')}</h2>
-              <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('formulaPreset.subtitle')}</p>
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('formulaPreset.subtitle')}</p>
             </div>
           </div>
           <button
             onClick={onClose}
             className="p-2 rounded-lg transition-colors hover:bg-[var(--bg-hover)]"
-            style={{ color: 'var(--text-tertiary)' }}
+            style={{ color: 'var(--text-secondary)' }}
           >
             <X className="w-5 h-5" />
           </button>
@@ -115,7 +115,7 @@ export default function FormulaPresetPicker({ onSelect, onClose }: FormulaPreset
             {/* 검색 */}
             <div className="p-4 border-b" style={{ borderColor: 'var(--border-primary)' }}>
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
                 <input
                   type="text"
                   value={searchQuery}
@@ -135,7 +135,7 @@ export default function FormulaPresetPicker({ onSelect, onClose }: FormulaPreset
             <div className="flex gap-1 p-2 border-b overflow-x-auto" style={{ borderColor: 'var(--border-primary)' }}>
               <button
                 onClick={() => setSelectedCategory('all')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                className={`px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
                   selectedCategory === 'all' ? 'bg-[var(--accent)] text-white' : 'bg-[var(--bg-tertiary)]'
                 }`}
                 style={{ color: selectedCategory === 'all' ? 'white' : 'var(--text-secondary)' }}
@@ -149,7 +149,7 @@ export default function FormulaPresetPicker({ onSelect, onClose }: FormulaPreset
                   <button
                     key={cat}
                     onClick={() => setSelectedCategory(cat)}
-                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap transition-colors ${
+                    className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium whitespace-nowrap transition-colors ${
                       selectedCategory === cat ? '' : 'bg-[var(--bg-tertiary)]'
                     }`}
                     style={{
@@ -167,7 +167,7 @@ export default function FormulaPresetPicker({ onSelect, onClose }: FormulaPreset
             {/* 프리셋 목록 */}
             <div className="flex-1 overflow-y-auto p-2">
               {filteredPresets.length === 0 ? (
-                <div className="text-center py-8 text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                <div className="text-center py-8 text-sm" style={{ color: 'var(--text-secondary)' }}>
                   {t('formulaPreset.noResults')}
                 </div>
               ) : (
@@ -198,11 +198,11 @@ export default function FormulaPresetPicker({ onSelect, onClose }: FormulaPreset
                           <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
                             {preset.name}
                           </div>
-                          <div className="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>
+                          <div className="text-sm truncate" style={{ color: 'var(--text-secondary)' }}>
                             {preset.description}
                           </div>
                         </div>
-                        <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-tertiary)' }} />
+                        <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-secondary)' }} />
                       </button>
                     );
                   })}
@@ -224,7 +224,7 @@ export default function FormulaPresetPicker({ onSelect, onClose }: FormulaPreset
                     {selectedPreset.description}
                   </div>
                   {selectedPreset.example && (
-                    <div className="text-xs p-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-tertiary)' }}>
+                    <div className="text-sm p-2 rounded-lg" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
                       {t('formulaPreset.example')} {selectedPreset.example}
                     </div>
                   )}
@@ -237,7 +237,7 @@ export default function FormulaPresetPicker({ onSelect, onClose }: FormulaPreset
                     <div className="space-y-3">
                       {selectedPreset.params.map(param => (
                         <div key={param.name}>
-                          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+                          <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
                             {param.name} - {param.description}
                           </label>
                           <input
@@ -260,7 +260,7 @@ export default function FormulaPresetPicker({ onSelect, onClose }: FormulaPreset
 
                 {/* 미리보기 & 액션 */}
                 <div className="p-4">
-                  <div className="text-xs font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>{t('formulaPreset.preview')}</div>
+                  <div className="text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>{t('formulaPreset.preview')}</div>
                   <div
                     className="p-3 rounded-lg font-mono text-sm mb-4 break-all"
                     style={{ background: 'var(--bg-tertiary)', color: 'var(--accent)' }}
@@ -305,8 +305,8 @@ export default function FormulaPresetPicker({ onSelect, onClose }: FormulaPreset
             ) : (
               <div className="flex-1 flex items-center justify-center">
                 <div className="text-center">
-                  <Book className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--text-tertiary)' }} />
-                  <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+                  <Book className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--text-secondary)' }} />
+                  <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                     {t('formulaPreset.selectPreset')}
                   </p>
                 </div>

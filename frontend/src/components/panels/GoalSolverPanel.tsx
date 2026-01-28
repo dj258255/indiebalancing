@@ -6,7 +6,7 @@ import { solve, SOLVER_FORMULAS, type SolverFormula } from '@/lib/goalSolver';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useTranslations } from 'next-intl';
 
-const PANEL_COLOR = '#14b8a6';
+const PANEL_COLOR = '#3db8a8'; // 소프트 틸
 
 interface GoalSolverPanelProps {
   onClose: () => void;
@@ -140,7 +140,7 @@ export default function GoalSolverPanel({ onClose, showHelp: externalShowHelp, s
                 <span style={{ color: 'var(--text-secondary)' }}>{t('helpExample3')}</span>
               </div>
             </div>
-            <div className="glass-divider pt-3 border-t text-sm" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-tertiary)' }}>
+            <div className="glass-divider pt-3 border-t text-sm" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-secondary)' }}>
               {t('helpVsFormula')}
             </div>
           </div>
@@ -176,13 +176,13 @@ export default function GoalSolverPanel({ onClose, showHelp: externalShowHelp, s
                   <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
                     {formula.name}
                   </div>
-                  <div className="text-xs truncate" style={{ color: 'var(--text-tertiary)' }}>
+                  <div className="text-sm truncate" style={{ color: 'var(--text-secondary)' }}>
                     {formula.description}
                   </div>
                 </div>
                 <ChevronDown
                   className={`w-4 h-4 flex-shrink-0 transition-transform ${isExpanded ? 'rotate-180' : ''}`}
-                  style={{ color: 'var(--text-tertiary)' }}
+                  style={{ color: 'var(--text-secondary)' }}
                 />
               </button>
 
@@ -191,7 +191,7 @@ export default function GoalSolverPanel({ onClose, showHelp: externalShowHelp, s
                 <div className="p-4 space-y-4">
                   {/* 목표값 입력 */}
                   <div>
-                    <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                    <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
                       {formula.targetLabel} {formula.targetUnit && `(${formula.targetUnit})`}
                     </label>
                     <input
@@ -206,7 +206,7 @@ export default function GoalSolverPanel({ onClose, showHelp: externalShowHelp, s
                   {/* 파라미터 입력 */}
                   {formula.params.map(param => (
                     <div key={param.key}>
-                      <label className="block text-xs font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
+                      <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>
                         {param.label} {param.unit && `(${param.unit})`}
                       </label>
                       <input
@@ -248,7 +248,7 @@ export default function GoalSolverPanel({ onClose, showHelp: externalShowHelp, s
                             </div>
                             <button
                               onClick={() => handleCopy(formula.id, result.value!)}
-                              className="glass-button flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium"
+                              className="glass-button flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium"
                               style={{
                                 background: copied === formula.id ? PANEL_COLOR : 'transparent',
                                 color: copied === formula.id ? 'white' : 'var(--text-secondary)',
@@ -261,7 +261,7 @@ export default function GoalSolverPanel({ onClose, showHelp: externalShowHelp, s
 
                           {/* 결과값 */}
                           <div className="glass-stat p-5 text-center">
-                            <div className="text-xs font-medium mb-2" style={{ color: 'var(--text-tertiary)' }}>
+                            <div className="text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>
                               {t('requiredValue')}
                             </div>
                             <div
@@ -279,18 +279,18 @@ export default function GoalSolverPanel({ onClose, showHelp: externalShowHelp, s
                             <p className="text-sm whitespace-pre-line" style={{ color: 'var(--text-secondary)' }}>
                               {result.explanation}
                             </p>
-                            <div className="glass-section px-3 py-2 rounded-lg font-mono text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                            <div className="glass-section px-3 py-2 rounded-lg font-mono text-sm" style={{ color: 'var(--text-secondary)' }}>
                               {result.formula}
                             </div>
                           </div>
                         </>
                       ) : (
-                        <div className="p-4 flex items-center gap-3" style={{ background: 'rgba(239, 68, 68, 0.08)' }}>
-                          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(239, 68, 68, 0.15)' }}>
-                            <AlertTriangle className="w-5 h-5" style={{ color: '#dc2626' }} />
+                        <div className="p-4 flex items-center gap-3" style={{ background: 'rgba(232, 97, 97, 0.08)' }}>
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: 'rgba(232, 97, 97, 0.15)' }}>
+                            <AlertTriangle className="w-5 h-5" style={{ color: '#e86161' }} />
                           </div>
                           <div>
-                            <div className="text-sm font-semibold" style={{ color: '#dc2626' }}>{t('calculationFailed')}</div>
+                            <div className="text-sm font-semibold" style={{ color: '#e86161' }}>{t('calculationFailed')}</div>
                             <div className="text-sm whitespace-pre-line" style={{ color: 'var(--text-secondary)' }}>
                               {result.explanation}
                             </div>
@@ -304,9 +304,9 @@ export default function GoalSolverPanel({ onClose, showHelp: externalShowHelp, s
                           {result.warnings.map((warning, i) => (
                             <div
                               key={i}
-                              className="flex items-center gap-2 text-xs"
+                              className="flex items-center gap-2 text-sm"
                             >
-                              <AlertTriangle className="w-3.5 h-3.5 shrink-0" style={{ color: '#d97706' }} />
+                              <AlertTriangle className="w-3.5 h-3.5 shrink-0" style={{ color: '#e5a440' }} />
                               <span style={{ color: '#92400e' }}>{warning}</span>
                             </div>
                           ))}

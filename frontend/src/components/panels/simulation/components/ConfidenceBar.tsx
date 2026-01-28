@@ -55,7 +55,7 @@ export function ConfidenceBar({ winRate, confidence, color, wins, total }: Confi
       {/* 호버 시 상세 정보 */}
       {isHovered && wins !== undefined && total !== undefined && (
         <div
-          className="absolute left-1/2 -translate-x-1/2 top-full mt-2 px-3 py-2 rounded-lg text-xs z-50 whitespace-nowrap"
+          className="absolute left-1/2 -translate-x-1/2 top-full mt-2 px-3 py-2 rounded-lg text-sm z-50 whitespace-nowrap"
           style={{
             background: 'var(--bg-secondary)',
             border: '1px solid var(--border-primary)',
@@ -63,7 +63,7 @@ export function ConfidenceBar({ winRate, confidence, color, wins, total }: Confi
           }}
         >
           <div className="font-medium mb-1" style={{ color }}>{wins.toLocaleString()}승 / {total.toLocaleString()}전</div>
-          <div style={{ color: 'var(--text-tertiary)' }}>
+          <div style={{ color: 'var(--text-secondary)' }}>
             95% 신뢰구간: {(confidence.lower * 100).toFixed(1)}% ~ {(confidence.upper * 100).toFixed(1)}%
           </div>
         </div>

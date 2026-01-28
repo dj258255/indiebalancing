@@ -1,1 +1,1 @@
-export const PANEL_COLOR = '#ef4444'; // 빨간색 (전투시뮬레이션 테마)
+export const PANEL_COLOR = '#e86161'; // 소프트 레드 (전투시뮬레이션 테마, 눈 편안함)

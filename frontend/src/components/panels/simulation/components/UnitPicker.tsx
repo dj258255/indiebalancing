@@ -41,7 +41,7 @@ export function UnitPicker({
         onClick={() => setIsOpen(!isOpen)}
         onMouseEnter={() => setShowTooltip(true)}
         onMouseLeave={() => setShowTooltip(false)}
-        className="flex items-center gap-1 px-1.5 py-1.5 rounded-lg text-xs font-medium transition-all hover:scale-105 whitespace-nowrap"
+        className="flex items-center gap-1 px-1.5 py-1.5 rounded-lg text-sm font-medium transition-all hover:scale-105 whitespace-nowrap"
         style={{
           background: `${color}10`,
           color: color,
@@ -56,7 +56,7 @@ export function UnitPicker({
       {/* 커스텀 툴팁 */}
       {showTooltip && !isOpen && (
         <div
-          className="absolute right-0 bottom-full mb-1.5 px-2 py-1 rounded text-xs whitespace-nowrap z-50 pointer-events-none animate-fadeIn"
+          className="absolute right-0 bottom-full mb-1.5 px-2 py-1 rounded text-sm whitespace-nowrap z-50 pointer-events-none animate-fadeIn"
           style={{
             background: 'var(--bg-secondary)',
             color: 'var(--text-primary)',
@@ -85,7 +85,7 @@ export function UnitPicker({
           }}
         >
           <div className="px-3 py-2 border-b" style={{ borderColor: 'var(--border-primary)', background: 'var(--bg-tertiary)' }}>
-            <div className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
+            <div className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
               {buttonText}
             </div>
           </div>
@@ -100,7 +100,7 @@ export function UnitPicker({
                 className="w-full px-3 py-2 flex items-center gap-3 hover:bg-[var(--bg-tertiary)] transition-colors text-left"
               >
                 <div
-                  className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold"
+                  className="w-7 h-7 rounded-lg flex items-center justify-center text-sm font-bold"
                   style={{ background: `${color}20`, color: color }}
                 >
                   {index + 1}
@@ -109,17 +109,17 @@ export function UnitPicker({
                   <div className="text-sm font-medium truncate" style={{ color: 'var(--text-primary)' }}>
                     {unit.name}
                   </div>
-                  <div className="flex items-center gap-2 text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                  <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
                     <span className="flex items-center gap-0.5">
-                      <Heart className="w-2.5 h-2.5" style={{ color: '#ef4444' }} />
+                      <Heart className="w-2.5 h-2.5" style={{ color: '#e86161' }} />
                       {unit.maxHp}
                     </span>
                     <span className="flex items-center gap-0.5">
-                      <Swords className="w-2.5 h-2.5" style={{ color: '#f59e0b' }} />
+                      <Swords className="w-2.5 h-2.5" style={{ color: '#e5a440' }} />
                       {unit.atk}
                     </span>
                     <span className="flex items-center gap-0.5">
-                      <Shield className="w-2.5 h-2.5" style={{ color: '#3b82f6' }} />
+                      <Shield className="w-2.5 h-2.5" style={{ color: '#5a9cf5' }} />
                       {unit.def}
                     </span>
                   </div>

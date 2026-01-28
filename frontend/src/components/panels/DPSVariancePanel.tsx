@@ -26,11 +26,11 @@ interface DPSVariancePanelProps {
 
 type SimMode = 'dps' | 'ttk' | 'compare';
 
-const PANEL_COLOR = '#f97316';
+const PANEL_COLOR = '#e5944a'; // 소프트 오렌지 (눈 편안함)
 const MODE_COLORS = {
-  dps: '#3b82f6',
-  ttk: '#22c55e',
-  compare: '#8b5cf6',
+  dps: '#5a9cf5',
+  ttk: '#3db88a',
+  compare: '#9179f2',
 };
 
 export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHelp }: DPSVariancePanelProps) {
@@ -130,7 +130,7 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
     setDpsResultB(null);
   };
 
-  const renderHistogram = (histogram: { min: number; max: number; count: number; percentage: number }[], color: string = '#3b82f6') => {
+  const renderHistogram = (histogram: { min: number; max: number; count: number; percentage: number }[], color: string = '#5a9cf5') => {
     const maxPercent = Math.max(...histogram.map(h => h.percentage));
     return (
       <div className="flex items-end gap-0.5 h-28 mt-2">
@@ -145,7 +145,7 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
               }}
             />
             <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-              <div className="glass-card px-2 py-1 text-xs whitespace-nowrap shadow-lg">
+              <div className="glass-card px-2 py-1 text-sm whitespace-nowrap shadow-lg">
                 <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{bin.min.toFixed(0)} - {bin.max.toFixed(0)}</div>
                 <div style={{ color: 'var(--text-secondary)' }}>{bin.count} ({bin.percentage.toFixed(1)}%)</div>
               </div>
@@ -176,7 +176,7 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
           style={{
             left: `${getPos(percentiles.p5)}%`,
             right: `${100 - getPos(percentiles.p25)}%`,
-            background: 'var(--text-tertiary)',
+            background: 'var(--text-secondary)',
           }}
         />
         <div
@@ -184,16 +184,16 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
           style={{
             left: `${getPos(percentiles.p75)}%`,
             right: `${100 - getPos(percentiles.p95)}%`,
-            background: 'var(--text-tertiary)',
+            background: 'var(--text-secondary)',
           }}
         />
         <div
           className="absolute top-0 bottom-0 w-0.5"
-          style={{ left: `${getPos(percentiles.p50)}%`, background: '#f59e0b' }}
+          style={{ left: `${getPos(percentiles.p50)}%`, background: '#e5a440' }}
         />
-        <div className="absolute -bottom-5 text-[10px]" style={{ left: `${getPos(percentiles.p5)}%`, transform: 'translateX(-50%)', color: 'var(--text-tertiary)' }}>5%</div>
-        <div className="absolute -bottom-5 text-[10px]" style={{ left: `${getPos(percentiles.p50)}%`, transform: 'translateX(-50%)', color: 'var(--text-tertiary)' }}>50%</div>
-        <div className="absolute -bottom-5 text-[10px]" style={{ left: `${getPos(percentiles.p95)}%`, transform: 'translateX(-50%)', color: 'var(--text-tertiary)' }}>95%</div>
+        <div className="absolute -bottom-5 text-sm" style={{ left: `${getPos(percentiles.p5)}%`, transform: 'translateX(-50%)', color: 'var(--text-secondary)' }}>5%</div>
+        <div className="absolute -bottom-5 text-sm" style={{ left: `${getPos(percentiles.p50)}%`, transform: 'translateX(-50%)', color: 'var(--text-secondary)' }}>50%</div>
+        <div className="absolute -bottom-5 text-sm" style={{ left: `${getPos(percentiles.p95)}%`, transform: 'translateX(-50%)', color: 'var(--text-secondary)' }}>95%</div>
       </div>
     );
   };
@@ -225,7 +225,7 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
 
     return (
       <div className="flex items-center gap-2" onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
-        <label className="text-xs w-20 shrink-0 font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</label>
+        <label className="text-sm w-20 shrink-0 font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</label>
         <div className="flex-1 relative">
           <input
             type="text"
@@ -256,12 +256,12 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
                 onClick={handleCellSelect}
                 className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"
               >
-                <Grid3X3 className="w-3.5 h-3.5" style={{ color: 'var(--text-tertiary)' }} />
+                <Grid3X3 className="w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} />
               </button>
             </Tooltip>
           )}
         </div>
-        {unit && <span className="text-xs w-8" style={{ color: 'var(--text-tertiary)' }}>{unit}</span>}
+        {unit && <span className="text-sm w-8" style={{ color: 'var(--text-secondary)' }}>{unit}</span>}
       </div>
     );
   };
@@ -283,7 +283,7 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
 
     return (
       <div className="flex items-center gap-2">
-        <label className="text-xs w-20 shrink-0 font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</label>
+        <label className="text-sm w-20 shrink-0 font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</label>
         <input
           type="text"
           inputMode="decimal"
@@ -307,7 +307,7 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
           }}
           className="glass-input flex-1 text-sm"
         />
-        {unit && <span className="text-xs w-8" style={{ color: 'var(--text-tertiary)' }}>{unit}</span>}
+        {unit && <span className="text-sm w-8" style={{ color: 'var(--text-secondary)' }}>{unit}</span>}
       </div>
     );
   };
@@ -327,13 +327,13 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
               </div>
               <div>
                 <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{t('helpTitle')}</p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{t('helpDesc')}</p>
+                <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{t('helpDesc')}</p>
               </div>
             </div>
 
-            <div className="glass-section p-2.5" style={{ borderLeft: `3px solid #f59e0b` }}>
-              <span className="font-medium text-xs" style={{ color: '#f59e0b' }}>{t('helpDiffTitle')}</span>
-              <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpDiff')}</p>
+            <div className="glass-section p-2.5" style={{ borderLeft: `3px solid #e5a440` }}>
+              <span className="font-medium text-sm" style={{ color: '#e5a440' }}>{t('helpDiffTitle')}</span>
+              <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t('helpDiff')}</p>
             </div>
 
             <div className="space-y-2">
@@ -343,8 +343,8 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
                 { mode: 'compare', color: MODE_COLORS.compare },
               ].map(({ mode: m, color }) => (
                 <div key={m} className="glass-section p-2.5" style={{ borderLeft: `3px solid ${color}` }}>
-                  <span className="font-medium text-xs" style={{ color }}>{t(`mode.${m}`)}</span>
-                  <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t(`help${m.charAt(0).toUpperCase() + m.slice(1)}`)}</p>
+                  <span className="font-medium text-sm" style={{ color }}>{t(`mode.${m}`)}</span>
+                  <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t(`help${m.charAt(0).toUpperCase() + m.slice(1)}`)}</p>
                 </div>
               ))}
             </div>
@@ -381,7 +381,7 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
         {/* Build A Configuration */}
         <div className="glass-card p-4 space-y-3">
           <div className="flex items-center gap-2">
-            <Sword className="w-4 h-4" style={{ color: '#ef4444' }} />
+            <Sword className="w-4 h-4" style={{ color: '#e86161' }} />
             <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
               {mode === 'compare' ? t('buildA') : t('config')}
             </span>
@@ -403,7 +403,7 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
         {mode === 'compare' && (
           <div className="glass-card p-4 space-y-3">
             <div className="flex items-center gap-2">
-              <ShieldIcon className="w-4 h-4" style={{ color: '#3b82f6' }} />
+              <ShieldIcon className="w-4 h-4" style={{ color: '#5a9cf5' }} />
               <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('buildB')}</span>
             </div>
 
@@ -441,7 +441,7 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
           )}
           style={{
             background: isSimulating ? 'var(--bg-tertiary)' : `linear-gradient(135deg, ${PANEL_COLOR}, ${PANEL_COLOR}dd)`,
-            color: isSimulating ? 'var(--text-tertiary)' : 'white',
+            color: isSimulating ? 'var(--text-secondary)' : 'white',
             boxShadow: isSimulating ? 'none' : `0 4px 16px ${PANEL_COLOR}40`,
           }}
         >
@@ -468,16 +468,16 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
 
             <div className="grid grid-cols-3 gap-2">
               <div className="glass-stat text-center">
-                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('mean')}</div>
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('mean')}</div>
                 <div className="text-lg font-bold" style={{ color: PANEL_COLOR }}>{dpsResult.mean.toFixed(1)}</div>
               </div>
               <div className="glass-stat text-center">
-                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('stdDev')}</div>
-                <div className="text-lg font-bold" style={{ color: '#3b82f6' }}>{dpsResult.stdDev.toFixed(1)}</div>
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('stdDev')}</div>
+                <div className="text-lg font-bold" style={{ color: '#5a9cf5' }}>{dpsResult.stdDev.toFixed(1)}</div>
               </div>
               <div className="glass-stat text-center">
-                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('cv')}</div>
-                <div className="text-lg font-bold" style={{ color: '#8b5cf6' }}>{dpsResult.coefficientOfVariation.toFixed(1)}%</div>
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('cv')}</div>
+                <div className="text-lg font-bold" style={{ color: '#9179f2' }}>{dpsResult.coefficientOfVariation.toFixed(1)}%</div>
               </div>
             </div>
 
@@ -489,7 +489,7 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
             </div>
 
             <div className="glass-section p-3 relative group">
-              <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('distribution')}</div>
+              <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('distribution')}</div>
               <button
                 onClick={() => setFullscreenChart('dps')}
                 className="absolute top-2 right-2 glass-button !p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -501,14 +501,14 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
             </div>
 
             <div>
-              <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('percentiles')}</div>
+              <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('percentiles')}</div>
               {renderPercentileBar(dpsResult.percentiles, dpsResult.min, dpsResult.max)}
             </div>
 
-            <div className="grid grid-cols-4 gap-1 text-xs mt-6">
+            <div className="grid grid-cols-4 gap-1 text-sm mt-6">
               {['p5', 'p25', 'p75', 'p95'].map(p => (
                 <div key={p} className="glass-stat text-center !p-1.5">
-                  <div style={{ color: 'var(--text-tertiary)' }}>P{p.slice(1)}</div>
+                  <div style={{ color: 'var(--text-secondary)' }}>P{p.slice(1)}</div>
                   <div className="font-semibold" style={{ color: 'var(--text-primary)' }}>
                     {dpsResult.percentiles[p as keyof typeof dpsResult.percentiles].toFixed(0)}
                   </div>
@@ -528,21 +528,21 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
 
             <div className="grid grid-cols-3 gap-2">
               <div className="glass-stat text-center">
-                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('meanTTK')}</div>
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('meanTTK')}</div>
                 <div className="text-lg font-bold" style={{ color: PANEL_COLOR }}>{ttkResult.mean.toFixed(2)}s</div>
               </div>
               <div className="glass-stat text-center">
-                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('minTTK')}</div>
-                <div className="text-lg font-bold" style={{ color: '#22c55e' }}>{ttkResult.min.toFixed(2)}s</div>
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('minTTK')}</div>
+                <div className="text-lg font-bold" style={{ color: '#3db88a' }}>{ttkResult.min.toFixed(2)}s</div>
               </div>
               <div className="glass-stat text-center">
-                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('maxTTK')}</div>
-                <div className="text-lg font-bold" style={{ color: '#ef4444' }}>{ttkResult.max.toFixed(2)}s</div>
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('maxTTK')}</div>
+                <div className="text-lg font-bold" style={{ color: '#e86161' }}>{ttkResult.max.toFixed(2)}s</div>
               </div>
             </div>
 
             <div className="glass-section p-3 relative group">
-              <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('ttkDistribution')}</div>
+              <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('ttkDistribution')}</div>
               <button
                 onClick={() => setFullscreenChart('ttk')}
                 className="absolute top-2 right-2 glass-button !p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
@@ -550,7 +550,7 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
               >
                 <Maximize2 className="w-3.5 h-3.5" />
               </button>
-              {renderHistogram(ttkResult.histogram, '#22c55e')}
+              {renderHistogram(ttkResult.histogram, '#3db88a')}
             </div>
           </div>
         )}
@@ -564,20 +564,20 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
             </div>
 
             <div className="space-y-2">
-              <div className="flex justify-between text-xs" style={{ color: 'var(--text-secondary)' }}>
+              <div className="flex justify-between text-sm" style={{ color: 'var(--text-secondary)' }}>
                 <span>{t('buildA')}</span>
                 <span>{t('buildB')}</span>
               </div>
               <div className="flex h-6 rounded-xl overflow-hidden">
                 <div
-                  className="flex items-center justify-center text-xs text-white font-medium"
-                  style={{ width: `${compareResult.buildAWinRate}%`, background: '#ef4444' }}
+                  className="flex items-center justify-center text-sm text-white font-medium"
+                  style={{ width: `${compareResult.buildAWinRate}%`, background: '#e86161' }}
                 >
                   {compareResult.buildAWinRate > 15 && `${compareResult.buildAWinRate.toFixed(0)}%`}
                 </div>
                 <div
-                  className="flex items-center justify-center text-xs text-white font-medium"
-                  style={{ width: `${compareResult.buildBWinRate}%`, background: '#3b82f6' }}
+                  className="flex items-center justify-center text-sm text-white font-medium"
+                  style={{ width: `${compareResult.buildBWinRate}%`, background: '#5a9cf5' }}
                 >
                   {compareResult.buildBWinRate > 15 && `${compareResult.buildBWinRate.toFixed(0)}%`}
                 </div>
@@ -585,25 +585,25 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="glass-section p-3" style={{ borderLeft: '3px solid #ef4444' }}>
-                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('buildA')}</div>
-                <div className="text-xl font-bold" style={{ color: '#ef4444' }}>{dpsResult.mean.toFixed(0)}</div>
-                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>DPS</div>
+              <div className="glass-section p-3" style={{ borderLeft: '3px solid #e86161' }}>
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('buildA')}</div>
+                <div className="text-xl font-bold" style={{ color: '#e86161' }}>{dpsResult.mean.toFixed(0)}</div>
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>DPS</div>
               </div>
-              <div className="glass-section p-3" style={{ borderLeft: '3px solid #3b82f6' }}>
-                <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('buildB')}</div>
-                <div className="text-xl font-bold" style={{ color: '#3b82f6' }}>{dpsResultB.mean.toFixed(0)}</div>
-                <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>DPS</div>
+              <div className="glass-section p-3" style={{ borderLeft: '3px solid #5a9cf5' }}>
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('buildB')}</div>
+                <div className="text-xl font-bold" style={{ color: '#5a9cf5' }}>{dpsResultB.mean.toFixed(0)}</div>
+                <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>DPS</div>
               </div>
             </div>
 
             <div className="glass-section flex items-center justify-center gap-2 p-3">
               {compareResult.dpsDifference > 0 ? (
-                <TrendingUp className="w-5 h-5" style={{ color: '#22c55e' }} />
+                <TrendingUp className="w-5 h-5" style={{ color: '#3db88a' }} />
               ) : compareResult.dpsDifference < 0 ? (
-                <TrendingDown className="w-5 h-5" style={{ color: '#ef4444' }} />
+                <TrendingDown className="w-5 h-5" style={{ color: '#e86161' }} />
               ) : (
-                <Minus className="w-5 h-5" style={{ color: 'var(--text-tertiary)' }} />
+                <Minus className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} />
               )}
               <span className="text-lg font-bold" style={{ color: 'var(--text-primary)' }}>
                 {compareResult.dpsDifference > 0 ? '+' : ''}
@@ -616,24 +616,24 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
 
             <div className="grid grid-cols-2 gap-3">
               <div className="glass-section p-3 relative group">
-                <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('buildA')}</div>
+                <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('buildA')}</div>
                 <button
                   onClick={() => setFullscreenChart('compareA')}
                   className="absolute top-2 right-2 glass-button !p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <Maximize2 className="w-3 h-3" />
                 </button>
-                {renderHistogram(dpsResult.histogram, '#ef4444')}
+                {renderHistogram(dpsResult.histogram, '#e86161')}
               </div>
               <div className="glass-section p-3 relative group">
-                <div className="text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('buildB')}</div>
+                <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('buildB')}</div>
                 <button
                   onClick={() => setFullscreenChart('compareB')}
                   className="absolute top-2 right-2 glass-button !p-1 opacity-0 group-hover:opacity-100 transition-opacity"
                 >
                   <Maximize2 className="w-3 h-3" />
                 </button>
-                {renderHistogram(dpsResultB.histogram, '#3b82f6')}
+                {renderHistogram(dpsResultB.histogram, '#5a9cf5')}
               </div>
             </div>
           </div>
@@ -643,7 +643,7 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
         {!dpsResult && !ttkResult && !compareResult && (
           <div className="glass-card p-4">
             <div className="flex items-start gap-2">
-              <Info className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#3b82f6' }} />
+              <Info className="w-4 h-4 mt-0.5 shrink-0" style={{ color: '#5a9cf5' }} />
               <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('description')}</p>
             </div>
           </div>
@@ -708,24 +708,24 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
                   </div>
                   <div className="mt-4 grid grid-cols-5 gap-2 text-sm">
                     <div className="glass-stat text-center">
-                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('mean')}</div>
+                      <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('mean')}</div>
                       <div className="font-bold" style={{ color: PANEL_COLOR }}>{dpsResult.mean.toFixed(1)}</div>
                     </div>
                     <div className="glass-stat text-center">
-                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('stdDev')}</div>
-                      <div className="font-bold" style={{ color: '#3b82f6' }}>{dpsResult.stdDev.toFixed(1)}</div>
+                      <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('stdDev')}</div>
+                      <div className="font-bold" style={{ color: '#5a9cf5' }}>{dpsResult.stdDev.toFixed(1)}</div>
                     </div>
                     <div className="glass-stat text-center">
-                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Min</div>
+                      <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Min</div>
                       <div className="font-bold" style={{ color: 'var(--text-primary)' }}>{dpsResult.min.toFixed(0)}</div>
                     </div>
                     <div className="glass-stat text-center">
-                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>Max</div>
+                      <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>Max</div>
                       <div className="font-bold" style={{ color: 'var(--text-primary)' }}>{dpsResult.max.toFixed(0)}</div>
                     </div>
                     <div className="glass-stat text-center">
-                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('cv')}</div>
-                      <div className="font-bold" style={{ color: '#8b5cf6' }}>{dpsResult.coefficientOfVariation.toFixed(1)}%</div>
+                      <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('cv')}</div>
+                      <div className="font-bold" style={{ color: '#9179f2' }}>{dpsResult.coefficientOfVariation.toFixed(1)}%</div>
                     </div>
                   </div>
                 </>
@@ -743,7 +743,7 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
                             style={{
                               height: `${(bin.percentage / maxPercent) * 100}%`,
                               minHeight: bin.count > 0 ? '4px' : '0',
-                              background: '#22c55e',
+                              background: '#3db88a',
                             }}
                           />
                           <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
@@ -758,16 +758,16 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
                   </div>
                   <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
                     <div className="glass-stat text-center">
-                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('meanTTK')}</div>
+                      <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('meanTTK')}</div>
                       <div className="font-bold" style={{ color: PANEL_COLOR }}>{ttkResult.mean.toFixed(2)}s</div>
                     </div>
                     <div className="glass-stat text-center">
-                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('minTTK')}</div>
-                      <div className="font-bold" style={{ color: '#22c55e' }}>{ttkResult.min.toFixed(2)}s</div>
+                      <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('minTTK')}</div>
+                      <div className="font-bold" style={{ color: '#3db88a' }}>{ttkResult.min.toFixed(2)}s</div>
                     </div>
                     <div className="glass-stat text-center">
-                      <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('maxTTK')}</div>
-                      <div className="font-bold" style={{ color: '#ef4444' }}>{ttkResult.max.toFixed(2)}s</div>
+                      <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('maxTTK')}</div>
+                      <div className="font-bold" style={{ color: '#e86161' }}>{ttkResult.max.toFixed(2)}s</div>
                     </div>
                   </div>
                 </>
@@ -777,7 +777,7 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
                 <>
                   {(() => {
                     const result = fullscreenChart === 'compareA' ? dpsResult : dpsResultB;
-                    const color = fullscreenChart === 'compareA' ? '#ef4444' : '#3b82f6';
+                    const color = fullscreenChart === 'compareA' ? '#e86161' : '#5a9cf5';
                     if (!result) return null;
                     return (
                       <>
@@ -806,15 +806,15 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
                         </div>
                         <div className="mt-4 grid grid-cols-3 gap-2 text-sm">
                           <div className="glass-stat text-center">
-                            <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('mean')}</div>
+                            <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('mean')}</div>
                             <div className="font-bold" style={{ color }}>{result.mean.toFixed(1)} DPS</div>
                           </div>
                           <div className="glass-stat text-center">
-                            <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('stdDev')}</div>
+                            <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('stdDev')}</div>
                             <div className="font-bold" style={{ color: 'var(--text-primary)' }}>{result.stdDev.toFixed(1)}</div>
                           </div>
                           <div className="glass-stat text-center">
-                            <div className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('cv')}</div>
+                            <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('cv')}</div>
                             <div className="font-bold" style={{ color: 'var(--text-primary)' }}>{result.coefficientOfVariation.toFixed(1)}%</div>
                           </div>
                         </div>

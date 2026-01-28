@@ -35,16 +35,16 @@ interface CurveFittingPanelProps {
 type DrawMode = 'point' | 'draw';
 type CodeLanguage = 'typescript' | 'csharp' | 'python';
 
-const PANEL_COLOR = '#8b5cf6';
+const PANEL_COLOR = '#9179f2'; // 소프트 퍼플
 
 const CURVE_COLORS: Record<CurveType, string> = {
-  linear: '#3b82f6',
-  quadratic: '#8b5cf6',
-  cubic: '#ec4899',
-  power: '#f59e0b',
-  exponential: '#10b981',
-  logarithmic: '#06b6d4',
-  sigmoid: '#f43f5e'
+  linear: '#5a9cf5',
+  quadratic: '#9179f2',
+  cubic: '#e87aa8',
+  power: '#e5a440',
+  exponential: '#3db88a',
+  logarithmic: '#4fc4d4',
+  sigmoid: '#e86161'
 };
 
 const CURVE_NAMES: Record<CurveType, string> = {
@@ -379,15 +379,15 @@ export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: Cu
               </div>
               <div>
                 <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{t('helpCurvesTitle')}</p>
-                <p className="text-xs mt-1" style={{ color: 'var(--text-tertiary)' }}>{t('helpDescription') || 'Draw or click to place data points, then analyze the best-fitting curve.'}</p>
+                <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>{t('helpDescription') || 'Draw or click to place data points, then analyze the best-fitting curve.'}</p>
               </div>
             </div>
 
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
               {Object.entries(CURVE_COLORS).slice(0, 4).map(([key, color]) => (
                 <div key={key} className="glass-section p-2" style={{ borderLeft: `3px solid ${color}` }}>
-                  <span className="font-medium text-xs" style={{ color }}>{t(`curves.${key}`)}</span>
-                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-tertiary)' }}>{t(`curves.${key}Desc`)}</p>
+                  <span className="font-medium text-sm" style={{ color }}>{t(`curves.${key}`)}</span>
+                  <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>{t(`curves.${key}Desc`)}</p>
                 </div>
               ))}
             </div>
@@ -400,7 +400,7 @@ export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: Cu
             {/* Mode Toggle */}
             <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
               <button
-                className={cn('px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all', drawMode === 'point' && 'shadow-sm')}
+                className={cn('px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-all', drawMode === 'point' && 'shadow-sm')}
                 style={{
                   background: drawMode === 'point' ? PANEL_COLOR : 'transparent',
                   color: drawMode === 'point' ? 'white' : 'var(--text-secondary)'
@@ -411,7 +411,7 @@ export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: Cu
                 {t('pointMode')}
               </button>
               <button
-                className={cn('px-3 py-1.5 rounded-lg text-xs flex items-center gap-1.5 transition-all', drawMode === 'draw' && 'shadow-sm')}
+                className={cn('px-3 py-1.5 rounded-lg text-sm flex items-center gap-1.5 transition-all', drawMode === 'draw' && 'shadow-sm')}
                 style={{
                   background: drawMode === 'draw' ? PANEL_COLOR : 'transparent',
                   color: drawMode === 'draw' ? 'white' : 'var(--text-secondary)'
@@ -453,19 +453,19 @@ export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: Cu
                         return (
                           <div key={actualIndex} className="flex items-center group hover:bg-black/5 dark:hover:bg-white/5">
                             <button
-                              className="flex-1 px-3 py-1.5 text-left text-xs flex items-center justify-between gap-2"
+                              className="flex-1 px-3 py-1.5 text-left text-sm flex items-center justify-between gap-2"
                               style={{ color: isSelected ? PANEL_COLOR : 'var(--text-secondary)' }}
                               onClick={() => restoreFromHistory(actualIndex)}
                             >
                               <span>{entry.points.length} {t('points')}</span>
-                              <span style={{ color: 'var(--text-tertiary)' }}>
+                              <span style={{ color: 'var(--text-secondary)' }}>
                                 {entry.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
                               </span>
                             </button>
                             <button
                               className="p-1 mr-1 rounded opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={(e) => deleteFromHistory(actualIndex, e)}
-                              style={{ color: 'var(--text-tertiary)' }}
+                              style={{ color: 'var(--text-secondary)' }}
                             >
                               <X size={12} />
                             </button>
@@ -475,8 +475,8 @@ export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: Cu
                     </div>
                     <div className="border-t px-3 py-1.5" style={{ borderColor: 'var(--border-primary)' }}>
                       <button
-                        className="w-full text-xs py-1 rounded-lg hover:bg-red-500/10 transition-colors"
-                        style={{ color: '#ef4444' }}
+                        className="w-full text-sm py-1 rounded-lg hover:bg-red-500/10 transition-colors"
+                        style={{ color: '#e86161' }}
                         onClick={() => { setHistory([]); setHistoryIndex(-1); setShowHistory(false); }}
                       >
                         {t('clearHistory')}
@@ -500,7 +500,7 @@ export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: Cu
             </div>
 
             <div className="ml-auto glass-badge">
-              <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{t('points')}: {points.length}</span>
+              <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('points')}: {points.length}</span>
             </div>
           </div>
         </div>
@@ -531,41 +531,41 @@ export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: Cu
             <Settings className="w-4 h-4" style={{ color: PANEL_COLOR }} />
             <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('axisRange') || 'Axis Range'}</span>
           </div>
-          <div className="flex flex-wrap gap-4 text-xs">
+          <div className="flex flex-wrap gap-4 text-sm">
             <div className="flex items-center gap-2">
-              <span style={{ color: 'var(--text-tertiary)' }}>X:</span>
+              <span style={{ color: 'var(--text-secondary)' }}>X:</span>
               <input
                 type="text"
                 inputMode="decimal"
                 value={xRange.min}
                 onChange={(e) => { const val = parseFloat(e.target.value); if (!isNaN(val)) setXRange(prev => ({ ...prev, min: val })); }}
-                className="glass-input w-16 text-center text-xs"
+                className="glass-input w-16 text-center text-sm"
               />
-              <span style={{ color: 'var(--text-tertiary)' }}>-</span>
+              <span style={{ color: 'var(--text-secondary)' }}>-</span>
               <input
                 type="text"
                 inputMode="decimal"
                 value={xRange.max}
                 onChange={(e) => { const val = parseFloat(e.target.value); if (!isNaN(val)) setXRange(prev => ({ ...prev, max: val })); }}
-                className="glass-input w-16 text-center text-xs"
+                className="glass-input w-16 text-center text-sm"
               />
             </div>
             <div className="flex items-center gap-2">
-              <span style={{ color: 'var(--text-tertiary)' }}>Y:</span>
+              <span style={{ color: 'var(--text-secondary)' }}>Y:</span>
               <input
                 type="text"
                 inputMode="decimal"
                 value={yRange.min}
                 onChange={(e) => { const val = parseFloat(e.target.value); if (!isNaN(val)) setYRange(prev => ({ ...prev, min: val })); }}
-                className="glass-input w-16 text-center text-xs"
+                className="glass-input w-16 text-center text-sm"
               />
-              <span style={{ color: 'var(--text-tertiary)' }}>-</span>
+              <span style={{ color: 'var(--text-secondary)' }}>-</span>
               <input
                 type="text"
                 inputMode="decimal"
                 value={yRange.max}
                 onChange={(e) => { const val = parseFloat(e.target.value); if (!isNaN(val)) setYRange(prev => ({ ...prev, max: val })); }}
-                className="glass-input w-16 text-center text-xs"
+                className="glass-input w-16 text-center text-sm"
               />
             </div>
           </div>
@@ -576,7 +576,7 @@ export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: Cu
           <div className="flex items-center gap-3">
             <TrendingUp className="w-4 h-4" style={{ color: PANEL_COLOR }} />
             <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('fittedCurves')}</span>
-            <label className="flex items-center gap-1.5 text-xs ml-auto" style={{ color: 'var(--text-secondary)' }}>
+            <label className="flex items-center gap-1.5 text-sm ml-auto" style={{ color: 'var(--text-secondary)' }}>
               <input
                 type="checkbox"
                 checked={showAllCurves}
@@ -589,7 +589,7 @@ export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: Cu
 
           {fitResults.length === 0 ? (
             <div className="glass-section text-center py-4">
-              <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>{t('addPointsHint')}</p>
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('addPointsHint')}</p>
             </div>
           ) : (
             <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-slim">
@@ -605,15 +605,15 @@ export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: Cu
                   >
                     <div className="flex items-center gap-2 mb-1">
                       <span className="w-3 h-3 rounded-full shrink-0" style={{ backgroundColor: color }} />
-                      <span className="text-xs font-semibold" style={{ color }}>{CURVE_NAMES[fit.type]}</span>
+                      <span className="text-sm font-semibold" style={{ color }}>{CURVE_NAMES[fit.type]}</span>
                       {index === 0 && (
-                        <span className="text-[10px] px-1.5 py-0.5 rounded-lg ml-auto" style={{ background: '#22c55e', color: 'white' }}>
+                        <span className="text-sm px-1.5 py-0.5 rounded-lg ml-auto" style={{ background: '#3db88a', color: 'white' }}>
                           {t('bestFit')}
                         </span>
                       )}
                     </div>
-                    <div className="text-[10px] font-mono truncate" style={{ color: 'var(--text-tertiary)' }}>{fit.equation}</div>
-                    <div className="text-[10px] mt-1 font-medium" style={{ color: 'var(--text-secondary)' }}>R² = {(fit.rSquared * 100).toFixed(2)}%</div>
+                    <div className="text-sm font-mono truncate" style={{ color: 'var(--text-secondary)' }}>{fit.equation}</div>
+                    <div className="text-sm mt-1 font-medium" style={{ color: 'var(--text-secondary)' }}>R² = {(fit.rSquared * 100).toFixed(2)}%</div>
                   </button>
                 );
               })}
@@ -630,14 +630,14 @@ export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: Cu
                 <select
                   value={codeLanguage}
                   onChange={(e) => setCodeLanguage(e.target.value as CodeLanguage)}
-                  className="glass-select text-xs"
+                  className="glass-select text-sm"
                 >
                   <option value="typescript">TypeScript</option>
                   <option value="csharp">C#</option>
                   <option value="python">Python</option>
                 </select>
                 <button
-                  className="glass-button-primary !px-3 !py-1.5 text-xs flex items-center gap-1.5"
+                  className="glass-button-primary !px-3 !py-1.5 text-sm flex items-center gap-1.5"
                   onClick={handleCopyCode}
                 >
                   {copiedCode ? <Check size={14} /> : <Copy size={14} />}
@@ -681,7 +681,7 @@ export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: Cu
                 {/* Mode Toggle */}
                 <div className="flex gap-1 p-1 rounded-xl" style={{ background: 'var(--bg-tertiary)' }}>
                   <button
-                    className={cn('px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all')}
+                    className={cn('px-2 py-1 rounded-lg text-sm flex items-center gap-1 transition-all')}
                     style={{
                       background: drawMode === 'point' ? PANEL_COLOR : 'transparent',
                       color: drawMode === 'point' ? 'white' : 'var(--text-secondary)'
@@ -691,7 +691,7 @@ export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: Cu
                     <MousePointer size={12} />
                   </button>
                   <button
-                    className={cn('px-2 py-1 rounded-lg text-xs flex items-center gap-1 transition-all')}
+                    className={cn('px-2 py-1 rounded-lg text-sm flex items-center gap-1 transition-all')}
                     style={{
                       background: drawMode === 'draw' ? PANEL_COLOR : 'transparent',
                       color: drawMode === 'draw' ? 'white' : 'var(--text-secondary)'
@@ -711,7 +711,7 @@ export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: Cu
                   </button>
                 </div>
 
-                <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>{points.length} pts</span>
+                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{points.length} pts</span>
 
                 <button onClick={() => setFullscreenCanvas(false)} className="glass-button !p-2">
                   <X className="w-5 h-5" />
@@ -753,15 +753,15 @@ export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: Cu
               />
             </div>
 
-            <div className="px-6 pb-4 flex flex-wrap gap-4 text-xs">
+            <div className="px-6 pb-4 flex flex-wrap gap-4 text-sm">
               <div className="flex items-center gap-2">
-                <span style={{ color: 'var(--text-tertiary)' }}>X:</span>
+                <span style={{ color: 'var(--text-secondary)' }}>X:</span>
                 <input
                   type="text"
                   inputMode="decimal"
                   value={xRange.min}
                   onChange={(e) => { const val = parseFloat(e.target.value); if (!isNaN(val)) setXRange(prev => ({ ...prev, min: val })); }}
-                  className="glass-input w-16 text-center text-xs"
+                  className="glass-input w-16 text-center text-sm"
                 />
                 <span>-</span>
                 <input
@@ -769,17 +769,17 @@ export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: Cu
                   inputMode="decimal"
                   value={xRange.max}
                   onChange={(e) => { const val = parseFloat(e.target.value); if (!isNaN(val)) setXRange(prev => ({ ...prev, max: val })); }}
-                  className="glass-input w-16 text-center text-xs"
+                  className="glass-input w-16 text-center text-sm"
                 />
               </div>
               <div className="flex items-center gap-2">
-                <span style={{ color: 'var(--text-tertiary)' }}>Y:</span>
+                <span style={{ color: 'var(--text-secondary)' }}>Y:</span>
                 <input
                   type="text"
                   inputMode="decimal"
                   value={yRange.min}
                   onChange={(e) => { const val = parseFloat(e.target.value); if (!isNaN(val)) setYRange(prev => ({ ...prev, min: val })); }}
-                  className="glass-input w-16 text-center text-xs"
+                  className="glass-input w-16 text-center text-sm"
                 />
                 <span>-</span>
                 <input
@@ -787,7 +787,7 @@ export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: Cu
                   inputMode="decimal"
                   value={yRange.max}
                   onChange={(e) => { const val = parseFloat(e.target.value); if (!isNaN(val)) setYRange(prev => ({ ...prev, max: val })); }}
-                  className="glass-input w-16 text-center text-xs"
+                  className="glass-input w-16 text-center text-sm"
                 />
               </div>
             </div>

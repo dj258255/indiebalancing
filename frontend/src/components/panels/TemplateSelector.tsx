@@ -143,21 +143,21 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
             <h2 className="text-xl font-semibold" style={{ color: 'var(--text-primary)' }}>
               {t('templateSelector.title')}
             </h2>
-            <p className="text-sm mt-1" style={{ color: 'var(--text-tertiary)' }}>
+            <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>
               {t('templateSelector.subtitle')}
             </p>
           </div>
           <button
             onClick={onClose}
             className="p-2 rounded-lg transition-colors"
-            style={{ color: 'var(--text-tertiary)' }}
+            style={{ color: 'var(--text-secondary)' }}
             onMouseEnter={(e) => {
               e.currentTarget.style.background = 'var(--bg-hover)';
               e.currentTarget.style.color = 'var(--text-secondary)';
             }}
             onMouseLeave={(e) => {
               e.currentTarget.style.background = 'transparent';
-              e.currentTarget.style.color = 'var(--text-tertiary)';
+              e.currentTarget.style.color = 'var(--text-secondary)';
             }}
           >
             <X className="w-5 h-5" />
@@ -197,7 +197,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                 </select>
                 <ChevronDown
                   className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-                  style={{ color: 'var(--text-tertiary)' }}
+                  style={{ color: 'var(--text-secondary)' }}
                 />
               </div>
             </div>
@@ -223,7 +223,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
               />
               <Search
                 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-                style={{ color: 'var(--text-tertiary)' }}
+                style={{ color: 'var(--text-secondary)' }}
               />
             </div>
 
@@ -233,7 +233,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                 <>
                   {selectedGenre && (
                     <span
-                      className="px-2.5 py-1 text-xs rounded-full font-medium"
+                      className="px-2.5 py-1 text-sm rounded-full font-medium"
                       style={{ background: 'var(--accent-light)', color: 'var(--accent)' }}
                     >
                       {(() => {
@@ -244,7 +244,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                   )}
                   {selectedCategory && (
                     <span
-                      className="px-2.5 py-1 text-xs rounded-full font-medium"
+                      className="px-2.5 py-1 text-sm rounded-full font-medium"
                       style={{ background: 'var(--primary-purple-light)', color: 'var(--primary-purple)' }}
                     >
                       {(() => {
@@ -255,7 +255,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                   )}
                   {searchQuery && (
                     <span
-                      className="px-2.5 py-1 text-xs rounded-full font-medium"
+                      className="px-2.5 py-1 text-sm rounded-full font-medium"
                       style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}
                     >
                       &quot;{searchQuery}&quot;
@@ -263,16 +263,16 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                   )}
                   <button
                     onClick={clearFilters}
-                    className="text-xs underline transition-colors ml-1"
-                    style={{ color: 'var(--text-tertiary)' }}
+                    className="text-sm underline transition-colors ml-1"
+                    style={{ color: 'var(--text-secondary)' }}
                     onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--text-primary)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-tertiary)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.color = 'var(--text-secondary)')}
                   >
                     {t('templateSelector.reset')}
                   </button>
                 </>
               ) : (
-                <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                   {t('templateSelector.activeFilters')} {t('templateSelector.none')}
                 </span>
               )}
@@ -282,7 +282,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
           {/* 두 번째 줄: 장르 필터 */}
           <div>
             <div className="flex items-center gap-2 mb-2">
-              <Filter className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />
+              <Filter className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
               <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
                 {t('templateSelector.gameGenre')}
               </span>
@@ -325,8 +325,8 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
             </button>
 
             <div
-              className="text-xs font-medium uppercase tracking-wide mb-2 px-2"
-              style={{ color: 'var(--text-tertiary)' }}
+              className="text-sm font-medium uppercase tracking-wide mb-2 px-2"
+              style={{ color: 'var(--text-secondary)' }}
             >
               {t('templateSelector.category')}
             </div>
@@ -369,7 +369,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                   className="w-full text-left px-3 py-2 rounded-lg text-sm mb-1 flex items-center gap-2 transition-colors"
                   style={{
                     background: isSelected ? 'var(--accent-light)' : 'transparent',
-                    color: isDisabled ? 'var(--text-tertiary)' : isSelected ? 'var(--accent)' : 'var(--text-secondary)',
+                    color: isDisabled ? 'var(--text-secondary)' : isSelected ? 'var(--accent)' : 'var(--text-secondary)',
                     opacity: isDisabled ? 0.5 : 1,
                     cursor: isDisabled ? 'not-allowed' : 'pointer',
                   }}
@@ -383,7 +383,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                 >
                   <span>{cat.icon}</span>
                   <span className="flex-1 truncate">{cat.nameKey ? t(cat.nameKey) : cat.name}</span>
-                  <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                  <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                     {count}
                   </span>
                 </button>
@@ -394,7 +394,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
           {/* 템플릿 목록 */}
           <div className="flex-1 overflow-y-auto p-4" style={{ background: 'var(--bg-primary)' }}>
             {filteredTemplates.length === 0 ? (
-              <div className="text-center py-12" style={{ color: 'var(--text-tertiary)' }}>
+              <div className="text-center py-12" style={{ color: 'var(--text-secondary)' }}>
                 <p className="mb-2">{t('templateSelector.noTemplates')}</p>
                 <button
                   onClick={clearFilters}
@@ -441,7 +441,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                           </h3>
                           <p
                             className="text-sm mt-1 line-clamp-2"
-                            style={{ color: 'var(--text-tertiary)' }}
+                            style={{ color: 'var(--text-secondary)' }}
                           >
                             {template.description}
                           </p>
@@ -464,7 +464,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                             return (
                               <span
                                 key={g}
-                                className="px-1.5 py-0.5 text-xs rounded"
+                                className="px-1.5 py-0.5 text-sm rounded"
                                 style={{
                                   background: 'var(--accent-light)',
                                   color: 'var(--accent)',
@@ -475,7 +475,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                             );
                           })}
                           {template.genre.length > 3 && (
-                            <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                            <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>
                               +{template.genre.length - 3}
                             </span>
                           )}
@@ -487,7 +487,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                         {template.columns.slice(0, 4).map((col, i) => (
                           <span
                             key={i}
-                            className="px-2 py-0.5 text-xs rounded"
+                            className="px-2 py-0.5 text-sm rounded"
                             style={{
                               background: 'var(--bg-tertiary)',
                               color: 'var(--text-secondary)',
@@ -498,8 +498,8 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                         ))}
                         {template.columns.length > 4 && (
                           <span
-                            className="px-2 py-0.5 text-xs"
-                            style={{ color: 'var(--text-tertiary)' }}
+                            className="px-2 py-0.5 text-sm"
+                            style={{ color: 'var(--text-secondary)' }}
                           >
                             +{template.columns.length - 4}
                           </span>
@@ -509,7 +509,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                       {/* 의존성 표시 */}
                       {template.dependencies && template.dependencies.length > 0 && (
                         <div
-                          className="mt-2 flex items-center gap-1.5 px-2 py-1 rounded text-xs"
+                          className="mt-2 flex items-center gap-1.5 px-2 py-1 rounded text-sm"
                           style={{
                             background: 'var(--primary-purple-light)',
                             color: 'var(--primary-purple)',
@@ -534,7 +534,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
           className="px-6 py-4 border-t flex items-center justify-between"
           style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-primary)' }}
         >
-          <div className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
+          <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
             {selectedTemplate ? (
               <div className="flex flex-col gap-1">
                 <span>
@@ -554,7 +554,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
                     {t('templateSelector.refSheetRequired')} {selectedTemplate.dependencies.map((d, i) => (
                       <span key={d.templateId}>
                         <strong>{d.sheetName}</strong>
-                        <span style={{ color: 'var(--text-tertiary)' }}> ({d.description})</span>
+                        <span style={{ color: 'var(--text-secondary)' }}> ({d.description})</span>
                         {i < selectedTemplate.dependencies!.length - 1 && ', '}
                       </span>
                     ))}
@@ -581,7 +581,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
               className={cn('px-4 py-2 rounded-lg transition-colors', !selectedTemplate && 'opacity-50 cursor-not-allowed')}
               style={{
                 background: selectedTemplate ? 'var(--accent)' : 'var(--bg-tertiary)',
-                color: selectedTemplate ? 'white' : 'var(--text-tertiary)',
+                color: selectedTemplate ? 'white' : 'var(--text-secondary)',
               }}
               onMouseEnter={(e) => {
                 if (selectedTemplate) e.currentTarget.style.opacity = '0.9';

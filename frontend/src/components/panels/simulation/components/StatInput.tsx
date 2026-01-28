@@ -18,7 +18,7 @@ export function StatInput({
   value,
   onChange,
   onCellSelect,
-  color = 'var(--text-tertiary)'
+  color = 'var(--text-secondary)'
 }: StatInputProps) {
   const [isHovered, setIsHovered] = useState(false);
 
@@ -27,7 +27,7 @@ export function StatInput({
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <label className="flex items-center gap-1 text-xs mb-1" style={{ color }}>
+      <label className="flex items-center gap-1 text-sm mb-1" style={{ color }}>
         <Icon className="w-3 h-3" /> {label}
       </label>
       <div className="relative">
@@ -44,7 +44,7 @@ export function StatInput({
             className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors hover:bg-[var(--bg-tertiary)]"
             title="셀에서 값 가져오기"
           >
-            <Grid3X3 className="w-3.5 h-3.5" style={{ color: 'var(--text-tertiary)' }} />
+            <Grid3X3 className="w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} />
           </button>
         )}
       </div>
