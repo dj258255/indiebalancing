@@ -26,35 +26,12 @@ import DeleteRowDialog from '@/components/ui/DeleteRowDialog';
 import { useSheetUIStore, DEFAULT_CELL_STYLE } from '@/stores/sheetUIStore';
 import { useTranslations } from 'next-intl';
 
-// 셀 키 생성 유틸리티 (Set 조회용)
-const cellKey = (rowId: string, columnId: string) => `${rowId}:${columnId}`;
+// hooks와 utils를 분리된 모듈에서 임포트
+import { cellKey, rafThrottle } from './utils';
+import type { CellPosition, SheetTableProps } from './types';
 
-// requestAnimationFrame 기반 throttle (브라우저 렌더링과 동기화)
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function rafThrottle<T extends (...args: any[]) => void>(fn: T): T {
-  let rafId: number | null = null;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let lastArgs: any[] | null = null;
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  return ((...args: any[]) => {
-    lastArgs = args;
-    if (rafId === null) {
-      rafId = requestAnimationFrame(() => {
-        rafId = null;
-        if (lastArgs) {
-          fn(...lastArgs);
-        }
-      });
-    }
-  }) as T;
-}
-
-interface SheetTableProps {
-  projectId: string;
-  sheet: Sheet;
-  onAddMemo?: () => void;
-}
+// 추출된 hooks 임포트 (향후 점진적 적용)
+// import { useSheetResize, useSheetSelection, useComputedRows, useSheetEditing, useSheetContextMenu, useSheetDrag, useSheetKeyboard } from './hooks';
 
 
 export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTableProps) {
@@ -1332,10 +1309,14 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
         return;
       }
 
-      // 선택 박스 DOM 직접 업데이트
+      // 선택 박스 DOM 직접 업데이트 (스크롤 위치 고려)
       if (selectionBoxEl) {
-        const left = Math.min(startX, currentX);
-        const top = Math.min(startY, currentY);
+        const scrollLeft = container.scrollLeft;
+        const scrollTop = container.scrollTop;
+
+        // 스크롤을 고려한 절대 좌표로 변환
+        const left = Math.min(startX, currentX) + scrollLeft;
+        const top = Math.min(startY, currentY) + scrollTop;
         const width = Math.abs(currentX - startX);
         const height = Math.abs(currentY - startY);
 

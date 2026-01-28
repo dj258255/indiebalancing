@@ -30,7 +30,7 @@ export interface CellSelectionMode {
   callback: ((value: number) => void) | null;
 }
 
-interface ProjectState {
+export interface ProjectState {
   // 상태
   projects: Project[];
   currentProjectId: string | null;

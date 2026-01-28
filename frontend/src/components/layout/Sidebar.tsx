@@ -12,27 +12,13 @@ import {
   X,
   Download,
   Upload,
-  BarChart3,
   HelpCircle,
-  Calculator,
-  PieChart,
   BookOpen,
   GripVertical,
-  GitCompare,
-  AlertTriangle,
-  Target,
-  TrendingUp,
   Globe,
-  FunctionSquare,
-  Shield,
-  Swords,
   Copy,
-  Coins,
-  BarChart2,
-  PenTool,
   Plus,
   Code,
-  Activity,
 } from 'lucide-react';
 import { useProjectStore } from '@/stores/projectStore';
 import { useToolLayoutStore, AllToolId } from '@/stores/toolLayoutStore';
@@ -43,6 +29,7 @@ import { ThemeToggle, ConfirmDialog } from '@/components/ui';
 import { useTranslations, useLocale } from 'next-intl';
 import Image from 'next/image';
 import { useTheme } from '@/contexts/ThemeContext';
+import { TOOL_CONFIGS } from '@/config/toolConfig';
 
 interface SidebarProps {
   onShowChart: () => void;
@@ -83,24 +70,6 @@ interface SidebarProps {
     simulation?: boolean;
   };
 }
-
-// 도구 설정
-const TOOL_CONFIG: Record<string, { icon: typeof Calculator; color: string; labelKey: string }> = {
-  calculator: { icon: Calculator, color: '#8b5cf6', labelKey: 'sidebar.calculator' },
-  comparison: { icon: PieChart, color: '#3b82f6', labelKey: 'sidebar.comparison' },
-  chart: { icon: BarChart3, color: '#22c55e', labelKey: 'sidebar.chart' },
-  presetComparison: { icon: GitCompare, color: '#f97316', labelKey: 'sidebar.presetComparison' },
-  imbalanceDetector: { icon: AlertTriangle, color: '#eab308', labelKey: 'sidebar.imbalanceDetector' },
-  goalSolver: { icon: Target, color: '#14b8a6', labelKey: 'sidebar.goalSolver' },
-  balanceAnalysis: { icon: Activity, color: '#ec4899', labelKey: 'sidebar.balanceAnalysis' },
-  economy: { icon: Coins, color: '#f59e0b', labelKey: 'sidebar.economy' },
-  dpsVariance: { icon: BarChart2, color: '#f97316', labelKey: 'sidebar.dpsVariance' },
-  curveFitting: { icon: PenTool, color: '#6366f1', labelKey: 'sidebar.curveFitting' },
-  formulaHelper: { icon: FunctionSquare, color: '#3b82f6', labelKey: 'bottomTabs.formulaHelper' },
-  balanceValidator: { icon: Shield, color: '#22c55e', labelKey: 'bottomTabs.balanceValidator' },
-  difficultyCurve: { icon: TrendingUp, color: '#8b5cf6', labelKey: 'bottomTabs.difficultyCurve' },
-  simulation: { icon: Swords, color: '#ef4444', labelKey: 'bottomTabs.simulation' },
-};
 
 export default function Sidebar({
   onShowChart,
@@ -920,7 +889,7 @@ export default function Sidebar({
         </div>
         <div ref={toolsContainerRef} className="space-y-1 overflow-y-auto flex-1 pr-1 scrollbar-visible">
           {sidebarTools.map((toolId, index) => {
-            const config = TOOL_CONFIG[toolId];
+            const config = TOOL_CONFIGS[toolId];
             if (!config) return null;
 
             const Icon = config.icon;
@@ -960,7 +929,7 @@ export default function Sidebar({
                     className="flex-1 text-left font-semibold truncate"
                     style={{ color: 'var(--text-primary)' }}
                   >
-                    {t(config.labelKey)}
+                    {t(config.titleKey)}
                   </span>
                   {isActive && (
                     <div

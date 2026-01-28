@@ -19,7 +19,7 @@ import {
   CurveFittingPanel,
 } from '@/components/panels';
 import { PresetComparisonModal } from '@/components/modals';
-import { ToolPanelRenderer } from '@/components/layouts';
+import { ToolPanelRenderer } from '@/components/layout';
 import { TOOL_CONFIGS } from '@/config/toolConfig';
 import type { DraggableState } from '@/hooks';
 
