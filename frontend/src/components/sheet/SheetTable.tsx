@@ -2408,7 +2408,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                 startEditing(row.original.id, col.id);
               }}
               onContextMenu={(e) => handleContextMenu(e, row.original.id, col.id)}
-              className={`px-2 sm:px-2 py-1.5 sm:py-1 min-h-[40px] sm:min-h-[32px] relative group overflow-hidden select-none flex ${
+              className={`px-2 sm:px-2 py-1.5 sm:py-1 h-full w-full absolute inset-0 overflow-hidden select-none flex ${
                 cellStyle?.vAlign === 'top' ? 'items-start' : cellStyle?.vAlign === 'bottom' ? 'items-end' : 'items-center'
               } ${isSelected && !editingCell ? 'cursor-move' : 'cursor-cell'} ${isMoveSource && !isCopyMode ? 'opacity-50' : ''}`}
               style={{
