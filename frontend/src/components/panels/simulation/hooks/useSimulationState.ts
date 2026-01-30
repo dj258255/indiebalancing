@@ -31,6 +31,21 @@ const DEFAULT_STATS: UnitStats = {
   evasion: 0,
 };
 
+// 유닛별 통계
+export interface UnitBattleStats {
+  unitId: string;
+  unitName: string;
+  team: 'team1' | 'team2';
+  survivalRate: number;          // 생존율 (0-1)
+  avgDamageDealt: number;        // 평균 가한 데미지
+  avgDamageTaken: number;        // 평균 받은 데미지
+  avgKills: number;              // 평균 킬 수
+  totalDamageDealt: number;      // 총 가한 데미지
+  totalKills: number;            // 총 킬 수
+  dps: number;                   // 초당 데미지
+  mvpCount: number;              // MVP 횟수 (팀 내 최고 데미지)
+}
+
 // 팀 결과 타입
 export interface TeamResult {
   totalRuns: number;
@@ -42,6 +57,33 @@ export interface TeamResult {
   avgDuration: number;
   avgTeam1Survivors: number;
   avgTeam2Survivors: number;
+
+  // 확장 통계
+  // 전투 시간 분포
+  durationDistribution: number[];
+  minDuration: number;
+  maxDuration: number;
+
+  // 팀 총 데미지
+  avgTeam1Damage: number;
+  avgTeam2Damage: number;
+  team1DPS: number;
+  team2DPS: number;
+
+  // 유닛별 상세 통계
+  unitStats: UnitBattleStats[];
+
+  // 승리 시 평균 생존 HP 비율
+  avgTeam1SurvivorHpRatio: number;
+  avgTeam2SurvivorHpRatio: number;
+
+  // 샘플 전투 (상세 분석용)
+  sampleBattles: import('@/lib/simulation/types').TeamBattleResult[];
+
+  // 역전 분석
+  team1Reversals: number;  // Team1이 불리한 상황에서 역전한 횟수
+  team2Reversals: number;
+  closeMatches: number;    // 박빙 (1명 차이로 끝난 경기)
 }
 
 // 팀 유닛 모달 상태 타입

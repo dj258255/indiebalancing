@@ -10,8 +10,49 @@ import type {
   BattleResult,
   SimulationResult,
   SimulationOptions,
+  SkillUsageStats,
 } from './types';
-import { simulateBattle } from './battleEngine';
+import { simulateBattle, simulateBattleWithSkills } from './battleEngine';
+
+/**
+ * 배틀 로그에서 스킬 통계 추출
+ */
+function extractSkillStatsFromBattle(
+  result: BattleResult,
+  unit1Name: string,
+  unit2Name: string
+): { unit1: Map<string, { uses: number; damage: number; healing: number }>; unit2: Map<string, { uses: number; damage: number; healing: number }> } {
+  const unit1Skills = new Map<string, { uses: number; damage: number; healing: number }>();
+  const unit2Skills = new Map<string, { uses: number; damage: number; healing: number }>();
+
+  for (const entry of result.log) {
+    if (entry.action === 'skill' || entry.action === 'heal') {
+      const skillName = entry.skillName || 'Unknown';
+      const isUnit1 = entry.actor === unit1Name;
+      const skillMap = isUnit1 ? unit1Skills : unit2Skills;
+
+      if (!skillMap.has(skillName)) {
+        skillMap.set(skillName, { uses: 0, damage: 0, healing: 0 });
+      }
+      const stats = skillMap.get(skillName)!;
+      stats.uses++;
+      if (entry.damage) stats.damage += entry.damage;
+      if (entry.healAmount) stats.healing += entry.healAmount;
+    } else if (entry.action === 'hot_tick') {
+      const skillName = entry.skillName || 'HoT';
+      const isUnit1 = entry.actor === unit1Name;
+      const skillMap = isUnit1 ? unit1Skills : unit2Skills;
+
+      if (!skillMap.has(skillName)) {
+        skillMap.set(skillName, { uses: 0, damage: 0, healing: 0 });
+      }
+      const stats = skillMap.get(skillName)!;
+      if (entry.healAmount) stats.healing += entry.healAmount;
+    }
+  }
+
+  return { unit1: unit1Skills, unit2: unit2Skills };
+}
 
 // 기본 설정
 const DEFAULT_OPTIONS: SimulationOptions = {
@@ -107,8 +148,11 @@ export function runMonteCarloSimulation(
   let closeMatches = 0;
 
   // 시뮬레이션 실행
+  const hasSkills = skills1.length > 0 || skills2.length > 0;
   for (let i = 0; i < runs; i++) {
-    const result = simulateBattle(unit1, unit2, skills1, skills2, config);
+    const result = hasSkills
+      ? simulateBattleWithSkills(unit1, unit2, skills1, skills2, config)
+      : simulateBattle(unit1, unit2, skills1, skills2, config);
 
     // 승패 집계
     if (result.winner === 'unit1') {
@@ -134,10 +178,82 @@ export function runMonteCarloSimulation(
     unit2TotalCrits += result.unit2Crits;
     unit2TotalHits += result.unit2Hits;
 
-    // 역전 분석: 이론적 DPS가 낮은 쪽이 이겼는지 확인
-    const unit1TheoreticalDps = unit1.atk * unit1.speed * (1 + (unit1.critRate || 0) * ((unit1.critDamage || 1.5) - 1));
-    const unit2TheoreticalDps = unit2.atk * unit2.speed * (1 + (unit2.critRate || 0) * ((unit2.critDamage || 1.5) - 1));
-    const unit1Expected = unit1TheoreticalDps > unit2TheoreticalDps;
+    // 역전 분석: 유효 전투력이 낮은 쪽이 이겼는지 확인
+    // 유효 전투력 = 유효 HP × 유효 DPS
+    // 스킬 포함: 스킬 DPS 추가, 힐 스킬은 유효 HP에 추가
+    const calcEffectivePower = (unit: UnitStats, skills: Skill[], enemyEvasion: number, battleDuration: number = 30) => {
+      const critMultiplier = 1 + (unit.critRate || 0) * ((unit.critDamage || 1.5) - 1);
+      const hitRate = Math.max(0, Math.min(1, (unit.accuracy ?? 1) - enemyEvasion));
+
+      // 기본 DPS
+      let effectiveDps = unit.atk * unit.speed * critMultiplier * hitRate;
+
+      // 스킬 DPS 추가
+      let skillDps = 0;
+      let totalHealing = 0;
+      let hasInvincible = false;
+      let invincibleDuration = 0;
+      let hasSelfRevive = false;
+
+      for (const skill of skills) {
+        const usesPerBattle = Math.floor(battleDuration / skill.cooldown);
+
+        if (skill.skillType === 'damage' || skill.skillType === 'aoe_damage' || !skill.skillType) {
+          // 데미지 스킬 DPS 계산
+          const skillDamage = skill.damageType === 'multiplier'
+            ? unit.atk * skill.damage
+            : skill.damage;
+          const skillDpsContribution = (skillDamage * usesPerBattle) / battleDuration;
+          skillDps += skillDpsContribution * hitRate;
+        } else if (skill.skillType === 'heal') {
+          // 즉시 힐
+          const healAmount = skill.healType === 'percent'
+            ? unit.maxHp * (skill.healAmount || 0)
+            : (skill.healAmount || 0);
+          totalHealing += healAmount * usesPerBattle;
+        } else if (skill.skillType === 'hot') {
+          // HoT (지속 힐)
+          const tickCount = Math.floor((skill.hotDuration || 0) / (skill.hotTickInterval || 1));
+          const healPerTick = skill.hotType === 'percent'
+            ? unit.maxHp * (skill.hotAmount || 0)
+            : (skill.hotAmount || 0);
+          totalHealing += healPerTick * tickCount * usesPerBattle;
+        } else if (skill.skillType === 'invincible') {
+          hasInvincible = true;
+          invincibleDuration += (skill.invincibleDuration || 0) * usesPerBattle;
+        } else if (skill.skillType === 'revive' && skill.reviveTarget === 'self') {
+          // 자기 부활만 1v1에서 유효 HP에 반영
+          hasSelfRevive = true;
+        }
+        // ally 부활은 팀 전투에서만 의미 있음 (1v1에서는 무시)
+      }
+
+      effectiveDps += skillDps;
+
+      // 유효 HP 계산
+      const evasionSurvival = 1 / (1 - Math.min(0.99, unit.evasion || 0));
+      let effectiveHp = unit.maxHp * evasionSurvival;
+
+      // 힐로 인한 유효 HP 증가
+      effectiveHp += totalHealing;
+
+      // 무적으로 인한 생존력 증가 (무적 시간 비율만큼 유효 HP 증가)
+      if (hasInvincible && battleDuration > 0) {
+        const invincibleRatio = Math.min(0.5, invincibleDuration / battleDuration); // 최대 50%
+        effectiveHp *= (1 + invincibleRatio);
+      }
+
+      // 자기 부활 스킬이 있으면 유효 HP 1.5배 (한 번 더 살 수 있음)
+      if (hasSelfRevive) {
+        effectiveHp *= 1.5;
+      }
+
+      return effectiveHp * effectiveDps;
+    };
+
+    const unit1Power = calcEffectivePower(unit1, skills1, unit2.evasion || 0);
+    const unit2Power = calcEffectivePower(unit2, skills2, unit1.evasion || 0);
+    const unit1Expected = unit1Power > unit2Power;
 
     if (result.winner === 'unit1' && !unit1Expected) {
       unit1Reversals++;
@@ -184,11 +300,12 @@ export function runMonteCarloSimulation(
   const unit1AvgDamage = avg(unit1Damages);
   const unit2AvgDamage = avg(unit2Damages);
 
-  // 이론적 DPS 계산
-  const calculateTheoreticalDps = (unit: UnitStats) => {
+  // 이론적 DPS 계산 (크리티컬, 명중률 반영)
+  const calculateTheoreticalDps = (unit: UnitStats, enemyEvasion: number = 0) => {
     const baseDps = unit.atk * unit.speed;
     const critMultiplier = 1 + (unit.critRate || 0) * ((unit.critDamage || 1.5) - 1);
-    return baseDps * critMultiplier;
+    const hitRate = Math.max(0, Math.min(1, (unit.accuracy ?? 1) - enemyEvasion));
+    return baseDps * critMultiplier * hitRate;
   };
 
   // 결과 반환
@@ -216,6 +333,14 @@ export function runMonteCarloSimulation(
     damageDistribution: {
       unit1: createHistogram(unit1Damages),
       unit2: createHistogram(unit2Damages),
+      unit1Range: {
+        min: unit1Damages.length > 0 ? Math.min(...unit1Damages) : 0,
+        max: unit1Damages.length > 0 ? Math.max(...unit1Damages) : 0,
+      },
+      unit2Range: {
+        min: unit2Damages.length > 0 ? Math.min(...unit2Damages) : 0,
+        max: unit2Damages.length > 0 ? Math.max(...unit2Damages) : 0,
+      },
     },
 
     winRateConfidence: {
@@ -244,8 +369,8 @@ export function runMonteCarloSimulation(
     },
 
     theoreticalDps: {
-      unit1: calculateTheoreticalDps(unit1),
-      unit2: calculateTheoreticalDps(unit2),
+      unit1: calculateTheoreticalDps(unit1, unit2.evasion || 0),
+      unit2: calculateTheoreticalDps(unit2, unit1.evasion || 0),
     },
 
     sampleBattles,
@@ -273,6 +398,10 @@ export function runMonteCarloSimulation(
       critCausedReversals,
       closeMatches,
     },
+
+    // 스킬 통계는 동기 버전에서는 미지원 (async 버전 사용 권장)
+    skillStats: undefined,
+    healingStats: undefined,
   };
 }
 
@@ -316,18 +445,92 @@ export async function runMonteCarloSimulationAsync(
   let critCausedReversals = 0;
   let closeMatches = 0;
 
-  // 이론적 DPS 미리 계산
-  const unit1TheoreticalDps = unit1.atk * unit1.speed * (1 + (unit1.critRate || 0) * ((unit1.critDamage || 1.5) - 1));
-  const unit2TheoreticalDps = unit2.atk * unit2.speed * (1 + (unit2.critRate || 0) * ((unit2.critDamage || 1.5) - 1));
-  const unit1Expected = unit1TheoreticalDps > unit2TheoreticalDps;
+  // 스킬 통계 누적
+  const unit1SkillStats = new Map<string, { uses: number; damage: number; healing: number }>();
+  const unit2SkillStats = new Map<string, { uses: number; damage: number; healing: number }>();
+  let unit1TotalHealing = 0;
+  let unit2TotalHealing = 0;
 
+  // 유효 전투력 계산 (HP, DPS, 크리티컬, 명중, 회피, 스킬 모두 반영)
+  const calcEffectivePower = (unit: UnitStats, skills: Skill[], enemyEvasion: number, battleDuration: number = 30) => {
+    const critMultiplier = 1 + (unit.critRate || 0) * ((unit.critDamage || 1.5) - 1);
+    const hitRate = Math.max(0, Math.min(1, (unit.accuracy ?? 1) - enemyEvasion));
+
+    // 기본 DPS
+    let effectiveDps = unit.atk * unit.speed * critMultiplier * hitRate;
+
+    // 스킬 DPS 추가
+    let skillDps = 0;
+    let totalHealing = 0;
+    let hasInvincible = false;
+    let invincibleDuration = 0;
+    let hasSelfRevive = false;
+
+    for (const skill of skills) {
+      const usesPerBattle = Math.floor(battleDuration / skill.cooldown);
+
+      if (skill.skillType === 'damage' || skill.skillType === 'aoe_damage' || !skill.skillType) {
+        const skillDamage = skill.damageType === 'multiplier'
+          ? unit.atk * skill.damage
+          : skill.damage;
+        const skillDpsContribution = (skillDamage * usesPerBattle) / battleDuration;
+        skillDps += skillDpsContribution * hitRate;
+      } else if (skill.skillType === 'heal') {
+        const healAmount = skill.healType === 'percent'
+          ? unit.maxHp * (skill.healAmount || 0)
+          : (skill.healAmount || 0);
+        totalHealing += healAmount * usesPerBattle;
+      } else if (skill.skillType === 'hot') {
+        const tickCount = Math.floor((skill.hotDuration || 0) / (skill.hotTickInterval || 1));
+        const healPerTick = skill.hotType === 'percent'
+          ? unit.maxHp * (skill.hotAmount || 0)
+          : (skill.hotAmount || 0);
+        totalHealing += healPerTick * tickCount * usesPerBattle;
+      } else if (skill.skillType === 'invincible') {
+        hasInvincible = true;
+        invincibleDuration += (skill.invincibleDuration || 0) * usesPerBattle;
+      } else if (skill.skillType === 'revive' && skill.reviveTarget === 'self') {
+        // 자기 부활만 1v1에서 유효 HP에 반영
+        hasSelfRevive = true;
+      }
+      // ally 부활은 팀 전투에서만 의미 있음 (1v1에서는 무시)
+    }
+
+    effectiveDps += skillDps;
+
+    // 유효 HP 계산
+    const evasionSurvival = 1 / (1 - Math.min(0.99, unit.evasion || 0));
+    let effectiveHp = unit.maxHp * evasionSurvival;
+
+    effectiveHp += totalHealing;
+
+    if (hasInvincible && battleDuration > 0) {
+      const invincibleRatio = Math.min(0.5, invincibleDuration / battleDuration);
+      effectiveHp *= (1 + invincibleRatio);
+    }
+
+    // 자기 부활 스킬이 있으면 유효 HP 1.5배 (한 번 더 살 수 있음)
+    if (hasSelfRevive) {
+      effectiveHp *= 1.5;
+    }
+
+    return effectiveHp * effectiveDps;
+  };
+
+  const unit1Power = calcEffectivePower(unit1, skills1, unit2.evasion || 0);
+  const unit2Power = calcEffectivePower(unit2, skills2, unit1.evasion || 0);
+  const unit1Expected = unit1Power > unit2Power;
+
+  const hasSkills = skills1.length > 0 || skills2.length > 0;
   for (let chunk = 0; chunk < chunks; chunk++) {
     const start = chunk * chunkSize;
     const end = Math.min(start + chunkSize, runs);
 
     // 청크 실행
     for (let i = start; i < end; i++) {
-      const result = simulateBattle(unit1, unit2, skills1, skills2, opts.config);
+      const result = hasSkills
+        ? simulateBattleWithSkills(unit1, unit2, skills1, skills2, opts.config)
+        : simulateBattle(unit1, unit2, skills1, skills2, opts.config);
 
       if (result.winner === 'unit1') {
         unit1Wins++;
@@ -374,6 +577,35 @@ export async function runMonteCarloSimulationAsync(
       if (opts.saveSampleBattles && sampleBattles.length < opts.saveSampleBattles) {
         sampleBattles.push(result);
       }
+
+      // 스킬 통계 수집 (스킬이 있을 때만)
+      if (hasSkills) {
+        const skillStats = extractSkillStatsFromBattle(result, unit1.name, unit2.name);
+
+        // Unit1 스킬 통계 합산
+        for (const [skillName, stats] of skillStats.unit1) {
+          if (!unit1SkillStats.has(skillName)) {
+            unit1SkillStats.set(skillName, { uses: 0, damage: 0, healing: 0 });
+          }
+          const accumulated = unit1SkillStats.get(skillName)!;
+          accumulated.uses += stats.uses;
+          accumulated.damage += stats.damage;
+          accumulated.healing += stats.healing;
+          unit1TotalHealing += stats.healing;
+        }
+
+        // Unit2 스킬 통계 합산
+        for (const [skillName, stats] of skillStats.unit2) {
+          if (!unit2SkillStats.has(skillName)) {
+            unit2SkillStats.set(skillName, { uses: 0, damage: 0, healing: 0 });
+          }
+          const accumulated = unit2SkillStats.get(skillName)!;
+          accumulated.uses += stats.uses;
+          accumulated.damage += stats.damage;
+          accumulated.healing += stats.healing;
+          unit2TotalHealing += stats.healing;
+        }
+      }
     }
 
     // 진행률 업데이트
@@ -397,11 +629,12 @@ export async function runMonteCarloSimulationAsync(
 
   const avgDuration = avg(durations);
 
-  // 이론적 DPS 계산 (스탯 기반)
-  const calculateTheoreticalDps = (unit: typeof unit1) => {
+  // 이론적 DPS 계산 (크리티컬, 명중률 반영)
+  const calculateTheoreticalDps = (unit: typeof unit1, enemyEvasion: number = 0) => {
     const baseDps = unit.atk * unit.speed;
     const critMultiplier = 1 + (unit.critRate || 0) * ((unit.critDamage || 1.5) - 1);
-    return baseDps * critMultiplier;
+    const hitRate = Math.max(0, Math.min(1, (unit.accuracy ?? 1) - enemyEvasion));
+    return baseDps * critMultiplier * hitRate;
   };
 
   return {
@@ -428,6 +661,14 @@ export async function runMonteCarloSimulationAsync(
     damageDistribution: {
       unit1: createHistogram(unit1Damages),
       unit2: createHistogram(unit2Damages),
+      unit1Range: {
+        min: unit1Damages.length > 0 ? Math.min(...unit1Damages) : 0,
+        max: unit1Damages.length > 0 ? Math.max(...unit1Damages) : 0,
+      },
+      unit2Range: {
+        min: unit2Damages.length > 0 ? Math.min(...unit2Damages) : 0,
+        max: unit2Damages.length > 0 ? Math.max(...unit2Damages) : 0,
+      },
     },
 
     winRateConfidence: {
@@ -456,8 +697,8 @@ export async function runMonteCarloSimulationAsync(
     },
 
     theoreticalDps: {
-      unit1: calculateTheoreticalDps(unit1),
-      unit2: calculateTheoreticalDps(unit2),
+      unit1: calculateTheoreticalDps(unit1, unit2.evasion || 0),
+      unit2: calculateTheoreticalDps(unit2, unit1.evasion || 0),
     },
 
     sampleBattles,
@@ -485,5 +726,35 @@ export async function runMonteCarloSimulationAsync(
       critCausedReversals,
       closeMatches,
     },
+
+    // 스킬 통계 (스킬이 있을 때만)
+    skillStats: hasSkills ? {
+      unit1: Array.from(unit1SkillStats.entries()).map(([skillName, stats]) => ({
+        skillId: skillName,
+        skillName,
+        totalUses: stats.uses,
+        totalDamage: stats.damage,
+        totalHealing: stats.healing,
+        avgDamagePerUse: stats.uses > 0 ? stats.damage / stats.uses : 0,
+        dpsContribution: avgDuration > 0 ? (stats.damage / runs) / avgDuration / (avg(unit1Damages) / avgDuration || 1) : 0,
+      } as SkillUsageStats)),
+      unit2: Array.from(unit2SkillStats.entries()).map(([skillName, stats]) => ({
+        skillId: skillName,
+        skillName,
+        totalUses: stats.uses,
+        totalDamage: stats.damage,
+        totalHealing: stats.healing,
+        avgDamagePerUse: stats.uses > 0 ? stats.damage / stats.uses : 0,
+        dpsContribution: avgDuration > 0 ? (stats.damage / runs) / avgDuration / (avg(unit2Damages) / avgDuration || 1) : 0,
+      } as SkillUsageStats)),
+    } : undefined,
+
+    // 힐 통계 (스킬이 있을 때만)
+    healingStats: hasSkills ? {
+      unit1TotalHealing,
+      unit2TotalHealing,
+      unit1HPS: avgDuration > 0 ? (unit1TotalHealing / runs) / avgDuration : 0,
+      unit2HPS: avgDuration > 0 ? (unit2TotalHealing / runs) / avgDuration : 0,
+    } : undefined,
   };
 }

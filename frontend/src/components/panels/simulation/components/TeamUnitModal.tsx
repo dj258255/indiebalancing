@@ -85,6 +85,57 @@ function StatField({
   );
 }
 
+// 선택적 스탯 입력 (빈 값 허용)
+function OptionalStatInput({
+  label,
+  value,
+  onChange,
+  multiplier = 1,
+  placeholder,
+}: {
+  label: string;
+  value: number | undefined;
+  onChange: (v: number | undefined) => void;
+  multiplier?: number;
+  placeholder?: string;
+}) {
+  const [inputValue, setInputValue] = useState(
+    value !== undefined ? String(value * multiplier) : ''
+  );
+
+  useEffect(() => {
+    setInputValue(value !== undefined ? String(value * multiplier) : '');
+  }, [value, multiplier]);
+
+  return (
+    <div>
+      <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</label>
+      <input
+        type="text"
+        inputMode="decimal"
+        value={inputValue}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (v === '' || /^-?\d*\.?\d*$/.test(v)) {
+            setInputValue(v);
+            if (v === '') {
+              onChange(undefined);
+            } else {
+              const num = parseFloat(v);
+              if (!isNaN(num)) {
+                onChange(num / multiplier);
+              }
+            }
+          }
+        }}
+        placeholder={placeholder}
+        className="w-full px-2 py-1.5 rounded text-sm"
+        style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
+      />
+    </div>
+  );
+}
+
 interface UnitWithSkills extends UnitStats {
   skills?: Skill[];
 }
@@ -242,55 +293,34 @@ export function TeamUnitModal({
             <summary className="text-sm cursor-pointer" style={{ color: 'var(--text-secondary)' }}>
               고급 옵션 (크리티컬, 명중, 회피)
             </summary>
-            <div className="grid grid-cols-3 gap-2 mt-2">
-              <div>
-                <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>{t('colCritRate') || '크리율'} %</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={(editUnit.critRate || 0) * 100}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (v === '' || /^-?\d*\.?\d*$/.test(v)) {
-                      setEditUnit(prev => ({ ...prev, critRate: Number(v) / 100 }));
-                    }
-                  }}
-                  className="w-full px-2 py-1.5 rounded text-sm"
-                  style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                />
-              </div>
-              <div>
-                <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>{t('colCritDmg') || '크리뎀'} x</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={editUnit.critDamage || 1.5}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (v === '' || /^-?\d*\.?\d*$/.test(v)) {
-                      setEditUnit(prev => ({ ...prev, critDamage: Number(v) }));
-                    }
-                  }}
-                  className="w-full px-2 py-1.5 rounded text-sm"
-                  style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                />
-              </div>
-              <div>
-                <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>회피 %</label>
-                <input
-                  type="text"
-                  inputMode="decimal"
-                  value={(editUnit.evasion || 0) * 100}
-                  onChange={(e) => {
-                    const v = e.target.value;
-                    if (v === '' || /^-?\d*\.?\d*$/.test(v)) {
-                      setEditUnit(prev => ({ ...prev, evasion: Number(v) / 100 }));
-                    }
-                  }}
-                  className="w-full px-2 py-1.5 rounded text-sm"
-                  style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                />
-              </div>
+            <div className="grid grid-cols-2 gap-2 mt-2">
+              <OptionalStatInput
+                label={`${t('colCritRate') || '크리율'} %`}
+                value={editUnit.critRate}
+                onChange={(v) => setEditUnit(prev => ({ ...prev, critRate: v }))}
+                multiplier={100}
+                placeholder="0"
+              />
+              <OptionalStatInput
+                label={`${t('colCritDmg') || '크리뎀'} x`}
+                value={editUnit.critDamage}
+                onChange={(v) => setEditUnit(prev => ({ ...prev, critDamage: v }))}
+                placeholder="1.5"
+              />
+              <OptionalStatInput
+                label="명중 %"
+                value={editUnit.accuracy}
+                onChange={(v) => setEditUnit(prev => ({ ...prev, accuracy: v }))}
+                multiplier={100}
+                placeholder="100"
+              />
+              <OptionalStatInput
+                label="회피 %"
+                value={editUnit.evasion}
+                onChange={(v) => setEditUnit(prev => ({ ...prev, evasion: v }))}
+                multiplier={100}
+                placeholder="0"
+              />
             </div>
           </details>
 
@@ -323,6 +353,7 @@ export function TeamUnitModal({
                   skills={editUnit.skills || []}
                   onSkillsChange={(skills) => setEditUnit(prev => ({ ...prev, skills }))}
                   color={color}
+                  isTeamBattle={true}
                 />
               </div>
             )}

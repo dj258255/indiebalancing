@@ -4,7 +4,8 @@
 
 'use client';
 
-import { Heart, Swords, Shield, Zap, ChevronDown, ChevronUp } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Heart, Swords, Shield, Zap, ChevronDown, ChevronUp, Target, Sparkles, Wind } from 'lucide-react';
 import type { UnitStats, Skill } from '@/lib/simulation/types';
 import { StatInput } from './StatInput';
 import { UnitPicker } from './UnitPicker';
@@ -25,6 +26,64 @@ interface UnitStatsPanelProps {
   placeholder: string;
 }
 
+// 선택적 스탯 입력 (빈 값 허용)
+function OptionalStatInput({
+  label,
+  value,
+  onChange,
+  multiplier = 1,
+  placeholder,
+  icon: Icon,
+  color,
+}: {
+  label: string;
+  value: number | undefined;
+  onChange: (v: number | undefined) => void;
+  multiplier?: number;
+  placeholder?: string;
+  icon?: React.ComponentType<{ className?: string; style?: React.CSSProperties }>;
+  color?: string;
+}) {
+  const [inputValue, setInputValue] = useState(
+    value !== undefined ? String(value * multiplier) : ''
+  );
+
+  useEffect(() => {
+    setInputValue(value !== undefined ? String(value * multiplier) : '');
+  }, [value, multiplier]);
+
+  return (
+    <div>
+      <label className="flex items-center gap-1 text-xs mb-1" style={{ color: color || 'var(--text-secondary)' }}>
+        {Icon && <Icon className="w-3 h-3" style={{ color }} />}
+        {label}
+      </label>
+      <input
+        type="text"
+        inputMode="decimal"
+        value={inputValue}
+        onChange={(e) => {
+          const v = e.target.value;
+          if (v === '' || /^-?\d*\.?\d*$/.test(v)) {
+            setInputValue(v);
+            if (v === '') {
+              onChange(undefined);
+            } else {
+              const num = parseFloat(v);
+              if (!isNaN(num)) {
+                onChange(num / multiplier);
+              }
+            }
+          }
+        }}
+        placeholder={placeholder}
+        className="w-full px-2 py-1.5 rounded text-sm"
+        style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
+      />
+    </div>
+  );
+}
+
 export function UnitStatsPanel({
   unitStats,
   setUnitStats,
@@ -39,6 +98,7 @@ export function UnitStatsPanel({
   placeholder,
 }: UnitStatsPanelProps) {
   const t = useTranslations('simulation');
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
   return (
     <div className="p-3 rounded-lg" style={{ background: 'var(--bg-tertiary)', border: `2px solid ${color}` }}>
@@ -104,6 +164,52 @@ export function UnitStatsPanel({
           color="#9179f2"
         />
       </div>
+
+      {/* 고급 옵션 (크리티컬, 명중, 회피) */}
+      <details className="mt-3 pt-3 group" style={{ borderTop: '1px solid var(--border-primary)' }}>
+        <summary className="text-sm cursor-pointer list-none flex items-center justify-between" style={{ color: 'var(--text-secondary)' }}>
+          <span>고급 옵션 (크리티컬, 명중, 회피)</span>
+          <ChevronDown className="w-4 h-4 group-open:rotate-180 transition-transform" />
+        </summary>
+        <div className="grid grid-cols-2 gap-2 mt-2">
+          <OptionalStatInput
+            label={`${t('colCritRate')} %`}
+            value={unitStats.critRate}
+            onChange={(v) => setUnitStats(prev => ({ ...prev, critRate: v }))}
+            multiplier={100}
+            placeholder="0"
+            icon={Target}
+            color="#e5a440"
+          />
+          <OptionalStatInput
+            label={`${t('colCritDmg')} x`}
+            value={unitStats.critDamage}
+            onChange={(v) => setUnitStats(prev => ({ ...prev, critDamage: v }))}
+            placeholder="1.5"
+            icon={Sparkles}
+            color="#f59e0b"
+          />
+          <OptionalStatInput
+            label="명중 %"
+            value={unitStats.accuracy}
+            onChange={(v) => setUnitStats(prev => ({ ...prev, accuracy: v }))}
+            multiplier={100}
+            placeholder="100"
+            icon={Target}
+            color="#3db88a"
+          />
+          <OptionalStatInput
+            label="회피 %"
+            value={unitStats.evasion}
+            onChange={(v) => setUnitStats(prev => ({ ...prev, evasion: v }))}
+            multiplier={100}
+            placeholder="0"
+            icon={Wind}
+            color="#9179f2"
+          />
+        </div>
+      </details>
+
       {/* 스킬 섹션 */}
       <div className="mt-3 pt-3" style={{ borderTop: '1px solid var(--border-primary)' }}>
         <button

@@ -51,13 +51,21 @@ export function Histogram({ data, label, color, unit = '', rangeLabels }: Histog
 
   return (
     <div className="space-y-2">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between h-6">
         <div className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</div>
-        {hoveredIndex !== null && (
-          <div className="text-sm px-2 py-0.5 rounded" style={{ background: `${color}20`, color }}>
-            {data[hoveredIndex].toLocaleString()}회 ({((data[hoveredIndex] / total) * 100).toFixed(1)}%)
-          </div>
-        )}
+        <div
+          className="text-sm px-2 py-0.5 rounded min-w-[100px] text-right transition-opacity"
+          style={{
+            background: hoveredIndex !== null ? `${color}20` : 'transparent',
+            color,
+            opacity: hoveredIndex !== null ? 1 : 0
+          }}
+        >
+          {hoveredIndex !== null
+            ? `${data[hoveredIndex].toLocaleString()}건 (${((data[hoveredIndex] / total) * 100).toFixed(1)}%)`
+            : '\u00A0'
+          }
+        </div>
       </div>
       <div
         ref={containerRef}

@@ -360,13 +360,14 @@ function shouldTriggerSkill(
 }
 
 /**
- * 스킬 데미지 계산
+ * 스킬 데미지 계산 (방어관통 지원)
  */
 function calculateSkillDamage(
   skill: Skill,
   caster: UnitStats,
   target: UnitStats,
-  formula: BattleConfig['damageFormula'] = 'simple'
+  formula: BattleConfig['damageFormula'] = 'simple',
+  armorPen?: ArmorPenetrationConfig
 ): number {
   let baseDamage: number;
 
@@ -377,17 +378,20 @@ function calculateSkillDamage(
     baseDamage = caster.atk * skill.damage;
   }
 
+  // 방어관통 적용한 유효 방어력 계산
+  const effectiveDef = calculateEffectiveDefense(target.def, armorPen);
+
   // 방어력 적용
   switch (formula) {
     case 'simple':
-      return Math.max(1, baseDamage - target.def);
+      return Math.max(1, baseDamage - effectiveDef);
     case 'mmorpg':
-      return baseDamage * (100 / (100 + target.def));
+      return baseDamage * (100 / (100 + effectiveDef));
     case 'percentage':
-      const reduction = Math.min(0.9, target.def / 200);
+      const reduction = Math.min(0.9, effectiveDef / 200);
       return baseDamage * (1 - reduction);
     default:
-      return Math.max(1, baseDamage - target.def);
+      return Math.max(1, baseDamage - effectiveDef);
   }
 }
 
@@ -505,6 +509,7 @@ function processActiveHoTs(
 
 /**
  * 부활 스킬 체크 (죽었을 때 발동)
+ * 1v1에서는 자기부활(self)만 체크
  */
 function checkReviveSkill(
   skills: Skill[],
@@ -514,6 +519,8 @@ function checkReviveSkill(
 ): { revived: boolean; newHp: number; skillName?: string } {
   for (const skill of skills) {
     if (skill.skillType !== 'revive') continue;
+    // 1v1에서는 자기부활(self)만 가능
+    if (skill.reviveTarget !== 'self') continue;
 
     const cooldownEnds = skillCooldowns.get(skill.id) || 0;
     if (time < cooldownEnds) continue;
@@ -612,7 +619,7 @@ export function simulateBattleWithSkills(
           break;
         }
 
-        const skillDamage = Math.round(calculateSkillDamage(skill, caster, target, cfg.damageFormula));
+        const skillDamage = Math.round(calculateSkillDamage(skill, caster, target, cfg.damageFormula, cfg.armorPenetration));
         target.hp = cfg.allowOverkill
           ? target.hp - skillDamage
           : Math.max(0, target.hp - skillDamage);
@@ -1118,51 +1125,72 @@ export function simulateTeamBattle(
     // 한 팀이 전멸하면 종료
     if (team1Alive.length === 0 || team2Alive.length === 0) break;
 
-    // Team1 공격
+    // 동시 공격 처리: 데미지를 먼저 모두 계산한 뒤 일괄 적용
+    interface PendingAttack {
+      attacker: UnitState;
+      target: UnitState;
+      damage: number;
+      isMiss: boolean;
+      isTeam1: boolean;
+    }
+    const pendingAttacks: PendingAttack[] = [];
+
+    // Team1 공격 계산
     for (const attacker of team1Alive) {
       if (time >= attacker.nextAttackTime) {
         const target = selectTarget(team2States, cfg.targetingMode);
-        if (!target) break;
+        if (!target) continue;
 
         const result = calculateDamage(attacker, target, cfg.damageFormula, cfg.defenseFormula, cfg.armorPenetration);
-
-        if (!result.isMiss) {
-          target.currentHp = Math.max(0, target.currentHp - result.damage);
-          target.damageTaken += result.damage;
-          attacker.damageDealt += result.damage;
-          team1TotalDamage += result.damage;
-
-          if (target.currentHp <= 0) {
-            target.alive = false;
-            attacker.kills++;
-          }
-        }
-
+        pendingAttacks.push({
+          attacker,
+          target,
+          damage: result.damage,
+          isMiss: result.isMiss,
+          isTeam1: true,
+        });
         attacker.nextAttackTime = time + 1 / attacker.speed;
       }
     }
 
-    // Team2 공격
-    for (const attacker of team2Alive.filter(u => u.alive)) {
+    // Team2 공격 계산
+    for (const attacker of team2Alive) {
       if (time >= attacker.nextAttackTime) {
         const target = selectTarget(team1States, cfg.targetingMode);
-        if (!target) break;
+        if (!target) continue;
 
         const result = calculateDamage(attacker, target, cfg.damageFormula, cfg.defenseFormula, cfg.armorPenetration);
-
-        if (!result.isMiss) {
-          target.currentHp = Math.max(0, target.currentHp - result.damage);
-          target.damageTaken += result.damage;
-          attacker.damageDealt += result.damage;
-          team2TotalDamage += result.damage;
-
-          if (target.currentHp <= 0) {
-            target.alive = false;
-            attacker.kills++;
-          }
-        }
-
+        pendingAttacks.push({
+          attacker,
+          target,
+          damage: result.damage,
+          isMiss: result.isMiss,
+          isTeam1: false,
+        });
         attacker.nextAttackTime = time + 1 / attacker.speed;
+      }
+    }
+
+    // 데미지 일괄 적용 (동시 처리)
+    for (const attack of pendingAttacks) {
+      if (!attack.isMiss) {
+        attack.target.currentHp = Math.max(0, attack.target.currentHp - attack.damage);
+        attack.target.damageTaken += attack.damage;
+        attack.attacker.damageDealt += attack.damage;
+
+        if (attack.isTeam1) {
+          team1TotalDamage += attack.damage;
+        } else {
+          team2TotalDamage += attack.damage;
+        }
+      }
+    }
+
+    // 사망 처리 (데미지 적용 후)
+    for (const attack of pendingAttacks) {
+      if (!attack.isMiss && attack.target.currentHp <= 0 && attack.target.alive) {
+        attack.target.alive = false;
+        attack.attacker.kills++;
       }
     }
   }
@@ -1218,17 +1246,23 @@ export function simulateTeamBattle(
   };
 }
 
-/**
- * 몬테카를로 팀 전투 시뮬레이션
- */
-export function runTeamMonteCarloSimulation(
-  team1: UnitStats[],
-  team2: UnitStats[],
-  runs: number = 1000,
-  config: Partial<import('./types').TeamBattleConfig> = {},
-  team1Skills?: Map<string, Skill[]>,
-  team2Skills?: Map<string, Skill[]>
-): {
+// 유닛별 통계 (몬테카를로 결과용)
+interface UnitBattleStats {
+  unitId: string;
+  unitName: string;
+  team: 'team1' | 'team2';
+  survivalRate: number;
+  avgDamageDealt: number;
+  avgDamageTaken: number;
+  avgKills: number;
+  totalDamageDealt: number;
+  totalKills: number;
+  dps: number;
+  mvpCount: number;
+}
+
+// 팀 전투 상세 결과 타입
+export interface DetailedTeamResult {
   totalRuns: number;
   team1Wins: number;
   team2Wins: number;
@@ -1238,7 +1272,35 @@ export function runTeamMonteCarloSimulation(
   avgDuration: number;
   avgTeam1Survivors: number;
   avgTeam2Survivors: number;
-} {
+
+  // 확장 통계
+  durationDistribution: number[];
+  minDuration: number;
+  maxDuration: number;
+  avgTeam1Damage: number;
+  avgTeam2Damage: number;
+  team1DPS: number;
+  team2DPS: number;
+  unitStats: UnitBattleStats[];
+  avgTeam1SurvivorHpRatio: number;
+  avgTeam2SurvivorHpRatio: number;
+  sampleBattles: import('./types').TeamBattleResult[];
+  team1Reversals: number;
+  team2Reversals: number;
+  closeMatches: number;
+}
+
+/**
+ * 몬테카를로 팀 전투 시뮬레이션 (상세 통계 포함)
+ */
+export function runTeamMonteCarloSimulation(
+  team1: UnitStats[],
+  team2: UnitStats[],
+  runs: number = 1000,
+  config: Partial<import('./types').TeamBattleConfig> = {},
+  team1Skills?: Map<string, Skill[]>,
+  team2Skills?: Map<string, Skill[]>
+): DetailedTeamResult {
   let team1Wins = 0;
   let team2Wins = 0;
   let draws = 0;
@@ -1246,19 +1308,191 @@ export function runTeamMonteCarloSimulation(
   let totalTeam1Survivors = 0;
   let totalTeam2Survivors = 0;
 
+  // 확장 통계용 변수
+  const durations: number[] = [];
+  let totalTeam1Damage = 0;
+  let totalTeam2Damage = 0;
+  let team1SurvivorHpRatioSum = 0;
+  let team2SurvivorHpRatioSum = 0;
+  let team1WinCount = 0;
+  let team2WinCount = 0;
+  let team1Reversals = 0;
+  let team2Reversals = 0;
+  let closeMatches = 0;
+
+  // 유닛별 통계 누적
+  const unitStatsAccum = new Map<string, {
+    survivalCount: number;
+    totalDamageDealt: number;
+    totalDamageTaken: number;
+    totalKills: number;
+    mvpCount: number;
+    unitName: string;
+    team: 'team1' | 'team2';
+  }>();
+
+  // 모든 유닛 초기화
+  team1.forEach(u => unitStatsAccum.set(u.id, {
+    survivalCount: 0, totalDamageDealt: 0, totalDamageTaken: 0, totalKills: 0, mvpCount: 0, unitName: u.name, team: 'team1'
+  }));
+  team2.forEach(u => unitStatsAccum.set(u.id, {
+    survivalCount: 0, totalDamageDealt: 0, totalDamageTaken: 0, totalKills: 0, mvpCount: 0, unitName: u.name, team: 'team2'
+  }));
+
+  // 샘플 전투 저장 (다양한 결과 포함: Team1 승리, Team2 승리, 무승부)
+  const sampleBattles: import('./types').TeamBattleResult[] = [];
+  const team1WinSamples: import('./types').TeamBattleResult[] = [];
+  const team2WinSamples: import('./types').TeamBattleResult[] = [];
+  const drawSamples: import('./types').TeamBattleResult[] = [];
+
   for (let i = 0; i < runs; i++) {
     const result = (team1Skills || team2Skills)
       ? simulateTeamBattleWithSkills(team1, team2, team1Skills || new Map(), team2Skills || new Map(), config)
       : simulateTeamBattle(team1, team2, config);
 
-    if (result.winner === 'team1') team1Wins++;
-    else if (result.winner === 'team2') team2Wins++;
-    else draws++;
+    // 결과별로 샘플 저장 (각 최대 2개씩)
+    if (result.winner === 'team1' && team1WinSamples.length < 2) {
+      team1WinSamples.push(result);
+    } else if (result.winner === 'team2' && team2WinSamples.length < 2) {
+      team2WinSamples.push(result);
+    } else if (result.winner === 'draw' && drawSamples.length < 1) {
+      drawSamples.push(result);
+    }
+
+    // 기본 통계
+    if (result.winner === 'team1') {
+      team1Wins++;
+      team1WinCount++;
+    } else if (result.winner === 'team2') {
+      team2Wins++;
+      team2WinCount++;
+    } else {
+      draws++;
+    }
 
     totalDuration += result.duration;
+    durations.push(result.duration);
     totalTeam1Survivors += result.team1Survivors;
     totalTeam2Survivors += result.team2Survivors;
+    totalTeam1Damage += result.team1TotalDamage;
+    totalTeam2Damage += result.team2TotalDamage;
+
+    // 유닛별 통계 수집
+    let team1TopDamage = 0;
+    let team1MVP = '';
+    let team2TopDamage = 0;
+    let team2MVP = '';
+
+    for (const unitResult of result.unitResults) {
+      const stats = unitStatsAccum.get(unitResult.unit.id);
+      if (stats) {
+        if (unitResult.survived) stats.survivalCount++;
+        stats.totalDamageDealt += unitResult.damageDealt;
+        stats.totalDamageTaken += unitResult.damageTaken;
+        stats.totalKills += unitResult.kills;
+
+        // MVP 추적
+        if (unitResult.team === 'team1' && unitResult.damageDealt > team1TopDamage) {
+          team1TopDamage = unitResult.damageDealt;
+          team1MVP = unitResult.unit.id;
+        }
+        if (unitResult.team === 'team2' && unitResult.damageDealt > team2TopDamage) {
+          team2TopDamage = unitResult.damageDealt;
+          team2MVP = unitResult.unit.id;
+        }
+      }
+    }
+
+    // MVP 카운트
+    if (team1MVP) {
+      const stats = unitStatsAccum.get(team1MVP);
+      if (stats) stats.mvpCount++;
+    }
+    if (team2MVP) {
+      const stats = unitStatsAccum.get(team2MVP);
+      if (stats) stats.mvpCount++;
+    }
+
+    // 승리 시 생존 HP 비율
+    if (result.winner === 'team1') {
+      const survivorHpRatio = result.unitResults
+        .filter(u => u.team === 'team1' && u.survived)
+        .reduce((sum, u) => {
+          // 현재 HP를 구하기 어려우므로 생존 자체를 1로 계산
+          return sum + 1;
+        }, 0) / team1.length;
+      team1SurvivorHpRatioSum += survivorHpRatio;
+    }
+    if (result.winner === 'team2') {
+      const survivorHpRatio = result.unitResults
+        .filter(u => u.team === 'team2' && u.survived)
+        .reduce((sum, u) => sum + 1, 0) / team2.length;
+      team2SurvivorHpRatioSum += survivorHpRatio;
+    }
+
+    // 역전 분석: 스탯상 불리한 팀이 이긴 경우
+    // 팀 전투력 = 총 HP * 평균 ATK (대략적 지표)
+    const team1Power = team1.reduce((sum, u) => sum + u.maxHp, 0) * (team1.reduce((sum, u) => sum + u.atk, 0) / team1.length);
+    const team2Power = team2.reduce((sum, u) => sum + u.maxHp, 0) * (team2.reduce((sum, u) => sum + u.atk, 0) / team2.length);
+
+    if (result.winner === 'team1') {
+      // Team1이 이겼는데: 전투력이 더 낮았으면 역전
+      if (team1Power < team2Power) {
+        team1Reversals++;
+      }
+    }
+    if (result.winner === 'team2') {
+      // Team2가 이겼는데: 전투력이 더 낮았으면 역전
+      if (team2Power < team1Power) {
+        team2Reversals++;
+      }
+    }
+
+    // 박빙 (생존자 수 차이가 1 이하)
+    if (Math.abs(result.team1Survivors - result.team2Survivors) <= 1 && result.winner !== 'draw') {
+      closeMatches++;
+    }
   }
+
+  // 샘플 전투 합치기 (Team1 승리 → Team2 승리 → 무승부 순서)
+  sampleBattles.push(...team1WinSamples, ...team2WinSamples, ...drawSamples);
+
+  // 전투 시간 분포 (10개 구간으로 나눔)
+  const minDuration = Math.min(...durations);
+  const maxDuration = Math.max(...durations);
+  const bucketCount = 10;
+  const bucketSize = (maxDuration - minDuration) / bucketCount || 1;
+  const durationDistribution = new Array(bucketCount).fill(0);
+  for (const d of durations) {
+    const bucket = Math.min(bucketCount - 1, Math.floor((d - minDuration) / bucketSize));
+    durationDistribution[bucket]++;
+  }
+
+  // 유닛별 최종 통계 계산
+  const avgDuration = totalDuration / runs;
+  const unitStats: UnitBattleStats[] = [];
+
+  unitStatsAccum.forEach((stats, unitId) => {
+    unitStats.push({
+      unitId,
+      unitName: stats.unitName,
+      team: stats.team,
+      survivalRate: stats.survivalCount / runs,
+      avgDamageDealt: stats.totalDamageDealt / runs,
+      avgDamageTaken: stats.totalDamageTaken / runs,
+      avgKills: stats.totalKills / runs,
+      totalDamageDealt: stats.totalDamageDealt,
+      totalKills: stats.totalKills,
+      dps: stats.totalDamageDealt / totalDuration,
+      mvpCount: stats.mvpCount,
+    });
+  });
+
+  // 팀별로 정렬 (Team1 먼저, 그 다음 Team2, MVP 카운트 순)
+  unitStats.sort((a, b) => {
+    if (a.team !== b.team) return a.team === 'team1' ? -1 : 1;
+    return b.mvpCount - a.mvpCount;
+  });
 
   return {
     totalRuns: runs,
@@ -1267,9 +1501,25 @@ export function runTeamMonteCarloSimulation(
     draws,
     team1WinRate: team1Wins / runs,
     team2WinRate: team2Wins / runs,
-    avgDuration: totalDuration / runs,
+    avgDuration,
     avgTeam1Survivors: totalTeam1Survivors / runs,
     avgTeam2Survivors: totalTeam2Survivors / runs,
+
+    // 확장 통계
+    durationDistribution,
+    minDuration,
+    maxDuration,
+    avgTeam1Damage: totalTeam1Damage / runs,
+    avgTeam2Damage: totalTeam2Damage / runs,
+    team1DPS: totalTeam1Damage / totalDuration,
+    team2DPS: totalTeam2Damage / totalDuration,
+    unitStats,
+    avgTeam1SurvivorHpRatio: team1WinCount > 0 ? team1SurvivorHpRatioSum / team1WinCount : 0,
+    avgTeam2SurvivorHpRatio: team2WinCount > 0 ? team2SurvivorHpRatioSum / team2WinCount : 0,
+    sampleBattles,
+    team1Reversals,
+    team2Reversals,
+    closeMatches,
   };
 }
 
@@ -1376,12 +1626,13 @@ export function simulateTeamBattleWithSkills(
     return sorted.slice(0, targetCount);
   };
 
-  // 부활 체크 함수
-  const checkRevive = (unit: UnitState, skills: Skill[], time: number): boolean => {
+  // 자기부활 체크 함수 (죽은 유닛 자신의 스킬)
+  const checkSelfRevive = (unit: UnitState, skills: Skill[], time: number): boolean => {
     if (unit.reviveUsed || unit.currentHp > 0) return false;
 
     for (const skill of skills) {
       if (skill.skillType !== 'revive') continue;
+      if (skill.reviveTarget !== 'self') continue;  // 자기부활만
 
       const cooldownEnds = unit.skillCooldowns.get(skill.id) || 0;
       if (time < cooldownEnds) continue;
@@ -1394,6 +1645,54 @@ export function simulateTeamBattleWithSkills(
       unit.skillCooldowns.set(skill.id, time + skill.cooldown);
       return true;
     }
+    return false;
+  };
+
+  // 타인부활 체크 함수 (살아있는 아군의 스킬로 죽은 아군 부활)
+  const checkAllyRevive = (
+    deadUnit: UnitState,
+    aliveAllies: UnitState[],
+    skillsMap: Map<string, Skill[]>,
+    time: number
+  ): boolean => {
+    if (deadUnit.reviveUsed || deadUnit.currentHp > 0) return false;
+
+    for (const ally of aliveAllies) {
+      if (!ally.alive || ally.id === deadUnit.id) continue;
+
+      const allySkills = skillsMap.get(ally.id) || [];
+      for (const skill of allySkills) {
+        if (skill.skillType !== 'revive') continue;
+        if (skill.reviveTarget !== 'ally') continue;  // 타인부활만
+
+        const cooldownEnds = ally.skillCooldowns.get(skill.id) || 0;
+        if (time < cooldownEnds) continue;
+
+        if (skill.trigger?.chance && Math.random() > skill.trigger.chance) continue;
+
+        // 부활 성공
+        deadUnit.currentHp = Math.round(deadUnit.maxHp * (skill.reviveHpPercent || 0.3));
+        deadUnit.alive = true;
+        deadUnit.reviveUsed = true;
+        ally.skillCooldowns.set(skill.id, time + skill.cooldown);  // 부활 스킬 쿨다운은 시전자에게
+        return true;
+      }
+    }
+    return false;
+  };
+
+  // 통합 부활 체크 (자기부활 -> 타인부활 순으로 시도)
+  const checkRevive = (
+    unit: UnitState,
+    unitSkills: Skill[],
+    allies: UnitState[],
+    skillsMap: Map<string, Skill[]>,
+    time: number
+  ): boolean => {
+    // 1. 자기부활 먼저 시도
+    if (checkSelfRevive(unit, unitSkills, time)) return true;
+    // 2. 타인부활 시도 (살아있는 아군이 부활시킴)
+    if (checkAllyRevive(unit, allies, skillsMap, time)) return true;
     return false;
   };
 
@@ -1440,7 +1739,8 @@ export function simulateTeamBattleWithSkills(
           const baseDamage = skill.damageType === 'flat'
             ? skill.damage
             : attacker.atk * skill.damage;
-          const finalDamage = Math.max(1, Math.round(baseDamage - target.def));
+          const effectiveDef = calculateEffectiveDefense(target.def, cfg.armorPenetration);
+          const finalDamage = Math.max(1, Math.round(baseDamage - effectiveDef));
 
           target.currentHp = Math.max(0, target.currentHp - finalDamage);
           target.damageTaken += finalDamage;
@@ -1452,7 +1752,9 @@ export function simulateTeamBattleWithSkills(
             const targetSkills = target.team === 'team1'
               ? team1Skills.get(target.id) || []
               : team2Skills.get(target.id) || [];
-            checkRevive(target, targetSkills, time);
+            const targetAllies = target.team === 'team1' ? team1States : team2States;
+            const targetSkillsMap = target.team === 'team1' ? team1Skills : team2Skills;
+            checkRevive(target, targetSkills, targetAllies, targetSkillsMap, time);
           }
           break;
         }
@@ -1465,7 +1767,8 @@ export function simulateTeamBattleWithSkills(
             const baseDamage = skill.damageType === 'flat'
               ? skill.damage
               : attacker.atk * skill.damage;
-            const finalDamage = Math.max(1, Math.round(baseDamage - target.def));
+            const effectiveDef = calculateEffectiveDefense(target.def, cfg.armorPenetration);
+            const finalDamage = Math.max(1, Math.round(baseDamage - effectiveDef));
 
             target.currentHp = Math.max(0, target.currentHp - finalDamage);
             target.damageTaken += finalDamage;
@@ -1477,7 +1780,9 @@ export function simulateTeamBattleWithSkills(
               const targetSkills = target.team === 'team1'
                 ? team1Skills.get(target.id) || []
                 : team2Skills.get(target.id) || [];
-              checkRevive(target, targetSkills, time);
+              const targetAllies = target.team === 'team1' ? team1States : team2States;
+              const targetSkillsMap = target.team === 'team1' ? team1Skills : team2Skills;
+              checkRevive(target, targetSkills, targetAllies, targetSkillsMap, time);
             }
           }
           break;
@@ -1569,13 +1874,33 @@ export function simulateTeamBattleWithSkills(
 
     if (team1Alive.length === 0 || team2Alive.length === 0) break;
 
-    // Team1 공격 및 스킬
+    // 스킬 처리 (양팀 동시)
     for (const attacker of team1Alive) {
       if (time >= attacker.nextAttackTime) {
-        // 스킬 처리
         const skills = team1Skills.get(attacker.id) || [];
         processUnitSkills(attacker, team2States, team1States, skills, time);
+      }
+    }
+    for (const attacker of team2Alive) {
+      if (time >= attacker.nextAttackTime) {
+        const skills = team2Skills.get(attacker.id) || [];
+        processUnitSkills(attacker, team1States, team2States, skills, time);
+      }
+    }
 
+    // 동시 공격 처리: 데미지를 먼저 모두 계산한 뒤 일괄 적용
+    interface PendingAttack {
+      attacker: UnitState;
+      target: UnitState;
+      damage: number;
+      isMiss: boolean;
+      isTeam1: boolean;
+    }
+    const pendingAttacks: PendingAttack[] = [];
+
+    // Team1 공격 계산
+    for (const attacker of team1Alive) {
+      if (time >= attacker.nextAttackTime) {
         // 무적 중 공격 불가
         if (time < attacker.invincibleUntil) {
           attacker.nextAttackTime = time + 1 / attacker.speed;
@@ -1583,7 +1908,7 @@ export function simulateTeamBattleWithSkills(
         }
 
         const target = selectTarget(team2States, cfg.targetingMode);
-        if (!target) break;
+        if (!target) continue;
 
         // 대상 무적 체크
         if (time < target.invincibleUntil) {
@@ -1592,32 +1917,20 @@ export function simulateTeamBattleWithSkills(
         }
 
         const result = calculateDamage(attacker, target, cfg.damageFormula, cfg.defenseFormula, cfg.armorPenetration);
-
-        if (!result.isMiss) {
-          target.currentHp = Math.max(0, target.currentHp - result.damage);
-          target.damageTaken += result.damage;
-          attacker.damageDealt += result.damage;
-          team1TotalDamage += result.damage;
-
-          if (target.currentHp <= 0) {
-            target.alive = false;
-            attacker.kills++;
-            const targetSkills = team2Skills.get(target.id) || [];
-            checkRevive(target, targetSkills, time);
-          }
-        }
-
+        pendingAttacks.push({
+          attacker,
+          target,
+          damage: result.damage,
+          isMiss: result.isMiss,
+          isTeam1: true,
+        });
         attacker.nextAttackTime = time + 1 / attacker.speed;
       }
     }
 
-    // Team2 공격 및 스킬
-    for (const attacker of team2Alive.filter(u => u.alive)) {
+    // Team2 공격 계산
+    for (const attacker of team2Alive) {
       if (time >= attacker.nextAttackTime) {
-        // 스킬 처리
-        const skills = team2Skills.get(attacker.id) || [];
-        processUnitSkills(attacker, team1States, team2States, skills, time);
-
         // 무적 중 공격 불가
         if (time < attacker.invincibleUntil) {
           attacker.nextAttackTime = time + 1 / attacker.speed;
@@ -1625,7 +1938,7 @@ export function simulateTeamBattleWithSkills(
         }
 
         const target = selectTarget(team1States, cfg.targetingMode);
-        if (!target) break;
+        if (!target) continue;
 
         // 대상 무적 체크
         if (time < target.invincibleUntil) {
@@ -1634,22 +1947,43 @@ export function simulateTeamBattleWithSkills(
         }
 
         const result = calculateDamage(attacker, target, cfg.damageFormula, cfg.defenseFormula, cfg.armorPenetration);
-
-        if (!result.isMiss) {
-          target.currentHp = Math.max(0, target.currentHp - result.damage);
-          target.damageTaken += result.damage;
-          attacker.damageDealt += result.damage;
-          team2TotalDamage += result.damage;
-
-          if (target.currentHp <= 0) {
-            target.alive = false;
-            attacker.kills++;
-            const targetSkills = team1Skills.get(target.id) || [];
-            checkRevive(target, targetSkills, time);
-          }
-        }
-
+        pendingAttacks.push({
+          attacker,
+          target,
+          damage: result.damage,
+          isMiss: result.isMiss,
+          isTeam1: false,
+        });
         attacker.nextAttackTime = time + 1 / attacker.speed;
+      }
+    }
+
+    // 데미지 일괄 적용 (동시 처리)
+    for (const attack of pendingAttacks) {
+      if (!attack.isMiss) {
+        attack.target.currentHp = Math.max(0, attack.target.currentHp - attack.damage);
+        attack.target.damageTaken += attack.damage;
+        attack.attacker.damageDealt += attack.damage;
+
+        if (attack.isTeam1) {
+          team1TotalDamage += attack.damage;
+        } else {
+          team2TotalDamage += attack.damage;
+        }
+      }
+    }
+
+    // 사망 처리 및 부활 체크 (데미지 적용 후)
+    for (const attack of pendingAttacks) {
+      if (!attack.isMiss && attack.target.currentHp <= 0 && attack.target.alive) {
+        attack.target.alive = false;
+        attack.attacker.kills++;
+        const targetSkills = attack.target.team === 'team1'
+          ? team1Skills.get(attack.target.id) || []
+          : team2Skills.get(attack.target.id) || [];
+        const targetAllies = attack.target.team === 'team1' ? team1States : team2States;
+        const targetSkillsMap = attack.target.team === 'team1' ? team1Skills : team2Skills;
+        checkRevive(attack.target, targetSkills, targetAllies, targetSkillsMap, time);
       }
     }
   }

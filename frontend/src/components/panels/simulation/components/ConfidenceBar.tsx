@@ -19,7 +19,7 @@ export function ConfidenceBar({ winRate, confidence, color, wins, total }: Confi
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="relative h-8 rounded-lg overflow-hidden cursor-pointer" style={{ background: 'var(--bg-primary)' }}>
+      <div className="relative h-8 rounded-lg overflow-hidden cursor-pointer" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
         {/* 신뢰구간 범위 */}
         <div
           className="absolute h-full transition-opacity"
@@ -35,7 +35,7 @@ export function ConfidenceBar({ winRate, confidence, color, wins, total }: Confi
           className="absolute h-full transition-all"
           style={{
             width: `${winRate * 100}%`,
-            background: `linear-gradient(90deg, ${color}90, ${color})`,
+            background: `linear-gradient(90deg, ${color}, ${color})`,
             boxShadow: isHovered ? `0 0 10px ${color}50` : 'none'
           }}
         />

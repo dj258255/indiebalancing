@@ -4,7 +4,7 @@
 
 'use client';
 
-import { BarChart3, Clock, Zap, TrendingUp, ChevronDown, ChevronUp, Download } from 'lucide-react';
+import { BarChart3, Clock, Zap, TrendingUp, ChevronDown, ChevronUp, Download, Heart, Shield, RotateCcw, Sparkles, Activity, Swords } from 'lucide-react';
 import type { UnitStats, SimulationResult } from '@/lib/simulation/types';
 import { Histogram } from './Histogram';
 import { HpTimelineGraph } from './HpTimelineGraph';
@@ -219,12 +219,14 @@ export function SimulationResults({
           data={result.damageDistribution.unit1}
           label={t('totalDamageDist', { name: unit1Stats.name || '' })}
           color="var(--primary-blue)"
+          rangeLabels={result.damageDistribution.unit1Range}
         />
 
         <Histogram
           data={result.damageDistribution.unit2}
           label={t('totalDamageDist', { name: unit2Stats.name || '' })}
           color="var(--primary-red)"
+          rangeLabels={result.damageDistribution.unit2Range}
         />
       </div>
 
@@ -317,48 +319,140 @@ export function SimulationResults({
           )}
 
           <div className="max-h-48 overflow-y-auto space-y-1">
-            {result.sampleBattles[selectedBattleIndex]?.log.map((entry, i) => (
-              <div
-                key={i}
-                className="flex items-center gap-2 text-sm py-1 px-2 rounded"
-                style={{
-                  background: entry.action === 'death' ? 'rgba(255, 0, 0, 0.1)' : 'transparent'
-                }}
-              >
-                <span className="w-12 text-right" style={{ color: 'var(--text-secondary)' }}>
-                  {entry.time.toFixed(1)}s
-                </span>
-                <span
-                  className="font-medium"
-                  style={{
-                    color: entry.actor === unit1Stats.name ? 'var(--primary-blue)' : 'var(--primary-red)'
-                  }}
+            {result.sampleBattles[selectedBattleIndex]?.log.map((entry, i) => {
+              const actorColor = entry.actor === unit1Stats.name ? 'var(--primary-blue)' : 'var(--primary-red)';
+              const getActionBackground = () => {
+                switch (entry.action) {
+                  case 'death': return 'rgba(255, 0, 0, 0.1)';
+                  case 'skill': return 'rgba(229, 168, 64, 0.1)';
+                  case 'heal': return 'rgba(61, 184, 138, 0.1)';
+                  case 'hot_tick': return 'rgba(61, 184, 138, 0.05)';
+                  case 'invincible': return 'rgba(90, 156, 245, 0.1)';
+                  case 'revive': return 'rgba(161, 150, 245, 0.1)';
+                  default: return 'transparent';
+                }
+              };
+
+              return (
+                <div
+                  key={i}
+                  className="flex items-center gap-2 text-sm py-1 px-2 rounded"
+                  style={{ background: getActionBackground() }}
                 >
-                  {entry.actor}
-                </span>
-                {entry.action === 'attack' && (
-                  <>
-                    <span style={{ color: 'var(--text-secondary)' }}>→</span>
-                    <span style={{ color: 'var(--text-secondary)' }}>
-                      {entry.isMiss ? (
-                        <span className="text-yellow-500">MISS</span>
-                      ) : (
+                  <span className="w-12 text-right shrink-0" style={{ color: 'var(--text-secondary)' }}>
+                    {entry.time.toFixed(1)}s
+                  </span>
+                  <span className="font-medium shrink-0" style={{ color: actorColor }}>
+                    {entry.actor}
+                  </span>
+
+                  {/* 일반 공격 */}
+                  {entry.action === 'attack' && (
+                    <>
+                      <span style={{ color: 'var(--text-secondary)' }}>→</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>
+                        {entry.isMiss ? (
+                          <span className="text-yellow-500">MISS</span>
+                        ) : (
+                          <>
+                            {entry.damage}
+                            {entry.isCrit && <span className="text-orange-500 ml-1">CRIT!</span>}
+                          </>
+                        )}
+                      </span>
+                      <span className="truncate" style={{ color: 'var(--text-secondary)' }}>
+                        ({entry.target} HP: {entry.remainingHp?.toFixed(0)})
+                      </span>
+                    </>
+                  )}
+
+                  {/* 스킬 데미지 */}
+                  {entry.action === 'skill' && (
+                    <>
+                      <Sparkles className="w-3 h-3 shrink-0" style={{ color: '#e5a440' }} />
+                      <span className="font-medium" style={{ color: '#e5a440' }}>{entry.skillName}</span>
+                      {entry.damage !== undefined && entry.damage > 0 && (
                         <>
-                          {entry.damage}
-                          {entry.isCrit && <span className="text-orange-500 ml-1">CRIT!</span>}
+                          <span style={{ color: 'var(--text-secondary)' }}>→</span>
+                          <span style={{ color: 'var(--text-secondary)' }}>
+                            {entry.isMiss ? (
+                              <span className="text-yellow-500">BLOCKED</span>
+                            ) : (
+                              <span className="text-orange-400">{entry.damage}</span>
+                            )}
+                          </span>
                         </>
                       )}
-                    </span>
-                    <span style={{ color: 'var(--text-secondary)' }}>
-                      ({entry.target} HP: {entry.remainingHp?.toFixed(0)})
-                    </span>
-                  </>
-                )}
-                {entry.action === 'death' && (
-                  <span className="text-red-500">{t('death')}</span>
-                )}
-              </div>
-            ))}
+                      {entry.remainingHp !== undefined && entry.target && (
+                        <span className="truncate" style={{ color: 'var(--text-secondary)' }}>
+                          ({entry.target} HP: {entry.remainingHp.toFixed(0)})
+                        </span>
+                      )}
+                    </>
+                  )}
+
+                  {/* 힐 스킬 */}
+                  {entry.action === 'heal' && (
+                    <>
+                      <Heart className="w-3 h-3 shrink-0" style={{ color: '#3db88a' }} />
+                      <span className="font-medium" style={{ color: '#3db88a' }}>{entry.skillName}</span>
+                      <span style={{ color: '#3db88a' }}>+{entry.healAmount}</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>(HP: {entry.remainingHp?.toFixed(0)})</span>
+                    </>
+                  )}
+
+                  {/* HoT 틱 */}
+                  {entry.action === 'hot_tick' && (
+                    <>
+                      <Activity className="w-3 h-3 shrink-0" style={{ color: '#3db88a' }} />
+                      <span style={{ color: '#3db88a' }}>HoT</span>
+                      <span style={{ color: '#3db88a' }}>+{entry.healAmount}</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>(HP: {entry.remainingHp?.toFixed(0)})</span>
+                    </>
+                  )}
+
+                  {/* HoT 종료 */}
+                  {entry.action === 'hot_end' && (
+                    <>
+                      <Activity className="w-3 h-3 shrink-0" style={{ color: 'var(--text-secondary)' }} />
+                      <span style={{ color: 'var(--text-secondary)' }}>{entry.skillName} 종료</span>
+                    </>
+                  )}
+
+                  {/* 무적 발동 */}
+                  {entry.action === 'invincible' && (
+                    <>
+                      <Shield className="w-3 h-3 shrink-0" style={{ color: '#5a9cf5' }} />
+                      <span className="font-medium" style={{ color: '#5a9cf5' }}>{entry.skillName}</span>
+                      <span style={{ color: '#5a9cf5' }}>무적!</span>
+                    </>
+                  )}
+
+                  {/* 무적 종료 */}
+                  {entry.action === 'invincible_end' && (
+                    <>
+                      <Shield className="w-3 h-3 shrink-0" style={{ color: 'var(--text-secondary)' }} />
+                      <span style={{ color: 'var(--text-secondary)' }}>무적 종료</span>
+                    </>
+                  )}
+
+                  {/* 부활 */}
+                  {entry.action === 'revive' && (
+                    <>
+                      <RotateCcw className="w-3 h-3 shrink-0" style={{ color: '#a896f5' }} />
+                      <span className="font-medium" style={{ color: '#a896f5' }}>{entry.skillName}</span>
+                      <span style={{ color: '#a896f5' }}>부활!</span>
+                      <span style={{ color: 'var(--text-secondary)' }}>(HP: {entry.remainingHp?.toFixed(0)})</span>
+                    </>
+                  )}
+
+                  {/* 사망 */}
+                  {entry.action === 'death' && (
+                    <span className="text-red-500 font-medium">{t('death')}</span>
+                  )}
+                </div>
+              );
+            })}
           </div>
 
           <div className="text-sm pt-2 border-t" style={{ borderColor: 'var(--border-primary)', color: 'var(--text-secondary)' }}>
@@ -457,6 +551,105 @@ export function SimulationResults({
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* 스킬 통계 */}
+      {result.skillStats && (result.skillStats.unit1.length > 0 || result.skillStats.unit2.length > 0) && (
+        <div className="p-4 rounded-xl space-y-4" style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}>
+          <div className="flex items-center gap-2">
+            <Swords className="w-4 h-4" style={{ color: '#e5a440' }} />
+            <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('skillStats')}</span>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* Unit1 스킬 통계 */}
+            {result.skillStats.unit1.length > 0 && (
+              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                <div className="text-sm font-medium mb-3" style={{ color: 'var(--primary-blue)' }}>{unit1Stats.name}</div>
+                <div className="space-y-2">
+                  {result.skillStats.unit1.map((skill) => (
+                    <div key={skill.skillId} className="text-sm">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{skill.skillName}</span>
+                        <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+                          {(skill.totalUses / result.totalRuns).toFixed(1)}회/전투
+                        </span>
+                      </div>
+                      <div className="flex gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                        {skill.totalDamage > 0 && (
+                          <span>
+                            데미지: <span style={{ color: '#e5a440' }}>{skill.avgDamagePerUse.toFixed(0)}</span>/회
+                          </span>
+                        )}
+                        {skill.totalHealing > 0 && (
+                          <span>
+                            힐: <span style={{ color: '#3db88a' }}>{(skill.totalHealing / skill.totalUses).toFixed(0)}</span>/회
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Unit2 스킬 통계 */}
+            {result.skillStats.unit2.length > 0 && (
+              <div className="p-3 rounded-lg" style={{ background: 'var(--bg-primary)' }}>
+                <div className="text-sm font-medium mb-3" style={{ color: 'var(--primary-red)' }}>{unit2Stats.name}</div>
+                <div className="space-y-2">
+                  {result.skillStats.unit2.map((skill) => (
+                    <div key={skill.skillId} className="text-sm">
+                      <div className="flex justify-between items-center mb-1">
+                        <span className="font-medium" style={{ color: 'var(--text-primary)' }}>{skill.skillName}</span>
+                        <span className="text-xs px-1.5 py-0.5 rounded" style={{ background: 'var(--bg-tertiary)', color: 'var(--text-secondary)' }}>
+                          {(skill.totalUses / result.totalRuns).toFixed(1)}회/전투
+                        </span>
+                      </div>
+                      <div className="flex gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
+                        {skill.totalDamage > 0 && (
+                          <span>
+                            데미지: <span style={{ color: '#e5a440' }}>{skill.avgDamagePerUse.toFixed(0)}</span>/회
+                          </span>
+                        )}
+                        {skill.totalHealing > 0 && (
+                          <span>
+                            힐: <span style={{ color: '#3db88a' }}>{(skill.totalHealing / skill.totalUses).toFixed(0)}</span>/회
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* 힐 통계 요약 */}
+          {result.healingStats && (result.healingStats.unit1TotalHealing > 0 || result.healingStats.unit2TotalHealing > 0) && (
+            <div className="pt-3 border-t" style={{ borderColor: 'var(--border-primary)' }}>
+              <div className="text-sm font-medium mb-2" style={{ color: 'var(--text-secondary)' }}>{t('healingStats')}</div>
+              <div className="grid grid-cols-2 gap-2">
+                <div className="p-2 rounded-lg text-center" style={{ background: 'var(--bg-primary)' }}>
+                  <div className="text-lg font-bold" style={{ color: '#3db88a' }}>
+                    {result.healingStats.unit1HPS.toFixed(1)}
+                  </div>
+                  <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    {unit1Stats.name} HPS
+                  </div>
+                </div>
+                <div className="p-2 rounded-lg text-center" style={{ background: 'var(--bg-primary)' }}>
+                  <div className="text-lg font-bold" style={{ color: '#3db88a' }}>
+                    {result.healingStats.unit2HPS.toFixed(1)}
+                  </div>
+                  <div className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    {unit2Stats.name} HPS
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
 

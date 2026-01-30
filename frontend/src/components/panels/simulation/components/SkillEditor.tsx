@@ -10,6 +10,7 @@ interface SkillEditorProps {
   skills: Skill[];
   onSkillsChange: (skills: Skill[]) => void;
   color?: string;
+  isTeamBattle?: boolean;  // 팀전 여부 (1v1에서는 타인부활 비활성화)
 }
 
 const SKILL_TYPES: { type: SkillType; icon: typeof Zap; label: string; desc: string; color: string }[] = [
@@ -118,15 +119,21 @@ function NumberInputWithCell({ label, value, onChange, placeholder }: NumberInpu
   const [inputValue, setInputValue] = useState(String(value));
   const { startCellSelection, cellSelectionMode } = useProjectStore();
 
+  // 외부에서 값이 변경될 때만 동기화 (사용자 입력 중이 아닐 때)
+  const [lastExternalValue, setLastExternalValue] = useState(value);
   useEffect(() => {
-    setInputValue(String(value));
-  }, [value]);
+    if (value !== lastExternalValue) {
+      setInputValue(String(value));
+      setLastExternalValue(value);
+    }
+  }, [value, lastExternalValue]);
 
   const handleCellSelect = () => {
     startCellSelection(label, (cellValue) => {
       const num = Number(cellValue);
       if (!isNaN(num)) {
         setInputValue(String(num));
+        setLastExternalValue(num);
         onChange(num);
       }
     });
@@ -145,22 +152,18 @@ function NumberInputWithCell({ label, value, onChange, placeholder }: NumberInpu
           type="text"
           inputMode="decimal"
           value={inputValue}
-          placeholder={placeholder}
+          placeholder={placeholder || '0'}
           onChange={(e) => {
             const newValue = e.target.value;
             if (newValue === '' || /^-?\d*\.?\d*$/.test(newValue)) {
               setInputValue(newValue);
-              const num = parseFloat(newValue);
-              if (!isNaN(num)) onChange(num);
-            }
-          }}
-          onBlur={() => {
-            const num = parseFloat(inputValue);
-            if (isNaN(num) || inputValue === '') {
-              setInputValue('0');
-              onChange(0);
-            } else {
-              setInputValue(String(num));
+              if (newValue !== '') {
+                const num = parseFloat(newValue);
+                if (!isNaN(num)) {
+                  setLastExternalValue(num);
+                  onChange(num);
+                }
+              }
             }
           }}
           className="w-full px-2 py-1.5 pr-7 rounded text-sm"
@@ -180,7 +183,7 @@ function NumberInputWithCell({ label, value, onChange, placeholder }: NumberInpu
   );
 }
 
-export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blue)' }: SkillEditorProps) {
+export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blue)', isTeamBattle = false }: SkillEditorProps) {
   const t = useTranslations('simulation');
   const [expandedSkill, setExpandedSkill] = useState<string | null>(null);
 
@@ -197,7 +200,11 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
       ...(type === 'heal' && { healAmount: 0.2, healType: 'percent' as const }),
       ...(type === 'hot' && { hotDuration: 5, hotTickInterval: 1, hotAmount: 0.05, hotType: 'percent' as const }),
       ...(type === 'invincible' && { invincibleDuration: 2 }),
-      ...(type === 'revive' && { reviveHpPercent: 0.3, trigger: { type: 'always' as const, chance: 0.5 } }),
+      ...(type === 'revive' && {
+        reviveHpPercent: 0.3,
+        reviveTarget: isTeamBattle ? 'ally' as const : 'self' as const,  // 1v1에서는 자기부활만 가능
+        trigger: { type: 'always' as const, chance: 0.5 }
+      }),
       ...(type === 'aoe_damage' && { aoeTargetCount: undefined, aoeTargetMode: 'all' as const }),
       ...(type === 'aoe_heal' && { healAmount: 0.15, healType: 'percent' as const, aoeTargetCount: undefined, aoeTargetMode: 'all' as const }),
     };
@@ -318,7 +325,7 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
                       {/* 발동 확률 */}
                       <NumberInputWithCell
                         label={`${t('triggerChance')} (%)`}
-                        value={Math.round((skill.trigger?.chance || 1) * 100)}
+                        value={Math.round((skill.trigger?.chance ?? 1) * 100)}
                         onChange={(v) => updateSkill(skill.id, {
                           trigger: { ...skill.trigger, type: skill.trigger?.type || 'always', chance: v / 100 }
                         })}
@@ -454,13 +461,39 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
                     )}
 
                     {skill.skillType === 'revive' && (
-                      <NumberInputWithCell
-                        label={`${t('reviveHpPercent')} (%)`}
-                        value={Math.round((skill.reviveHpPercent || 0.3) * 100)}
-                        onChange={(v) => updateSkill(skill.id, { reviveHpPercent: v / 100 })}
-                        min={1}
-                        max={100}
-                      />
+                      <div className="grid grid-cols-2 gap-2">
+                        <div>
+                          <label className="text-sm font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>
+                            {t('reviveTarget')}
+                          </label>
+                          {isTeamBattle ? (
+                            <select
+                              value={skill.reviveTarget || 'ally'}
+                              onChange={(e) => updateSkill(skill.id, { reviveTarget: e.target.value as 'self' | 'ally' })}
+                              className="w-full px-2 py-1.5 rounded text-sm"
+                              style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
+                            >
+                              <option value="self">{t('reviveTargetSelf')}</option>
+                              <option value="ally">{t('reviveTargetAlly')}</option>
+                            </select>
+                          ) : (
+                            <div
+                              className="w-full px-2 py-1.5 rounded text-sm"
+                              style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-secondary)' }}
+                              title={t('reviveAllyOnlyTeam')}
+                            >
+                              {t('reviveTargetSelf')}
+                            </div>
+                          )}
+                        </div>
+                        <NumberInputWithCell
+                          label={`${t('reviveHpPercent')} (%)`}
+                          value={Math.round((skill.reviveHpPercent || 0.3) * 100)}
+                          onChange={(v) => updateSkill(skill.id, { reviveHpPercent: v / 100 })}
+                          min={1}
+                          max={100}
+                        />
+                      </div>
                     )}
 
                     {(skill.skillType === 'aoe_damage' || skill.skillType === 'aoe_heal') && (

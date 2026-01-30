@@ -31,6 +31,7 @@ export interface Skill {
   invincibleDuration?: number;  // 무적 지속 시간 (초)
   invincibleTradeoff?: InvincibleTradeoff; // 무적 트레이드오프 설정
   reviveHpPercent?: number;     // 부활 시 HP 비율 (0-1)
+  reviveTarget?: 'self' | 'ally';  // 부활 대상 (self: 자기 부활, ally: 아군 부활)
   // HoT (Heal Over Time) 설정
   hotDuration?: number;     // HoT 지속 시간 (초)
   hotTickInterval?: number; // HoT 틱 간격 (초, 기본 1)
@@ -194,6 +195,8 @@ export interface SimulationResult {
   damageDistribution: {
     unit1: number[];
     unit2: number[];
+    unit1Range: { min: number; max: number };
+    unit2Range: { min: number; max: number };
   };
 
   // 신뢰 구간
@@ -248,6 +251,31 @@ export interface SimulationResult {
     critCausedReversals: number;  // 크리티컬로 인한 역전 횟수
     closeMatches: number;    // 박빙 승부 횟수 (HP 10% 이내 차이)
   };
+
+  // 스킬 통계
+  skillStats?: {
+    unit1: SkillUsageStats[];
+    unit2: SkillUsageStats[];
+  };
+
+  // 힐 통계
+  healingStats?: {
+    unit1TotalHealing: number;
+    unit2TotalHealing: number;
+    unit1HPS: number;  // Healing Per Second
+    unit2HPS: number;
+  };
+}
+
+// 스킬 사용 통계
+export interface SkillUsageStats {
+  skillId: string;
+  skillName: string;
+  totalUses: number;
+  totalDamage: number;
+  totalHealing: number;
+  avgDamagePerUse: number;
+  dpsContribution: number;  // 전체 DPS 중 비율 (0-1)
 }
 
 // 팀 전투 설정

@@ -1,6 +1,6 @@
 'use client';
 
-import { X, BookOpen, ExternalLink, Lightbulb, Calculator, TrendingUp, Coins, Sparkles, Gamepad2, AlertTriangle, CheckCircle } from 'lucide-react';
+import { X, BookOpen, ExternalLink, Lightbulb, Calculator, TrendingUp, Coins, Sparkles, Gamepad2, AlertTriangle, CheckCircle, Swords, RotateCcw } from 'lucide-react';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useTranslations } from 'next-intl';
 
@@ -310,6 +310,98 @@ export default function ReferencesModal({ onClose }: ReferencesModalProps) {
         },
       ],
     },
+    {
+      id: 'combatPower',
+      name: t('categories.combatPower'),
+      icon: Swords,
+      color: 'bg-orange-100 text-orange-700',
+      items: [
+        {
+          title: t('combatPower.effectivePowerTitle'),
+          description: t('combatPower.effectivePowerDesc'),
+          url: 'https://app2top.com/game_design/combat-system-design-how-a-game-designer-can-calculate-the-basics-264500.html',
+          guidelines: [
+            { label: t('combatPower.effectivePowerFormula'), value: t('combatPower.effectivePowerFormulaValue'), status: 'good' },
+            { label: t('combatPower.effectiveDps'), value: t('combatPower.effectiveDpsValue'), status: 'info' },
+            { label: t('combatPower.effectiveHp'), value: t('combatPower.effectiveHpValue'), status: 'info' },
+          ],
+        },
+        {
+          title: t('combatPower.ttkCompareTitle'),
+          description: t('combatPower.ttkCompareDesc'),
+          url: 'https://www.hiveworkshop.com/threads/best-way-to-calculate-fighting-power.307286/',
+          guidelines: [
+            { label: t('combatPower.ttkFormula'), value: t('combatPower.ttkFormulaValue'), status: 'good' },
+            { label: t('combatPower.ttkWinner'), value: t('combatPower.ttkWinnerValue'), status: 'info' },
+          ],
+        },
+        {
+          title: t('combatPower.lanchesterTitle'),
+          description: t('combatPower.lanchesterDesc'),
+          url: 'https://www.gamedeveloper.com/design/the-designer-s-notebook-kicking-butt-by-the-numbers-lanchester-s-laws',
+          guidelines: [
+            { label: t('combatPower.lanchesterLinear'), value: t('combatPower.lanchesterLinearValue'), status: 'info' },
+            { label: t('combatPower.lanchesterSquare'), value: t('combatPower.lanchesterSquareValue'), status: 'good' },
+            { label: t('combatPower.lanchesterWarning'), value: t('combatPower.lanchesterWarningValue'), status: 'warning' },
+          ],
+        },
+        {
+          title: t('combatPower.edpsTitle'),
+          description: t('combatPower.edpsDesc'),
+          url: 'https://gamebalancing.wordpress.com/2015/03/14/fire-rate-dps-and-ttk/',
+          guidelines: [
+            { label: t('combatPower.edpsFormula'), value: t('combatPower.edpsFormulaValue'), status: 'good' },
+            { label: t('combatPower.edpsCrit'), value: t('combatPower.edpsCritValue'), status: 'info' },
+            { label: t('combatPower.edpsHit'), value: t('combatPower.edpsHitValue'), status: 'info' },
+          ],
+        },
+      ],
+    },
+    {
+      id: 'comeback',
+      name: t('categories.comeback'),
+      icon: RotateCcw,
+      color: 'bg-cyan-100 text-cyan-700',
+      items: [
+        {
+          title: t('comeback.mechanicTitle'),
+          description: t('comeback.mechanicDesc'),
+          url: 'https://machinations.io/glossary/comeback-mechanic',
+          guidelines: [
+            { label: t('comeback.mechanicCore'), value: t('comeback.mechanicCoreValue'), status: 'good' },
+            { label: t('comeback.mechanicBalance'), value: t('comeback.mechanicBalanceValue'), status: 'info' },
+          ],
+        },
+        {
+          title: t('comeback.reversalTitle'),
+          description: t('comeback.reversalDesc'),
+          url: 'https://blogofarcanesecrets.wordpress.com/2018/02/12/the-underdog-story-designing-comeback-mechanics/',
+          guidelines: [
+            { label: t('comeback.reversalCondition'), value: t('comeback.reversalConditionValue'), status: 'good' },
+            { label: t('comeback.reversalFactor'), value: t('comeback.reversalFactorValue'), status: 'info' },
+          ],
+        },
+        {
+          title: t('comeback.snowballTitle'),
+          description: t('comeback.snowballDesc'),
+          url: 'https://www.leagueoflegends.com/en-us/news/dev/quick-gameplay-thoughts-2-25-comeback-mechanics/',
+          guidelines: [
+            { label: t('comeback.snowballBalance'), value: t('comeback.snowballBalanceValue'), status: 'good' },
+            { label: t('comeback.snowballWarning'), value: t('comeback.snowballWarningValue'), status: 'warning' },
+          ],
+        },
+        {
+          title: t('comeback.varianceTitle'),
+          description: t('comeback.varianceDesc'),
+          url: 'https://www.theonlycolors.com/2013/5/22/4353884/game-theory-expectation-variance-and-underdog-strategies',
+          guidelines: [
+            { label: t('comeback.varianceCrit'), value: t('comeback.varianceCritValue'), status: 'info' },
+            { label: t('comeback.varianceEvasion'), value: t('comeback.varianceEvasionValue'), status: 'info' },
+            { label: t('comeback.varianceWarning'), value: t('comeback.varianceWarningValue'), status: 'warning' },
+          ],
+        },
+      ],
+    },
   ];
 
   const getStatusIcon = (status: 'good' | 'warning' | 'info') => {
@@ -391,6 +483,8 @@ export default function ReferencesModal({ onClose }: ReferencesModalProps) {
                 'bg-yellow-100 text-yellow-700': { bg: 'var(--warning-light)', text: 'var(--warning)' },
                 'bg-pink-100 text-pink-700': { bg: 'var(--primary-purple-light)', text: 'var(--primary-purple)' },
                 'bg-blue-100 text-blue-700': { bg: 'var(--primary-blue-light)', text: 'var(--primary-blue)' },
+                'bg-orange-100 text-orange-700': { bg: '#fff7ed', text: '#c2410c' },
+                'bg-cyan-100 text-cyan-700': { bg: '#ecfeff', text: '#0e7490' },
               };
               const categoryStyle = categoryColorMap[category.color] || { bg: 'var(--bg-tertiary)', text: 'var(--text-primary)' };
               return (
