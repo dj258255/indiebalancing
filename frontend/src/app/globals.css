@@ -52,6 +52,16 @@
   --primary-red-light: rgba(232, 97, 97, 0.12);
   --primary-yellow: #e5a440;
   --primary-yellow-light: rgba(229, 164, 64, 0.12);
+  --primary-teal: #26a69a;
+  --primary-teal-light: rgba(38, 166, 154, 0.12);
+
+  /* 셀 에디터 및 수식 바 - 소프트 톤 */
+  --editor-bg: #ffffff;
+  --editor-bg-formula: #f5f0ff;
+  --editor-border-focus: #5a9cf5;
+  --editor-border-formula: #9179f2;
+  --editor-shadow-focus: rgba(90, 156, 245, 0.15);
+  --editor-shadow-formula: rgba(145, 121, 242, 0.15);
 
   --success: #3db88a;
   --success-light: rgba(61, 184, 138, 0.12);
@@ -111,6 +121,16 @@
   --primary-red-light: rgba(240, 128, 128, 0.18);
   --primary-yellow: #f0c060;
   --primary-yellow-light: rgba(240, 192, 96, 0.18);
+  --primary-teal: #4db6ac;
+  --primary-teal-light: rgba(77, 182, 172, 0.18);
+
+  /* 셀 에디터 및 수식 바 - 다크모드 소프트 톤 */
+  --editor-bg: #1e2430;
+  --editor-bg-formula: #252338;
+  --editor-border-focus: #7bb4f7;
+  --editor-border-formula: #a896f5;
+  --editor-shadow-focus: rgba(123, 180, 247, 0.2);
+  --editor-shadow-formula: rgba(168, 150, 245, 0.2);
 
   --success: #5cc9a0;
   --success-light: rgba(92, 201, 160, 0.18);

@@ -36,8 +36,13 @@ export function useComputedRows({ sheet, currentProject }: UseComputedRowsProps)
           continue;
         }
 
+        // 수식 컬럼인 경우, 빈 문자열도 "값 없음"으로 처리하여 컬럼 수식 적용
+        // (사용자가 명시적으로 값을 입력한 경우에만 오버라이드로 처리)
+        const isEmptyValue = rawValue === null || rawValue === undefined || rawValue === '';
+
         // 셀에 직접 값이 있으면 그 값 사용 (오버라이드)
-        if (rawValue !== null && rawValue !== undefined) {
+        // 단, 수식 컬럼에서 빈 값은 오버라이드로 취급하지 않음
+        if (!isEmptyValue) {
           computedRow[column.id] = rawValue;
           continue;
         }

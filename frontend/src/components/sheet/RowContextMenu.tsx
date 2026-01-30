@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import {
   Lock,
   Unlock,
@@ -8,8 +8,12 @@ import {
   ArrowUp,
   ArrowDown,
   Eraser,
+  Type,
+  ChevronRight,
+  Check,
 } from 'lucide-react';
 import { useTranslations } from 'next-intl';
+import { useSheetUIStore } from '@/stores/sheetUIStore';
 
 interface RowContextMenuProps {
   x: number;
@@ -27,10 +31,14 @@ interface RowContextMenuProps {
 interface MenuItem {
   label: string;
   icon: React.ReactNode;
-  onClick: () => void;
+  onClick?: () => void;
   danger?: boolean;
   divider?: boolean;
+  hasSubmenu?: boolean;
+  submenuId?: string;
 }
+
+const ROW_HEADER_FONT_SIZES = [10, 11, 12, 13, 14, 16, 18, 20, 24];
 
 export default function RowContextMenu({
   x,
@@ -46,6 +54,8 @@ export default function RowContextMenu({
 }: RowContextMenuProps) {
   const t = useTranslations();
   const menuRef = useRef<HTMLDivElement>(null);
+  const [openSubmenu, setOpenSubmenu] = useState<string | null>(null);
+  const { rowHeaderFontSize, setRowHeaderFontSize } = useSheetUIStore();
 
   // 메뉴 위치 조정 (화면 밖으로 나가지 않도록)
   useEffect(() => {
@@ -87,6 +97,13 @@ export default function RowContextMenu({
 
   const menuItems: MenuItem[] = [
     {
+      label: t('contextMenu.rowHeaderFontSize'),
+      icon: <Type className="w-4 h-4" />,
+      hasSubmenu: true,
+      submenuId: 'rowHeaderFontSize',
+      divider: true,
+    },
+    {
       label: isLocked ? t('table.unlockRow') : t('table.lockRow'),
       icon: isLocked ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />,
       onClick: onToggleLock,
@@ -119,7 +136,7 @@ export default function RowContextMenu({
   return (
     <div
       ref={menuRef}
-      className="fixed z-[60] min-w-[160px] py-1 rounded-lg shadow-lg animate-scaleIn"
+      className="fixed z-[60] min-w-[180px] py-1 rounded-lg shadow-lg animate-scaleIn"
       style={{
         left: x,
         top: y,
@@ -144,29 +161,75 @@ export default function RowContextMenu({
       </div>
 
       {menuItems.map((item, index) => (
-        <div key={index}>
+        <div key={index} className="relative">
           <button
             onClick={() => {
-              item.onClick();
-              onClose();
+              if (item.hasSubmenu) {
+                setOpenSubmenu(openSubmenu === item.submenuId ? null : item.submenuId ?? null);
+              } else if (item.onClick) {
+                item.onClick();
+                onClose();
+              }
+            }}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.background = item.danger
+                ? 'var(--primary-red-light)'
+                : 'var(--bg-hover)';
+              if (item.hasSubmenu) {
+                setOpenSubmenu(item.submenuId ?? null);
+              }
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.background = 'transparent';
             }}
             className="w-full flex items-center gap-3 px-3 py-2 text-sm transition-colors"
             style={{
               color: item.danger ? 'var(--primary-red)' : 'var(--text-primary)',
               cursor: 'pointer',
             }}
-            onMouseEnter={(e) => {
-              e.currentTarget.style.background = item.danger
-                ? 'var(--primary-red-light)'
-                : 'var(--bg-hover)';
-            }}
-            onMouseLeave={(e) => {
-              e.currentTarget.style.background = 'transparent';
-            }}
           >
             <span>{item.icon}</span>
             <span className="flex-1 text-left">{item.label}</span>
+            {item.hasSubmenu && <ChevronRight className="w-4 h-4" style={{ color: 'var(--text-tertiary)' }} />}
           </button>
+
+          {/* Row Header Font Size Submenu */}
+          {item.submenuId === 'rowHeaderFontSize' && openSubmenu === 'rowHeaderFontSize' && (
+            <div
+              className="absolute left-full top-0 ml-1 min-w-[120px] py-1 rounded-lg shadow-lg"
+              style={{
+                background: 'var(--bg-primary)',
+                border: '1px solid var(--border-primary)',
+                boxShadow: 'var(--shadow-lg)',
+              }}
+              onMouseEnter={() => setOpenSubmenu('rowHeaderFontSize')}
+              onMouseLeave={() => setOpenSubmenu(null)}
+            >
+              {ROW_HEADER_FONT_SIZES.map((size) => (
+                <button
+                  key={size}
+                  onClick={() => {
+                    setRowHeaderFontSize(size);
+                    onClose();
+                  }}
+                  className="w-full flex items-center gap-2 px-3 py-1.5 text-sm transition-colors"
+                  style={{ color: 'var(--text-primary)' }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.background = 'var(--bg-hover)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.background = 'transparent';
+                  }}
+                >
+                  <span className="w-4 flex justify-center">
+                    {rowHeaderFontSize === size && <Check className="w-3 h-3" />}
+                  </span>
+                  <span>{size}px</span>
+                </button>
+              ))}
+            </div>
+          )}
+
           {item.divider && (
             <div
               className="my-1 mx-2"

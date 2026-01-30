@@ -97,6 +97,14 @@ export interface CellData {
 export interface FormulaResult {
   value: CellValue;
   error?: string;
+  warnings?: string[];  // 경고 메시지 (참조를 찾았지만 값이 0으로 처리됨 등)
+}
+
+// 참조 에러 타입
+export interface ReferenceError {
+  type: 'sheet_not_found' | 'variable_not_found' | 'column_not_found' | 'circular_reference';
+  reference: string;
+  message: string;
 }
 
 // 성장 곡선 타입

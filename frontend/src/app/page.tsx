@@ -245,7 +245,7 @@ export default function Home() {
       }, 500);
       return () => clearTimeout(timeout);
     }
-  }, [projects, isLoading, saveToHistory, isUndoRedoAction]);
+  }, [projects, isLoading, saveToHistory]);
 
   // History panel outside click
   useEffect(() => {

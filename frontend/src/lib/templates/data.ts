@@ -103,7 +103,7 @@ export const sheetTemplates: SheetTemplate[] = [
   // ========================================
   {
     id: 'rpg-character',
-    name: '[RPG] 캐릭터 스탯',
+    name: '캐릭터스탯',
     description: '캐릭터별 기본 능력치와 역할에 따른 스탯 배분',
     category: 'character',
     genre: ['rpg'],
@@ -222,7 +222,7 @@ export const sheetTemplates: SheetTemplate[] = [
   // ========================================
   {
     id: 'rpg-level-exp',
-    name: '[RPG] 레벨/경험치 테이블',
+    name: '레벨경험치테이블',
     description: '레벨업 필요 경험치와 스탯 성장. 글로벌 설정 참조.',
     category: 'progression',
     genre: ['rpg', 'idle'],
@@ -330,7 +330,7 @@ export const sheetTemplates: SheetTemplate[] = [
   // ========================================
   {
     id: 'rpg-skill',
-    name: '[RPG] 스킬 데이터',
+    name: '스킬데이터',
     description: '스킬 배율과 쿨타임 설계. DPS 균형을 위한 배율/쿨타임 트레이드오프.',
     category: 'skill',
     genre: ['rpg', 'action', 'moba'],
@@ -417,7 +417,7 @@ export const sheetTemplates: SheetTemplate[] = [
   // ========================================
   {
     id: 'rpg-equipment',
-    name: '[RPG] 장비 스탯',
+    name: '장비스탯',
     description: '장비 등급별 스탯 설계. 기준값 = BASE_ATK의 30%(무기), BASE_DEF의 80%(방어구)',
     category: 'equipment',
     genre: ['rpg', 'action'],
@@ -521,7 +521,7 @@ export const sheetTemplates: SheetTemplate[] = [
   // ========================================
   {
     id: 'rpg-monster',
-    name: '[RPG] 몬스터 데이터',
+    name: '몬스터데이터',
     description: '몬스터 스탯과 보상. 플레이어 레벨 기준 상대적 난이도 설계.',
     category: 'enemy',
     genre: ['rpg', 'action', 'roguelike'],
@@ -640,7 +640,7 @@ export const sheetTemplates: SheetTemplate[] = [
   // ========================================
   {
     id: 'fps-weapon',
-    name: '[FPS] 무기 스탯',
+    name: '무기스탯',
     description: 'FPS 무기 밸런스. TTK 기준으로 DPS와 정확도 트레이드오프.',
     category: 'equipment',
     genre: ['fps'],
@@ -732,7 +732,7 @@ export const sheetTemplates: SheetTemplate[] = [
   // ========================================
   {
     id: 'idle-upgrade',
-    name: '[방치형] 업그레이드 테이블',
+    name: '업그레이드테이블',
     description: '업그레이드 비용과 효과. 비용 증가율 vs 효과 증가율 밸런스.',
     category: 'progression',
     genre: ['idle'],
@@ -1005,7 +1005,7 @@ export const sheetTemplates: SheetTemplate[] = [
   // ========================================
   {
     id: 'td-wave',
-    name: '[TD/로그라이크] 웨이브 구성',
+    name: '웨이브구성',
     description: '웨이브별 난이도 스케일링. 플로우 이론 기반 난이도 곡선.',
     category: 'stage',
     genre: ['strategy', 'idle', 'roguelike'],
@@ -1018,7 +1018,7 @@ export const sheetTemplates: SheetTemplate[] = [
     dependencies: [
       {
         templateId: 'rpg-monster',
-        sheetName: '몬스터',
+        sheetName: '몬스터데이터',
         description: '적ID 참조 (ENM_001, ENM_BOSS 등)',
       },
     ],
@@ -1101,7 +1101,7 @@ export const sheetTemplates: SheetTemplate[] = [
   // ========================================
   {
     id: 'roguelike-relic',
-    name: '[로그라이크] 유물 시스템',
+    name: '유물시스템',
     description: '유물 효과와 시너지 설계. 빌드 다양성과 파워 스파이크.',
     category: 'item',
     genre: ['roguelike', 'card'],
@@ -1193,7 +1193,7 @@ export const sheetTemplates: SheetTemplate[] = [
   // ========================================
   {
     id: 'card-deck',
-    name: '[카드게임] 카드 밸런스',
+    name: '카드밸런스',
     description: '카드 코스트 대비 효율. 마나 커브와 카드 가치 설계.',
     category: 'card',
     genre: ['card', 'roguelike'],
@@ -1300,9 +1300,16 @@ export const sheetTemplates: SheetTemplate[] = [
     genre: ['rpg', 'fps', 'moba', 'action'],
     context: '같은 등급 내 총점 ±10% 이내 유지. 역할별 특화 허용',
     keyMetrics: [
-      'DPS/EHP는 캐릭터시트에서 참조. =캐릭터.DPS, =캐릭터.EHP',
+      'DPS/EHP는 캐릭터시트에서 참조. =캐릭터스탯.CHAR_ID.DPS',
       '정규화: MAX(DPS)=300(암살자) 기준 상대 점수',
       'S등급 = 90점 이상, A등급 = 75~89점',
+    ],
+    dependencies: [
+      {
+        templateId: 'rpg-character',
+        sheetName: '캐릭터스탯',
+        description: 'DPS, EHP 값 참조 (시트명.캐릭터ID.컬럼명 형식)',
+      },
     ],
     columns: [
       { name: '대상', type: 'general' as ColumnType, width: 100, exportName: 'target' },
@@ -1323,11 +1330,11 @@ export const sheetTemplates: SheetTemplate[] = [
         cells: {
           col0: '철갑 기사',
           col1: '탱커',
-          col2: '=캐릭터스탯.CHAR_001.DPS',
-          col3: '=VLOOKUP(대상, 캐릭터스탯, DPS)',
+          col2: 'CHAR_001',
+          col3: '=캐릭터스탯.CHAR_001.DPS',
           col4: '=DPS/300*40',
-          col5: '=캐릭터스탯.CHAR_001.EHP',
-          col6: '=VLOOKUP(대상, 캐릭터스탯, EHP)',
+          col5: 'CHAR_001',
+          col6: '=캐릭터스탯.CHAR_001.EHP',
           col7: '=EHP/3750*40',
           col8: 15,
           col9: '=DPS점수+EHP점수+유틸점수',
@@ -1339,11 +1346,11 @@ export const sheetTemplates: SheetTemplate[] = [
         cells: {
           col0: '암살자',
           col1: '딜러',
-          col2: '=캐릭터스탯.CHAR_002.DPS',
-          col3: '=VLOOKUP(대상, 캐릭터스탯, DPS)',
+          col2: 'CHAR_002',
+          col3: '=캐릭터스탯.CHAR_002.DPS',
           col4: '=DPS/300*40',
-          col5: '=캐릭터스탯.CHAR_002.EHP',
-          col6: '=VLOOKUP(대상, 캐릭터스탯, EHP)',
+          col5: 'CHAR_002',
+          col6: '=캐릭터스탯.CHAR_002.EHP',
           col7: '=EHP/3750*40',
           col8: 5,
           col9: '=DPS점수+EHP점수+유틸점수',
@@ -1355,11 +1362,11 @@ export const sheetTemplates: SheetTemplate[] = [
         cells: {
           col0: '사제',
           col1: '힐러',
-          col2: '=캐릭터스탯.CHAR_003.DPS',
-          col3: '=VLOOKUP(대상, 캐릭터스탯, DPS)',
+          col2: 'CHAR_003',
+          col3: '=캐릭터스탯.CHAR_003.DPS',
           col4: '=DPS/300*40',
-          col5: '=캐릭터스탯.CHAR_003.EHP',
-          col6: '=VLOOKUP(대상, 캐릭터스탯, EHP)',
+          col5: 'CHAR_003',
+          col6: '=캐릭터스탯.CHAR_003.EHP',
           col7: '=EHP/3750*40',
           col8: 35,
           col9: '=DPS점수+EHP점수+유틸점수',
@@ -1371,11 +1378,11 @@ export const sheetTemplates: SheetTemplate[] = [
         cells: {
           col0: '마법사',
           col1: '딜러',
-          col2: '=캐릭터스탯.CHAR_004.DPS',
-          col3: '=VLOOKUP(대상, 캐릭터스탯, DPS)',
+          col2: 'CHAR_004',
+          col3: '=캐릭터스탯.CHAR_004.DPS',
           col4: '=DPS/300*40',
-          col5: '=캐릭터스탯.CHAR_004.EHP',
-          col6: '=VLOOKUP(대상, 캐릭터스탯, EHP)',
+          col5: 'CHAR_004',
+          col6: '=캐릭터스탯.CHAR_004.EHP',
           col7: '=EHP/3750*40',
           col8: 20,
           col9: '=DPS점수+EHP점수+유틸점수',
@@ -1555,7 +1562,7 @@ export const sheetTemplates: SheetTemplate[] = [
   // ========================================
   {
     id: 'moba-champion',
-    name: '[MOBA] 챔피언 스탯',
+    name: '챔피언스탯',
     description: '챔피언 기본 스탯과 레벨당 성장. 역할별 스케일링 차등.',
     category: 'character',
     genre: ['moba'],
@@ -1647,7 +1654,7 @@ export const sheetTemplates: SheetTemplate[] = [
   // ========================================
   {
     id: 'idle-prestige',
-    name: '[방치형] 환생 시스템',
+    name: '환생시스템',
     description: '환생(리셋) 보너스와 조건. 장기 성장 동기 부여.',
     category: 'progression',
     genre: ['idle', 'roguelike'],
@@ -1684,7 +1691,7 @@ export const sheetTemplates: SheetTemplate[] = [
           col1: '스테이지 50 클리어',
           col2: '2일',
           col3: 1.5,
-          col4: '=누적배율*1.5',
+          col4: '=이전행.누적배율*데미지배율',
           col5: '환생 포인트 +10',
           col6: '누적 2.25배. 1차보다 1일 단축. 성장 체감',
         },

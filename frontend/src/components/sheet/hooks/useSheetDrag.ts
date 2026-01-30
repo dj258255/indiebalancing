@@ -10,7 +10,7 @@ interface UseSheetDragProps {
   selectedCell: CellPosition | null;
   selectedCells: CellPosition[];
   setSelectedCell: (cell: CellPosition | null) => void;
-  setSelectedCells: React.Dispatch<React.SetStateAction<CellPosition[]>>;
+  setSelectedCells: (cells: CellPosition[]) => void;
   setFormulaBarValue: (value: string) => void;
   calculateDragSelection: (start: CellPosition, end: CellPosition) => CellPosition[];
   tableContainerRef: React.RefObject<HTMLDivElement | null>;
@@ -192,16 +192,41 @@ export function useSheetDrag({
   }, [isFillDragging, fillPreviewCells, sheet.rows, sheet.columns, projectId, sheet.id, updateCell, adjustFormulaForRow, setSelectedCells]);
 
   // 채우기 드래그 전역 이벤트
+  // 편집 중에는 CellEditor가 셀을 덮어서 onMouseEnter가 발생하지 않으므로
+  // 전역 mousemove로 마우스 아래 셀을 찾아서 처리
   useEffect(() => {
-    const handleMouseUp = () => {
-      if (isFillDragging) {
-        handleFillDragEnd();
+    if (!isFillDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!tableContainerRef.current) return;
+
+      // 마우스 위치에서 셀 요소 찾기
+      const elementsUnderMouse = document.elementsFromPoint(e.clientX, e.clientY);
+      const cellElement = elementsUnderMouse.find(el => el.hasAttribute('data-cell-id'));
+
+      if (cellElement) {
+        const cellId = cellElement.getAttribute('data-cell-id');
+        if (cellId) {
+          // cellKey 형식: "rowId:columnId"
+          const [rowId, columnId] = cellId.split(':');
+          if (rowId && columnId) {
+            handleFillDragEnterThrottled(rowId, columnId);
+          }
+        }
       }
     };
 
+    const handleMouseUp = () => {
+      handleFillDragEnd();
+    };
+
+    window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('mouseup', handleMouseUp);
-    return () => window.removeEventListener('mouseup', handleMouseUp);
-  }, [isFillDragging, handleFillDragEnd]);
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isFillDragging, handleFillDragEnd, handleFillDragEnterThrottled, tableContainerRef]);
 
   // 셀 이동 드래그 시작
   const handleMoveStart = useCallback((rowId: string, columnId: string, e: React.MouseEvent) => {
@@ -241,6 +266,7 @@ export function useSheetDrag({
   }, [isMoveDragging, sheet.rows, sheet.columns]);
 
   // 셀 이동/복사 드래그 완료
+  // Handsontable 패턴: 드래그가 같은 셀에서 끝나거나 타겟이 없으면 아무것도 하지 않음
   const handleMoveDragEnd = useCallback((ctrlKey: boolean = false) => {
     if (!isMoveDragging || !moveStartCellRef.current) {
       setIsMoveDragging(false);
@@ -250,6 +276,7 @@ export function useSheetDrag({
       return;
     }
 
+    // 타겟 셀이 있고, 시작 셀과 다른 경우에만 이동/복사 수행
     if (moveTargetCell) {
       const startCell = moveStartCellRef.current;
 
@@ -261,17 +288,15 @@ export function useSheetDrag({
 
       setSelectedCell({ rowId: moveTargetCell.rowId, columnId: moveTargetCell.columnId });
       setSelectedCells([{ rowId: moveTargetCell.rowId, columnId: moveTargetCell.columnId }]);
-    } else {
-      setSelectedCell(null);
-      setSelectedCells([]);
-      setFormulaBarValue('');
     }
+    // 타겟이 없으면 (같은 셀에서 끝났거나 드래그가 취소됨) 기존 선택 유지
+    // 선택 해제하지 않음 - Google Sheets/Handsontable 동작과 일치
 
     setIsMoveDragging(false);
     setMoveTargetCell(null);
     setIsCopyMode(false);
     moveStartCellRef.current = null;
-  }, [isMoveDragging, moveTargetCell, isCopyMode, projectId, sheet.id, updateCell, setSelectedCell, setSelectedCells, setFormulaBarValue]);
+  }, [isMoveDragging, moveTargetCell, isCopyMode, projectId, sheet.id, updateCell, setSelectedCell, setSelectedCells]);
 
   // 이동/복사 드래그 전역 이벤트
   useEffect(() => {

@@ -1,6 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import type { Sheet } from '@/types';
 import { useProjectStore } from '@/stores/projectStore';
+import { useSheetUIStore } from '@/stores/sheetUIStore';
 
 interface UseSheetResizeProps {
   projectId: string;
@@ -23,27 +24,56 @@ interface UseSheetResizeReturn {
   handleHeaderResizeStart: (e: React.MouseEvent) => void;
   setColumnWidths: React.Dispatch<React.SetStateAction<Record<string, number>>>;
   setRowHeights: React.Dispatch<React.SetStateAction<Record<string, number>>>;
-  setHeaderHeight: React.Dispatch<React.SetStateAction<number>>;
 }
 
 export function useSheetResize({ projectId, sheet }: UseSheetResizeProps): UseSheetResizeReturn {
   const { updateColumn, updateRow } = useProjectStore();
+  const { columnHeaderHeight, setColumnHeaderHeight, rowHeaderWidth, columnHeaderFontSize } = useSheetUIStore();
+
+  // 열 헤더 폰트 크기에 따른 최소 높이 계산
+  // exportName이 있는 열을 기준으로: 컬럼명 + exportName + 구분선 + 패딩
+  const calculateMinHeaderHeight = (fontSize: number): number => {
+    // 기본 높이 (exportName 없는 경우): 컬럼명 + 패딩
+    const baseHeight = fontSize * 1.8 + 16;
+    // exportName 있는 경우: 컬럼명 + exportName + 구분선 + 패딩
+    const withExportName = fontSize * 1.8 + Math.max(10, fontSize - 2) * 1.5 + 6 + 20;
+    // 더 큰 값 사용
+    return Math.ceil(Math.max(baseHeight, withExportName));
+  };
+
+  // 폰트 크기가 기본(12px)일 때는 store 값 그대로, 커지면 자동 계산
+  const minHeaderHeight = calculateMinHeaderHeight(columnHeaderFontSize);
+  // 기본 폰트 크기(12px)일 때 최소 높이를 32px로 제한
+  const effectiveMinHeight = columnHeaderFontSize <= 12 ? Math.max(32, columnHeaderHeight) : minHeaderHeight;
+  const effectiveHeaderHeight = Math.max(columnHeaderHeight, effectiveMinHeight);
 
   const [columnWidths, setColumnWidths] = useState<Record<string, number>>({});
   const [rowHeights, setRowHeights] = useState<Record<string, number>>({});
-  const [headerHeight, setHeaderHeight] = useState(36);
   const [resizingColumn, setResizingColumn] = useState<string | null>(null);
   const [resizingRow, setResizingRow] = useState<string | null>(null);
   const [resizingHeader, setResizingHeader] = useState(false);
 
+  // 행 헤더 너비 계산 (행 개수 자릿수에 따라 동적)
+  // 체크박스(20px) + 구분선+마진(12px) + 숫자너비(자릿수*8px) + 패딩(16px)
+  const calculateRowNumberWidth = (rowCount: number): number => {
+    const digits = Math.max(1, String(rowCount).length);
+    const checkboxWidth = 20;
+    const separatorWidth = 12;
+    const digitWidth = digits * 8;
+    const padding = 16;
+    return Math.max(60, checkboxWidth + separatorWidth + digitWidth + padding);
+  };
+
   // 컬럼 너비 초기화
   useEffect(() => {
-    const widths: Record<string, number> = { rowNumber: 80 };
+    // rowHeaderWidth가 설정되어 있으면 사용, 아니면 동적 계산
+    const rowNumberWidth = rowHeaderWidth || calculateRowNumberWidth(sheet.rows.length);
+    const widths: Record<string, number> = { rowNumber: rowNumberWidth };
     sheet.columns.forEach((col) => {
       widths[col.id] = col.width || 150;
     });
     setColumnWidths(widths);
-  }, [sheet.columns]);
+  }, [sheet.columns, sheet.rows.length, rowHeaderWidth]);
 
   // 행 높이 초기화
   useEffect(() => {
@@ -55,9 +85,13 @@ export function useSheetResize({ projectId, sheet }: UseSheetResizeProps): UseSh
   }, [sheet.rows]);
 
   // 테이블 전체 너비 계산
+  // 각 열의 최소 너비(minWidth)를 고려하여 계산
   const tableWidth = (() => {
-    const rowNumberWidth = columnWidths['rowNumber'] || 80;
-    const dataColumnsWidth = sheet.columns.reduce((sum, col) => sum + (columnWidths[col.id] || 150), 0);
+    const rowNumberWidth = Math.max(columnWidths['rowNumber'] || 80, 100);
+    const dataColumnsWidth = sheet.columns.reduce((sum, col) => {
+      const colWidth = columnWidths[col.id] || col.width || 150;
+      return sum + Math.max(colWidth, 100); // minWidth: 100 반영
+    }, 0);
     const actionsWidth = 36;
     return rowNumberWidth + dataColumnsWidth + actionsWidth;
   })();
@@ -74,7 +108,8 @@ export function useSheetResize({ projectId, sheet }: UseSheetResizeProps): UseSh
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const diff = moveEvent.clientX - startX;
-      finalWidth = Math.max(60, startWidth + diff);
+      // 최소 너비 100px로 제한 (헤더에 exportName도 표시되므로)
+      finalWidth = Math.max(100, startWidth + diff);
       setColumnWidths((prev) => ({ ...prev, [columnId]: finalWidth }));
     };
 
@@ -131,12 +166,13 @@ export function useSheetResize({ projectId, sheet }: UseSheetResizeProps): UseSh
     setResizingHeader(true);
 
     const startY = e.clientY;
-    const startHeight = headerHeight;
+    const startHeight = columnHeaderHeight;
 
     const handleMouseMove = (moveEvent: MouseEvent) => {
       const diff = moveEvent.clientY - startY;
-      const newHeight = Math.max(28, Math.min(100, startHeight + diff));
-      setHeaderHeight(newHeight);
+      // 최소 높이 32px, 최대 120px (store에서 clamp)
+      const newHeight = startHeight + diff;
+      setColumnHeaderHeight(newHeight);
     };
 
     const handleMouseUp = () => {
@@ -147,12 +183,12 @@ export function useSheetResize({ projectId, sheet }: UseSheetResizeProps): UseSh
 
     document.addEventListener('mousemove', handleMouseMove);
     document.addEventListener('mouseup', handleMouseUp);
-  }, [headerHeight]);
+  }, [columnHeaderHeight, setColumnHeaderHeight]);
 
   return {
     columnWidths,
     rowHeights,
-    headerHeight,
+    headerHeight: effectiveHeaderHeight,
     resizingColumn,
     resizingRow,
     resizingHeader,
@@ -162,6 +198,5 @@ export function useSheetResize({ projectId, sheet }: UseSheetResizeProps): UseSh
     handleHeaderResizeStart,
     setColumnWidths,
     setRowHeights,
-    setHeaderHeight,
   };
 }

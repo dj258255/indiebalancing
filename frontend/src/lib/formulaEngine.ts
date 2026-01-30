@@ -568,7 +568,12 @@ interface FormulaContext {
   currentRow: Record<string, CellValue>;
   currentRowIndex?: number;  // 현재 행 인덱스 (이전행 참조용)
   allRows?: Record<string, CellValue>[];  // 모든 행 데이터 (이전행 참조용)
+  computedSheetsCache?: Map<string, Record<string, CellValue>[]>;  // 시트별 계산된 값 캐시
+  _recursionDepth?: number;  // 재귀 깊이 추적
 }
+
+// 최대 재귀 깊이 (순환 참조 방지)
+const MAX_RECURSION_DEPTH = 10;
 
 /**
  * REF - 다른 시트 참조 함수
@@ -602,6 +607,106 @@ function createREF(context: FormulaContext) {
 }
 
 /**
+ * 시트 참조 처리 결과
+ */
+interface SheetReferenceResult {
+  expression: string;
+  scope: Record<string, CellValue>;
+  errors: string[];  // 참조 에러 메시지
+}
+
+/**
+ * 시트의 전체 행을 계산하여 computedRows 반환
+ */
+function computeSheetRows(
+  sheet: Sheet,
+  sheets: Sheet[],
+  recursionDepth: number
+): Record<string, CellValue>[] {
+  if (recursionDepth >= MAX_RECURSION_DEPTH) {
+    return sheet.rows.map(r => r.cells as Record<string, CellValue>);
+  }
+
+  const result: Record<string, CellValue>[] = [];
+
+  for (let rowIndex = 0; rowIndex < sheet.rows.length; rowIndex++) {
+    const row = sheet.rows[rowIndex];
+    const computedRow: Record<string, CellValue> = { ...row.cells };
+
+    for (const column of sheet.columns) {
+      const rawValue = row.cells[column.id];
+
+      // 셀 자체에 수식이 있는 경우
+      if (typeof rawValue === 'string' && rawValue.startsWith('=')) {
+        const evalResult = evaluateFormulaInternal(rawValue, {
+          sheets,
+          currentSheet: sheet,
+          currentRow: computedRow,
+          currentRowIndex: rowIndex,
+          allRows: result,
+          _recursionDepth: recursionDepth + 1,
+        });
+        computedRow[column.id] = evalResult.error ? 0 : (evalResult.value ?? 0);
+        continue;
+      }
+
+      // 셀에 직접 값이 있으면 사용
+      if (rawValue !== null && rawValue !== undefined) {
+        computedRow[column.id] = rawValue;
+        continue;
+      }
+
+      // 컬럼 수식 사용
+      if (column.type === 'formula' && column.formula) {
+        const evalResult = evaluateFormulaInternal(column.formula, {
+          sheets,
+          currentSheet: sheet,
+          currentRow: computedRow,
+          currentRowIndex: rowIndex,
+          allRows: result,
+          _recursionDepth: recursionDepth + 1,
+        });
+        computedRow[column.id] = evalResult.error ? 0 : (evalResult.value ?? 0);
+        continue;
+      }
+
+      computedRow[column.id] = rawValue;
+    }
+
+    result.push(computedRow);
+  }
+
+  return result;
+}
+
+/**
+ * 시트의 특정 행에서 컬럼 값을 계산 (수식인 경우 평가)
+ */
+function computeCellValue(
+  sheet: Sheet,
+  row: { id: string; cells: Record<string, CellValue> },
+  column: { id: string; name: string; type?: string; formula?: string },
+  sheets: Sheet[],
+  recursionDepth: number
+): CellValue {
+  // 재귀 깊이 초과 시 에러
+  if (recursionDepth >= MAX_RECURSION_DEPTH) {
+    return 0;  // 순환 참조 가능성 - 0 반환
+  }
+
+  // 해당 시트의 전체 행을 계산
+  const computedRows = computeSheetRows(sheet, sheets, recursionDepth);
+  const rowIndex = sheet.rows.findIndex(r => r.id === row.id);
+
+  if (rowIndex === -1 || !computedRows[rowIndex]) {
+    return 0;
+  }
+
+  // 계산된 행에서 해당 컬럼 값 반환
+  return computedRows[rowIndex][column.id] ?? 0;
+}
+
+/**
  * 시트 참조 (시트명.참조명) 처리
  * 예: 글로벌설정.BASE_HP, 캐릭터스탯.공격력
  *
@@ -612,26 +717,101 @@ function createREF(context: FormulaContext) {
 function processSheetReferences(
   expression: string,
   sheets: Sheet[],
-  scope: Record<string, CellValue>
-): { expression: string; scope: Record<string, CellValue> } {
+  scope: Record<string, CellValue>,
+  recursionDepth: number = 0
+): SheetReferenceResult {
   let convertedExpr = expression;
   let refIndex = 0;
-
-  // 시트명.참조명 패턴 찾기 (한글/영문/숫자/_로 구성된 시트명과 참조명)
-  const sheetRefPattern = /([가-힣a-zA-Z_][가-힣a-zA-Z0-9_]*)\.([가-힣a-zA-Z_][가-힣a-zA-Z0-9_()%]*)/g;
-
-  let match;
+  const errors: string[] = [];
   const replacements: { original: string; varName: string; value: CellValue }[] = [];
 
-  while ((match = sheetRefPattern.exec(expression)) !== null) {
-    const [fullMatch, sheetName, refName] = match;
+  // 1. 먼저 3단계 참조 처리: 시트명.행ID.컬럼명 (예: 캐릭터스탯.CHAR_001.DPS)
+  const threePartPattern = /([가-힣a-zA-Z_][가-힣a-zA-Z0-9_]*)\.([가-힣a-zA-Z0-9_]+)\.([가-힣a-zA-Z_][가-힣a-zA-Z0-9_()%]*)/g;
+
+  let match;
+  while ((match = threePartPattern.exec(expression)) !== null) {
+    const [fullMatch, sheetName, rowId, colName] = match;
 
     // 이전행 참조는 별도로 처리
-    // 이전행/PREV 참조는 별도로 처리
     if (sheetName === '이전행' || sheetName === 'PREV') continue;
 
     const sheet = sheets.find(s => s.name === sheetName);
     if (!sheet) {
+      errors.push(`시트를 찾을 수 없음: "${sheetName}" (${fullMatch})`);
+      replacements.push({ original: fullMatch, varName: `__ref${refIndex}__`, value: 0 });
+      refIndex++;
+      continue;
+    }
+
+    // ID 컬럼 찾기 (ID, id, 캐릭터ID, CharID 등)
+    const idCol = sheet.columns.find(c =>
+      c.name === 'ID' || c.name === 'id' || c.name === '캐릭터ID' ||
+      c.name === 'CharID' || c.name === '아이템ID' || c.name === 'ItemID' ||
+      c.name === '무기ID' || c.name === 'WeaponID' || c.name === '몬스터ID' ||
+      c.name.toLowerCase().endsWith('id')
+    );
+
+    // 대상 컬럼 찾기
+    const targetCol = sheet.columns.find(c => c.name === colName);
+
+    if (!targetCol) {
+      errors.push(`컬럼을 찾을 수 없음: "${colName}" (시트: ${sheetName})`);
+      replacements.push({ original: fullMatch, varName: `__ref${refIndex}__`, value: 0 });
+      refIndex++;
+      continue;
+    }
+
+    // 행 찾기: ID 컬럼이 있으면 ID로, 없으면 첫 번째 컬럼 값으로 검색
+    let row;
+    if (idCol) {
+      row = sheet.rows.find(r => String(r.cells[idCol.id]) === rowId);
+    }
+    // ID 컬럼이 없거나 못 찾으면 첫 번째 컬럼으로 시도
+    if (!row) {
+      const firstCol = sheet.columns[0];
+      if (firstCol) {
+        row = sheet.rows.find(r => String(r.cells[firstCol.id]) === rowId);
+      }
+    }
+
+    if (!row) {
+      errors.push(`행을 찾을 수 없음: "${rowId}" (시트: ${sheetName})`);
+      replacements.push({ original: fullMatch, varName: `__ref${refIndex}__`, value: 0 });
+      refIndex++;
+      continue;
+    }
+
+    // 셀 값 계산 (수식인 경우 재귀적으로 평가)
+    const value = computeCellValue(sheet, row, targetCol, sheets, recursionDepth);
+    replacements.push({ original: fullMatch, varName: `__ref${refIndex}__`, value });
+    refIndex++;
+  }
+
+  // 2. 그 다음 2단계 참조 처리: 시트명.참조명 (예: 글로벌설정.BASE_HP)
+  const twoPartPattern = /([가-힣a-zA-Z_][가-힣a-zA-Z0-9_]*)\.([가-힣a-zA-Z_][가-힣a-zA-Z0-9_()%]*)/g;
+
+  while ((match = twoPartPattern.exec(expression)) !== null) {
+    const [fullMatch, sheetName, refName] = match;
+
+    // 이미 3단계 참조로 처리된 부분인지 확인
+    if (replacements.some(r => r.original.includes(fullMatch) || fullMatch.includes(r.original.split('.').slice(0, 2).join('.')))) {
+      // 3단계 참조의 일부인 경우 스킵
+      const isPartOfThreePart = replacements.some(r => {
+        const parts = r.original.split('.');
+        return parts.length === 3 && r.original.startsWith(fullMatch + '.');
+      });
+      if (isPartOfThreePart) continue;
+    }
+
+    // 이전행 참조는 별도로 처리
+    if (sheetName === '이전행' || sheetName === 'PREV') continue;
+
+    // 이미 처리된 참조인지 확인
+    if (replacements.some(r => r.original === fullMatch)) continue;
+
+    const sheet = sheets.find(s => s.name === sheetName);
+    if (!sheet) {
+      errors.push(`시트를 찾을 수 없음: "${sheetName}" (${fullMatch})`);
       replacements.push({ original: fullMatch, varName: `__ref${refIndex}__`, value: 0 });
       refIndex++;
       continue;
@@ -639,8 +819,7 @@ function processSheetReferences(
 
     let value: CellValue = 0;
 
-    // 1. 세로형 설정 시트 확인 (변수명/값 구조)
-    // '변수명', 'name', 'ID' 등의 컬럼과 '값', 'value' 컬럼이 있는지 확인
+    // 세로형 설정 시트 확인 (변수명/값 구조)
     const varNameCol = sheet.columns.find(c =>
       c.name === '변수명' || c.name === 'name' || c.name === 'Name' || c.name === 'ID' || c.name === 'id'
     );
@@ -654,13 +833,19 @@ function processSheetReferences(
       if (row) {
         const rawValue = row.cells[valueCol.id];
         value = rawValue === null || rawValue === undefined ? 0 : rawValue;
+      } else {
+        errors.push(`변수를 찾을 수 없음: "${refName}" (시트: ${sheetName})`);
       }
     } else {
-      // 2. 가로형 데이터 시트: refName이 컬럼명이면 첫 번째 행의 해당 컬럼 값 반환
+      // 가로형 데이터 시트: refName이 컬럼명이면 첫 번째 행의 해당 컬럼 값 반환
       const column = sheet.columns.find(c => c.name === refName);
       if (column && sheet.rows[0]) {
         const rawValue = sheet.rows[0].cells[column.id];
         value = rawValue === null || rawValue === undefined ? 0 : rawValue;
+      } else if (!column) {
+        errors.push(`컬럼을 찾을 수 없음: "${refName}" (시트: ${sheetName})`);
+      } else {
+        errors.push(`시트에 데이터가 없음: "${sheetName}"`);
       }
     }
 
@@ -677,7 +862,17 @@ function processSheetReferences(
     scope[rep.varName] = rep.value;
   }
 
-  return { expression: convertedExpr, scope };
+  return { expression: convertedExpr, scope, errors };
+}
+
+/**
+ * 이전행 참조 처리 결과
+ */
+interface PrevRowReferenceResult {
+  expression: string;
+  scope: Record<string, CellValue>;
+  errors: string[];
+  warnings: string[];
 }
 
 /**
@@ -690,9 +885,11 @@ function processPreviousRowReferences(
   allRows: Record<string, CellValue>[] | undefined,
   currentRowIndex: number | undefined,
   scope: Record<string, CellValue>
-): { expression: string; scope: Record<string, CellValue> } {
+): PrevRowReferenceResult {
   let convertedExpr = expression;
   let prevIndex = 0;
+  const errors: string[] = [];
+  const warnings: string[] = [];
 
   // 이전행.컬럼명 또는 PREV.컬럼명 패턴 찾기 (한글/영어 둘 다 지원)
   const prevRowPattern = /(?:이전행|PREV)\.([가-힣a-zA-Z_][가-힣a-zA-Z0-9_()%]*)/g;
@@ -704,8 +901,18 @@ function processPreviousRowReferences(
     const [fullMatch, columnName] = match;
 
     const column = columns.find(c => c.name === columnName);
-    if (!column || currentRowIndex === undefined || !allRows || currentRowIndex <= 0) {
-      // 첫 번째 행이거나 컬럼을 못 찾으면 0
+
+    // 컬럼을 찾지 못한 경우 - 에러
+    if (!column) {
+      errors.push(`컬럼을 찾을 수 없음: "${columnName}" (${fullMatch})`);
+      replacements.push({ original: fullMatch, varName: `__prev${prevIndex}__`, value: 0 });
+      prevIndex++;
+      continue;
+    }
+
+    // 첫 번째 행인 경우 - 경고 (0으로 처리)
+    if (currentRowIndex === undefined || !allRows || currentRowIndex <= 0) {
+      warnings.push(`첫 번째 행에서 이전행 참조는 0으로 처리됨: ${fullMatch}`);
       replacements.push({ original: fullMatch, varName: `__prev${prevIndex}__`, value: 0 });
       prevIndex++;
       continue;
@@ -713,18 +920,20 @@ function processPreviousRowReferences(
 
     const prevRow = allRows[currentRowIndex - 1];
     if (!prevRow) {
+      warnings.push(`이전 행 데이터 없음: ${fullMatch}`);
       replacements.push({ original: fullMatch, varName: `__prev${prevIndex}__`, value: 0 });
       prevIndex++;
       continue;
     }
 
     const rawValue = prevRow[column.id];
-    // null/undefined는 0으로 처리
-    // 에러 문자열(#ERR:로 시작)도 0으로 처리하여 에러 전파 방지
     let value: CellValue = 0;
+
     if (rawValue !== null && rawValue !== undefined) {
       if (typeof rawValue === 'string' && rawValue.startsWith('#ERR')) {
-        value = 0;  // 에러 값은 0으로 처리
+        // 이전 행에 에러가 있으면 에러 전파
+        errors.push(`이전 행에 에러 발생: ${fullMatch} → ${rawValue}`);
+        value = rawValue;  // 에러 값 그대로 전파
       } else if (typeof rawValue === 'number') {
         value = rawValue;
       } else {
@@ -747,7 +956,17 @@ function processPreviousRowReferences(
     scope[rep.varName] = rep.value;
   }
 
-  return { expression: convertedExpr, scope };
+  return { expression: convertedExpr, scope, errors, warnings };
+}
+
+/**
+ * 한글 변수명 변환 결과
+ */
+interface ConvertResult {
+  expression: string;
+  scope: Record<string, CellValue>;
+  errors: string[];
+  warnings: string[];
 }
 
 /**
@@ -757,17 +976,21 @@ function convertKoreanToScope(
   expression: string,
   columns: { id: string; name: string }[],
   currentRow: Record<string, CellValue>,
-  context?: FormulaContext
-): { expression: string; scope: Record<string, CellValue> } {
+  context?: FormulaContext,
+  recursionDepth: number = 0
+): ConvertResult {
   let scope: Record<string, CellValue> = {};
   let convertedExpr = expression;
   let varIndex = 0;
+  const errors: string[] = [];
+  const warnings: string[] = [];
 
   // 1. 시트 참조 처리 (시트명.컬럼명)
   if (context?.sheets) {
-    const sheetResult = processSheetReferences(convertedExpr, context.sheets, scope);
+    const sheetResult = processSheetReferences(convertedExpr, context.sheets, scope, recursionDepth);
     convertedExpr = sheetResult.expression;
     scope = sheetResult.scope;
+    errors.push(...sheetResult.errors);
   }
 
   // 2. 이전행 참조 처리 (이전행.컬럼명)
@@ -780,6 +1003,8 @@ function convertKoreanToScope(
   );
   convertedExpr = prevResult.expression;
   scope = prevResult.scope;
+  errors.push(...prevResult.errors);
+  warnings.push(...prevResult.warnings);
 
   // 3. 현재 행의 컬럼 변수 처리
   // 긴 이름부터 치환 (부분 매칭 방지)
@@ -789,12 +1014,15 @@ function convertKoreanToScope(
     const rawValue = currentRow[col.id];
     // null/undefined는 0으로 처리 (수식 계산을 위해)
     // 수식 문자열(=로 시작)은 아직 평가되지 않은 것이므로 0으로 처리
-    // 에러 문자열(#ERR:로 시작)도 0으로 처리
     let value: CellValue = 0;
     if (rawValue !== null && rawValue !== undefined) {
       if (typeof rawValue === 'string') {
-        if (rawValue.startsWith('=') || rawValue.startsWith('#ERR')) {
-          value = 0;  // 수식이나 에러는 0으로 처리
+        if (rawValue.startsWith('=')) {
+          value = 0;  // 미평가 수식은 0으로 처리
+        } else if (rawValue.startsWith('#ERR')) {
+          // 에러 값 전파 - 에러를 추가하고 값은 그대로 전파
+          errors.push(`참조한 컬럼에 에러: "${col.name}" → ${rawValue}`);
+          value = rawValue;
         } else {
           // 문자열이지만 숫자로 파싱 가능하면 숫자로
           const num = parseFloat(rawValue);
@@ -817,17 +1045,26 @@ function convertKoreanToScope(
     }
   }
 
-  return { expression: convertedExpr, scope };
+  return { expression: convertedExpr, scope, errors, warnings };
 }
 
 /**
- * 수식 평가
+ * 내부용 수식 평가 (재귀 깊이 추적)
  */
-export function evaluateFormula(
+function evaluateFormulaInternal(
   formula: string,
   context?: FormulaContext
 ): FormulaResult {
   try {
+    // 재귀 깊이 체크
+    const recursionDepth = context?._recursionDepth ?? 0;
+    if (recursionDepth >= MAX_RECURSION_DEPTH) {
+      return {
+        value: null,
+        error: '최대 참조 깊이 초과 (순환 참조 가능성)',
+      };
+    }
+
     // 수식이 =로 시작하면 제거
     const expression = formula.startsWith('=') ? formula.slice(1) : formula;
 
@@ -837,15 +1074,39 @@ export function evaluateFormula(
 
       // 한글 컬럼명을 영어 변수로 변환하고 scope 생성
       // context를 전달하여 시트참조와 이전행 참조도 처리
-      const { expression: convertedExpr, scope } = convertKoreanToScope(
+      const { expression: convertedExpr, scope, errors, warnings } = convertKoreanToScope(
         expression,
         context.currentSheet.columns,
         context.currentRow,
-        context
+        context,
+        recursionDepth
       );
 
+      // 참조 에러가 있으면 첫 번째 에러 반환
+      if (errors.length > 0) {
+        return {
+          value: null,
+          error: errors[0],
+          warnings: warnings.length > 0 ? warnings : undefined,
+        };
+      }
+
+      // scope에 에러 값이 있는지 확인 (에러 전파)
+      for (const [key, value] of Object.entries(scope)) {
+        if (typeof value === 'string' && value.startsWith('#ERR')) {
+          return {
+            value: null,
+            error: `참조 에러 전파: ${value}`,
+            warnings: warnings.length > 0 ? warnings : undefined,
+          };
+        }
+      }
+
       const result = math.evaluate(convertedExpr, scope);
-      return { value: typeof result === 'number' ? result : String(result) };
+      return {
+        value: typeof result === 'number' ? result : String(result),
+        warnings: warnings.length > 0 ? warnings : undefined,
+      };
     }
 
     const result = math.evaluate(expression);
@@ -856,6 +1117,16 @@ export function evaluateFormula(
       error: error instanceof Error ? error.message : '수식 오류',
     };
   }
+}
+
+/**
+ * 수식 평가 (외부 API)
+ */
+export function evaluateFormula(
+  formula: string,
+  context?: FormulaContext
+): FormulaResult {
+  return evaluateFormulaInternal(formula, context);
 }
 
 /**
@@ -909,6 +1180,114 @@ export interface FormulaValidationResult {
   referencedColumns: string[];
   referencedSheets: string[];
   usedFunctions: string[];
+}
+
+/**
+ * 수식에서 참조하는 컬럼 이름 추출
+ */
+export function extractColumnReferences(
+  formula: string,
+  availableColumns: string[]
+): string[] {
+  if (!formula || !formula.startsWith('=')) return [];
+  const expression = formula.slice(1);
+  const refs: string[] = [];
+
+  // 긴 이름부터 매칭 (부분 매칭 방지)
+  const sortedColumns = [...availableColumns].sort((a, b) => b.length - a.length);
+
+  for (const colName of sortedColumns) {
+    const escapedName = colName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // 단어 경계 매칭 (한글 포함)
+    const regex = new RegExp(`(?<![가-힣a-zA-Z0-9_])${escapedName}(?![가-힣a-zA-Z0-9_])`, 'g');
+    if (regex.test(expression) && !refs.includes(colName)) {
+      refs.push(colName);
+    }
+  }
+
+  return refs;
+}
+
+/**
+ * 순환 참조 감지
+ * @param columns 컬럼 목록
+ * @param targetColumnName 검사할 컬럼 이름 (새 수식 적용 시)
+ * @param newFormula 새로 적용할 수식 (선택적)
+ * @returns 순환 참조 발견 시 순환 경로, 없으면 null
+ */
+export function detectCircularReference(
+  columns: { name: string; formula?: string; type: string }[],
+  targetColumnName?: string,
+  newFormula?: string
+): string[] | null {
+  const columnNames = columns.map(c => c.name);
+
+  // 각 컬럼의 참조 맵 생성
+  const dependencyMap = new Map<string, string[]>();
+
+  for (const col of columns) {
+    if (col.type !== 'formula' || !col.formula) {
+      dependencyMap.set(col.name, []);
+      continue;
+    }
+
+    // 새 수식이 주어진 경우 해당 컬럼은 새 수식으로 계산
+    const formula = (targetColumnName && col.name === targetColumnName && newFormula)
+      ? newFormula
+      : col.formula;
+
+    const refs = extractColumnReferences(formula, columnNames);
+    dependencyMap.set(col.name, refs);
+  }
+
+  // 새 컬럼이 추가되는 경우
+  if (targetColumnName && newFormula && !dependencyMap.has(targetColumnName)) {
+    const refs = extractColumnReferences(newFormula, columnNames);
+    dependencyMap.set(targetColumnName, refs);
+  }
+
+  // DFS로 순환 감지
+  const visited = new Set<string>();
+  const recursionStack = new Set<string>();
+  const path: string[] = [];
+
+  function dfs(colName: string): string[] | null {
+    if (recursionStack.has(colName)) {
+      // 순환 발견 - 경로 반환
+      const cycleStart = path.indexOf(colName);
+      return [...path.slice(cycleStart), colName];
+    }
+
+    if (visited.has(colName)) {
+      return null;
+    }
+
+    visited.add(colName);
+    recursionStack.add(colName);
+    path.push(colName);
+
+    const deps = dependencyMap.get(colName) || [];
+    for (const dep of deps) {
+      const cycle = dfs(dep);
+      if (cycle) return cycle;
+    }
+
+    path.pop();
+    recursionStack.delete(colName);
+    return null;
+  }
+
+  // 모든 컬럼에서 시작하여 순환 검사
+  for (const colName of dependencyMap.keys()) {
+    visited.clear();
+    recursionStack.clear();
+    path.length = 0;
+
+    const cycle = dfs(colName);
+    if (cycle) return cycle;
+  }
+
+  return null;
 }
 
 /**

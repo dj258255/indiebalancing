@@ -19,6 +19,11 @@ import {
   Swords,
   Gift,
   ExternalLink,
+  Calculator,
+  BarChart3,
+  PieChart,
+  AlertTriangle,
+  FunctionSquare,
 } from 'lucide-react';
 
 interface OnboardingGuideProps {
@@ -38,6 +43,7 @@ interface TutorialStep {
   tip?: string;
   isGuidelinesStep?: boolean;
   isSurveyStep?: boolean;
+  isToolsStep?: boolean;
 }
 
 // Helper function to get guidelines data with translations
@@ -110,6 +116,56 @@ const getGuidelinesData = (t: (key: string) => string) => [
   },
 ];
 
+// Helper function to get tools categories data with translations
+const getToolsCategoriesData = (t: (key: string) => string) => [
+  {
+    id: 'calculation',
+    icon: Calculator,
+    title: t('onboarding.steps.tools.categories.calculation.title'),
+    color: 'violet',
+    tools: [
+      t('onboarding.steps.tools.categories.calculation.tools.calculator'),
+      t('onboarding.steps.tools.categories.calculation.tools.goalSolver'),
+      t('onboarding.steps.tools.categories.calculation.tools.formulaHelper'),
+    ],
+  },
+  {
+    id: 'visualization',
+    icon: BarChart3,
+    title: t('onboarding.steps.tools.categories.visualization.title'),
+    color: 'green',
+    tools: [
+      t('onboarding.steps.tools.categories.visualization.tools.comparison'),
+      t('onboarding.steps.tools.categories.visualization.tools.chart'),
+      t('onboarding.steps.tools.categories.visualization.tools.presetComparison'),
+    ],
+  },
+  {
+    id: 'analysis',
+    icon: AlertTriangle,
+    title: t('onboarding.steps.tools.categories.analysis.title'),
+    color: 'yellow',
+    tools: [
+      t('onboarding.steps.tools.categories.analysis.tools.imbalanceDetector'),
+      t('onboarding.steps.tools.categories.analysis.tools.balanceAnalysis'),
+      t('onboarding.steps.tools.categories.analysis.tools.balanceValidator'),
+      t('onboarding.steps.tools.categories.analysis.tools.dpsVariance'),
+      t('onboarding.steps.tools.categories.analysis.tools.curveFitting'),
+      t('onboarding.steps.tools.categories.analysis.tools.difficultyCurve'),
+    ],
+  },
+  {
+    id: 'simulation',
+    icon: Swords,
+    title: t('onboarding.steps.tools.categories.simulation.title'),
+    color: 'rose',
+    tools: [
+      t('onboarding.steps.tools.categories.simulation.tools.simulation'),
+      t('onboarding.steps.tools.categories.simulation.tools.economy'),
+    ],
+  },
+];
+
 // Helper function to get tutorial steps with translations
 const getTutorialSteps = (t: (key: string) => string): TutorialStep[] => [
   {
@@ -117,6 +173,13 @@ const getTutorialSteps = (t: (key: string) => string): TutorialStep[] => [
     title: t('onboarding.steps.welcome.title'),
     description: t('onboarding.steps.welcome.description'),
     tip: t('onboarding.steps.welcome.tip'),
+  },
+  {
+    id: 'tools',
+    title: t('onboarding.steps.tools.title'),
+    description: t('onboarding.steps.tools.description'),
+    tip: t('onboarding.steps.tools.tip'),
+    isToolsStep: true,
   },
   {
     id: 'survey',
@@ -220,6 +283,7 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
 
   // Get translated data
   const GUIDELINES_DATA = getGuidelinesData(t);
+  const TOOLS_CATEGORIES_DATA = getToolsCategoriesData(t);
   const TUTORIAL_STEPS = getTutorialSteps(t);
 
   const handleNext = () => {
@@ -346,6 +410,41 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
                         <div key={idx} className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                           <span className="font-medium">{item.label}:</span>{' '}
                           <span className="opacity-90">{item.value}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
+
+          {/* 도구 소개 UI */}
+          {step.isToolsStep && (
+            <div className="grid grid-cols-2 gap-3 mb-4 flex-1 overflow-y-auto pr-2">
+              {TOOLS_CATEGORIES_DATA.map((category) => {
+                const IconComponent = category.icon;
+                const colorStyles: Record<string, { bg: string; border: string; text: string; icon: string }> = {
+                  violet: { bg: 'var(--primary-purple-light)', border: 'var(--primary-purple)', text: 'var(--primary-purple)', icon: 'var(--primary-purple)' },
+                  green: { bg: 'var(--success-light)', border: 'var(--success)', text: 'var(--success)', icon: 'var(--success)' },
+                  yellow: { bg: 'var(--warning-light)', border: 'var(--warning)', text: 'var(--warning)', icon: 'var(--warning)' },
+                  rose: { bg: 'var(--error-light)', border: 'var(--error)', text: 'var(--error)', icon: 'var(--error)' },
+                };
+                const style = colorStyles[category.color];
+                return (
+                  <div
+                    key={category.id}
+                    className="p-3 rounded-lg border"
+                    style={{ background: style.bg, borderColor: style.border }}
+                  >
+                    <div className="flex items-center gap-2 mb-2">
+                      <IconComponent className="w-4 h-4" style={{ color: style.icon }} />
+                      <span className="font-semibold text-sm" style={{ color: style.text }}>{category.title}</span>
+                    </div>
+                    <div className="space-y-1">
+                      {category.tools.map((tool, idx) => (
+                        <div key={idx} className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                          {tool}
                         </div>
                       ))}
                     </div>

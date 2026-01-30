@@ -5,11 +5,13 @@ import { X, Check, HelpCircle, Lock, Globe } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEscapeKey } from '@/hooks';
 import FormulaAutocomplete from './FormulaAutocomplete';
-import type { Column, ColumnType, DataType, ValidationConfig } from '@/types';
+import type { Column, ColumnType, DataType, ValidationConfig, Sheet } from '@/types';
 
 interface ColumnModalProps {
   column?: Column;
   columns: Column[];
+  sheets?: Sheet[];  // 다른 시트들 (시트 참조 자동완성용)
+  currentSheetId?: string;  // 현재 시트 ID
   onSave: (data: {
     name: string;
     type: ColumnType;
@@ -25,6 +27,8 @@ interface ColumnModalProps {
 export default function ColumnModal({
   column,
   columns,
+  sheets = [],
+  currentSheetId,
   onSave,
   onClose,
   mode,
@@ -231,6 +235,8 @@ export default function ColumnModal({
                   <FormulaAutocomplete
                     value={formula}
                     columns={columns.filter(c => c.id !== column?.id)}
+                    sheets={sheets}
+                    currentSheetId={currentSheetId}
                     onSelect={(newValue) => {
                       setFormula(newValue);
                       inputRef.current?.focus();

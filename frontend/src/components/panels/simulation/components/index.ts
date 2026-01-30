@@ -5,3 +5,7 @@ export { Histogram } from './Histogram';
 export { HpTimelineGraph } from './HpTimelineGraph';
 export { ConfidenceBar } from './ConfidenceBar';
 export { SkillEditor } from './SkillEditor';
+export { BattleSettings } from './BattleSettings';
+export { UnitStatsPanel } from './UnitStatsPanel';
+export { SimulationResults } from './SimulationResults';
+export { TeamBattlePanel } from './TeamBattlePanel';

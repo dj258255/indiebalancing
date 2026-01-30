@@ -13,7 +13,7 @@ interface UseSheetEditingProps {
   selectedCells: CellPosition[];
   formulaBarValue: string;
   setFormulaBarValue: (value: string) => void;
-  setSelectedCells: React.Dispatch<React.SetStateAction<CellPosition[]>>;
+  setSelectedCells: (cells: CellPosition[]) => void;
 }
 
 export function useSheetEditing({

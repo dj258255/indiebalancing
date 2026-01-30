@@ -5,3 +5,4 @@ export { useSheetEditing } from './useSheetEditing';
 export { useSheetContextMenu } from './useSheetContextMenu';
 export { useSheetDrag } from './useSheetDrag';
 export { useSheetKeyboard } from './useSheetKeyboard';
+export { useSheetVirtualization } from './useSheetVirtualization';

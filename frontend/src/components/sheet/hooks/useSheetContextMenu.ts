@@ -18,7 +18,7 @@ interface UseSheetContextMenuProps {
   sheet: Sheet;
   selectedCells: CellPosition[];
   setSelectedCell: (cell: CellPosition | null) => void;
-  setSelectedCells: React.Dispatch<React.SetStateAction<CellPosition[]>>;
+  setSelectedCells: (cells: CellPosition[]) => void;
 }
 
 export function useSheetContextMenu({

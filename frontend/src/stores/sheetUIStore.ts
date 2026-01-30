@@ -2,8 +2,9 @@ import { create } from 'zustand';
 import type { CellStyle } from '@/types';
 
 // 기본 셀 스타일 (스타일이 지정되지 않은 셀의 기본값)
+// fontSize는 툴바의 FONT_SIZES 배열 [8, 9, 10, 11, 12, 14, 16, 18, 20, 22, 24, 26, 28, 36]에 포함되어야 함
 export const DEFAULT_CELL_STYLE: CellStyle = {
-  fontSize: 15,
+  fontSize: 14,
   bold: false,
   italic: false,
   underline: false,
@@ -24,6 +25,14 @@ interface SheetUIState {
   // 줌
   zoomLevel: number; // 0.5 ~ 2.0 (50% ~ 200%)
 
+  // 열 헤더 (Column Header) 설정
+  columnHeaderFontSize: number;
+  columnHeaderHeight: number;
+
+  // 행 헤더 (Row Header) 설정 - 행 번호 영역
+  rowHeaderFontSize: number;
+  rowHeaderWidth: number;
+
   // Undo/Redo 스택 (x-spreadsheet History 패턴)
   undoStack: HistoryItem[];
   redoStack: HistoryItem[];
@@ -36,6 +45,14 @@ interface SheetUIState {
   setZoom: (level: number) => void;
   zoomIn: () => void;
   zoomOut: () => void;
+
+  // 열 헤더 설정
+  setColumnHeaderFontSize: (size: number) => void;
+  setColumnHeaderHeight: (height: number) => void;
+
+  // 행 헤더 설정
+  setRowHeaderFontSize: (size: number) => void;
+  setRowHeaderWidth: (width: number) => void;
 
   // Undo/Redo (x-spreadsheet 패턴)
   pushHistory: (type: HistoryItem['type'], data: unknown) => void;
@@ -56,6 +73,10 @@ const ZOOM_LEVELS = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
 export const useSheetUIStore = create<SheetUIState>((set, get) => ({
   // 초기 상태
   zoomLevel: 1.0,
+  columnHeaderFontSize: 12,
+  columnHeaderHeight: 36, // 기본 높이 줄임 (48 -> 36)
+  rowHeaderFontSize: 12,
+  rowHeaderWidth: 80,
   undoStack: [],
   redoStack: [],
   maxHistorySize: 50,
@@ -79,6 +100,28 @@ export const useSheetUIStore = create<SheetUIState>((set, get) => ({
     const currentIndex = ZOOM_LEVELS.findIndex((l) => l >= zoomLevel);
     const nextIndex = Math.max(currentIndex - 1, 0);
     set({ zoomLevel: ZOOM_LEVELS[nextIndex] });
+  },
+
+  // 열 헤더 설정
+  setColumnHeaderFontSize: (size) => {
+    const clampedSize = Math.max(8, Math.min(24, size));
+    set({ columnHeaderFontSize: clampedSize });
+  },
+
+  setColumnHeaderHeight: (height) => {
+    const clampedHeight = Math.max(32, Math.min(120, height));
+    set({ columnHeaderHeight: clampedHeight });
+  },
+
+  // 행 헤더 설정
+  setRowHeaderFontSize: (size) => {
+    const clampedSize = Math.max(8, Math.min(24, size));
+    set({ rowHeaderFontSize: clampedSize });
+  },
+
+  setRowHeaderWidth: (width) => {
+    const clampedWidth = Math.max(40, Math.min(200, width));
+    set({ rowHeaderWidth: clampedWidth });
   },
 
   // Undo/Redo 액션 (x-spreadsheet History 패턴)

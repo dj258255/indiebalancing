@@ -141,7 +141,11 @@
     "editMemo": "Edit memo",
     "deleteMemo": "Delete memo",
     "resetWidth": "Reset Width",
-    "resetHeight": "Reset Height"
+    "resetHeight": "Reset Height",
+    "headerFontSize": "Column Header Font Size",
+    "headerHeight": "Column Header Height",
+    "rowHeaderFontSize": "Row Header Font Size",
+    "rowHeaderWidth": "Row Header Width"
   },
   "memo": {
     "content": "Memo content",
@@ -177,7 +181,9 @@
       "row": "Row Change",
       "column": "Column Change",
       "sheet": "Sheet Change"
-    }
+    },
+    "headerFontSize": "Header Font Size",
+    "header": "Header"
   },
   "settings": {
     "title": "Settings",
@@ -375,6 +381,9 @@
   "formula": {
     "functions": "Functions",
     "columnRef": "Column Reference",
+    "sheetRef": "Sheet Reference",
+    "sheetVars": "Sheet Variables",
+    "prevRowRef": "Previous Row Reference",
     "formulaType": "Formula",
     "generalType": "General",
     "hint": "Enter a function name or column name after ="
@@ -428,7 +437,12 @@
     "deleteRowCompletelyDesc": "Remove the entire row",
     "addRow": "Add Row",
     "addColumn": "Add Column",
-    "noData": "No data. Click the \"Add Row\" button below."
+    "noData": "No data. Click the \"Add Row\" button below.",
+    "formulaBarPlaceholder": "Enter formula or value",
+    "selectCellToEdit": "Select a cell to edit",
+    "columnName": "Column",
+    "rowNumber": "Row",
+    "formulaMode": "Toggle formula mode"
   },
   "templateSelector": {
     "title": "Create New Sheet",
@@ -1742,8 +1756,49 @@
     "steps": {
       "welcome": {
         "title": "Welcome to Game Balance Tool",
-        "description": "This tool helps game designers manage and calculate character stats, weapon damage, level tables, and more.",
-        "tip": "Use it like Excel, but with game-specific formulas built in."
+        "description": "Manage character stats, weapon damage, level tables, and calculate them with game-specific formulas. Use it like Excel, but with built-in functions like DAMAGE, DPS, and SCALE.",
+        "tip": "💡 Drag tools between the left sidebar and bottom dock to customize your workspace!"
+      },
+      "tools": {
+        "title": "14 Analysis Tools",
+        "description": "Once you input data, use various tools to analyze balance. Click tools in the left sidebar or bottom dock.",
+        "tip": "Tool panels can be resized by dragging and multiple panels can be used simultaneously!",
+        "categories": {
+          "calculation": {
+            "title": "Calculation Tools",
+            "tools": {
+              "calculator": "Calculator - Quick formula calculations",
+              "goalSolver": "Goal Solver - Find inputs from desired outputs",
+              "formulaHelper": "Formula Helper - Search/test game formulas"
+            }
+          },
+          "visualization": {
+            "title": "Visualization Tools",
+            "tools": {
+              "comparison": "Comparison - Compare multiple rows as charts",
+              "chart": "Growth Curve - Level-based growth graphs",
+              "presetComparison": "Preset Comparison - Compare saved versions"
+            }
+          },
+          "analysis": {
+            "title": "Analysis Tools",
+            "tools": {
+              "imbalanceDetector": "Imbalance Detector - Find outliers/OP characters",
+              "balanceAnalysis": "Balance Analysis - Analyze overall distribution",
+              "balanceValidator": "Balance Validator - Rule-based validation",
+              "dpsVariance": "DPS Variance - Probabilistic DPS distribution",
+              "curveFitting": "Curve Fitting - Find formulas that fit your data",
+              "difficultyCurve": "Difficulty Curve - Design stage difficulty"
+            }
+          },
+          "simulation": {
+            "title": "Simulation",
+            "tools": {
+              "simulation": "Battle Simulation - Test unit combat",
+              "economy": "Economy Simulator - Simulate currency flow"
+            }
+          }
+        }
       },
       "survey": {
         "title": "🍔 MVP Feedback Event",

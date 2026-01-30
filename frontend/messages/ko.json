@@ -142,7 +142,11 @@
     "editMemo": "메모 편집",
     "deleteMemo": "메모 삭제",
     "resetWidth": "너비 초기화",
-    "resetHeight": "높이 초기화"
+    "resetHeight": "높이 초기화",
+    "headerFontSize": "열 헤더 글꼴 크기",
+    "headerHeight": "열 헤더 높이",
+    "rowHeaderFontSize": "행 헤더 글꼴 크기",
+    "rowHeaderWidth": "행 헤더 너비"
   },
   "memo": {
     "content": "메모 내용",
@@ -178,7 +182,9 @@
       "row": "행 변경",
       "column": "열 변경",
       "sheet": "시트 변경"
-    }
+    },
+    "headerFontSize": "헤더 글꼴 크기",
+    "header": "헤더"
   },
   "settings": {
     "title": "설정",
@@ -376,6 +382,9 @@
   "formula": {
     "functions": "함수",
     "columnRef": "열 참조",
+    "sheetRef": "시트 참조",
+    "sheetVars": "시트 변수",
+    "prevRowRef": "이전 행 참조",
     "formulaType": "수식",
     "generalType": "일반",
     "hint": "= 다음에 함수명 또는 열 이름을 입력하세요"
@@ -429,7 +438,12 @@
     "deleteRowCompletelyDesc": "행 전체를 삭제합니다",
     "addRow": "행 추가",
     "addColumn": "열 추가",
-    "noData": "데이터가 없습니다. 아래 \"행 추가\" 버튼을 클릭하세요."
+    "noData": "데이터가 없습니다. 아래 \"행 추가\" 버튼을 클릭하세요.",
+    "formulaBarPlaceholder": "수식 또는 값을 입력하세요",
+    "selectCellToEdit": "편집할 셀을 선택하세요",
+    "columnName": "컬럼명",
+    "rowNumber": "행 번호",
+    "formulaMode": "수식 모드 전환"
   },
   "templateSelector": {
     "title": "새 시트 만들기",
@@ -1746,8 +1760,49 @@
     "steps": {
       "welcome": {
         "title": "게임 밸런스 툴에 오신 걸 환영합니다",
-        "description": "이 툴은 게임 기획자가 캐릭터 스탯, 무기 데미지, 레벨 테이블 등을 관리하고 계산하는 도구입니다.",
-        "tip": "엑셀처럼 사용하되, 게임에 특화된 수식을 바로 쓸 수 있어요."
+        "description": "캐릭터 스탯, 무기 데미지, 레벨 테이블 등을 관리하고 게임 전용 수식으로 계산하는 도구입니다. 엑셀처럼 사용하되 DAMAGE, DPS, SCALE 같은 게임 특화 함수를 바로 쓸 수 있어요.",
+        "tip": "💡 왼쪽 도구와 하단 독바의 도구는 드래그로 서로 위치를 이동할 수 있어요!"
+      },
+      "tools": {
+        "title": "14가지 분석 도구",
+        "description": "데이터를 입력하면 다양한 도구로 밸런스를 분석할 수 있어요. 왼쪽 사이드바와 하단 독바에서 도구를 클릭하세요.",
+        "tip": "도구 패널은 드래그로 크기 조절, 여러 개 동시 사용 가능해요!",
+        "categories": {
+          "calculation": {
+            "title": "계산 도구",
+            "tools": {
+              "calculator": "계산기 - 수식 빠른 계산",
+              "goalSolver": "목표 역산 - 원하는 결과에서 입력값 찾기",
+              "formulaHelper": "수식 도우미 - 게임 수식 검색/테스트"
+            }
+          },
+          "visualization": {
+            "title": "시각화 도구",
+            "tools": {
+              "comparison": "비교 분석 - 여러 행 차트 비교",
+              "chart": "성장 곡선 - 레벨별 성장 그래프",
+              "presetComparison": "프리셋 비교 - 저장된 버전 간 비교"
+            }
+          },
+          "analysis": {
+            "title": "분석 도구",
+            "tools": {
+              "imbalanceDetector": "불균형 감지 - 이상치/OP 캐릭터 찾기",
+              "balanceAnalysis": "밸런스 분석 - 전체 분포 분석",
+              "balanceValidator": "밸런스 검증 - 규칙 기반 검사",
+              "dpsVariance": "DPS 분산 - 확률적 DPS 분포",
+              "curveFitting": "곡선 피팅 - 데이터에 맞는 수식 찾기",
+              "difficultyCurve": "난이도 곡선 - 스테이지별 난이도 설계"
+            }
+          },
+          "simulation": {
+            "title": "시뮬레이션",
+            "tools": {
+              "simulation": "전투 시뮬레이션 - 유닛 간 전투 테스트",
+              "economy": "경제 시뮬레이터 - 재화 흐름 시뮬레이션"
+            }
+          }
+        }
       },
       "survey": {
         "title": "🍔 MVP 피드백 이벤트",

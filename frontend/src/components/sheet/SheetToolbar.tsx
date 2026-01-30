@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useState, useRef, useEffect, ReactNode } from 'react';
+import { createPortal } from 'react-dom';
 import { useTranslations } from 'next-intl';
 import {
   Undo2,
@@ -23,7 +24,7 @@ import {
   StickyNote,
   X,
 } from 'lucide-react';
-import { useSheetUIStore } from '@/stores/sheetUIStore';
+import { useSheetUIStore, DEFAULT_CELL_STYLE } from '@/stores/sheetUIStore';
 import { useHistoryStore } from '@/stores/historyStore';
 import type { CellStyle } from '@/types';
 
@@ -138,24 +139,41 @@ export default function SheetToolbar({
   // 히스토리 드롭다운 상태
   const [showHistory, setShowHistory] = useState(false);
   const historyRef = useRef<HTMLDivElement>(null);
+  const historyButtonRef = useRef<HTMLButtonElement>(null);
+  const [historyDropdownPos, setHistoryDropdownPos] = useState({ top: 0, left: 0 });
 
   // 회전 드롭다운 상태
   const [showRotation, setShowRotation] = useState(false);
   const rotationRef = useRef<HTMLDivElement>(null);
+  const rotationButtonRef = useRef<HTMLButtonElement>(null);
+  const [rotationDropdownPos, setRotationDropdownPos] = useState({ top: 0, left: 0 });
+
+  // Portal 마운트 상태
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
   // 외부 클릭 시 드롭다운 닫기
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
-      if (historyRef.current && !historyRef.current.contains(event.target as Node)) {
+      const target = event.target as Node;
+      // Portal로 렌더링된 드롭다운이 클릭 타겟의 부모인지 확인
+      const historyDropdown = document.querySelector('[data-dropdown="history"]');
+      const rotationDropdown = document.querySelector('[data-dropdown="rotation"]');
+
+      if (showHistory && historyRef.current && !historyRef.current.contains(target) &&
+          (!historyDropdown || !historyDropdown.contains(target))) {
         setShowHistory(false);
       }
-      if (rotationRef.current && !rotationRef.current.contains(event.target as Node)) {
+      if (showRotation && rotationRef.current && !rotationRef.current.contains(target) &&
+          (!rotationDropdown || !rotationDropdown.contains(target))) {
         setShowRotation(false);
       }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
+  }, [showHistory, showRotation]);
 
   // 스타일 토글 핸들러 (x-spreadsheet ToggleItem 패턴)
   const handleToggleStyle = useCallback(
@@ -179,7 +197,7 @@ export default function SheetToolbar({
   // 폰트 사이즈 증감
   const handleFontSizeStep = useCallback(
     (delta: number) => {
-      const currentSize = currentCellStyle.fontSize || 12;
+      const currentSize = currentCellStyle.fontSize || DEFAULT_CELL_STYLE.fontSize || 14;
       const currentIndex = FONT_SIZES.findIndex((s) => s >= currentSize);
       const newIndex = Math.max(0, Math.min(FONT_SIZES.length - 1, currentIndex + delta));
       handleFontSizeChange(FONT_SIZES[newIndex]);
@@ -270,7 +288,14 @@ export default function SheetToolbar({
       <div className="relative" ref={historyRef}>
         <Tooltip label={t('toolbar.history')}>
           <button
-            onClick={() => setShowHistory(!showHistory)}
+            ref={historyButtonRef}
+            onClick={() => {
+              if (historyButtonRef.current) {
+                const rect = historyButtonRef.current.getBoundingClientRect();
+                setHistoryDropdownPos({ top: rect.bottom + 4, left: rect.left });
+              }
+              setShowHistory(!showHistory);
+            }}
             disabled={disabled || (past.length === 0 && future.length === 0)}
             className={`${buttonClass} ${hoverClass} flex items-center gap-0.5`}
             style={{ color: 'var(--text-secondary)' }}
@@ -280,10 +305,13 @@ export default function SheetToolbar({
           </button>
         </Tooltip>
 
-        {showHistory && (past.length > 0 || future.length > 0) && (
+        {showHistory && (past.length > 0 || future.length > 0) && isMounted && createPortal(
           <div
-            className="absolute top-full left-0 mt-1 min-w-[220px] rounded-lg shadow-lg border z-50 overflow-hidden"
+            data-dropdown="history"
+            className="fixed min-w-[220px] rounded-lg shadow-lg border z-[9999] overflow-hidden"
             style={{
+              top: historyDropdownPos.top,
+              left: historyDropdownPos.left,
               background: 'var(--bg-primary)',
               borderColor: 'var(--border-primary)',
             }}
@@ -389,7 +417,8 @@ export default function SheetToolbar({
                 </button>
               </div>
             )}
-          </div>
+          </div>,
+          document.body
         )}
       </div>
 
@@ -410,7 +439,7 @@ export default function SheetToolbar({
         <Tooltip label={t('toolbar.fontSize')}>
           <div className="relative">
             <select
-              value={currentCellStyle.fontSize || 12}
+              value={currentCellStyle.fontSize || DEFAULT_CELL_STYLE.fontSize}
               onChange={(e) => handleFontSizeChange(Number(e.target.value))}
               disabled={disabled}
               className="appearance-none pl-2 pr-6 py-1 text-xs font-medium rounded border cursor-pointer min-w-[50px] text-center"
@@ -562,7 +591,14 @@ export default function SheetToolbar({
       <div className="relative" ref={rotationRef}>
         <Tooltip label={t('toolbar.textRotation')}>
           <button
-            onClick={() => setShowRotation(!showRotation)}
+            ref={rotationButtonRef}
+            onClick={() => {
+              if (rotationButtonRef.current) {
+                const rect = rotationButtonRef.current.getBoundingClientRect();
+                setRotationDropdownPos({ top: rect.bottom + 4, left: rect.left });
+              }
+              setShowRotation(!showRotation);
+            }}
             disabled={disabled}
             className={`${buttonClass} ${hoverClass} flex items-center gap-1 px-2`}
             style={{ color: 'var(--text-secondary)' }}
@@ -573,10 +609,13 @@ export default function SheetToolbar({
             <RotateCcw className="w-3.5 h-3.5" />
           </button>
         </Tooltip>
-        {showRotation && (
+        {showRotation && isMounted && createPortal(
           <div
-            className="absolute top-full left-0 mt-1 py-1 rounded-lg shadow-lg z-50 min-w-[80px]"
+            data-dropdown="rotation"
+            className="fixed py-1 rounded-lg shadow-lg z-[9999] min-w-[80px]"
             style={{
+              top: rotationDropdownPos.top,
+              left: rotationDropdownPos.left,
               background: 'var(--bg-primary)',
               border: '1px solid var(--border-primary)',
             }}
@@ -597,7 +636,8 @@ export default function SheetToolbar({
                 {rot.label}
               </button>
             ))}
-          </div>
+          </div>,
+          document.body
         )}
       </div>
 
