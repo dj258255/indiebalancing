@@ -7,6 +7,10 @@
  * - React.memo로 불필요한 리렌더링 방지
  * - 커스텀 비교 함수로 필요한 props만 비교
  *
+ * 터치/모바일 지원:
+ * - Pointer Events로 마우스/터치/펜 통합 처리
+ * - 참고: https://javascript.info/pointer-events
+ *
  * 출처:
  * - React.memo 공식 문서: https://react.dev/reference/react/memo
  * - Handsontable 렌더링 최적화: https://handsontable.com/docs/javascript-data-grid/row-virtualization/
@@ -46,13 +50,13 @@ export interface SheetCellProps {
   // 배경색 (계산된 값)
   backgroundColor: string;
 
-  // 이벤트 핸들러
-  onMouseDown: (rowId: string, columnId: string, e: React.MouseEvent) => void;
-  onMouseEnter: (rowId: string, columnId: string, e: React.MouseEvent, memo?: string) => void;
-  onMouseLeave: (rowId: string, columnId: string, memo?: string) => void;
+  // 이벤트 핸들러 - Pointer Events (마우스/터치/펜 통합)
+  onPointerDown: (rowId: string, columnId: string, e: React.PointerEvent) => void;
+  onPointerEnter: (rowId: string, columnId: string, e: React.PointerEvent, memo?: string) => void;
+  onPointerLeave: (rowId: string, columnId: string, memo?: string) => void;
   onDoubleClick: (rowId: string, columnId: string) => void;
   onContextMenu: (e: React.MouseEvent, rowId: string, columnId: string) => void;
-  onFillHandleMouseDown: (e: React.MouseEvent) => void;
+  onFillHandlePointerDown: (e: React.PointerEvent) => void;
   onMemoClick: (rowId: string, columnId: string, memo: string) => void;
 
   // 번역
@@ -111,28 +115,37 @@ const SheetCell = memo(function SheetCell({
   isFormulaColumn,
   isCopyMode,
   backgroundColor,
-  onMouseDown,
-  onMouseEnter,
-  onMouseLeave,
+  onPointerDown,
+  onPointerEnter,
+  onPointerLeave,
   onDoubleClick,
   onContextMenu,
-  onFillHandleMouseDown,
+  onFillHandlePointerDown,
   onMemoClick,
   dragToFillText,
   defaultFontSize,
 }: SheetCellProps) {
-  // 이벤트 핸들러 - useCallback으로 안정화
-  const handleMouseDown = useCallback((e: React.MouseEvent) => {
-    onMouseDown(rowId, columnId, e);
-  }, [onMouseDown, rowId, columnId]);
+  /**
+   * Pointer Events 핸들러
+   * - 마우스, 터치, 펜 입력을 통합 처리
+   * - e.pointerType으로 입력 유형 구분 가능: "mouse" | "touch" | "pen"
+   * - 참고: https://javascript.info/pointer-events
+   */
+  const handlePointerDown = useCallback((e: React.PointerEvent) => {
+    // 터치 디바이스에서 포인터 캡처 (드래그 선택 지원)
+    if (e.pointerType === 'touch') {
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    }
+    onPointerDown(rowId, columnId, e);
+  }, [onPointerDown, rowId, columnId]);
 
-  const handleMouseEnter = useCallback((e: React.MouseEvent) => {
-    onMouseEnter(rowId, columnId, e, cellMemo);
-  }, [onMouseEnter, rowId, columnId, cellMemo]);
+  const handlePointerEnter = useCallback((e: React.PointerEvent) => {
+    onPointerEnter(rowId, columnId, e, cellMemo);
+  }, [onPointerEnter, rowId, columnId, cellMemo]);
 
-  const handleMouseLeave = useCallback(() => {
-    onMouseLeave(rowId, columnId, cellMemo);
-  }, [onMouseLeave, rowId, columnId, cellMemo]);
+  const handlePointerLeave = useCallback(() => {
+    onPointerLeave(rowId, columnId, cellMemo);
+  }, [onPointerLeave, rowId, columnId, cellMemo]);
 
   const handleDoubleClick = useCallback((e: React.MouseEvent) => {
     e.preventDefault();
@@ -174,12 +187,12 @@ const SheetCell = memo(function SheetCell({
   return (
     <div
       data-cell-id={cellKey}
-      onMouseDown={handleMouseDown}
-      onMouseEnter={handleMouseEnter}
-      onMouseLeave={handleMouseLeave}
+      onPointerDown={handlePointerDown}
+      onPointerEnter={handlePointerEnter}
+      onPointerLeave={handlePointerLeave}
       onDoubleClick={handleDoubleClick}
       onContextMenu={handleContextMenuClick}
-      className={`px-2 sm:px-2 py-1.5 sm:py-1 h-full w-full absolute inset-0 overflow-hidden select-none flex ${
+      className={`sheet-cell px-2 sm:px-2 py-1.5 sm:py-1 h-full w-full absolute inset-0 overflow-hidden select-none flex ${
         (cellStyle?.vAlign || DEFAULT_CELL_STYLE.vAlign) === 'top' ? 'items-start' : (cellStyle?.vAlign || DEFAULT_CELL_STYLE.vAlign) === 'bottom' ? 'items-end' : 'items-center'
       } ${isSelected && !isEditing ? 'cursor-move' : 'cursor-cell'} ${isMoveSource && !isCopyMode ? 'opacity-50' : ''}`}
       style={{
@@ -190,6 +203,8 @@ const SheetCell = memo(function SheetCell({
         // 테마 전환 성능 최적화: contain으로 리플로우 범위 제한
         // https://developer.mozilla.org/en-US/docs/Web/CSS/contain
         contain: 'strict',
+        // 터치 동작 방지 (드래그 선택 시 스크롤 방지)
+        touchAction: 'none',
       }}
     >
       <span
@@ -249,15 +264,19 @@ const SheetCell = memo(function SheetCell({
       )}
 
       {/* 채우기 핸들 (선택된 셀의 오른쪽 하단) - 편집 중에도 표시 */}
+      {/* 모바일에서 터치하기 쉽게 크기 확대 (sm: 이상에서는 기존 크기) */}
       {isSelected && !isLocked && (
         <div
-          onMouseDown={onFillHandleMouseDown}
-          className="absolute bottom-0 right-0 w-3 h-3 cursor-crosshair"
+          onPointerDown={onFillHandlePointerDown}
+          className="absolute bottom-0 right-0 w-4 h-4 sm:w-3 sm:h-3 cursor-crosshair touch-none"
           style={{
             background: 'var(--primary-blue)',
-            border: '1px solid white',
+            border: '2px solid white',
+            borderRadius: '2px',
             // 편집 중에도 CellEditor(z-50) 위에 표시되도록 z-index 높임
             zIndex: isEditing ? 60 : 10,
+            // 모바일에서 터치 영역 확대
+            touchAction: 'none',
           }}
           title={dragToFillText}
         />

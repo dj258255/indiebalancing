@@ -235,7 +235,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     isFillDragging,
     fillPreviewCells,
     fillPreviewCellsSet,
-    handleFillHandleMouseDown,
+    handleFillHandlePointerDown,
     handleFillDragEnter,
     isMoveDragging,
     moveTargetCell,
@@ -504,14 +504,22 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     [isCheckboxDragging, handleCheckboxDragEnterThrottled]
   );
 
-  // 셀 마우스다운 핸들러 - x-spreadsheet 패턴: selector.set(ri, ci)
-  const handleCellMouseDown = useCallback(
-    (rowId: string, columnId: string, e: React.MouseEvent) => {
+  /**
+   * 셀 Pointer Down 핸들러 - x-spreadsheet 패턴: selector.set(ri, ci)
+   * Pointer Events로 마우스/터치/펜 통합 처리
+   * 참고: https://javascript.info/pointer-events
+   */
+  const handleCellPointerDown = useCallback(
+    (rowId: string, columnId: string, e: React.PointerEvent) => {
       // 컨테이너의 clearSelection이 호출되지 않도록 버블링 중단
       e.stopPropagation();
 
-      if (e.ctrlKey || e.metaKey || e.shiftKey) return;
-      if (e.button !== 0) return;
+      // 터치가 아닌 경우 Ctrl/Meta/Shift 키 처리
+      if (e.pointerType !== 'touch') {
+        if (e.ctrlKey || e.metaKey || e.shiftKey) return;
+      }
+      // 마우스의 경우 왼쪽 버튼만 처리
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
 
       if (editingCell && (editingCell.rowId !== rowId || editingCell.columnId !== columnId)) {
         commitCurrentEditingCell();
@@ -553,8 +561,11 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     ]
   );
 
-  // 셀 마우스엔터 핸들러 (드래그 선택) - x-spreadsheet 패턴: extendSelection 사용
-  const handleCellMouseEnterThrottled = useMemo(
+  /**
+   * 셀 Pointer Enter 핸들러 (드래그 선택) - x-spreadsheet 패턴: extendSelection 사용
+   * Pointer Events로 마우스/터치/펜 통합 처리
+   */
+  const handleCellPointerEnterThrottled = useMemo(
     () =>
       rafThrottle((rowId: string, columnId: string) => {
         if (!isDraggingRef.current || !dragStartCellRef.current) return;
@@ -569,34 +580,42 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     [isDraggingRef, dragStartCellRef, sheet.rows, sheet.columns, extendSelection]
   );
 
-  const handleCellMouseEnter = useCallback(
-    (rowId: string, columnId: string, e: React.MouseEvent, memo?: string) => {
+  const handleCellPointerEnter = useCallback(
+    (rowId: string, columnId: string, e: React.PointerEvent, memo?: string) => {
       // 드래그 선택 처리
-      handleCellMouseEnterThrottled(rowId, columnId);
-      // 메모 툴팁 처리
-      handleCellMouseEnterForMemo(rowId, columnId, e, memo);
+      handleCellPointerEnterThrottled(rowId, columnId);
+      // 메모 툴팁 처리 (PointerEvent를 MouseEvent로 캐스팅 - 호환됨)
+      handleCellMouseEnterForMemo(rowId, columnId, e as unknown as React.MouseEvent, memo);
     },
-    [handleCellMouseEnterThrottled, handleCellMouseEnterForMemo]
+    [handleCellPointerEnterThrottled, handleCellMouseEnterForMemo]
   );
 
-  // 드래그 종료 - Fortune Sheet 패턴: 드래그 플래그만 해제
+  /**
+   * Pointer Up 핸들러 - 드래그 종료
+   * Fortune Sheet 패턴: 드래그 플래그만 해제
+   * pointerup 이벤트로 마우스/터치/펜 통합 처리
+   */
   useEffect(() => {
-    const handleMouseUp = () => {
+    const handlePointerUp = () => {
       if (isDraggingRef.current) {
         isDraggingRef.current = false;
-        // 선택 상태는 이미 handleCellMouseEnter에서 업데이트됨
-        // 단일 셀 클릭의 경우 handleCellMouseDown에서 이미 설정됨
+        // 선택 상태는 이미 handleCellPointerEnter에서 업데이트됨
+        // 단일 셀 클릭의 경우 handleCellPointerDown에서 이미 설정됨
       }
     };
 
-    window.addEventListener('mouseup', handleMouseUp);
-    return () => window.removeEventListener('mouseup', handleMouseUp);
+    window.addEventListener('pointerup', handlePointerUp);
+    return () => window.removeEventListener('pointerup', handlePointerUp);
   }, [isDraggingRef]);
 
-  // 컨테이너 마우스다운 (외부 클릭)
-  const handleContainerMouseDown = useCallback(
-    (e: React.MouseEvent) => {
-      if (e.button !== 0) return;
+  /**
+   * 컨테이너 Pointer Down (외부 클릭)
+   * Pointer Events로 마우스/터치/펜 통합 처리
+   */
+  const handleContainerPointerDown = useCallback(
+    (e: React.PointerEvent) => {
+      // 마우스의 경우 왼쪽 버튼만 처리
+      if (e.pointerType === 'mouse' && e.button !== 0) return;
 
       const container = tableContainerRef.current;
       if (container) {
@@ -930,12 +949,13 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
             background: 'var(--bg-primary)',
             borderColor: 'var(--border-primary)',
           }}
-          onMouseDown={(e) => {
+          onPointerDown={(e) => {
             setContextMenu(null);
             setColumnContextMenu(null);
             setRowContextMenu(null);
-            if (e.button === 2) return;
-            handleContainerMouseDown(e);
+            // 마우스 우클릭은 무시
+            if (e.pointerType === 'mouse' && e.button === 2) return;
+            handleContainerPointerDown(e);
           }}
         >
           {/* 오버레이 에디터 */}
@@ -1157,15 +1177,15 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                           )
                         )}
 
-                        {/* 열 너비 조절 핸들 - TanStack Table 패턴 */}
+                        {/* 열 너비 조절 핸들 - TanStack Table 패턴 + Pointer Events */}
                         {!isActions && (
                           <div
-                            className="absolute top-0 -right-[4px] h-full w-[8px] cursor-col-resize group/resizer z-20"
-                            onMouseDown={(e) => handleResizeStart(header.id, e)}
+                            className="absolute top-0 -right-[4px] h-full w-[8px] cursor-col-resize group/resizer z-20 touch-none"
+                            onPointerDown={(e) => handleResizeStart(header.id, e)}
                             onDoubleClick={() => {
                               // 더블클릭으로 기본 너비로 리셋
                               const col = sheet.columns.find(c => c.id === header.id);
-                              if (col) handleResizeStart(header.id, { clientX: 0, preventDefault: () => {}, stopPropagation: () => {} } as React.MouseEvent);
+                              if (col) handleResizeStart(header.id, { clientX: 0, preventDefault: () => {}, stopPropagation: () => {}, pointerType: 'mouse' } as React.PointerEvent);
                             }}
                           >
                             <div
@@ -1179,11 +1199,11 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                           </div>
                         )}
 
-                        {/* 헤더 높이 조절 핸들 */}
+                        {/* 헤더 높이 조절 핸들 - Pointer Events */}
                         {!isActions && (
                           <div
-                            className="absolute -bottom-[4px] left-0 right-0 h-[8px] cursor-row-resize group/hresizer z-20"
-                            onMouseDown={handleHeaderResizeStart}
+                            className="absolute -bottom-[4px] left-0 right-0 h-[8px] cursor-row-resize group/hresizer z-20 touch-none"
+                            onPointerDown={handleHeaderResizeStart}
                           >
                             <div
                               className={cn(
@@ -1295,11 +1315,11 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                               {isRowNumber && (
                                 <div
                                   className={cn(
-                                    'absolute left-0 right-0 cursor-row-resize transition-colors z-10',
+                                    'absolute left-0 right-0 cursor-row-resize transition-colors z-10 touch-none',
                                     resizingRow === rowData.id ? 'bg-[var(--accent)]' : 'hover:bg-[var(--accent)]'
                                   )}
                                   style={{ bottom: -3, height: 7 }}
-                                  onMouseDown={(e) => {
+                                  onPointerDown={(e) => {
                                     e.stopPropagation();
                                     handleRowResizeStart(rowData.id, e);
                                   }}
@@ -1390,21 +1410,21 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                               isFormulaColumn={isFormulaColumn}
                               isCopyMode={isCopyMode}
                               backgroundColor={getCellBackgroundColor()}
-                              onMouseDown={handleCellMouseDown}
-                              onMouseEnter={handleCellMouseEnter}
-                              onMouseLeave={handleCellMouseLeaveForMemo}
+                              onPointerDown={handleCellPointerDown}
+                              onPointerEnter={handleCellPointerEnter}
+                              onPointerLeave={handleCellMouseLeaveForMemo}
                               onDoubleClick={startEditing}
                               onContextMenu={handleContextMenu}
-                              onFillHandleMouseDown={handleFillHandleMouseDown}
+                              onFillHandlePointerDown={handleFillHandlePointerDown}
                               onMemoClick={() => {}}
                               dragToFillText={t('table.dragToFill')}
                               defaultFontSize={defaultCellStyle.fontSize || 13}
                             />
 
-                            {/* 열 너비 조절 핸들 - fill handle(z-10)보다 아래 */}
+                            {/* 열 너비 조절 핸들 - fill handle(z-10)보다 아래, Pointer Events */}
                             <div
-                              className="absolute top-0 -right-[4px] h-full w-[8px] cursor-col-resize group/cellresizer z-[5]"
-                              onMouseDown={(e) => {
+                              className="absolute top-0 -right-[4px] h-full w-[8px] cursor-col-resize group/cellresizer z-[5] touch-none"
+                              onPointerDown={(e) => {
                                 e.stopPropagation();
                                 handleResizeStart(columnId, e);
                               }}
@@ -1419,10 +1439,10 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                               />
                             </div>
 
-                            {/* 행 높이 조절 핸들 - fill handle(z-10)보다 아래 */}
+                            {/* 행 높이 조절 핸들 - fill handle(z-10)보다 아래, Pointer Events */}
                             <div
-                              className="absolute -bottom-[4px] left-0 right-0 h-[8px] cursor-row-resize group/rowresizer z-[5]"
-                              onMouseDown={(e) => {
+                              className="absolute -bottom-[4px] left-0 right-0 h-[8px] cursor-row-resize group/rowresizer z-[5] touch-none"
+                              onPointerDown={(e) => {
                                 e.stopPropagation();
                                 handleRowResizeStart(rowData.id, e);
                               }}

@@ -72,12 +72,21 @@ export function useSheetDrag({
     return formula;
   }, []);
 
-  // 채우기 핸들 드래그 시작
-  const handleFillHandleMouseDown = useCallback((e: React.MouseEvent) => {
+  /**
+   * 채우기 핸들 Pointer Down - 드래그 시작
+   * Pointer Events로 마우스/터치/펜 통합 처리
+   * 참고: https://javascript.info/pointer-events
+   */
+  const handleFillHandlePointerDown = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
 
     if (!selectedCell) return;
+
+    // 터치 디바이스에서 포인터 캡처 (드래그 지원)
+    if (e.pointerType === 'touch') {
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    }
 
     setIsFillDragging(true);
     fillStartCellRef.current = selectedCell;
@@ -191,18 +200,21 @@ export function useSheetDrag({
     fillStartCellRef.current = null;
   }, [isFillDragging, fillPreviewCells, sheet.rows, sheet.columns, projectId, sheet.id, updateCell, adjustFormulaForRow, setSelectedCells]);
 
-  // 채우기 드래그 전역 이벤트
-  // 편집 중에는 CellEditor가 셀을 덮어서 onMouseEnter가 발생하지 않으므로
-  // 전역 mousemove로 마우스 아래 셀을 찾아서 처리
+  /**
+   * 채우기 드래그 전역 이벤트
+   * Pointer Events로 마우스/터치/펜 통합 처리
+   * 편집 중에는 CellEditor가 셀을 덮어서 onPointerEnter가 발생하지 않으므로
+   * 전역 pointermove로 포인터 아래 셀을 찾아서 처리
+   */
   useEffect(() => {
     if (!isFillDragging) return;
 
-    const handleMouseMove = (e: MouseEvent) => {
+    const handlePointerMove = (e: PointerEvent) => {
       if (!tableContainerRef.current) return;
 
-      // 마우스 위치에서 셀 요소 찾기
-      const elementsUnderMouse = document.elementsFromPoint(e.clientX, e.clientY);
-      const cellElement = elementsUnderMouse.find(el => el.hasAttribute('data-cell-id'));
+      // 포인터 위치에서 셀 요소 찾기
+      const elementsUnderPointer = document.elementsFromPoint(e.clientX, e.clientY);
+      const cellElement = elementsUnderPointer.find(el => el.hasAttribute('data-cell-id'));
 
       if (cellElement) {
         const cellId = cellElement.getAttribute('data-cell-id');
@@ -216,15 +228,15 @@ export function useSheetDrag({
       }
     };
 
-    const handleMouseUp = () => {
+    const handlePointerUp = () => {
       handleFillDragEnd();
     };
 
-    window.addEventListener('mousemove', handleMouseMove);
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
     return () => {
-      window.removeEventListener('mousemove', handleMouseMove);
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
     };
   }, [isFillDragging, handleFillDragEnd, handleFillDragEnterThrottled, tableContainerRef]);
 
@@ -298,9 +310,12 @@ export function useSheetDrag({
     moveStartCellRef.current = null;
   }, [isMoveDragging, moveTargetCell, isCopyMode, projectId, sheet.id, updateCell, setSelectedCell, setSelectedCells]);
 
-  // 이동/복사 드래그 전역 이벤트
+  /**
+   * 이동/복사 드래그 전역 이벤트
+   * Pointer Events로 마우스/터치/펜 통합 처리
+   */
   useEffect(() => {
-    const handleMouseUp = (e: MouseEvent) => {
+    const handlePointerUp = (e: PointerEvent) => {
       if (isMoveDragging) {
         handleMoveDragEnd(e.ctrlKey || e.metaKey);
       }
@@ -318,28 +333,31 @@ export function useSheetDrag({
       }
     };
 
-    window.addEventListener('mouseup', handleMouseUp);
+    window.addEventListener('pointerup', handlePointerUp);
     window.addEventListener('keydown', handleKeyDown);
     window.addEventListener('keyup', handleKeyUp);
     return () => {
-      window.removeEventListener('mouseup', handleMouseUp);
+      window.removeEventListener('pointerup', handlePointerUp);
       window.removeEventListener('keydown', handleKeyDown);
       window.removeEventListener('keyup', handleKeyUp);
     };
   }, [isMoveDragging, handleMoveDragEnd]);
 
-  // 체크박스 드래그 종료
+  /**
+   * 체크박스 드래그 종료
+   * Pointer Events로 마우스/터치/펜 통합 처리
+   */
   useEffect(() => {
     if (!isCheckboxDragging) return;
 
-    const handleMouseUp = () => {
+    const handlePointerUp = () => {
       setIsCheckboxDragging(false);
       checkboxDragModeRef.current = null;
       lastDragRowIndexRef.current = null;
     };
 
-    document.addEventListener('mouseup', handleMouseUp);
-    return () => document.removeEventListener('mouseup', handleMouseUp);
+    document.addEventListener('pointerup', handlePointerUp);
+    return () => document.removeEventListener('pointerup', handlePointerUp);
   }, [isCheckboxDragging]);
 
   return {
@@ -347,7 +365,7 @@ export function useSheetDrag({
     isFillDragging,
     fillPreviewCells,
     fillPreviewCellsSet,
-    handleFillHandleMouseDown,
+    handleFillHandlePointerDown,
     handleFillDragEnter,
 
     // 이동 상태

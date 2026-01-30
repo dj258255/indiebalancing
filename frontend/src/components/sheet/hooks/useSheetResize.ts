@@ -18,10 +18,10 @@ interface UseSheetResizeReturn {
   resizingHeader: boolean;
   tableWidth: number;
 
-  // 핸들러
-  handleResizeStart: (columnId: string, e: React.MouseEvent) => void;
-  handleRowResizeStart: (rowId: string, e: React.MouseEvent) => void;
-  handleHeaderResizeStart: (e: React.MouseEvent) => void;
+  // 핸들러 - Pointer Events (마우스/터치/펜 통합)
+  handleResizeStart: (columnId: string, e: React.PointerEvent) => void;
+  handleRowResizeStart: (rowId: string, e: React.PointerEvent) => void;
+  handleHeaderResizeStart: (e: React.PointerEvent) => void;
   setColumnWidths: React.Dispatch<React.SetStateAction<Record<string, number>>>;
   setRowHeights: React.Dispatch<React.SetStateAction<Record<string, number>>>;
 }
@@ -96,27 +96,36 @@ export function useSheetResize({ projectId, sheet }: UseSheetResizeProps): UseSh
     return rowNumberWidth + dataColumnsWidth + actionsWidth;
   })();
 
-  // 컬럼 리사이즈 핸들러
-  const handleResizeStart = useCallback((columnId: string, e: React.MouseEvent) => {
+  /**
+   * 컬럼 리사이즈 핸들러
+   * Pointer Events로 마우스/터치/펜 통합 처리
+   * 참고: https://javascript.info/pointer-events
+   */
+  const handleResizeStart = useCallback((columnId: string, e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setResizingColumn(columnId);
+
+    // 터치 디바이스에서 포인터 캡처
+    if (e.pointerType === 'touch') {
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    }
 
     const startX = e.clientX;
     const startWidth = columnWidths[columnId] || 150;
     let finalWidth = startWidth;
 
-    const handleMouseMove = (moveEvent: MouseEvent) => {
+    const handlePointerMove = (moveEvent: PointerEvent) => {
       const diff = moveEvent.clientX - startX;
       // 최소 너비 100px로 제한 (헤더에 exportName도 표시되므로)
       finalWidth = Math.max(100, startWidth + diff);
       setColumnWidths((prev) => ({ ...prev, [columnId]: finalWidth }));
     };
 
-    const handleMouseUp = () => {
+    const handlePointerUp = () => {
       setResizingColumn(null);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('pointerup', handlePointerUp);
 
       if (columnId !== 'rowNumber') {
         setTimeout(() => {
@@ -125,64 +134,80 @@ export function useSheetResize({ projectId, sheet }: UseSheetResizeProps): UseSh
       }
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerup', handlePointerUp);
   }, [columnWidths, projectId, sheet.id, updateColumn]);
 
-  // 행 리사이즈 핸들러
-  const handleRowResizeStart = useCallback((rowId: string, e: React.MouseEvent) => {
+  /**
+   * 행 리사이즈 핸들러
+   * Pointer Events로 마우스/터치/펜 통합 처리
+   */
+  const handleRowResizeStart = useCallback((rowId: string, e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setResizingRow(rowId);
+
+    // 터치 디바이스에서 포인터 캡처
+    if (e.pointerType === 'touch') {
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    }
 
     const startY = e.clientY;
     const startHeight = rowHeights[rowId] || 36;
     let finalHeight = startHeight;
 
-    const handleMouseMove = (moveEvent: MouseEvent) => {
+    const handlePointerMove = (moveEvent: PointerEvent) => {
       const diff = moveEvent.clientY - startY;
       finalHeight = Math.max(24, Math.min(200, startHeight + diff));
       setRowHeights((prev) => ({ ...prev, [rowId]: finalHeight }));
     };
 
-    const handleMouseUp = () => {
+    const handlePointerUp = () => {
       setResizingRow(null);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('pointerup', handlePointerUp);
 
       setTimeout(() => {
         updateRow(projectId, sheet.id, rowId, { height: finalHeight });
       }, 0);
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerup', handlePointerUp);
   }, [rowHeights, projectId, sheet.id, updateRow]);
 
-  // 헤더 높이 조절 핸들러
-  const handleHeaderResizeStart = useCallback((e: React.MouseEvent) => {
+  /**
+   * 헤더 높이 조절 핸들러
+   * Pointer Events로 마우스/터치/펜 통합 처리
+   */
+  const handleHeaderResizeStart = useCallback((e: React.PointerEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setResizingHeader(true);
 
+    // 터치 디바이스에서 포인터 캡처
+    if (e.pointerType === 'touch') {
+      (e.target as HTMLElement).setPointerCapture(e.pointerId);
+    }
+
     const startY = e.clientY;
     const startHeight = columnHeaderHeight;
 
-    const handleMouseMove = (moveEvent: MouseEvent) => {
+    const handlePointerMove = (moveEvent: PointerEvent) => {
       const diff = moveEvent.clientY - startY;
       // 최소 높이 32px, 최대 120px (store에서 clamp)
       const newHeight = startHeight + diff;
       setColumnHeaderHeight(newHeight);
     };
 
-    const handleMouseUp = () => {
+    const handlePointerUp = () => {
       setResizingHeader(false);
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('pointermove', handlePointerMove);
+      document.removeEventListener('pointerup', handlePointerUp);
     };
 
-    document.addEventListener('mousemove', handleMouseMove);
-    document.addEventListener('mouseup', handleMouseUp);
+    document.addEventListener('pointermove', handlePointerMove);
+    document.addEventListener('pointerup', handlePointerUp);
   }, [columnHeaderHeight, setColumnHeaderHeight]);
 
   return {

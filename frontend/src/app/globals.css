@@ -2,6 +2,188 @@
 @tailwind components;
 @tailwind utilities;
 
+/* ========================================
+   Mobile & Touch Support
+   참고: AG Grid, Handsontable, Google Sheets 패턴
+   ======================================== */
+
+/**
+ * touch-action 설정
+ * - 드래그 가능한 요소에서 브라우저 기본 터치 동작 방지
+ * - 참고: https://javascript.info/pointer-events
+ */
+.touch-none {
+  touch-action: none;
+  -webkit-touch-callout: none; /* iOS 롱프레스 메뉴 방지 */
+}
+
+/* 스프레드시트 셀 - 드래그 선택 시 스크롤 방지 */
+.sheet-cell {
+  touch-action: none;
+  -webkit-user-select: none;
+  user-select: none;
+}
+
+/* 스프레드시트 컨테이너 - 패닝만 허용 */
+.sheet-container {
+  touch-action: pan-x pan-y;
+  -webkit-overflow-scrolling: touch; /* iOS 부드러운 스크롤 */
+}
+
+/* 리사이즈 핸들 - 터치 동작 완전 차단 */
+.resize-handle {
+  touch-action: none;
+}
+
+/* 드래그 가능한 패널 */
+.draggable-panel {
+  touch-action: none;
+}
+
+/**
+ * 모바일 터치 타겟 크기
+ * - Apple HIG 권장: 최소 44x44px
+ * - 참고: https://developer.apple.com/design/human-interface-guidelines/
+ */
+.touch-target {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.touch-target-sm {
+  min-width: 36px;
+  min-height: 36px;
+}
+
+/**
+ * 모바일 셀 선택 핸들 (Google Sheets 스타일)
+ * - 터치로 범위 확장할 수 있는 파란 핸들
+ */
+.mobile-selection-handle {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: var(--primary-blue);
+  border: 2px solid white;
+  border-radius: 50%;
+  touch-action: none;
+  cursor: grab;
+  z-index: 100;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.mobile-selection-handle:active {
+  cursor: grabbing;
+  transform: scale(1.2);
+}
+
+/* 좌상단 핸들 */
+.mobile-selection-handle.top-left {
+  top: -6px;
+  left: -6px;
+}
+
+/* 우하단 핸들 */
+.mobile-selection-handle.bottom-right {
+  bottom: -6px;
+  right: -6px;
+}
+
+/**
+ * 모바일 컨텍스트 메뉴 (롱프레스)
+ * - 하단에서 슬라이드업 되는 액션 시트 스타일
+ */
+.mobile-context-menu {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--bg-primary);
+  border-radius: 20px 20px 0 0;
+  padding: env(safe-area-inset-bottom, 20px);
+  padding-top: 12px;
+  box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.15);
+  z-index: 9999;
+  transform: translateY(100%);
+  transition: transform 0.3s cubic-bezier(0.32, 0.72, 0, 1);
+}
+
+.mobile-context-menu.open {
+  transform: translateY(0);
+}
+
+.mobile-context-menu-handle {
+  width: 36px;
+  height: 5px;
+  background: var(--border-secondary);
+  border-radius: 3px;
+  margin: 0 auto 16px;
+}
+
+.mobile-context-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 20px;
+  font-size: 16px;
+  color: var(--text-primary);
+  border-radius: 12px;
+  transition: background 0.15s;
+}
+
+.mobile-context-menu-item:active {
+  background: var(--bg-hover);
+}
+
+.mobile-context-menu-item.destructive {
+  color: var(--error);
+}
+
+/**
+ * 롱프레스 피드백
+ * - 사용자에게 롱프레스 진행 중임을 시각적으로 표시
+ */
+.longpress-feedback {
+  position: relative;
+}
+
+.longpress-feedback::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: var(--accent-light);
+  border-radius: inherit;
+  opacity: 0;
+  transition: opacity 0.1s;
+  pointer-events: none;
+}
+
+.longpress-feedback.pressing::after {
+  opacity: 1;
+}
+
+/**
+ * 모바일 반응형 브레이크포인트
+ * - Tailwind 기본값과 동일하게 유지
+ */
+@media (max-width: 640px) {
+  /* 모바일에서 더 큰 터치 타겟 */
+  .sheet-cell {
+    min-height: 44px;
+  }
+
+  /* 체크박스 크기 확대 */
+  input[type="checkbox"] {
+    width: 20px;
+    height: 20px;
+  }
+
+  /* 버튼 터치 영역 확대 */
+  .btn-ghost {
+    padding: 12px 16px;
+  }
+}
+
 /* 가로 스크롤 - 스크롤바 숨김 (드래그/휠로 이동) */
 .scrollbar-x-hidden {
   overflow-x: auto;
@@ -281,6 +463,11 @@ body {
 }
 
 /* 인풋 */
+/**
+ * iOS Safari 자동 줌 방지
+ * - 16px 미만 폰트에서 input focus 시 자동 줌됨
+ * - 참고: https://medium.com/@rares.popescu/2-ways-to-avoid-the-automatic-zoom-in-on-input-fields-8a71479e542e
+ */
 input[type="text"],
 input[type="number"],
 input[type="email"],
@@ -291,7 +478,7 @@ select {
   color: var(--text-primary);
   border-radius: 8px;
   padding: 8px 12px;
-  font-size: 14px;
+  font-size: 16px; /* iOS 자동 줌 방지 - 최소 16px */
   transition: border-color 0.15s ease, box-shadow 0.15s ease;
 }
 

@@ -49,16 +49,16 @@ interface SheetBodyProps {
   // 기본 스타일
   defaultCellStyle: CellStyle;
 
-  // 이벤트 핸들러
-  onCellMouseDown: (rowId: string, columnId: string, e: React.MouseEvent) => void;
-  onCellMouseEnter: (rowId: string, columnId: string, e: React.MouseEvent, memo?: string) => void;
-  onCellMouseLeave: (rowId: string, columnId: string, memo?: string) => void;
+  // 이벤트 핸들러 - Pointer Events (마우스/터치/펜 통합)
+  onCellPointerDown: (rowId: string, columnId: string, e: React.PointerEvent) => void;
+  onCellPointerEnter: (rowId: string, columnId: string, e: React.PointerEvent, memo?: string) => void;
+  onCellPointerLeave: (rowId: string, columnId: string, memo?: string) => void;
   onCellDoubleClick: (rowId: string, columnId: string) => void;
   onCellContextMenu: (e: React.MouseEvent, rowId: string, columnId: string) => void;
-  onFillHandleMouseDown: (e: React.MouseEvent) => void;
+  onFillHandlePointerDown: (e: React.PointerEvent) => void;
   onMemoClick: (rowId: string, columnId: string, memo: string) => void;
-  onResizeStart: (columnId: string, e: React.MouseEvent) => void;
-  onRowResizeStart: (rowId: string, e: React.MouseEvent) => void;
+  onResizeStart: (columnId: string, e: React.PointerEvent) => void;
+  onRowResizeStart: (rowId: string, e: React.PointerEvent) => void;
   onRowContextMenu?: (e: React.MouseEvent, row: Row, rowIndex: number) => void;
   onResizeContextMenu?: (e: React.MouseEvent, type: 'column' | 'row', id?: string, rowIndex?: number) => void;
 
@@ -85,12 +85,12 @@ const SheetBody = memo(function SheetBody({
   resizingColumn,
   resizingRow,
   defaultCellStyle,
-  onCellMouseDown,
-  onCellMouseEnter,
-  onCellMouseLeave,
+  onCellPointerDown,
+  onCellPointerEnter,
+  onCellPointerLeave,
   onCellDoubleClick,
   onCellContextMenu,
-  onFillHandleMouseDown,
+  onFillHandlePointerDown,
   onMemoClick,
   onResizeStart,
   onRowResizeStart,
@@ -185,11 +185,11 @@ const SheetBody = memo(function SheetBody({
                       <>
                         <div
                           className={cn(
-                            'absolute top-0 bottom-0 cursor-col-resize transition-colors z-10 opacity-0 hover:opacity-100',
+                            'absolute top-0 bottom-0 cursor-col-resize transition-colors z-10 opacity-0 hover:opacity-100 touch-none',
                             resizingColumn === 'rowNumber' ? 'opacity-100 bg-[var(--accent)]' : 'hover:bg-[var(--accent)]'
                           )}
                           style={{ right: -2, width: 5 }}
-                          onMouseDown={(e) => {
+                          onPointerDown={(e) => {
                             e.stopPropagation();
                             onResizeStart('rowNumber', e);
                           }}
@@ -203,11 +203,11 @@ const SheetBody = memo(function SheetBody({
                         />
                         <div
                           className={cn(
-                            'absolute left-0 right-0 cursor-row-resize transition-colors z-10',
+                            'absolute left-0 right-0 cursor-row-resize transition-colors z-10 touch-none',
                             resizingRow === rowData.id ? 'bg-[var(--accent)]' : 'hover:bg-[var(--accent)]'
                           )}
                           style={{ bottom: -3, height: 7 }}
-                          onMouseDown={(e) => {
+                          onPointerDown={(e) => {
                             e.stopPropagation();
                             onRowResizeStart(rowData.id, e);
                           }}
@@ -314,25 +314,25 @@ const SheetBody = memo(function SheetBody({
                     isFormulaColumn={isFormulaColumn}
                     isCopyMode={isCopyMode}
                     backgroundColor={getBackgroundColor()}
-                    onMouseDown={onCellMouseDown}
-                    onMouseEnter={onCellMouseEnter}
-                    onMouseLeave={onCellMouseLeave}
+                    onPointerDown={onCellPointerDown}
+                    onPointerEnter={onCellPointerEnter}
+                    onPointerLeave={onCellPointerLeave}
                     onDoubleClick={onCellDoubleClick}
                     onContextMenu={onCellContextMenu}
-                    onFillHandleMouseDown={onFillHandleMouseDown}
+                    onFillHandlePointerDown={onFillHandlePointerDown}
                     onMemoClick={onMemoClick}
                     dragToFillText={dragToFillText}
                     defaultFontSize={defaultCellStyle.fontSize || 13}
                   />
 
-                  {/* 열 너비 조절 핸들 */}
+                  {/* 열 너비 조절 핸들 - Pointer Events */}
                   <div
                     className={cn(
-                      'absolute top-0 bottom-0 cursor-col-resize transition-colors z-10 opacity-0 hover:opacity-100',
+                      'absolute top-0 bottom-0 cursor-col-resize transition-colors z-10 opacity-0 hover:opacity-100 touch-none',
                       resizingColumn === columnId ? 'opacity-100 bg-[var(--accent)]' : 'hover:bg-[var(--accent)]'
                     )}
                     style={{ right: -2, width: 5 }}
-                    onMouseDown={(e) => {
+                    onPointerDown={(e) => {
                       e.stopPropagation();
                       onResizeStart(columnId, e);
                     }}
@@ -345,14 +345,14 @@ const SheetBody = memo(function SheetBody({
                     }}
                   />
 
-                  {/* 행 높이 조절 핸들 */}
+                  {/* 행 높이 조절 핸들 - Pointer Events */}
                   <div
                     className={cn(
-                      'absolute left-0 right-0 cursor-row-resize transition-colors z-10',
+                      'absolute left-0 right-0 cursor-row-resize transition-colors z-10 touch-none',
                       resizingRow === rowData.id ? 'bg-[var(--accent)]' : 'hover:bg-[var(--accent)]'
                     )}
                     style={{ bottom: -3, height: 7 }}
-                    onMouseDown={(e) => {
+                    onPointerDown={(e) => {
                       e.stopPropagation();
                       onRowResizeStart(rowData.id, e);
                     }}
