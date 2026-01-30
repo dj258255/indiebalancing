@@ -59,7 +59,7 @@ export default function Modal({
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-end sm:items-center justify-center p-0 sm:p-4"
+      className="fixed inset-0 z-[1100] flex items-end sm:items-center justify-center p-0 sm:p-4"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
       onClick={handleBackdropClick}
     >

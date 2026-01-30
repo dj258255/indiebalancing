@@ -6,31 +6,57 @@
 
 import { TrendingUp, AlertTriangle } from 'lucide-react';
 import type { PowerCurveAnalysis as PowerCurveResult } from '@/lib/balanceAnalysis';
+import type { Column } from '@/types';
+import { ColumnMappingConfig, type ColumnMapping } from './ColumnMappingConfig';
+
+const PANEL_COLOR = '#3db88a';
 
 interface PowerCurveAnalysisProps {
   units: { id: string }[];
   powerResult: PowerCurveResult | null;
   onRunAnalysis: () => void;
+  columns: Column[];
+  columnMapping: ColumnMapping;
+  onMappingChange: (mapping: ColumnMapping) => void;
 }
 
 export function PowerCurveAnalysis({
   units,
   powerResult,
   onRunAnalysis,
+  columns,
+  columnMapping,
+  onMappingChange,
 }: PowerCurveAnalysisProps) {
   return (
     <div className="space-y-4">
       {/* 탭 설명 */}
-      <div className="glass-section p-3 rounded-lg" style={{ borderLeft: '3px solid #3db88a' }}>
+      <div className="glass-section p-3 rounded-lg" style={{ borderLeft: `3px solid ${PANEL_COLOR}` }}>
         <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>파워 커브 분석</div>
-        <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>레벨별 스탯 성장이 선형/지수/로그 중 어떤 패턴인지 분석합니다. R² 값으로 피팅 정확도를 확인하세요. <strong style={{ color: '#3db88a' }}>level 컬럼 필수</strong></div>
+        <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>레벨별 스탯 성장이 선형/지수/로그 중 어떤 패턴인지 분석합니다. R² 값으로 피팅 정확도를 확인하세요.</div>
       </div>
+
+      {/* 컬럼 매핑 설정 */}
+      <ColumnMappingConfig
+        mapping={columnMapping}
+        onMappingChange={onMappingChange}
+        columns={columns}
+        fields={[
+          { key: 'level', label: '레벨', required: true, description: '레벨/등급 컬럼' },
+          { key: 'hp', label: 'HP', description: '체력 (파워 계산용)' },
+          { key: 'atk', label: 'ATK', description: '공격력 (파워 계산용)' },
+          { key: 'def', label: 'DEF', description: '방어력 (파워 계산용)' },
+          { key: 'speed', label: 'Speed', description: '속도 (파워 계산용)' },
+        ]}
+        title="컬럼 설정"
+        accentColor={PANEL_COLOR}
+      />
 
       <button
         onClick={onRunAnalysis}
-        disabled={units.length < 2}
+        disabled={units.length < 2 || !columnMapping.level}
         className="glass-button-primary w-full px-4 py-2.5 rounded-lg text-sm font-medium disabled:opacity-50"
-        style={{ background: '#3db88a' }}
+        style={{ background: PANEL_COLOR }}
       >
         <div className="flex items-center justify-center gap-2">
           <TrendingUp className="w-4 h-4" />
@@ -64,11 +90,20 @@ export function PowerCurveAnalysis({
                 </div>
               </div>
             </div>
-            <div className="glass-divider px-4 py-3 border-t" style={{ borderColor: 'var(--border-primary)' }}>
-              <div className="text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>수식</div>
-              <div className="glass-section text-sm font-mono px-2 py-1.5 rounded" style={{ color: 'var(--text-secondary)' }}>
-                {powerResult.formula}
-              </div>
+          </div>
+
+          {/* 수식 카드 - 별도 분리 */}
+          <div className="glass-card rounded-xl p-4">
+            <div className="text-sm mb-2 font-medium" style={{ color: 'var(--text-secondary)' }}>수식</div>
+            <div
+              className="text-sm font-mono px-3 py-2 rounded-lg"
+              style={{
+                color: 'var(--text-primary)',
+                background: 'var(--bg-tertiary)',
+                wordBreak: 'break-all'
+              }}
+            >
+              {powerResult.formula}
             </div>
           </div>
 

@@ -10,7 +10,6 @@ import type {
   MemoModalState,
   MemoHoverState,
   DeleteColumnConfirmState,
-  DeleteRowConfirmState,
 } from '../types';
 
 interface UseSheetContextMenuProps {
@@ -40,9 +39,8 @@ export function useSheetContextMenu({
   const [memoModal, setMemoModal] = useState<MemoModalState | null>(null);
   const [memoHover, setMemoHover] = useState<MemoHoverState | null>(null);
 
-  // 삭제 확인 상태
+  // 삭제 확인 상태 (열만 - 행은 바로 삭제)
   const [deleteColumnConfirm, setDeleteColumnConfirm] = useState<DeleteColumnConfirmState | null>(null);
-  const [deleteRowConfirm, setDeleteRowConfirm] = useState<DeleteRowConfirmState | null>(null);
 
   // 컨텍스트 메뉴 열기
   const handleContextMenu = useCallback((
@@ -115,7 +113,7 @@ export function useSheetContextMenu({
     setContextMenu(null);
   }, [contextMenu, sheet.columns, projectId, sheet.id, insertColumn]);
 
-  // 선택된 행 삭제
+  // 선택된 행 삭제 (바로 삭제, 모달 없이)
   const deleteSelectedRows = useCallback(() => {
     if (selectedCells.length === 0 && !contextMenu) return;
 
@@ -126,16 +124,7 @@ export function useSheetContextMenu({
       rowIds.add(contextMenu.rowId);
     }
 
-    if (rowIds.size === 1) {
-      const rowId = [...rowIds][0];
-      const rowIndex = sheet.rows.findIndex(r => r.id === rowId);
-      const row = sheet.rows.find(r => r.id === rowId);
-      const hasValue = row ? Object.values(row.cells).some(v => v !== null && v !== undefined && v !== '') : false;
-      setDeleteRowConfirm({ rowId, rowIndex, hasValue });
-      setContextMenu(null);
-      return;
-    }
-
+    // 바로 삭제
     rowIds.forEach(rowId => {
       deleteRow(projectId, sheet.id, rowId);
     });
@@ -143,7 +132,7 @@ export function useSheetContextMenu({
     setSelectedCells([]);
     setSelectedCell(null);
     setContextMenu(null);
-  }, [selectedCells, contextMenu, projectId, sheet.id, deleteRow, sheet.rows, setSelectedCell, setSelectedCells]);
+  }, [selectedCells, contextMenu, projectId, sheet.id, deleteRow, setSelectedCell, setSelectedCells]);
 
   // 열 삭제
   const deleteSelectedColumn = useCallback(() => {
@@ -163,7 +152,6 @@ export function useSheetContextMenu({
     memoModal,
     memoHover,
     deleteColumnConfirm,
-    deleteRowConfirm,
 
     // setters
     setContextMenu,
@@ -173,7 +161,6 @@ export function useSheetContextMenu({
     setMemoModal,
     setMemoHover,
     setDeleteColumnConfirm,
-    setDeleteRowConfirm,
 
     // 핸들러
     handleContextMenu,

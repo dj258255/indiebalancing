@@ -308,7 +308,7 @@ export default function SheetToolbar({
         {showHistory && (past.length > 0 || future.length > 0) && isMounted && createPortal(
           <div
             data-dropdown="history"
-            className="fixed min-w-[220px] rounded-lg shadow-lg border z-[9999] overflow-hidden"
+            className="fixed min-w-[220px] rounded-lg shadow-lg border z-[1100] overflow-hidden"
             style={{
               top: historyDropdownPos.top,
               left: historyDropdownPos.left,
@@ -612,7 +612,7 @@ export default function SheetToolbar({
         {showRotation && isMounted && createPortal(
           <div
             data-dropdown="rotation"
-            className="fixed py-1 rounded-lg shadow-lg z-[9999] min-w-[80px]"
+            className="fixed py-1 rounded-lg shadow-lg z-[1100] min-w-[80px]"
             style={{
               top: rotationDropdownPos.top,
               left: rotationDropdownPos.left,

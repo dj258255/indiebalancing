@@ -273,7 +273,7 @@ export default function ImportModal({ onClose }: ImportModalProps) {
   }, {} as Record<string, typeof FORMAT_INFO>);
 
   return (
-    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-[9999] p-4">
+    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-[1100] p-4">
       <div
         className="w-full max-w-5xl h-[85vh] overflow-hidden flex flex-col animate-scaleIn rounded-2xl shadow-2xl"
         style={{ background: 'var(--bg-primary)' }}

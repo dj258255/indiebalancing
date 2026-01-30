@@ -67,7 +67,7 @@ function Tooltip({ children, content, color }: TooltipProps) {
       {isHovered && (
         <div
           ref={tooltipRef}
-          className="fixed z-[9999] px-3 py-2 rounded-lg shadow-lg text-sm max-w-[200px] pointer-events-none transition-opacity duration-150"
+          className="fixed z-[1100] px-3 py-2 rounded-lg shadow-lg text-sm max-w-[200px] pointer-events-none transition-opacity duration-150"
           style={{
             left: position.x,
             top: position.y,
@@ -113,14 +113,22 @@ interface NumberInputWithCellProps {
   placeholder?: string;
 }
 
-function NumberInputWithCell({ label, value, onChange, min, max, step = 1, placeholder }: NumberInputWithCellProps) {
+function NumberInputWithCell({ label, value, onChange, placeholder }: NumberInputWithCellProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const [inputValue, setInputValue] = useState(String(value));
   const { startCellSelection, cellSelectionMode } = useProjectStore();
+
+  useEffect(() => {
+    setInputValue(String(value));
+  }, [value]);
 
   const handleCellSelect = () => {
     startCellSelection(label, (cellValue) => {
       const num = Number(cellValue);
-      if (!isNaN(num)) onChange(num);
+      if (!isNaN(num)) {
+        setInputValue(String(num));
+        onChange(num);
+      }
     });
   };
 
@@ -134,15 +142,29 @@ function NumberInputWithCell({ label, value, onChange, min, max, step = 1, place
       </label>
       <div className="relative">
         <input
-          type="number"
-          value={value}
+          type="text"
+          inputMode="decimal"
+          value={inputValue}
           placeholder={placeholder}
-          onChange={(e) => onChange(Number(e.target.value))}
-          className="w-full px-2 py-1.5 pr-7 rounded text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+          onChange={(e) => {
+            const newValue = e.target.value;
+            if (newValue === '' || /^-?\d*\.?\d*$/.test(newValue)) {
+              setInputValue(newValue);
+              const num = parseFloat(newValue);
+              if (!isNaN(num)) onChange(num);
+            }
+          }}
+          onBlur={() => {
+            const num = parseFloat(inputValue);
+            if (isNaN(num) || inputValue === '') {
+              setInputValue('0');
+              onChange(0);
+            } else {
+              setInputValue(String(num));
+            }
+          }}
+          className="w-full px-2 py-1.5 pr-7 rounded text-sm"
           style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-          min={min}
-          max={max}
-          step={step}
         />
         {isHovered && !cellSelectionMode?.active && (
           <button

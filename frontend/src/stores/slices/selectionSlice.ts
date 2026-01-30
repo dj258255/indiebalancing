@@ -20,8 +20,8 @@ export interface SelectionSlice {
   deleteSticker: (projectId: string, sheetId: string, stickerId: string) => void;
 
   // 셀 선택 모드 액션
-  startCellSelection: (fieldLabel: string, callback: (value: number) => void) => void;
-  completeCellSelection: (value: number) => void;
+  startCellSelection: (fieldLabel: string, callback: (value: number, rowId?: string, columnId?: string) => void) => void;
+  completeCellSelection: (value: number, rowId?: string, columnId?: string) => void;
   cancelCellSelection: () => void;
 }
 
@@ -148,10 +148,10 @@ export const createSelectionSlice: StateCreator<
     });
   },
 
-  completeCellSelection: (value) => {
+  completeCellSelection: (value, rowId, columnId) => {
     const { cellSelectionMode } = get();
     if (cellSelectionMode.callback) {
-      cellSelectionMode.callback(value);
+      cellSelectionMode.callback(value, rowId, columnId);
     }
     set({
       cellSelectionMode: { active: false, fieldLabel: '', callback: null }

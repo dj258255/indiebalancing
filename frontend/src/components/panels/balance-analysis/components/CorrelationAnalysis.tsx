@@ -6,30 +6,52 @@
 
 import { BarChart2 } from 'lucide-react';
 import type { CorrelationResult } from '@/lib/balanceAnalysis';
+import type { Column } from '@/types';
+import { ColumnMappingConfig, type ColumnMapping } from './ColumnMappingConfig';
+
+const PANEL_COLOR = '#5a9cf5';
 
 interface CorrelationAnalysisProps {
   units: { id: string }[];
   correlationResult: CorrelationResult[] | null;
   onRunAnalysis: () => void;
+  columns: Column[];
+  columnMapping: ColumnMapping;
+  onMappingChange: (mapping: ColumnMapping) => void;
 }
 
 export function CorrelationAnalysis({
   units,
   correlationResult,
   onRunAnalysis,
+  columns,
+  columnMapping,
+  onMappingChange,
 }: CorrelationAnalysisProps) {
   return (
     <div className="space-y-4">
       {/* 탭 설명 */}
-      <div className="glass-section p-3 rounded-lg" style={{ borderLeft: '3px solid #5a9cf5' }}>
+      <div className="glass-section p-3 rounded-lg" style={{ borderLeft: `3px solid ${PANEL_COLOR}` }}>
         <div className="font-medium text-sm mb-1" style={{ color: 'var(--text-primary)' }}>스탯 상관관계 분석</div>
         <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
           스탯 간의 통계적 연관성을 분석합니다. <strong style={{ color: '#3db88a' }}>+1에 가까우면 양의 상관</strong>(함께 증가), <strong style={{ color: '#e86161' }}>-1에 가까우면 음의 상관</strong>(반대로 변화)입니다.
         </div>
-        <div className="text-sm mt-1.5" style={{ color: 'var(--text-secondary)' }}>
-          <strong>사용법:</strong> 분석 버튼을 클릭하면 모든 스탯 쌍의 상관계수를 계산합니다. 강한 상관관계(|r| &gt; 0.7)가 있으면 스탯 설계를 재검토하세요.
-        </div>
       </div>
+
+      {/* 컬럼 매핑 설정 */}
+      <ColumnMappingConfig
+        mapping={columnMapping}
+        onMappingChange={onMappingChange}
+        columns={columns}
+        fields={[
+          { key: 'hp', label: 'HP', description: '체력' },
+          { key: 'atk', label: 'ATK', description: '공격력' },
+          { key: 'def', label: 'DEF', description: '방어력' },
+          { key: 'speed', label: 'Speed', description: '속도' },
+        ]}
+        title="분석할 스탯 컬럼"
+        accentColor={PANEL_COLOR}
+      />
 
       <button
         onClick={onRunAnalysis}

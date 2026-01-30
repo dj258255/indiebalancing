@@ -3,9 +3,87 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useEscapeKey } from '@/hooks';
-import { X, Heart, Swords, Shield, Zap, ChevronDown, ChevronUp } from 'lucide-react';
+import { X, Heart, Swords, Shield, Zap, ChevronDown, ChevronUp, Grid3X3 } from 'lucide-react';
 import type { UnitStats, Skill } from '@/lib/simulation/types';
 import { SkillEditor } from './SkillEditor';
+import { useProjectStore } from '@/stores/projectStore';
+import { Tooltip } from '@/components/ui/Tooltip';
+
+// 셀 선택 가능한 스탯 입력 필드
+function StatField({
+  label,
+  value,
+  onChange,
+  icon,
+  color,
+  step,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  icon: React.ReactNode;
+  color: string;
+  step?: string;
+}) {
+  const [inputValue, setInputValue] = useState(String(value));
+  const [isHovered, setIsHovered] = useState(false);
+  const { startCellSelection, cellSelectionMode } = useProjectStore();
+
+  useEffect(() => {
+    setInputValue(String(value));
+  }, [value]);
+
+  const handleCellSelect = () => {
+    startCellSelection(label, (cellValue) => {
+      setInputValue(String(cellValue));
+      onChange(cellValue);
+    });
+  };
+
+  return (
+    <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
+      <label className="flex items-center gap-1 text-sm mb-1" style={{ color }}>
+        {icon} {label}
+      </label>
+      <div className="relative">
+        <input
+          type="text"
+          inputMode="decimal"
+          value={inputValue}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            if (newValue === '' || /^-?\d*\.?\d*$/.test(newValue)) {
+              setInputValue(newValue);
+              const num = parseFloat(newValue);
+              if (!isNaN(num)) onChange(num);
+            }
+          }}
+          onBlur={() => {
+            const num = parseFloat(inputValue);
+            if (isNaN(num) || inputValue === '') {
+              setInputValue('0');
+              onChange(0);
+            } else {
+              setInputValue(String(num));
+            }
+          }}
+          className="w-full px-3 py-2 pr-9 rounded-lg text-sm"
+          style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
+        />
+        {isHovered && !cellSelectionMode.active && (
+          <Tooltip content="셀에서 선택" position="top">
+            <button
+              onClick={handleCellSelect}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+            >
+              <Grid3X3 className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+            </button>
+          </Tooltip>
+        )}
+      </div>
+    </div>
+  );
+}
 
 interface UnitWithSkills extends UnitStats {
   skills?: Skill[];
@@ -128,58 +206,35 @@ export function TeamUnitModal({
 
           {/* 스탯 그리드 */}
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="flex items-center gap-1 text-sm mb-1" style={{ color: '#e86161' }}>
-                <Heart className="w-3 h-3" /> HP
-              </label>
-              <input
-                type="number"
-                value={editUnit.maxHp}
-                onChange={(e) => {
-                  const v = Number(e.target.value);
-                  setEditUnit(prev => ({ ...prev, maxHp: v, hp: v }));
-                }}
-                className="w-full px-3 py-2 rounded-lg text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-              />
-            </div>
-            <div>
-              <label className="flex items-center gap-1 text-sm mb-1" style={{ color: '#e5a440' }}>
-                <Swords className="w-3 h-3" /> ATK
-              </label>
-              <input
-                type="number"
-                value={editUnit.atk}
-                onChange={(e) => setEditUnit(prev => ({ ...prev, atk: Number(e.target.value) }))}
-                className="w-full px-3 py-2 rounded-lg text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-              />
-            </div>
-            <div>
-              <label className="flex items-center gap-1 text-sm mb-1" style={{ color: '#5a9cf5' }}>
-                <Shield className="w-3 h-3" /> DEF
-              </label>
-              <input
-                type="number"
-                value={editUnit.def}
-                onChange={(e) => setEditUnit(prev => ({ ...prev, def: Number(e.target.value) }))}
-                className="w-full px-3 py-2 rounded-lg text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-              />
-            </div>
-            <div>
-              <label className="flex items-center gap-1 text-sm mb-1" style={{ color: '#9179f2' }}>
-                <Zap className="w-3 h-3" /> SPD
-              </label>
-              <input
-                type="number"
-                value={editUnit.speed}
-                onChange={(e) => setEditUnit(prev => ({ ...prev, speed: Number(e.target.value) }))}
-                className="w-full px-3 py-2 rounded-lg text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
-                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                step="0.1"
-              />
-            </div>
+            <StatField
+              label="HP"
+              value={editUnit.maxHp}
+              onChange={(v) => setEditUnit(prev => ({ ...prev, maxHp: v, hp: v }))}
+              icon={<Heart className="w-3 h-3" />}
+              color="#e86161"
+            />
+            <StatField
+              label="ATK"
+              value={editUnit.atk}
+              onChange={(v) => setEditUnit(prev => ({ ...prev, atk: v }))}
+              icon={<Swords className="w-3 h-3" />}
+              color="#e5a440"
+            />
+            <StatField
+              label="DEF"
+              value={editUnit.def}
+              onChange={(v) => setEditUnit(prev => ({ ...prev, def: v }))}
+              icon={<Shield className="w-3 h-3" />}
+              color="#5a9cf5"
+            />
+            <StatField
+              label="SPD"
+              value={editUnit.speed}
+              onChange={(v) => setEditUnit(prev => ({ ...prev, speed: v }))}
+              icon={<Zap className="w-3 h-3" />}
+              color="#9179f2"
+              step="0.1"
+            />
           </div>
 
           {/* 선택적 스탯 */}
@@ -191,36 +246,49 @@ export function TeamUnitModal({
               <div>
                 <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>{t('colCritRate') || '크리율'} %</label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   value={(editUnit.critRate || 0) * 100}
-                  onChange={(e) => setEditUnit(prev => ({ ...prev, critRate: Number(e.target.value) / 100 }))}
-                  className="w-full px-2 py-1.5 rounded text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === '' || /^-?\d*\.?\d*$/.test(v)) {
+                      setEditUnit(prev => ({ ...prev, critRate: Number(v) / 100 }));
+                    }
+                  }}
+                  className="w-full px-2 py-1.5 rounded text-sm"
                   style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                  min="0"
-                  max="100"
                 />
               </div>
               <div>
                 <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>{t('colCritDmg') || '크리뎀'} x</label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   value={editUnit.critDamage || 1.5}
-                  onChange={(e) => setEditUnit(prev => ({ ...prev, critDamage: Number(e.target.value) }))}
-                  className="w-full px-2 py-1.5 rounded text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === '' || /^-?\d*\.?\d*$/.test(v)) {
+                      setEditUnit(prev => ({ ...prev, critDamage: Number(v) }));
+                    }
+                  }}
+                  className="w-full px-2 py-1.5 rounded text-sm"
                   style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                  step="0.1"
                 />
               </div>
               <div>
                 <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>회피 %</label>
                 <input
-                  type="number"
+                  type="text"
+                  inputMode="decimal"
                   value={(editUnit.evasion || 0) * 100}
-                  onChange={(e) => setEditUnit(prev => ({ ...prev, evasion: Number(e.target.value) / 100 }))}
-                  className="w-full px-2 py-1.5 rounded text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    if (v === '' || /^-?\d*\.?\d*$/.test(v)) {
+                      setEditUnit(prev => ({ ...prev, evasion: Number(v) / 100 }));
+                    }
+                  }}
+                  className="w-full px-2 py-1.5 rounded text-sm"
                   style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                  min="0"
-                  max="100"
                 />
               </div>
             </div>

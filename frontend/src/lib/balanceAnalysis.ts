@@ -225,10 +225,23 @@ export function analyzePowerCurve(
     return {
       points: data.map(d => ({ ...d })),
       curveType: 'linear',
-      formula: 'y = x',
+      formula: '데이터 부족',
       r2: 0,
       outliers: [],
-      recommendations: ['데이터가 부족합니다.'],
+      recommendations: ['분석하려면 최소 2개 이상의 데이터가 필요합니다.'],
+    };
+  }
+
+  // 레벨 분산 확인 (모든 레벨이 같으면 분석 불가)
+  const uniqueLevels = new Set(data.map(d => d.level));
+  if (uniqueLevels.size < 2) {
+    return {
+      points: data.map(d => ({ ...d })),
+      curveType: 'linear',
+      formula: '레벨 다양성 부족',
+      r2: 0,
+      outliers: [],
+      recommendations: ['서로 다른 레벨의 데이터가 2개 이상 필요합니다. 현재 모든 데이터의 레벨이 동일합니다.'],
     };
   }
 
@@ -252,23 +265,31 @@ export function analyzePowerCurve(
   const expR2 = calculateR2(powers, levels.map(l => Math.exp(expFit.a * l + expFit.b)));
   const logR2 = calculateR2(powers, logLevels.map((ll, i) => logFit.a * ll + logFit.b));
 
+  // 수식 안전하게 생성하는 헬퍼
+  const safeNum = (n: number, decimals: number = 2) =>
+    isNaN(n) || !isFinite(n) ? '0' : n.toFixed(decimals);
+
   // 최적 커브 선택
   let bestType: 'linear' | 'exponential' | 'logarithmic' = 'linear';
-  let bestR2 = linearR2;
-  let formula = `y = ${linearFit.a.toFixed(2)}x + ${linearFit.b.toFixed(2)}`;
+  let bestR2 = isNaN(linearR2) ? 0 : linearR2;
+  let formula = `y = ${safeNum(linearFit.a)}x + ${safeNum(linearFit.b)}`;
   let expectedPowers = levels.map(l => linearFit.a * l + linearFit.b);
 
-  if (curveType === 'exponential' || (!curveType && expR2 > bestR2)) {
+  const safeExpR2 = isNaN(expR2) ? 0 : expR2;
+  const safeLogR2 = isNaN(logR2) ? 0 : logR2;
+
+  if (curveType === 'exponential' || (!curveType && safeExpR2 > bestR2)) {
     bestType = 'exponential';
-    bestR2 = expR2;
-    formula = `y = ${Math.exp(expFit.b).toFixed(2)} * e^(${expFit.a.toFixed(4)}x)`;
+    bestR2 = safeExpR2;
+    const expCoeff = Math.exp(expFit.b);
+    formula = `y = ${safeNum(expCoeff)} × e^(${safeNum(expFit.a, 4)}x)`;
     expectedPowers = levels.map(l => Math.exp(expFit.a * l + expFit.b));
   }
 
-  if (curveType === 'logarithmic' || (!curveType && logR2 > bestR2)) {
+  if (curveType === 'logarithmic' || (!curveType && safeLogR2 > bestR2)) {
     bestType = 'logarithmic';
-    bestR2 = logR2;
-    formula = `y = ${logFit.a.toFixed(2)} * ln(x) + ${logFit.b.toFixed(2)}`;
+    bestR2 = safeLogR2;
+    formula = `y = ${safeNum(logFit.a)} × ln(x) + ${safeNum(logFit.b)}`;
     expectedPowers = logLevels.map((ll) => logFit.a * ll + logFit.b);
   }
 

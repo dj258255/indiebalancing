@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import {
   Shield,
   Swords,
@@ -14,10 +14,13 @@ import {
   Users,
   Plus,
   Trash2,
+  Grid3X3,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { useEscapeKey } from '@/hooks';
+import { useProjectStore } from '@/stores/projectStore';
+import { Tooltip } from '@/components/ui/Tooltip';
 
 const PANEL_COLOR = '#3db88a'; // 소프트 그린
 
@@ -144,6 +147,75 @@ function simulate1v1(unitA: UnitData, unitB: UnitData): { winner: string; rounds
     const hpRemaining = unitB.hp - (dmgAtoB * timeToKillA);
     return { winner: unitB.name, rounds: Math.ceil(timeToKillA), hpRemaining: Math.max(0, hpRemaining) };
   }
+}
+
+// 셀 선택 가능한 스탯 입력 컴포넌트
+function StatInputField({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  const [inputValue, setInputValue] = useState(String(value));
+  const [isHovered, setIsHovered] = useState(false);
+  const { startCellSelection, cellSelectionMode } = useProjectStore();
+
+  useEffect(() => {
+    setInputValue(String(value));
+  }, [value]);
+
+  const handleCellSelect = () => {
+    startCellSelection(label, (cellValue) => {
+      setInputValue(String(cellValue));
+      onChange(cellValue);
+    });
+  };
+
+  return (
+    <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
+      <label className="text-sm block mb-1 font-medium" style={{ color: 'var(--text-secondary)' }}>
+        {label}
+      </label>
+      <div className="relative">
+        <input
+          type="text"
+          inputMode="decimal"
+          value={inputValue}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            if (newValue === '' || /^-?\d*\.?\d*$/.test(newValue)) {
+              setInputValue(newValue);
+              const num = parseFloat(newValue);
+              if (!isNaN(num)) onChange(num);
+            }
+          }}
+          onBlur={() => {
+            const num = parseFloat(inputValue);
+            if (isNaN(num) || inputValue === '') {
+              setInputValue('0');
+              onChange(0);
+            } else {
+              setInputValue(String(num));
+            }
+          }}
+          className="glass-input w-full !py-1.5 !pr-8 text-sm text-center"
+        />
+        {isHovered && !cellSelectionMode.active && (
+          <Tooltip content="셀에서 선택" position="top">
+            <button
+              onClick={handleCellSelect}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 p-0.5 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+            >
+              <Grid3X3 className="w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} />
+            </button>
+          </Tooltip>
+        )}
+      </div>
+    </div>
+  );
 }
 
 export default function BalanceValidator({ onClose, showHelp = false, setShowHelp }: BalanceValidatorProps) {
@@ -352,25 +424,19 @@ export default function BalanceValidator({ onClose, showHelp = false, setShowHel
                 {/* 스탯 입력 */}
                 <div className="grid grid-cols-3 gap-2 mb-4">
                   {[
-                    { key: 'hp', label: t('stats.hp'), step: '10' },
-                    { key: 'atk', label: t('stats.atk'), step: '10' },
-                    { key: 'def', label: t('stats.def'), step: '10' },
-                    { key: 'attackSpeed', label: t('stats.atkSpeed'), step: '0.1' },
-                    { key: 'critRate', label: t('stats.critRate'), step: '0.01' },
-                    { key: 'critDamage', label: t('stats.critDmg'), step: '0.1' },
-                  ].map(({ key, label, step }) => (
-                    <div key={key}>
-                      <label className="text-sm block mb-1 font-medium" style={{ color: 'var(--text-secondary)' }}>
-                        {label}
-                      </label>
-                      <input
-                        type="number"
-                        step={step}
-                        value={unit[key as keyof UnitData]}
-                        onChange={(e) => updateUnit(index, key as keyof UnitData, e.target.value)}
-                        className="glass-input w-full !py-1.5 text-sm text-center"
-                      />
-                    </div>
+                    { key: 'hp', label: t('stats.hp') },
+                    { key: 'atk', label: t('stats.atk') },
+                    { key: 'def', label: t('stats.def') },
+                    { key: 'attackSpeed', label: t('stats.atkSpeed') },
+                    { key: 'critRate', label: t('stats.critRate') },
+                    { key: 'critDamage', label: t('stats.critDmg') },
+                  ].map(({ key, label }) => (
+                    <StatInputField
+                      key={key}
+                      label={label}
+                      value={unit[key as keyof UnitData] as number}
+                      onChange={(v) => updateUnit(index, key as keyof UnitData, v)}
+                    />
                   ))}
                 </div>
 

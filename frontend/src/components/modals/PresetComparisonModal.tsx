@@ -121,7 +121,7 @@ export default function PresetComparisonModal({ onClose, isPanel = false, showHe
   // 공통 wrapper 클래스
   const wrapperClass = isPanel
     ? "flex flex-col h-full"
-    : "fixed inset-0 modal-overlay flex items-center justify-center z-[9999] p-4";
+    : "fixed inset-0 modal-overlay flex items-center justify-center z-[1100] p-4";
 
   const cardClass = isPanel
     ? "flex flex-col h-full overflow-hidden"

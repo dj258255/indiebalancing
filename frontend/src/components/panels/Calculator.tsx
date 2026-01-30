@@ -120,7 +120,7 @@ export default function Calculator({ onClose, isPanel = false, showHelp = false,
     }
   };
 
-  const wrapperClass = isPanel ? "flex flex-col h-full" : "fixed inset-0 modal-overlay flex items-center justify-center z-[9999] p-2 sm:p-4";
+  const wrapperClass = isPanel ? "flex flex-col h-full" : "fixed inset-0 modal-overlay flex items-center justify-center z-[1100] p-2 sm:p-4";
   const cardClass = isPanel ? "flex flex-col h-full" : "card w-full max-w-2xl max-h-[95vh] sm:max-h-[85vh] flex flex-col animate-fadeIn";
   const tabColor = TAB_COLORS[activeTab];
 

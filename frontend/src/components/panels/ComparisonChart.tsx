@@ -231,7 +231,7 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
 
   const wrapperClass = isPanel
     ? "flex flex-col h-full"
-    : "fixed inset-0 flex items-end sm:items-center justify-center z-[9999] p-0 sm:p-4 bg-black/50 backdrop-blur-sm";
+    : "fixed inset-0 flex items-end sm:items-center justify-center z-[1100] p-0 sm:p-4 bg-black/50 backdrop-blur-sm";
 
   const cardClass = isPanel
     ? "flex flex-col h-full"

@@ -221,7 +221,7 @@ export function ClassNameEditModal({
   if (!sheetId) return null;
 
   return (
-    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-[9999]">
+    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-[1100]">
       <div
         className="w-80 p-4 rounded-xl shadow-2xl"
         style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)' }}

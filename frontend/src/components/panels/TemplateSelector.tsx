@@ -129,7 +129,7 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
   };
 
   return (
-    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-[9999] p-4">
+    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-[1100] p-4">
       <div
         className="rounded-xl w-full max-w-5xl max-h-[85vh] flex flex-col shadow-2xl"
         style={{ background: 'var(--bg-primary)' }}

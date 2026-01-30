@@ -191,14 +191,13 @@ export function useSheetSelection({ projectId, sheet, computedRows }: UseSheetSe
       const ci = sheet.columns.findIndex((c) => c.id === columnId);
       if (ri === -1 || ci === -1) return;
 
-      // 계산기 셀 선택 모드 처리
+      // 계산기/밸런스분석 셀 선택 모드 처리
       if (cellSelectionMode.active) {
         const computedValue = computedRows[ri]?.[columnId];
         const rawValue = computedValue ?? sheet.rows[ri]?.cells[columnId];
         const numValue = typeof rawValue === 'number' ? rawValue : parseFloat(String(rawValue));
-        if (!isNaN(numValue)) {
-          completeCellSelection(numValue);
-        }
+        // value, rowId, columnId 모두 전달
+        completeCellSelection(isNaN(numValue) ? 0 : numValue, rowId, columnId);
         return;
       }
 
@@ -517,9 +516,24 @@ export function useSheetSelection({ projectId, sheet, computedRows }: UseSheetSe
     [sheet.rows, sheet.columns]
   );
 
-  // 전체 셀 선택 (Ctrl+A / Cmd+A)
+  // 전체 셀 선택 (Ctrl+A / Cmd+A) - 토글 방식
   const selectAllCells = useCallback(() => {
     if (sheet.rows.length === 0 || sheet.columns.length === 0) return;
+
+    // 이미 전체 선택 상태인지 확인
+    const isAllSelected = selector?.range &&
+      selector.range.sri === 0 &&
+      selector.range.sci === 0 &&
+      selector.range.eri === sheet.rows.length - 1 &&
+      selector.range.eci === sheet.columns.length - 1;
+
+    if (isAllSelected) {
+      // 전체 선택 해제
+      setSelector(null);
+      setFormulaBarValue('');
+      lastSelectedCellRef.current = null;
+      return;
+    }
 
     const range = new CellRange(0, 0, sheet.rows.length - 1, sheet.columns.length - 1);
     setSelector(() => {
@@ -536,7 +550,7 @@ export function useSheetSelection({ projectId, sheet, computedRows }: UseSheetSe
       setFormulaBarValue(rawValue?.toString() || '');
       lastSelectedCellRef.current = { rowId: firstRow.id, columnId: firstCol.id };
     }
-  }, [sheet.rows, sheet.columns]);
+  }, [sheet.rows, sheet.columns, selector]);
 
   // 선택 범위 직접 설정
   const setSelectionRange = useCallback((range: CellRange, anchorRi?: number, anchorCi?: number) => {

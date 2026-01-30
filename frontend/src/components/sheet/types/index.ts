@@ -69,12 +69,6 @@ export interface DeleteColumnConfirmState {
   columnName: string;
 }
 
-export interface DeleteRowConfirmState {
-  rowId: string;
-  rowIndex: number;
-  hasValue: boolean;
-}
-
 // 리사이즈 컨텍스트 메뉴 상태
 export interface ResizeContextMenuState {
   x: number;

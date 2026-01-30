@@ -337,7 +337,7 @@ export default function ExportModal({ onClose }: ExportModalProps) {
   }, {} as Record<string, typeof FORMAT_INFO>);
 
   return (
-    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-[9999] p-4">
+    <div className="fixed inset-0 modal-overlay flex items-center justify-center z-[1100] p-4">
       <div
         className="w-full max-w-5xl h-[85vh] overflow-hidden flex flex-col animate-scaleIn rounded-2xl shadow-2xl"
         style={{ background: 'var(--bg-primary)' }}
@@ -844,7 +844,7 @@ export default function ExportModal({ onClose }: ExportModalProps) {
 
       {/* 코드 전체화면 모달 */}
       {isCodeFullscreen && expandedFile && (
-        <div className="fixed inset-0 z-[10000] flex flex-col" style={{ background: isDark ? '#1e1e2e' : '#fafafa' }}>
+        <div className="fixed inset-0 z-[1200] flex flex-col" style={{ background: isDark ? '#1e1e2e' : '#fafafa' }}>
           {/* 전체화면 헤더 */}
           <div
             className="flex items-center justify-between px-4 py-3 border-b shrink-0"

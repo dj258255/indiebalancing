@@ -98,7 +98,7 @@ export function Tooltip({ content, children, position = 'top', delay = 200, clas
       <div
         ref={tooltipRef}
         role="tooltip"
-        className="fixed z-[9999] px-2.5 py-1.5 text-xs font-medium rounded-md shadow-lg pointer-events-none animate-fadeIn"
+        className="fixed z-[1100] px-2.5 py-1.5 text-xs font-medium rounded-md shadow-lg pointer-events-none animate-fadeIn"
         style={{
           left: coords?.x ?? 0,
           top: coords?.y ?? 0,

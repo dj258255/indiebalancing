@@ -44,7 +44,7 @@ export default function MobilePanels({ panels }: MobilePanelsProps) {
 
       {/* Chart Mobile */}
       {panels.chart.show && (
-        <div className="md:hidden fixed inset-0 modal-overlay flex items-center justify-center z-[9999] p-2">
+        <div className="md:hidden fixed inset-0 modal-overlay flex items-center justify-center z-[1100] p-2">
           <div className="card w-full h-[95vh] flex flex-col animate-scaleIn">
             <div
               className="shrink-0 border-b px-4 py-3 flex items-center justify-between"

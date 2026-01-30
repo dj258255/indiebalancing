@@ -24,7 +24,6 @@ import {
   type ColumnDef,
 } from '@tanstack/react-table';
 import { Trash2, X, MessageSquare } from 'lucide-react';
-import { Checkbox } from '@/components/ui/Checkbox';
 import { useTranslations } from 'next-intl';
 
 // 타입
@@ -59,7 +58,6 @@ import RowContextMenu from './RowContextMenu';
 import MemoEditModal from './MemoEditModal';
 import SheetToolbar from './SheetToolbar';
 import { ConfirmDialog } from '@/components/ui';
-import DeleteRowDialog from '@/components/ui/DeleteRowDialog';
 
 // Utils
 import { cellKey, rafThrottle, formatDisplayValue } from './utils';
@@ -243,10 +241,6 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     isCopyMode,
     handleMoveStart,
     handleMoveDragEnter,
-    isCheckboxDragging,
-    setIsCheckboxDragging,
-    checkboxDragModeRef,
-    lastDragRowIndexRef,
   } = useSheetDrag({
     projectId,
     sheet,
@@ -298,14 +292,12 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     resizeContextMenu,
     memoModal,
     deleteColumnConfirm,
-    deleteRowConfirm,
     setContextMenu,
     setColumnContextMenu,
     setRowContextMenu,
     setResizeContextMenu,
     setMemoModal,
     setDeleteColumnConfirm,
-    setDeleteRowConfirm,
     handleContextMenu,
     insertRowAbove,
     insertRowBelow,
@@ -447,63 +439,6 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     setHoveredMemo(null);
   }, []);
 
-  // 체크박스 드래그 핸들러
-  const handleRowNumberDragStart = useCallback(
-    (row: Row, e: React.MouseEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      const wasSelected = isRowSelected(row.id);
-      checkboxDragModeRef.current = wasSelected ? 'deselect' : 'select';
-
-      const rowIndex = sheet.rows.findIndex((r) => r.id === row.id);
-      lastDragRowIndexRef.current = rowIndex;
-
-      setIsCheckboxDragging(true);
-      handleRowSelect(row);
-    },
-    [isRowSelected, handleRowSelect, sheet.rows, checkboxDragModeRef, lastDragRowIndexRef, setIsCheckboxDragging]
-  );
-
-  const handleCheckboxDragEnterThrottled = useMemo(
-    () =>
-      rafThrottle((rowId: string) => {
-        if (!checkboxDragModeRef.current) return;
-
-        const currentRowIndex = sheet.rows.findIndex((r) => r.id === rowId);
-        if (currentRowIndex === -1) return;
-
-        const lastIndex = lastDragRowIndexRef.current;
-
-        if (lastIndex !== null && lastIndex !== currentRowIndex) {
-          const start = Math.min(lastIndex, currentRowIndex);
-          const end = Math.max(lastIndex, currentRowIndex);
-
-          for (let i = start; i <= end; i++) {
-            const targetRow = sheet.rows[i];
-            const targetSelected = isRowSelected(targetRow.id);
-
-            if (checkboxDragModeRef.current === 'select' && !targetSelected) {
-              handleRowSelect(targetRow);
-            } else if (checkboxDragModeRef.current === 'deselect' && targetSelected) {
-              handleRowSelect(targetRow);
-            }
-          }
-        }
-
-        lastDragRowIndexRef.current = currentRowIndex;
-      }),
-    [sheet.rows, isRowSelected, handleRowSelect, checkboxDragModeRef, lastDragRowIndexRef]
-  );
-
-  const handleCheckboxDragEnter = useCallback(
-    (row: Row) => {
-      if (!isCheckboxDragging) return;
-      handleCheckboxDragEnterThrottled(row.id);
-    },
-    [isCheckboxDragging, handleCheckboxDragEnterThrottled]
-  );
-
   /**
    * 셀 Pointer Down 핸들러 - x-spreadsheet 패턴: selector.set(ri, ci)
    * Pointer Events로 마우스/터치/펜 통합 처리
@@ -643,27 +578,13 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     // 행 번호 컬럼
     cols.push({
       id: 'rowNumber',
-      header: () => {
-        const allSelected = sheet.rows.length > 0 && sheet.rows.every((row) => isRowSelected(row.id));
-        const someSelected = sheet.rows.some((row) => isRowSelected(row.id));
-        return (
-          <div className="flex items-center justify-center" onClick={(e) => e.stopPropagation()}>
-            <Checkbox
-              checked={allSelected}
-              indeterminate={!allSelected && someSelected}
-              onChange={handleSelectAll}
-              size="sm"
-            />
-          </div>
-        );
-      },
+      header: () => null,
       cell: ({ row }) => {
         const rowIndex = sheet.rows.findIndex((r) => r.id === row.original.id);
         return (
           <div
-            className="flex select-none cursor-pointer hover:bg-[var(--bg-hover)] transition-colors"
+            className="flex items-center justify-center select-none cursor-pointer hover:bg-[var(--bg-hover)] transition-colors"
             style={{ height: '100%', width: '100%' }}
-            onMouseEnter={() => handleCheckboxDragEnter(row.original)}
             onClick={(e) => {
               e.stopPropagation();
               selectRow(row.original.id);
@@ -680,43 +601,16 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
               });
             }}
           >
-            {/* 체크박스 영역 - 고정 너비, 이벤트 전파 차단 */}
-            <div
-              className="flex items-center justify-center flex-shrink-0"
-              style={{ width: 32, height: '100%' }}
-              onClick={(e) => e.stopPropagation()}
-              onContextMenu={(e) => e.stopPropagation()}
-              onMouseDown={(e) => handleRowNumberDragStart(row.original, e)}
+            <span
+              className="font-medium"
+              style={{ color: 'var(--text-tertiary)', fontSize: `${rowHeaderFontSize}px` }}
             >
-              <Checkbox
-                checked={isRowSelected(row.original.id)}
-                onChange={() => handleRowSelect(row.original)}
-                size="sm"
-              />
-            </div>
-            {/* 구분선 */}
-            <div
-              className="flex-shrink-0 flex items-center"
-              style={{ height: '100%' }}
-            >
-              <div style={{ width: 1, height: '50%', background: 'var(--border-secondary)' }} />
-            </div>
-            {/* 행 번호 영역 */}
-            <div
-              className="flex-1 flex items-center"
-              style={{ height: '100%', paddingLeft: 8 }}
-            >
-              <span
-                className="font-medium"
-                style={{ color: 'var(--text-tertiary)', fontSize: `${rowHeaderFontSize}px` }}
-              >
-                {rowIndex + 1}
-              </span>
-            </div>
+              {rowIndex + 1}
+            </span>
           </div>
         );
       },
-      size: 80,
+      size: 50,
     });
 
     // 데이터 컬럼
@@ -754,7 +648,10 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
         );
         return (
           <button
-            onClick={() => setDeleteRowConfirm({ rowId: row.original.id, rowIndex, hasValue })}
+            onClick={() => {
+              // 바로 삭제 (모달 없이)
+              deleteRow(projectId, sheet.id, row.original.id);
+            }}
             className="p-1 transition-colors"
             style={{ color: 'var(--text-tertiary)' }}
             onMouseEnter={(e) => (e.currentTarget.style.color = 'var(--error)')}
@@ -771,14 +668,12 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
   }, [
     sheet.columns,
     sheet.rows,
+    sheet.id,
     computedRows,
-    isRowSelected,
-    handleRowSelect,
-    handleSelectAll,
-    handleRowNumberDragStart,
-    handleCheckboxDragEnter,
-    setDeleteRowConfirm,
+    deleteRow,
+    projectId,
     selectRow,
+    selectAllCells,
     setRowContextMenu,
     rowHeaderFontSize,
   ]);
@@ -1062,7 +957,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                         className={cn(
                           'text-xs font-bold uppercase tracking-wide relative',
                           isRowNumber ? 'text-center' : 'text-left',
-                          !isRowNumber && !isActions && 'cursor-pointer hover:bg-[var(--bg-secondary)]'
+                          !isActions && 'cursor-pointer hover:bg-[var(--bg-secondary)]'
                         )}
                         style={{
                           display: 'flex',
@@ -1082,9 +977,13 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                           borderRight: '1px solid var(--border-primary)',
                         }}
                         onClick={(e) => {
+                          e.stopPropagation();
+                          // 좌측 상단 코너 클릭 시 전체 셀 선택
+                          if (isRowNumber) {
+                            selectAllCells();
+                          }
                           // 데이터 열 헤더 클릭 시 해당 열 전체 선택
-                          if (!isRowNumber && !isActions) {
-                            e.stopPropagation();
+                          else if (!isActions) {
                             selectColumn(header.id);
                           }
                         }}
@@ -1619,15 +1518,11 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
             setRowContextMenu(null);
           }}
           onDelete={() => {
-            const hasValue = Object.values(rowContextMenu.row.cells).some(
-              (v) => v !== null && v !== undefined && v !== ''
-            );
-            setDeleteRowConfirm({
-              rowId: rowContextMenu.row.id,
-              rowIndex: rowContextMenu.rowIndex,
-              hasValue,
-            });
+            // 바로 삭제 (모달 없이)
+            deleteRow(projectId, sheet.id, rowContextMenu.row.id);
             setRowContextMenu(null);
+            setSelectedCell(null);
+            setSelectedCells([]);
           }}
           onClearValues={() => {
             sheet.columns.forEach((col) => {
@@ -1662,30 +1557,6 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
         />
       )}
 
-      {deleteRowConfirm && (
-        <DeleteRowDialog
-          isOpen={true}
-          rowIndex={deleteRowConfirm.rowIndex}
-          onClose={() => setDeleteRowConfirm(null)}
-          onClearValues={() => {
-            // Clear all values in the row
-            const row = sheet.rows[deleteRowConfirm.rowIndex];
-            if (row) {
-              sheet.columns.forEach((col) => {
-                updateCell(projectId, sheet.id, row.id, col.id, '');
-              });
-            }
-            setDeleteRowConfirm(null);
-          }}
-          onDeleteRow={() => {
-            deleteRow(projectId, sheet.id, deleteRowConfirm.rowId);
-            setDeleteRowConfirm(null);
-            setSelectedCell(null);
-            setSelectedCells([]);
-          }}
-        />
-      )}
-
       {/* 메모 편집 모달 */}
       {memoModal && (
         <MemoEditModal
@@ -1713,7 +1584,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
       {/* 메모 툴팁 - 포탈로 렌더링 */}
       {hoveredMemo && typeof window !== 'undefined' && createPortal(
         <div
-          className="fixed z-[9999] pointer-events-none animate-fadeIn"
+          className="fixed z-[1100] pointer-events-none animate-fadeIn"
           style={{
             left: hoveredMemo.x,
             top: hoveredMemo.y,

@@ -33,6 +33,132 @@ const MODE_COLORS = {
   compare: '#9179f2',
 };
 
+// 셀 선택 가능한 입력 필드 (컴포넌트 외부 정의)
+function InputFieldWithCell({
+  label,
+  value,
+  onChange,
+  unit,
+  startCellSelection,
+  cellSelectionMode,
+  selectFromCellText,
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  unit?: string;
+  startCellSelection: (label: string, callback: (value: number) => void) => void;
+  cellSelectionMode: { active: boolean };
+  selectFromCellText: string;
+}) {
+  const [inputValue, setInputValue] = useState(String(value));
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    setInputValue(String(value));
+  }, [value]);
+
+  const handleCellSelect = () => {
+    startCellSelection(label, (cellValue) => {
+      setInputValue(String(cellValue));
+      onChange(cellValue);
+    });
+  };
+
+  return (
+    <div className="flex items-center gap-2" onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
+      <label className="text-sm w-20 shrink-0 font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</label>
+      <div className="flex-1 relative">
+        <input
+          type="text"
+          inputMode="decimal"
+          value={inputValue}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            if (newValue === '' || /^-?\d*\.?\d*$/.test(newValue)) {
+              setInputValue(newValue);
+              const num = parseFloat(newValue);
+              if (!isNaN(num)) onChange(num);
+            }
+          }}
+          onBlur={() => {
+            const num = parseFloat(inputValue);
+            if (isNaN(num) || inputValue === '') {
+              setInputValue('0');
+              onChange(0);
+            } else {
+              setInputValue(String(num));
+            }
+          }}
+          className="glass-input w-full text-sm !pr-8"
+        />
+        {isHovered && !cellSelectionMode.active && (
+          <Tooltip content={selectFromCellText} position="top">
+            <button
+              onClick={handleCellSelect}
+              className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+            >
+              <Grid3X3 className="w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} />
+            </button>
+          </Tooltip>
+        )}
+      </div>
+      {unit && <span className="text-sm w-8" style={{ color: 'var(--text-secondary)' }}>{unit}</span>}
+    </div>
+  );
+}
+
+// 단순 입력 필드 (컴포넌트 외부 정의)
+function InputFieldSimple({
+  label,
+  value,
+  onChange,
+  unit
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  unit?: string;
+}) {
+  const [inputValue, setInputValue] = useState(String(value));
+
+  useEffect(() => {
+    setInputValue(String(value));
+  }, [value]);
+
+  return (
+    <div>
+      <label className="block text-sm mb-1 font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</label>
+      <div className="flex items-center gap-2">
+        <input
+          type="text"
+          inputMode="decimal"
+          value={inputValue}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            if (newValue === '' || /^-?\d*\.?\d*$/.test(newValue)) {
+              setInputValue(newValue);
+              const num = parseFloat(newValue);
+              if (!isNaN(num)) onChange(num);
+            }
+          }}
+          onBlur={() => {
+            const num = parseFloat(inputValue);
+            if (isNaN(num) || inputValue === '') {
+              setInputValue('0');
+              onChange(0);
+            } else {
+              setInputValue(String(num));
+            }
+          }}
+          className="glass-input flex-1 text-sm"
+        />
+        {unit && <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{unit}</span>}
+      </div>
+    </div>
+  );
+}
+
 export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHelp }: DPSVariancePanelProps) {
   const t = useTranslations('dpsVariance');
   const tCommon = useTranslations('common');
@@ -135,19 +261,20 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
     return (
       <div className="flex items-end gap-0.5 h-28 mt-2">
         {histogram.map((bin, i) => (
-          <div key={i} className="flex-1 flex flex-col items-center group relative">
+          <div key={i} className="flex-1 h-full flex items-end">
             <div
-              className="w-full rounded-t transition-all duration-200 hover:opacity-80"
+              className="w-full rounded-t transition-all duration-200 relative group/bar"
               style={{
                 height: `${(bin.percentage / maxPercent) * 100}%`,
                 minHeight: bin.count > 0 ? '2px' : '0',
                 background: color,
               }}
-            />
-            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-              <div className="glass-card px-2 py-1 text-sm whitespace-nowrap shadow-lg">
-                <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{bin.min.toFixed(0)} - {bin.max.toFixed(0)}</div>
-                <div style={{ color: 'var(--text-secondary)' }}>{bin.count} ({bin.percentage.toFixed(1)}%)</div>
+            >
+              <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-10">
+                <div className="glass-card px-2 py-1 text-sm whitespace-nowrap shadow-lg">
+                  <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{bin.min.toFixed(0)} - {bin.max.toFixed(0)}</div>
+                  <div style={{ color: 'var(--text-secondary)' }}>{bin.count} ({bin.percentage.toFixed(1)}%)</div>
+                </div>
               </div>
             </div>
           </div>
@@ -199,118 +326,7 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
   };
 
   const { startCellSelection, cellSelectionMode } = useProjectStore();
-
-  const InputFieldWithCell = ({ label, value, onChange, min, max, step = 1, unit }: {
-    label: string;
-    value: number;
-    onChange: (v: number) => void;
-    min: number;
-    max: number;
-    step?: number;
-    unit?: string;
-  }) => {
-    const [inputValue, setInputValue] = useState(String(value));
-    const [isHovered, setIsHovered] = useState(false);
-
-    useEffect(() => {
-      setInputValue(String(value));
-    }, [value]);
-
-    const handleCellSelect = () => {
-      startCellSelection(label, (cellValue) => {
-        setInputValue(String(cellValue));
-        onChange(cellValue);
-      });
-    };
-
-    return (
-      <div className="flex items-center gap-2" onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
-        <label className="text-sm w-20 shrink-0 font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</label>
-        <div className="flex-1 relative">
-          <input
-            type="text"
-            inputMode="decimal"
-            value={inputValue}
-            onChange={(e) => {
-              const newValue = e.target.value;
-              if (newValue === '' || /^-?\d*\.?\d*$/.test(newValue)) {
-                setInputValue(newValue);
-                const num = parseFloat(newValue);
-                if (!isNaN(num)) onChange(num);
-              }
-            }}
-            onBlur={() => {
-              const num = parseFloat(inputValue);
-              if (isNaN(num) || inputValue === '') {
-                setInputValue(String(min ?? 0));
-                onChange(min ?? 0);
-              } else {
-                setInputValue(String(num));
-              }
-            }}
-            className="glass-input w-full text-sm !pr-8"
-          />
-          {isHovered && !cellSelectionMode.active && (
-            <Tooltip content={t('selectFromCell')} position="top">
-              <button
-                onClick={handleCellSelect}
-                className="absolute right-1.5 top-1/2 -translate-y-1/2 p-1 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"
-              >
-                <Grid3X3 className="w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} />
-              </button>
-            </Tooltip>
-          )}
-        </div>
-        {unit && <span className="text-sm w-8" style={{ color: 'var(--text-secondary)' }}>{unit}</span>}
-      </div>
-    );
-  };
-
-  const InputFieldSimple = ({ label, value, onChange, min, max, step = 1, unit }: {
-    label: string;
-    value: number;
-    onChange: (v: number) => void;
-    min: number;
-    max: number;
-    step?: number;
-    unit?: string;
-  }) => {
-    const [inputValue, setInputValue] = useState(String(value));
-
-    useEffect(() => {
-      setInputValue(String(value));
-    }, [value]);
-
-    return (
-      <div className="flex items-center gap-2">
-        <label className="text-sm w-20 shrink-0 font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</label>
-        <input
-          type="text"
-          inputMode="decimal"
-          value={inputValue}
-          onChange={(e) => {
-            const newValue = e.target.value;
-            if (newValue === '' || /^-?\d*\.?\d*$/.test(newValue)) {
-              setInputValue(newValue);
-              const num = parseFloat(newValue);
-              if (!isNaN(num)) onChange(num);
-            }
-          }}
-          onBlur={() => {
-            const num = parseFloat(inputValue);
-            if (isNaN(num) || inputValue === '') {
-              setInputValue(String(min ?? 0));
-              onChange(min ?? 0);
-            } else {
-              setInputValue(String(num));
-            }
-          }}
-          className="glass-input flex-1 text-sm"
-        />
-        {unit && <span className="text-sm w-8" style={{ color: 'var(--text-secondary)' }}>{unit}</span>}
-      </div>
-    );
-  };
+  const selectFromCellText = t('selectFromCell');
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -388,13 +404,13 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <InputFieldWithCell label={t('damage')} value={damage} onChange={setDamage} min={1} max={999999} />
-            <InputFieldWithCell label={t('attackSpeed')} value={attackSpeed} onChange={setAttackSpeed} min={0.1} max={10} step={0.1} unit="/s" />
-            <InputFieldWithCell label={t('critRate')} value={critRate} onChange={setCritRate} min={0} max={100} unit="%" />
-            <InputFieldWithCell label={t('critDamage')} value={critDamage} onChange={setCritDamage} min={1} max={10} step={0.1} unit="x" />
-            <InputFieldWithCell label={t('variance')} value={damageVariance} onChange={setDamageVariance} min={0} max={100} unit="%" />
+            <InputFieldWithCell label={t('damage')} value={damage} onChange={setDamage} startCellSelection={startCellSelection} cellSelectionMode={cellSelectionMode} selectFromCellText={selectFromCellText} />
+            <InputFieldWithCell label={t('attackSpeed')} value={attackSpeed} onChange={setAttackSpeed} unit="/s" startCellSelection={startCellSelection} cellSelectionMode={cellSelectionMode} selectFromCellText={selectFromCellText} />
+            <InputFieldWithCell label={t('critRate')} value={critRate} onChange={setCritRate} unit="%" startCellSelection={startCellSelection} cellSelectionMode={cellSelectionMode} selectFromCellText={selectFromCellText} />
+            <InputFieldWithCell label={t('critDamage')} value={critDamage} onChange={setCritDamage} unit="x" startCellSelection={startCellSelection} cellSelectionMode={cellSelectionMode} selectFromCellText={selectFromCellText} />
+            <InputFieldWithCell label={t('variance')} value={damageVariance} onChange={setDamageVariance} unit="%" startCellSelection={startCellSelection} cellSelectionMode={cellSelectionMode} selectFromCellText={selectFromCellText} />
             {mode === 'ttk' && (
-              <InputFieldWithCell label={t('targetHP')} value={targetHP} onChange={setTargetHP} min={1} max={9999999} />
+              <InputFieldWithCell label={t('targetHP')} value={targetHP} onChange={setTargetHP} startCellSelection={startCellSelection} cellSelectionMode={cellSelectionMode} selectFromCellText={selectFromCellText} />
             )}
           </div>
         </div>
@@ -408,11 +424,11 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <InputFieldWithCell label={t('damage')} value={damageB} onChange={setDamageB} min={1} max={999999} />
-              <InputFieldWithCell label={t('attackSpeed')} value={attackSpeedB} onChange={setAttackSpeedB} min={0.1} max={10} step={0.1} unit="/s" />
-              <InputFieldWithCell label={t('critRate')} value={critRateB} onChange={setCritRateB} min={0} max={100} unit="%" />
-              <InputFieldWithCell label={t('critDamage')} value={critDamageB} onChange={setCritDamageB} min={1} max={10} step={0.1} unit="x" />
-              <InputFieldWithCell label={t('variance')} value={damageVarianceB} onChange={setDamageVarianceB} min={0} max={100} unit="%" />
+              <InputFieldWithCell label={t('damage')} value={damageB} onChange={setDamageB} startCellSelection={startCellSelection} cellSelectionMode={cellSelectionMode} selectFromCellText={selectFromCellText} />
+              <InputFieldWithCell label={t('attackSpeed')} value={attackSpeedB} onChange={setAttackSpeedB} unit="/s" startCellSelection={startCellSelection} cellSelectionMode={cellSelectionMode} selectFromCellText={selectFromCellText} />
+              <InputFieldWithCell label={t('critRate')} value={critRateB} onChange={setCritRateB} unit="%" startCellSelection={startCellSelection} cellSelectionMode={cellSelectionMode} selectFromCellText={selectFromCellText} />
+              <InputFieldWithCell label={t('critDamage')} value={critDamageB} onChange={setCritDamageB} unit="x" startCellSelection={startCellSelection} cellSelectionMode={cellSelectionMode} selectFromCellText={selectFromCellText} />
+              <InputFieldWithCell label={t('variance')} value={damageVarianceB} onChange={setDamageVarianceB} unit="%" startCellSelection={startCellSelection} cellSelectionMode={cellSelectionMode} selectFromCellText={selectFromCellText} />
             </div>
           </div>
         )}
@@ -424,9 +440,9 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
             <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('simSettings') || 'Simulation Settings'}</span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <InputFieldSimple label={t('iterations')} value={iterations} onChange={setIterations} min={100} max={10000} />
+            <InputFieldSimple label={t('iterations')} value={iterations} onChange={setIterations} />
             {mode !== 'ttk' && (
-              <InputFieldSimple label={t('duration')} value={duration} onChange={setDuration} min={1} max={60} unit="s" />
+              <InputFieldSimple label={t('duration')} value={duration} onChange={setDuration} unit="s" />
             )}
           </div>
         </div>
@@ -488,11 +504,11 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
               </span>
             </div>
 
-            <div className="glass-section p-3 relative group">
+            <div className="glass-section p-3 relative group/card">
               <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('distribution')}</div>
               <button
                 onClick={() => setFullscreenChart('dps')}
-                className="absolute top-2 right-2 glass-button !p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-2 right-2 glass-button !p-1.5 opacity-0 group-hover/card:opacity-100 transition-opacity"
                 title={tCommon('fullscreen')}
               >
                 <Maximize2 className="w-3.5 h-3.5" />
@@ -541,11 +557,11 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
               </div>
             </div>
 
-            <div className="glass-section p-3 relative group">
+            <div className="glass-section p-3 relative group/card">
               <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('ttkDistribution')}</div>
               <button
                 onClick={() => setFullscreenChart('ttk')}
-                className="absolute top-2 right-2 glass-button !p-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                className="absolute top-2 right-2 glass-button !p-1.5 opacity-0 group-hover/card:opacity-100 transition-opacity"
                 title={tCommon('fullscreen')}
               >
                 <Maximize2 className="w-3.5 h-3.5" />
@@ -615,21 +631,21 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="glass-section p-3 relative group">
+              <div className="glass-section p-3 relative group/card">
                 <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('buildA')}</div>
                 <button
                   onClick={() => setFullscreenChart('compareA')}
-                  className="absolute top-2 right-2 glass-button !p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-2 right-2 glass-button !p-1 opacity-0 group-hover/card:opacity-100 transition-opacity z-10"
                 >
                   <Maximize2 className="w-3 h-3" />
                 </button>
                 {renderHistogram(dpsResult.histogram, '#e86161')}
               </div>
-              <div className="glass-section p-3 relative group">
+              <div className="glass-section p-3 relative group/card">
                 <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('buildB')}</div>
                 <button
                   onClick={() => setFullscreenChart('compareB')}
-                  className="absolute top-2 right-2 glass-button !p-1 opacity-0 group-hover:opacity-100 transition-opacity"
+                  className="absolute top-2 right-2 glass-button !p-1 opacity-0 group-hover/card:opacity-100 transition-opacity z-10"
                 >
                   <Maximize2 className="w-3 h-3" />
                 </button>
@@ -687,19 +703,20 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
                     {dpsResult.histogram.map((bin, i) => {
                       const maxPercent = Math.max(...dpsResult.histogram.map(h => h.percentage));
                       return (
-                        <div key={i} className="flex-1 flex flex-col items-center group relative h-full justify-end">
+                        <div key={i} className="flex-1 h-full flex items-end">
                           <div
-                            className="w-full rounded-t transition-all duration-200 hover:opacity-80"
+                            className="w-full rounded-t transition-all duration-200 relative group/bar"
                             style={{
                               height: `${(bin.percentage / maxPercent) * 100}%`,
                               minHeight: bin.count > 0 ? '4px' : '0',
                               background: PANEL_COLOR,
                             }}
-                          />
-                          <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                            <div className="glass-card px-3 py-2 text-sm whitespace-nowrap shadow-lg">
-                              <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{bin.min.toFixed(0)} - {bin.max.toFixed(0)} DPS</div>
-                              <div style={{ color: 'var(--text-secondary)' }}>{bin.count} ({bin.percentage.toFixed(1)}%)</div>
+                          >
+                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-10">
+                              <div className="glass-card px-3 py-2 text-sm whitespace-nowrap shadow-lg">
+                                <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{bin.min.toFixed(0)} - {bin.max.toFixed(0)} DPS</div>
+                                <div style={{ color: 'var(--text-secondary)' }}>{bin.count} ({bin.percentage.toFixed(1)}%)</div>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -737,19 +754,20 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
                     {ttkResult.histogram.map((bin, i) => {
                       const maxPercent = Math.max(...ttkResult.histogram.map(h => h.percentage));
                       return (
-                        <div key={i} className="flex-1 flex flex-col items-center group relative h-full justify-end">
+                        <div key={i} className="flex-1 h-full flex items-end">
                           <div
-                            className="w-full rounded-t transition-all duration-200 hover:opacity-80"
+                            className="w-full rounded-t transition-all duration-200 relative group/bar"
                             style={{
                               height: `${(bin.percentage / maxPercent) * 100}%`,
                               minHeight: bin.count > 0 ? '4px' : '0',
                               background: '#3db88a',
                             }}
-                          />
-                          <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                            <div className="glass-card px-3 py-2 text-sm whitespace-nowrap shadow-lg">
-                              <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{bin.min.toFixed(2)}s - {bin.max.toFixed(2)}s</div>
-                              <div style={{ color: 'var(--text-secondary)' }}>{bin.count} ({bin.percentage.toFixed(1)}%)</div>
+                          >
+                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-10">
+                              <div className="glass-card px-3 py-2 text-sm whitespace-nowrap shadow-lg">
+                                <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{bin.min.toFixed(2)}s - {bin.max.toFixed(2)}s</div>
+                                <div style={{ color: 'var(--text-secondary)' }}>{bin.count} ({bin.percentage.toFixed(1)}%)</div>
+                              </div>
                             </div>
                           </div>
                         </div>
@@ -785,19 +803,20 @@ export default function DPSVariancePanel({ onClose, isPanel, showHelp, setShowHe
                           {result.histogram.map((bin, i) => {
                             const maxPercent = Math.max(...result.histogram.map(h => h.percentage));
                             return (
-                              <div key={i} className="flex-1 flex flex-col items-center group relative h-full justify-end">
+                              <div key={i} className="flex-1 h-full flex items-end">
                                 <div
-                                  className="w-full rounded-t transition-all duration-200 hover:opacity-80"
+                                  className="w-full rounded-t transition-all duration-200 relative group/bar"
                                   style={{
                                     height: `${(bin.percentage / maxPercent) * 100}%`,
                                     minHeight: bin.count > 0 ? '4px' : '0',
                                     background: color,
                                   }}
-                                />
-                                <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
-                                  <div className="glass-card px-3 py-2 text-sm whitespace-nowrap shadow-lg">
-                                    <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{bin.min.toFixed(0)} - {bin.max.toFixed(0)} DPS</div>
-                                    <div style={{ color: 'var(--text-secondary)' }}>{bin.count} ({bin.percentage.toFixed(1)}%)</div>
+                                >
+                                  <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 opacity-0 group-hover/bar:opacity-100 transition-opacity pointer-events-none z-10">
+                                    <div className="glass-card px-3 py-2 text-sm whitespace-nowrap shadow-lg">
+                                      <div className="font-medium" style={{ color: 'var(--text-primary)' }}>{bin.min.toFixed(0)} - {bin.max.toFixed(0)} DPS</div>
+                                      <div style={{ color: 'var(--text-secondary)' }}>{bin.count} ({bin.percentage.toFixed(1)}%)</div>
+                                    </div>
                                   </div>
                                 </div>
                               </div>

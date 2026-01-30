@@ -6,6 +6,8 @@
 
 import { X, TrendingUp, GitBranch, AlertTriangle, Maximize2 } from 'lucide-react';
 import type { PerfectImbalanceResult } from '@/lib/balanceAnalysis';
+import type { Column } from '@/types';
+import { ColumnMappingConfig, type ColumnMapping } from './ColumnMappingConfig';
 
 const PANEL_COLOR = '#7c7ff2';
 
@@ -17,6 +19,9 @@ interface MatchupAnalysisProps {
   matchupResult: PerfectImbalanceResult | null;
   onRunAnalysis: () => void;
   onShowMatrix: () => void;
+  columns: Column[];
+  columnMapping: ColumnMapping;
+  onMappingChange: (mapping: ColumnMapping) => void;
 }
 
 // 승률 매트릭스 색상 함수
@@ -40,6 +45,9 @@ export function MatchupAnalysis({
   matchupResult,
   onRunAnalysis,
   onShowMatrix,
+  columns,
+  columnMapping,
+  onMappingChange,
 }: MatchupAnalysisProps) {
   return (
     <div className="space-y-4">
@@ -48,6 +56,23 @@ export function MatchupAnalysis({
         <div className="text-sm font-medium mb-1" style={{ color: 'var(--text-primary)' }}>상성 분석 (Perfect Imbalance)</div>
         <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>모든 유닛 조합의 전투를 시뮬레이션하여 상성 관계와 밸런스를 분석합니다. 지배적/약한 유닛과 가위바위보 순환 관계를 탐지합니다.</div>
       </div>
+
+      {/* 컬럼 매핑 설정 */}
+      <ColumnMappingConfig
+        mapping={columnMapping}
+        onMappingChange={onMappingChange}
+        columns={columns}
+        fields={[
+          { key: 'name', label: '이름', description: '유닛 식별용 이름' },
+          { key: 'hp', label: 'HP', required: true, description: '체력' },
+          { key: 'atk', label: 'ATK', required: true, description: '공격력' },
+          { key: 'def', label: 'DEF', description: '방어력' },
+          { key: 'speed', label: 'Speed', description: '공격 속도' },
+        ]}
+        title="컬럼 설정"
+        accentColor={PANEL_COLOR}
+      />
+
       <div className="flex items-end gap-3">
         <div className="flex-1">
           <label className="text-sm" style={{ color: 'var(--text-secondary)' }}>

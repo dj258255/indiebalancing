@@ -68,10 +68,15 @@ export default function BalanceAnalysisPanel({
     showTabDropdown,
     setShowTabDropdown,
     units,
+    currentSheet,
+    columnMapping,
+    setColumnMapping,
     runMatchupAnalysis,
     runPowerAnalysis,
     runCorrelationAnalysis,
   } = state;
+
+  const columns = currentSheet?.columns || [];
 
   const tabs: { id: AnalysisTab; label: string; icon: React.ReactNode; tooltip: string; color: string }[] = [
     { id: 'matchup', label: '상성 분석', icon: <GitBranch className="w-4 h-4" />, tooltip: '가위바위보 상성 관계 분석', color: '#7c7ff2' },
@@ -178,6 +183,9 @@ export default function BalanceAnalysisPanel({
             matchupResult={matchupResult}
             onRunAnalysis={runMatchupAnalysis}
             onShowMatrix={() => setShowMatrixModal(true)}
+            columns={columns}
+            columnMapping={columnMapping}
+            onMappingChange={setColumnMapping}
           />
         )}
 
@@ -186,6 +194,9 @@ export default function BalanceAnalysisPanel({
             units={units}
             powerResult={powerResult}
             onRunAnalysis={runPowerAnalysis}
+            columns={columns}
+            columnMapping={columnMapping}
+            onMappingChange={setColumnMapping}
           />
         )}
 
@@ -194,11 +205,19 @@ export default function BalanceAnalysisPanel({
             units={units}
             correlationResult={correlationResult}
             onRunAnalysis={runCorrelationAnalysis}
+            columns={columns}
+            columnMapping={columnMapping}
+            onMappingChange={setColumnMapping}
           />
         )}
 
         {activeTab === 'deadzone' && (
-          <DeadZoneAnalysis units={units} />
+          <DeadZoneAnalysis
+            units={units}
+            columns={columns}
+            columnMapping={columnMapping}
+            onMappingChange={setColumnMapping}
+          />
         )}
 
         {activeTab === 'curve' && (

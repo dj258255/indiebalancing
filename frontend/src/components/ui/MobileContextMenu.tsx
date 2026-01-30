@@ -86,7 +86,7 @@ export function MobileContextMenu({
   if (!open) return null;
 
   return createPortal(
-    <div className="fixed inset-0 z-[9999]">
+    <div className="fixed inset-0 z-[1100]">
       {/* 배경 오버레이 */}
       <div
         className="absolute inset-0 bg-black/50 transition-opacity"

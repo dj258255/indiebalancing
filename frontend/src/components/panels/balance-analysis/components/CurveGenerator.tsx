@@ -4,9 +4,82 @@
 
 'use client';
 
-import { useState } from 'react';
-import { Target } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Target, Grid3X3 } from 'lucide-react';
 import { generateBalanceCurve } from '@/lib/balanceAnalysis';
+import { useProjectStore } from '@/stores/projectStore';
+import { Tooltip } from '@/components/ui/Tooltip';
+
+const PANEL_COLOR = '#9179f2';
+
+// 셀 선택 가능한 입력 필드
+function StatInputField({
+  label,
+  value,
+  onChange,
+  step = 1
+}: {
+  label: string;
+  value: number;
+  onChange: (v: number) => void;
+  step?: number;
+}) {
+  const [inputValue, setInputValue] = useState(String(value));
+  const [isHovered, setIsHovered] = useState(false);
+  const { startCellSelection, cellSelectionMode } = useProjectStore();
+
+  useEffect(() => {
+    setInputValue(String(value));
+  }, [value]);
+
+  const handleCellSelect = () => {
+    startCellSelection(label, (cellValue) => {
+      setInputValue(String(cellValue));
+      onChange(cellValue);
+    });
+  };
+
+  return (
+    <div onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
+      <label className="block text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{label}</label>
+      <div className="relative">
+        <input
+          type="text"
+          inputMode="decimal"
+          value={inputValue}
+          onChange={(e) => {
+            const newValue = e.target.value;
+            if (newValue === '' || /^-?\d*\.?\d*$/.test(newValue)) {
+              setInputValue(newValue);
+              const num = parseFloat(newValue);
+              if (!isNaN(num)) onChange(num);
+            }
+          }}
+          onBlur={() => {
+            const num = parseFloat(inputValue);
+            if (isNaN(num) || inputValue === '') {
+              setInputValue('0');
+              onChange(0);
+            } else {
+              setInputValue(String(num));
+            }
+          }}
+          className="glass-input w-full pr-9 text-sm"
+        />
+        {isHovered && !cellSelectionMode.active && (
+          <Tooltip content="셀에서 선택" position="top">
+            <button
+              onClick={handleCellSelect}
+              className="absolute right-2 top-1/2 -translate-y-1/2 p-1 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"
+            >
+              <Grid3X3 className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+            </button>
+          </Tooltip>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export function CurveGenerator() {
   const [baseHp, setBaseHp] = useState(100);
@@ -47,43 +120,10 @@ export function CurveGenerator() {
           <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>기본 스탯 (레벨 1)</span>
         </div>
         <div className="grid grid-cols-2 gap-3 p-4">
-          <div>
-            <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>HP</label>
-            <input
-              type="number"
-              value={baseHp}
-              onChange={(e) => setBaseHp(Number(e.target.value))}
-              className="glass-input w-full mt-1 px-3 py-2 rounded-lg text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>ATK</label>
-            <input
-              type="number"
-              value={baseAtk}
-              onChange={(e) => setBaseAtk(Number(e.target.value))}
-              className="glass-input w-full mt-1 px-3 py-2 rounded-lg text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>DEF</label>
-            <input
-              type="number"
-              value={baseDef}
-              onChange={(e) => setBaseDef(Number(e.target.value))}
-              className="glass-input w-full mt-1 px-3 py-2 rounded-lg text-sm"
-            />
-          </div>
-          <div>
-            <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>Speed</label>
-            <input
-              type="number"
-              value={baseSpeed}
-              onChange={(e) => setBaseSpeed(Number(e.target.value))}
-              className="glass-input w-full mt-1 px-3 py-2 rounded-lg text-sm"
-              step={0.1}
-            />
-          </div>
+          <StatInputField label="HP" value={baseHp} onChange={setBaseHp} />
+          <StatInputField label="ATK" value={baseAtk} onChange={setBaseAtk} />
+          <StatInputField label="DEF" value={baseDef} onChange={setBaseDef} />
+          <StatInputField label="Speed" value={baseSpeed} onChange={setBaseSpeed} step={0.1} />
         </div>
       </div>
 
@@ -94,25 +134,8 @@ export function CurveGenerator() {
         </div>
         <div className="p-4 space-y-3">
           <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>최대 레벨</label>
-              <input
-                type="number"
-                value={maxLevel}
-                onChange={(e) => setMaxLevel(Number(e.target.value))}
-                className="glass-input w-full mt-1 px-3 py-2 rounded-lg text-sm"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>레벨당 성장률</label>
-              <input
-                type="number"
-                value={growthRate}
-                onChange={(e) => setGrowthRate(Number(e.target.value))}
-                className="glass-input w-full mt-1 px-3 py-2 rounded-lg text-sm"
-                step={0.05}
-              />
-            </div>
+            <StatInputField label="최대 레벨" value={maxLevel} onChange={setMaxLevel} />
+            <StatInputField label="레벨당 성장률" value={growthRate} onChange={setGrowthRate} step={0.05} />
           </div>
           <div>
             <label className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>성장 타입</label>

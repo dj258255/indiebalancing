@@ -125,9 +125,15 @@ export function BattleSettings({
             {t('maxBattleTime')}
           </label>
           <input
-            type="number"
+            type="text"
+            inputMode="numeric"
             value={maxDuration}
-            onChange={(e) => setMaxDuration(Number(e.target.value))}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === '' || /^\d*$/.test(v)) {
+                setMaxDuration(Number(v) || 0);
+              }
+            }}
             className="w-full px-2 py-1.5 rounded text-sm"
             style={{
               background: 'var(--bg-primary)',
@@ -160,18 +166,21 @@ export function BattleSettings({
                 {t('flatPen')}
               </label>
               <input
-                type="number"
+                type="text"
+                inputMode="numeric"
                 value={armorPen.flatPenetration || 0}
-                onChange={(e) =>
-                  setArmorPen({ ...armorPen, flatPenetration: Number(e.target.value) })
-                }
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === '' || /^\d*$/.test(v)) {
+                    setArmorPen({ ...armorPen, flatPenetration: Number(v) || 0 });
+                  }
+                }}
                 className="w-full px-2 py-1 rounded text-sm"
                 style={{
                   background: 'var(--bg-primary)',
                   border: '1px solid var(--border-primary)',
                   color: 'var(--text-primary)',
                 }}
-                min={0}
               />
             </div>
             <div>
@@ -179,20 +188,21 @@ export function BattleSettings({
                 {t('percentPen')}
               </label>
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 value={armorPen.percentPenetration || 0}
-                onChange={(e) =>
-                  setArmorPen({ ...armorPen, percentPenetration: Number(e.target.value) })
-                }
+                onChange={(e) => {
+                  const v = e.target.value;
+                  if (v === '' || /^\d*\.?\d*$/.test(v)) {
+                    setArmorPen({ ...armorPen, percentPenetration: Number(v) || 0 });
+                  }
+                }}
                 className="w-full px-2 py-1 rounded text-sm"
                 style={{
                   background: 'var(--bg-primary)',
                   border: '1px solid var(--border-primary)',
                   color: 'var(--text-primary)',
                 }}
-                min={0}
-                max={1}
-                step={0.05}
               />
             </div>
           </div>

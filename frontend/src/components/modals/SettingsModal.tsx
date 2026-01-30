@@ -37,7 +37,7 @@ export default function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[9999] flex items-center justify-center"
+      className="fixed inset-0 z-[1100] flex items-center justify-center"
       style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
       onClick={handleBackdropClick}
     >
