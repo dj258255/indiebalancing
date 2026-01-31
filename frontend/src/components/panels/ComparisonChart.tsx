@@ -549,7 +549,7 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
                     )}
                   </div>
 
-                  {/* 비교 대상 목록 - 가로 스크롤 */}
+                  {/* 비교 대상 목록 */}
                   {items.length > 0 && (
                     <div className="flex gap-2 flex-wrap">
                       {items.map((item) => (
@@ -559,9 +559,8 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
                           style={{ borderLeft: `3px solid ${item.color}` }}
                         >
                           <span
-                            className="text-sm truncate font-medium max-w-[150px]"
+                            className="text-sm font-medium"
                             style={{ color: 'var(--text-primary)' }}
-                            title={item.name}
                           >
                             {item.name}
                           </span>
@@ -660,7 +659,7 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
             )}
 
             {/* 차트 영역 */}
-            <div className="flex-1 overflow-hidden p-4 flex flex-col" style={{ minWidth: 0, minHeight: 0 }}>
+            <div className="flex-1 overflow-y-auto p-4 flex flex-col" style={{ minWidth: 0 }}>
                 {activeTab === 'radar' && (
                   <>
                     {items.length === 0 || uniqueSelectedColumns.length === 0 ? (
@@ -673,8 +672,8 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
                       </div>
                     ) : (
                       <>
-                        <div className="flex-1" style={{ minHeight: 0 }}>
-                          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
+                        <div style={{ minHeight: '350px', height: '100%' }}>
+                          <ResponsiveContainer width="100%" height="100%">
                             <RadarChart data={radarData}>
                               <PolarGrid stroke="var(--border-primary)" />
                               <PolarAngleAxis dataKey="stat" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
@@ -698,7 +697,7 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
                           {items.map((item) => (
                             <div key={item.id} className="flex items-center gap-1.5">
                               <div className="w-3 h-3 rounded-md shrink-0" style={{ background: item.color }} />
-                              <span className="text-sm font-medium truncate max-w-[100px]" style={{ color: 'var(--text-secondary)' }} title={item.name}>{item.name}</span>
+                              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{item.name}</span>
                             </div>
                           ))}
                         </div>
@@ -718,8 +717,8 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
                       </div>
                     ) : (
                       <>
-                        <div className="flex-1 relative" style={{ minHeight: 0 }} onMouseLeave={() => setHoveredBar(null)}>
-                          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
+                        <div className="relative" style={{ minHeight: '350px', height: '100%' }} onMouseLeave={() => setHoveredBar(null)}>
+                          <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={barData}>
                               <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
                               <XAxis dataKey="stat" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
@@ -778,7 +777,7 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
                           {items.map((item) => (
                             <div key={item.id} className="flex items-center gap-1.5">
                               <div className="w-3 h-3 rounded-md shrink-0" style={{ background: item.color }} />
-                              <span className="text-sm font-medium truncate max-w-[100px]" style={{ color: 'var(--text-secondary)' }} title={item.name}>{item.name}</span>
+                              <span className="text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>{item.name}</span>
                             </div>
                           ))}
                         </div>
@@ -809,8 +808,8 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
                           <TrendingUp className="w-4 h-4" style={{ color: '#e5a440' }} />
                           <span className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('distribution', { column: histogramColumn })}</span>
                         </div>
-                        <div className="flex-1" style={{ minHeight: 0 }}>
-                          <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
+                        <div style={{ minHeight: '300px', height: '100%' }}>
+                          <ResponsiveContainer width="100%" height="100%">
                             <BarChart data={histogramData}>
                               <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
                               <XAxis dataKey="range" tick={{ fontSize: 10, fill: 'var(--text-secondary)' }} angle={-45} textAnchor="end" height={50} />
