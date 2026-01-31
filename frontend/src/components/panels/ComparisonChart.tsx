@@ -23,6 +23,8 @@ import { useTranslations } from 'next-intl';
 import { useEscapeKey } from '@/hooks';
 import SheetSelector from './SheetSelector';
 import CustomSelect from '@/components/ui/CustomSelect';
+import { computeSheetRows } from '@/lib/formulaEngine';
+import type { CellValue } from '@/types';
 
 interface ComparisonChartProps {
   onClose: () => void;
@@ -76,7 +78,13 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
     );
   }, [selectedSheet]);
 
-  // 행 데이터
+  // 수식 계산된 행 데이터
+  const computedRows = useMemo(() => {
+    if (!selectedSheet || !currentProject) return [];
+    return computeSheetRows(selectedSheet, currentProject.sheets);
+  }, [selectedSheet, currentProject]);
+
+  // 행 데이터 (수식 계산 적용)
   const availableRows = useMemo(() => {
     if (!selectedSheet) return [];
     return selectedSheet.rows.map((row, index) => {
@@ -90,18 +98,21 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
 
       const idCol = selectedSheet.columns.find((c) => idPatterns.includes(c.name));
 
+      // 계산된 값 사용
+      const computedCells = computedRows[index] || {};
+
       let name = '';
-      if (nameCol && row.cells[nameCol.id]) {
-        name = `${selectedSheet.name} - ${index + 1}행 (${row.cells[nameCol.id]})`;
-      } else if (idCol && row.cells[idCol.id]) {
-        name = `${selectedSheet.name} - ${index + 1}행 (${row.cells[idCol.id]})`;
+      if (nameCol && computedCells[nameCol.id]) {
+        name = `${selectedSheet.name} - ${index + 1}행 (${computedCells[nameCol.id]})`;
+      } else if (idCol && computedCells[idCol.id]) {
+        name = `${selectedSheet.name} - ${index + 1}행 (${computedCells[idCol.id]})`;
       } else {
         name = `${selectedSheet.name} - ${index + 1}행`;
       }
 
-      return { id: row.id, name, cells: row.cells };
+      return { id: row.id, name, cells: computedCells as Record<string, CellValue> };
     });
-  }, [selectedSheet]);
+  }, [selectedSheet, computedRows]);
 
   // 아이템 추가/제거
   const addItem = (rowId: string) => {
