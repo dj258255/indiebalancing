@@ -2,7 +2,7 @@ import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
 // 패널 도구 (하단에 표시되는 패널들)
-export type PanelToolId = 'formulaHelper' | 'balanceValidator' | 'difficultyCurve' | 'simulation';
+export type PanelToolId = 'formulaHelper' | 'balanceValidator' | 'difficultyCurve' | 'simulation' | 'entityDefinition';
 
 // 사이드바 도구
 export type SidebarToolId = 'calculator' | 'comparison' | 'chart' | 'presetComparison' | 'imbalanceDetector' | 'goalSolver' | 'balanceAnalysis' | 'economy' | 'dpsVariance' | 'curveFitting';
@@ -92,6 +92,7 @@ const DEFAULT_LOCATIONS: Record<AllToolId, ToolLocation> = {
   balanceValidator: 'bottom',
   difficultyCurve: 'bottom',
   simulation: 'bottom',
+  entityDefinition: 'bottom',
   // 사이드바 도구 - 사이드바
   calculator: 'sidebar',
   comparison: 'sidebar',
@@ -128,6 +129,7 @@ const DEFAULT_BOTTOM_ORDER: AllToolId[] = [
   'balanceValidator',
   'difficultyCurve',
   'simulation',
+  'entityDefinition',
 ];
 
 export const useToolLayoutStore = create<ToolLayoutState>()(
@@ -137,7 +139,7 @@ export const useToolLayoutStore = create<ToolLayoutState>()(
       bottomToolPositions: { ...DEFAULT_BOTTOM_POSITIONS },
       sidebarToolOrder: [...DEFAULT_SIDEBAR_ORDER],
       bottomToolOrder: [...DEFAULT_BOTTOM_ORDER],
-      bottomToolZOrder: ['formulaHelper', 'balanceValidator', 'difficultyCurve', 'simulation'] as AllToolId[],
+      bottomToolZOrder: ['formulaHelper', 'balanceValidator', 'difficultyCurve', 'simulation', 'entityDefinition'] as AllToolId[],
       pinnedTools: [] as AllToolId[],
       sidebarWidth: 256, // 기본값 256px (w-64)
       toolsSectionHeight: 200, // 기본값 200px
@@ -327,7 +329,7 @@ export const useToolLayoutStore = create<ToolLayoutState>()(
           bottomToolPositions: { ...DEFAULT_BOTTOM_POSITIONS },
           sidebarToolOrder: [...DEFAULT_SIDEBAR_ORDER],
           bottomToolOrder: [...DEFAULT_BOTTOM_ORDER],
-          bottomToolZOrder: ['formulaHelper', 'balanceValidator', 'difficultyCurve', 'simulation'] as AllToolId[],
+          bottomToolZOrder: ['formulaHelper', 'balanceValidator', 'difficultyCurve', 'simulation', 'entityDefinition'] as AllToolId[],
           pinnedTools: [] as AllToolId[],
           sidebarWidth: 256,
           toolsSectionHeight: 200,

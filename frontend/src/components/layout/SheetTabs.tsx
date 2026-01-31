@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Plus, X, Edit2, Copy, Check, LayoutTemplate, GripVertical } from 'lucide-react';
+import { Plus, X, Edit2, Copy, Check, LayoutTemplate, GripVertical, ChevronLeft, ChevronRight, XCircle } from 'lucide-react';
 import { useProjectStore } from '@/stores/projectStore';
 import type { Project } from '@/types';
 import { TemplateSelector } from '@/components/panels';
@@ -49,6 +49,11 @@ export default function SheetTabs({ project }: SheetTabsProps) {
   // 컨텍스트 메뉴 상태
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; sheetId: string; sheetName: string } | null>(null);
   const contextMenuRef = useRef<HTMLDivElement>(null);
+
+  // 스크롤 상태
+  const tabsContainerRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   // localStorage에서 탭 너비 불러오기
   useEffect(() => {
@@ -195,6 +200,47 @@ export default function SheetTabs({ project }: SheetTabsProps) {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [contextMenu]);
 
+  // 스크롤 상태 업데이트
+  const updateScrollState = useCallback(() => {
+    const container = tabsContainerRef.current;
+    if (!container) return;
+
+    const { scrollLeft, scrollWidth, clientWidth } = container;
+    // 스크롤 가능 여부 확인 (1px 여유 추가)
+    const hasOverflow = scrollWidth > clientWidth + 1;
+    setCanScrollLeft(hasOverflow && scrollLeft > 1);
+    setCanScrollRight(hasOverflow && scrollLeft + clientWidth < scrollWidth - 1);
+  }, []);
+
+  // 스크롤 이벤트 및 리사이즈 감지
+  useEffect(() => {
+    const container = tabsContainerRef.current;
+    if (!container) return;
+
+    updateScrollState();
+    container.addEventListener('scroll', updateScrollState);
+
+    const resizeObserver = new ResizeObserver(updateScrollState);
+    resizeObserver.observe(container);
+
+    return () => {
+      container.removeEventListener('scroll', updateScrollState);
+      resizeObserver.disconnect();
+    };
+  }, [updateScrollState, openSheets.length]);
+
+  // 스크롤 함수
+  const scrollTabs = (direction: 'left' | 'right') => {
+    const container = tabsContainerRef.current;
+    if (!container) return;
+
+    const scrollAmount = 200;
+    container.scrollBy({
+      left: direction === 'left' ? -scrollAmount : scrollAmount,
+      behavior: 'smooth',
+    });
+  };
+
   return (
     <>
       {/* 리사이즈 중 오버레이 */}
@@ -203,9 +249,28 @@ export default function SheetTabs({ project }: SheetTabsProps) {
       )}
 
       <div
-        className="flex items-center gap-1 border-b px-2 py-1 overflow-x-auto"
+        className="flex items-center border-b min-h-[38px]"
         style={{ background: 'var(--bg-tertiary)', borderColor: 'var(--border-primary)' }}
       >
+        {/* 왼쪽 스크롤 버튼 - 맨 왼쪽 고정 */}
+        <button
+          onClick={() => scrollTabs('left')}
+          className={cn(
+            "flex-shrink-0 p-1.5 transition-all hover:bg-[var(--bg-hover)]",
+            !canScrollLeft && "opacity-0 pointer-events-none w-0 p-0 overflow-hidden"
+          )}
+          style={{ color: 'var(--text-secondary)' }}
+          disabled={!canScrollLeft}
+        >
+          <ChevronLeft className="w-4 h-4" />
+        </button>
+
+        {/* 탭 + 액션 버튼 컨테이너 */}
+        <div
+          ref={tabsContainerRef}
+          className="flex items-center gap-1 px-2 py-1 overflow-x-auto scrollbar-none flex-1 min-w-0"
+          style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+        >
         {openSheets.map((sheet) => {
           const isActive = currentSheetId === sheet.id;
           const tabWidth = getTabWidth(sheet.id);
@@ -283,7 +348,7 @@ export default function SheetTabs({ project }: SheetTabsProps) {
               ) : (
                 <>
                   <span
-                    className="text-sm truncate flex-1"
+                    className="text-sm flex-1 whitespace-nowrap overflow-hidden text-ellipsis"
                     style={{ color: 'var(--text-primary)' }}
                   >
                     {sheet.name}
@@ -322,103 +387,118 @@ export default function SheetTabs({ project }: SheetTabsProps) {
           );
         })}
 
-        {showNewSheet ? (
-          <div className="flex items-center gap-1 px-2">
-            <input
-              type="text"
-              value={newSheetName}
-              onChange={(e) => setNewSheetName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleCreateSheet();
-                if (e.key === 'Escape') {
+          {/* 액션 버튼 - 탭들 바로 옆에 위치 */}
+          {showNewSheet ? (
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <input
+                type="text"
+                value={newSheetName}
+                onChange={(e) => setNewSheetName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreateSheet();
+                  if (e.key === 'Escape') {
+                    setShowNewSheet(false);
+                    setNewSheetName('');
+                    setNewSheetClassName('');
+                  }
+                }}
+                placeholder={t('table.sheetName')}
+                className="w-24 px-2 py-1 text-sm border rounded"
+                style={{
+                  background: 'var(--bg-primary)',
+                  borderColor: 'var(--border-primary)',
+                  color: 'var(--text-primary)'
+                }}
+                autoFocus
+              />
+              <input
+                type="text"
+                value={newSheetClassName}
+                onChange={(e) => setNewSheetClassName(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter') handleCreateSheet();
+                  if (e.key === 'Escape') {
+                    setShowNewSheet(false);
+                    setNewSheetName('');
+                    setNewSheetClassName('');
+                  }
+                }}
+                placeholder={t('sheet.className')}
+                className="w-24 px-2 py-1 text-sm border rounded"
+                style={{
+                  background: 'var(--bg-primary)',
+                  borderColor: 'var(--border-primary)',
+                  color: 'var(--text-tertiary)'
+                }}
+              />
+              <button
+                onClick={handleCreateSheet}
+                className="px-2 py-1 text-sm rounded transition-colors"
+                style={{ background: 'var(--primary-blue)', color: 'white' }}
+              >
+                {t('table.addSheet')}
+              </button>
+              <button
+                onClick={() => {
                   setShowNewSheet(false);
                   setNewSheetName('');
                   setNewSheetClassName('');
-                }
-              }}
-              placeholder={t('table.sheetName')}
-              className="w-24 px-2 py-1 text-sm border rounded"
-              style={{
-                background: 'var(--bg-primary)',
-                borderColor: 'var(--border-primary)',
-                color: 'var(--text-primary)'
-              }}
-              autoFocus
-            />
-            <input
-              type="text"
-              value={newSheetClassName}
-              onChange={(e) => setNewSheetClassName(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter') handleCreateSheet();
-                if (e.key === 'Escape') {
-                  setShowNewSheet(false);
-                  setNewSheetName('');
-                  setNewSheetClassName('');
-                }
-              }}
-              placeholder={t('sheet.className')}
-              className="w-24 px-2 py-1 text-sm border rounded"
-              style={{
-                background: 'var(--bg-primary)',
-                borderColor: 'var(--border-primary)',
-                color: 'var(--text-tertiary)'
-              }}
-            />
-            <button
-              onClick={handleCreateSheet}
-              className="px-2 py-1 text-sm rounded transition-colors"
-              style={{ background: 'var(--primary-blue)', color: 'white' }}
-            >
-              {t('table.addSheet')}
-            </button>
-            <button
-              onClick={() => {
-                setShowNewSheet(false);
-                setNewSheetName('');
-                setNewSheetClassName('');
-              }}
-              className="px-2 py-1 text-sm rounded transition-colors"
-              style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
-            >
-              {t('common.cancel')}
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-1">
-            <button
-              onClick={() => setShowNewSheet(true)}
-              className="flex items-center gap-1 px-2 py-1.5 text-sm rounded transition-colors"
-              style={{ color: 'var(--text-tertiary)' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.color = 'var(--text-primary)';
-                e.currentTarget.style.background = 'var(--bg-hover)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.color = 'var(--text-tertiary)';
-                e.currentTarget.style.background = 'transparent';
-              }}
-              title={t('sheet.newSheet')}
-            >
-              <Plus className="w-4 h-4" />
-            </button>
-            <button
-              onClick={() => setShowTemplateSelector(true)}
-              className="flex items-center gap-1 px-2 py-1.5 text-sm rounded transition-colors"
-              style={{ color: 'var(--primary-blue)' }}
-              onMouseEnter={(e) => {
-                e.currentTarget.style.background = 'var(--primary-blue-light)';
-              }}
-              onMouseLeave={(e) => {
-                e.currentTarget.style.background = 'transparent';
-              }}
-              title={t('table.addFromTemplate')}
-            >
-              <LayoutTemplate className="w-4 h-4" />
-              <span className="text-xs">{t('table.template')}</span>
-            </button>
-          </div>
-        )}
+                }}
+                className="px-2 py-1 text-sm rounded transition-colors"
+                style={{ background: 'var(--bg-hover)', color: 'var(--text-secondary)' }}
+              >
+                {t('common.cancel')}
+              </button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-1 flex-shrink-0">
+              <button
+                onClick={() => setShowNewSheet(true)}
+                className="flex items-center gap-1 px-2 py-1.5 text-sm rounded transition-colors"
+                style={{ color: 'var(--text-tertiary)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.color = 'var(--text-primary)';
+                  e.currentTarget.style.background = 'var(--bg-hover)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.color = 'var(--text-tertiary)';
+                  e.currentTarget.style.background = 'transparent';
+                }}
+                title={t('sheet.newSheet')}
+              >
+                <Plus className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setShowTemplateSelector(true)}
+                className="flex items-center gap-1 px-2 py-1.5 text-sm rounded transition-colors"
+                style={{ color: 'var(--primary-blue)' }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.background = 'var(--primary-blue-light)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.background = 'transparent';
+                }}
+                title={t('table.addFromTemplate')}
+              >
+                <LayoutTemplate className="w-4 h-4" />
+                <span className="text-xs">{t('table.template')}</span>
+              </button>
+            </div>
+          )}
+        </div>
+
+        {/* 오른쪽 스크롤 버튼 - 맨 오른쪽 고정 */}
+        <button
+          onClick={() => scrollTabs('right')}
+          className={cn(
+            "flex-shrink-0 p-1.5 transition-all hover:bg-[var(--bg-hover)]",
+            !canScrollRight && "opacity-0 pointer-events-none w-0 p-0 overflow-hidden"
+          )}
+          style={{ color: 'var(--text-secondary)' }}
+          disabled={!canScrollRight}
+        >
+          <ChevronRight className="w-4 h-4" />
+        </button>
 
         {/* 템플릿 선택 모달 */}
         {showTemplateSelector && (
@@ -467,6 +547,63 @@ export default function SheetTabs({ project }: SheetTabsProps) {
           >
             <Copy className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
             {t('sheet.duplicate')}
+          </button>
+
+          {/* 구분선 */}
+          <div className="my-1 border-t" style={{ borderColor: 'var(--border-primary)' }} />
+
+          {/* 이 탭 닫기 */}
+          <button
+            onClick={() => {
+              closeSheetTab(contextMenu.sheetId);
+              setContextMenu(null);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
+            style={{ color: 'var(--text-primary)' }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <X className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+            {t('sheet.closeTab')}
+          </button>
+
+          {/* 다른 탭 모두 닫기 */}
+          <button
+            onClick={() => {
+              // 현재 탭을 제외한 모든 탭 닫기
+              openSheetTabs.forEach((tabId) => {
+                if (tabId !== contextMenu.sheetId) {
+                  closeSheetTab(tabId);
+                }
+              });
+              setContextMenu(null);
+            }}
+            disabled={openSheetTabs.length <= 1}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left disabled:opacity-40"
+            style={{ color: 'var(--text-primary)' }}
+            onMouseEnter={(e) => { if (openSheetTabs.length > 1) e.currentTarget.style.background = 'var(--bg-hover)'; }}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <X className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+            {t('sheet.closeOthers')}
+          </button>
+
+          {/* 모든 탭 닫기 */}
+          <button
+            onClick={() => {
+              // 모든 탭 닫기
+              [...openSheetTabs].forEach((tabId) => {
+                closeSheetTab(tabId);
+              });
+              setContextMenu(null);
+            }}
+            className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
+            style={{ color: 'var(--status-error)' }}
+            onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+          >
+            <XCircle className="w-4 h-4" />
+            {t('sheet.closeAll')}
           </button>
         </div>
       )}

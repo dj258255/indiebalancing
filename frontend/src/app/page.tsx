@@ -76,6 +76,7 @@ const PANEL_CONFIG = {
   balanceValidator: { x: 310, y: 86, width: 520, height: 580, zIndex: 30, color: '#10b981' },
   difficultyCurve: { x: 340, y: 116, width: 580, height: 600, zIndex: 30, color: '#a855f7' },
   simulation: { x: 300, y: 50, width: 700, height: 700, zIndex: 30, color: '#e11d48' },
+  entityDefinition: { x: 320, y: 70, width: 550, height: 650, zIndex: 30, color: '#06b6d4' },
 };
 
 export default function Home() {
@@ -118,7 +119,7 @@ export default function Home() {
     getDraggingPanel,
     resetPanelPosition,
   } = usePanelManager({
-    panels: ['calculator', 'comparison', 'chart', 'preset', 'imbalance', 'goal', 'balance', 'economy', 'dpsVariance', 'curveFitting', 'formulaHelper', 'balanceValidator', 'difficultyCurve', 'simulation'],
+    panels: ['calculator', 'comparison', 'chart', 'preset', 'imbalance', 'goal', 'balance', 'economy', 'dpsVariance', 'curveFitting', 'formulaHelper', 'balanceValidator', 'difficultyCurve', 'simulation', 'entityDefinition'],
     initialStates: Object.fromEntries(
       Object.entries(PANEL_CONFIG).map(([key, config]) => [
         key,
@@ -179,6 +180,7 @@ export default function Home() {
   const [showBalanceValidator, setShowBalanceValidator] = useState(false);
   const [showDifficultyCurve, setShowDifficultyCurve] = useState(false);
   const [showSimulation, setShowSimulation] = useState(false);
+  const [showEntityDefinition, setShowEntityDefinition] = useState(false);
 
   // Refs
   const sheetContainerRef = useRef<HTMLDivElement>(null);
@@ -324,6 +326,10 @@ export default function Home() {
       if (!showSimulation) resetPanelPosition('simulation');
       setShowSimulation(!showSimulation);
     },
+    onToggleEntityDefinition: () => {
+      if (!showEntityDefinition) resetPanelPosition('entityDefinition');
+      setShowEntityDefinition(!showEntityDefinition);
+    },
   };
 
   // Add memo handler
@@ -361,6 +367,7 @@ export default function Home() {
       balanceValidator: () => setShowBalanceValidator(false),
       difficultyCurve: () => setShowDifficultyCurve(false),
       simulation: () => setShowSimulation(false),
+      entityDefinition: () => setShowEntityDefinition(false),
     };
 
     const closeHandler = closeMap[targetPanelId];
@@ -460,6 +467,10 @@ export default function Home() {
             setShowSimulation(true);
             setShowMobileSidebar(false);
           },
+          onToggleEntityDefinition: () => {
+            setShowEntityDefinition(true);
+            setShowMobileSidebar(false);
+          },
         }}
         activeTools={{
           calculator: showCalculator,
@@ -476,6 +487,7 @@ export default function Home() {
           balanceValidator: showBalanceValidator,
           difficultyCurve: showDifficultyCurve,
           simulation: showSimulation,
+          entityDefinition: showEntityDefinition,
         }}
       />
 
@@ -498,6 +510,7 @@ export default function Home() {
             balanceValidator: showBalanceValidator,
             difficultyCurve: showDifficultyCurve,
             simulation: showSimulation,
+            entityDefinition: showEntityDefinition,
           }}
         />
       </div>
@@ -569,6 +582,7 @@ export default function Home() {
           balanceValidator: { show: showBalanceValidator, setShow: setShowBalanceValidator },
           difficultyCurve: { show: showDifficultyCurve, setShow: setShowDifficultyCurve },
           simulation: { show: showSimulation, setShow: setShowSimulation },
+          entityDefinition: { show: showEntityDefinition, setShow: setShowEntityDefinition },
         }}
       />
 
@@ -579,6 +593,7 @@ export default function Home() {
           balanceValidator: showBalanceValidator,
           difficultyCurve: showDifficultyCurve,
           simulation: showSimulation,
+          entityDefinition: showEntityDefinition,
         }}
         activeTools={{
           calculator: showCalculator,
@@ -608,6 +623,10 @@ export default function Home() {
           simulation: (value) => {
             if (value) resetPanelPosition('simulation');
             setShowSimulation(value);
+          },
+          entityDefinition: (value) => {
+            if (value) resetPanelPosition('entityDefinition');
+            setShowEntityDefinition(value);
           },
         }}
         onShowCalculator={() => {

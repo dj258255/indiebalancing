@@ -69,14 +69,24 @@ export async function saveProject(project: Project): Promise<void> {
   await updateMetadata({ lastSaved: Date.now() });
 }
 
-// 모든 프로젝트 저장
+// 모든 프로젝트 저장 (sync - DB에 있지만 projects에 없는 것은 삭제)
 export async function saveAllProjects(projects: Project[]): Promise<void> {
   const database = await initDB();
   const tx = database.transaction('projects', 'readwrite');
-  await Promise.all([
-    ...projects.map((project) => tx.store.put(project)),
-    tx.done,
-  ]);
+
+  // 현재 DB에 있는 모든 프로젝트 ID 가져오기
+  const existingKeys = await tx.store.getAllKeys();
+  const projectIds = new Set(projects.map(p => p.id));
+
+  // DB에는 있지만 현재 projects에 없는 것들 삭제
+  const deletePromises = existingKeys
+    .filter(key => !projectIds.has(key))
+    .map(key => tx.store.delete(key));
+
+  // 현재 projects 저장
+  const putPromises = projects.map(project => tx.store.put(project));
+
+  await Promise.all([...deletePromises, ...putPromises, tx.done]);
   await updateMetadata({ lastSaved: Date.now() });
 }
 

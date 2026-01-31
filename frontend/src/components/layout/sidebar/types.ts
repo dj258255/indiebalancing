@@ -23,6 +23,7 @@ export interface SidebarProps {
   onToggleBalanceValidator?: () => void;
   onToggleDifficultyCurve?: () => void;
   onToggleSimulation?: () => void;
+  onToggleEntityDefinition?: () => void;
   // 활성화된 도구 상태
   activeTools?: ActiveToolsState;
 }
@@ -42,6 +43,7 @@ export interface ActiveToolsState {
   balanceValidator?: boolean;
   difficultyCurve?: boolean;
   simulation?: boolean;
+  entityDefinition?: boolean;
 }
 
 // 도구 설정 타입

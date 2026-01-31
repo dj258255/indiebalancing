@@ -12,6 +12,7 @@ import {
   Coins,
   BarChart2,
   PenTool,
+  Users,
 } from 'lucide-react';
 import type { AllToolId } from '@/stores/toolLayoutStore';
 
@@ -152,5 +153,14 @@ export const TOOL_CONFIGS: Record<AllToolId, ToolConfig> = {
     defaultIndex: 3,
     defaultWidth: 700,
     defaultHeight: 700,
+  },
+  entityDefinition: {
+    icon: Users,
+    color: '#06b6d4', // 시안 (Cyan)
+    titleKey: 'bottomTabs.entityDefinition',
+    descriptionKey: 'toolDescriptions.entityDefinition',
+    defaultIndex: 4,
+    defaultWidth: 550,
+    defaultHeight: 650,
   },
 };

@@ -6,10 +6,28 @@ import type { SheetTemplate } from './types';
 export function createSheetFromTemplate(template: SheetTemplate): Sheet {
   const now = Date.now();
 
-  // Create columns with IDs
-  const columns: Column[] = template.columns.map((col) => ({
+  // 첫 번째 sampleRow에서 수식 열의 formula 값 추출
+  const firstSampleRow = template.sampleRows?.[0];
+  const formulaMap: Record<number, string> = {};
+
+  if (firstSampleRow) {
+    template.columns.forEach((col, index) => {
+      if (col.type === 'formula') {
+        const cellKey = `col${index}`;
+        const cellValue = firstSampleRow.cells[cellKey];
+        if (typeof cellValue === 'string' && cellValue.startsWith('=')) {
+          formulaMap[index] = cellValue;
+        }
+      }
+    });
+  }
+
+  // Create columns with IDs (수식 열에 formula 속성 자동 설정)
+  const columns: Column[] = template.columns.map((col, index) => ({
     ...col,
     id: uuidv4(),
+    // 수식 열이면서 formula가 없으면 sampleRow에서 추출한 수식 사용
+    formula: col.type === 'formula' ? (col.formula || formulaMap[index]) : undefined,
   }));
 
   // Create sample data (map column IDs)

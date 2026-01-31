@@ -17,6 +17,7 @@ import {
   EconomyPanel,
   DPSVariancePanel,
   CurveFittingPanel,
+  EntityDefinition,
 } from '@/components/panels';
 import { PresetComparisonModal } from '@/components/modals';
 import { ToolPanelRenderer } from '@/components/layout';
@@ -77,6 +78,7 @@ interface ToolPanelsProps {
     balanceValidator: PanelState;
     difficultyCurve: PanelState;
     simulation: PanelState;
+    entityDefinition: PanelState;
   };
 }
 
@@ -104,6 +106,7 @@ export default function ToolPanels({
   const [economyHelp, setEconomyHelp] = useState(false);
   const [dpsVarianceHelp, setDpsVarianceHelp] = useState(false);
   const [curveFittingHelp, setCurveFittingHelp] = useState(false);
+  const [entityDefinitionHelp, setEntityDefinitionHelp] = useState(false);
 
   // 패널이 닫히면 도움말도 자동으로 닫기
   useEffect(() => { if (!panels.calculator.show) setCalculatorHelp(false); }, [panels.calculator.show]);
@@ -120,6 +123,7 @@ export default function ToolPanels({
   useEffect(() => { if (!panels.economy.show) setEconomyHelp(false); }, [panels.economy.show]);
   useEffect(() => { if (!panels.dpsVariance.show) setDpsVarianceHelp(false); }, [panels.dpsVariance.show]);
   useEffect(() => { if (!panels.curveFitting.show) setCurveFittingHelp(false); }, [panels.curveFitting.show]);
+  useEffect(() => { if (!panels.entityDefinition.show) setEntityDefinitionHelp(false); }, [panels.entityDefinition.show]);
 
   return (
     <>
@@ -568,6 +572,38 @@ export default function ToolPanels({
           onClose={() => panels.simulation.setShow(false)}
           showHelp={simulationHelp}
           setShowHelp={setSimulationHelp}
+        />
+      </ToolPanelRenderer>
+
+      {/* Entity Definition */}
+      <ToolPanelRenderer
+        toolId="entityDefinition"
+        panelId="entityDefinition"
+        show={panels.entityDefinition.show}
+        onClose={() => { panels.entityDefinition.setShow(false); setEntityDefinitionHelp(false); }}
+        title={t('bottomTabs.entityDefinition')}
+        description={t(TOOL_CONFIGS.entityDefinition.descriptionKey)}
+        icon={TOOL_CONFIGS.entityDefinition.icon}
+        color={TOOL_CONFIGS.entityDefinition.color}
+        headerExtra={
+          <HelpButton
+            showHelp={entityDefinitionHelp}
+            setShowHelp={setEntityDefinitionHelp}
+            color={TOOL_CONFIGS.entityDefinition.color}
+          />
+        }
+        panelState={panelStates.entityDefinition}
+        onBringToFront={() => bringToFront('entityDefinition')}
+        onDragStart={createDragHandler('entityDefinition')}
+        onResizeE={createResizeHandler('entityDefinition', 'e')}
+        onResizeS={createResizeHandler('entityDefinition', 's')}
+        onResizeSE={createResizeHandler('entityDefinition', 'se')}
+        defaultIndex={TOOL_CONFIGS.entityDefinition.defaultIndex}
+      >
+        <EntityDefinition
+          onClose={() => panels.entityDefinition.setShow(false)}
+          showHelp={entityDefinitionHelp}
+          setShowHelp={setEntityDefinitionHelp}
         />
       </ToolPanelRenderer>
     </>

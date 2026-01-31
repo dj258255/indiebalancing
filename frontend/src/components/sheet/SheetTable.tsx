@@ -23,7 +23,7 @@ import {
   flexRender,
   type ColumnDef,
 } from '@tanstack/react-table';
-import { Trash2, X, MessageSquare } from 'lucide-react';
+import { Trash2, X, MessageSquare, EyeOff } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 
 // 타입
@@ -1052,6 +1052,28 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                                         title={`수식: ${col.formula}`}
                                       >
                                         ƒ
+                                      </span>
+                                    );
+                                  }
+                                  return null;
+                                })()}
+                                {/* 내보내기 제외 컬럼 표시 */}
+                                {(() => {
+                                  const col = sheet.columns.find((c) => c.id === header.id);
+                                  if (col?.exportExcluded) {
+                                    return (
+                                      <span
+                                        className="shrink-0 flex items-center justify-center"
+                                        style={{
+                                          width: 16,
+                                          height: 16,
+                                          background: 'rgba(239, 68, 68, 0.15)',
+                                          color: '#ef4444',
+                                          borderRadius: 4,
+                                        }}
+                                        title="내보내기 제외"
+                                      >
+                                        <EyeOff className="w-2.5 h-2.5" />
                                       </span>
                                     );
                                   }

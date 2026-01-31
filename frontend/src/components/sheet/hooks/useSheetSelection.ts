@@ -354,7 +354,8 @@ export function useSheetSelection({ projectId, sheet, computedRows }: UseSheetSe
     selector.range.each((ri, ci) => {
       const row = sheet.rows[ri];
       const col = sheet.columns[ci];
-      if (row && col) {
+      // 잠금된 열이나 행은 지우지 않음
+      if (row && col && !col.locked && !row.locked) {
         updateCell(projectId, sheet.id, row.id, col.id, '');
       }
     });

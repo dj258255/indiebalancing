@@ -17,7 +17,8 @@
     "formulaHelper": "Provides game balance formula templates",
     "balanceValidator": "Validate balance rule compliance",
     "difficultyCurve": "Design difficulty curves by stage",
-    "simulation": "Simulate combat between units"
+    "simulation": "Simulate combat between units",
+    "entityDefinition": "Define level-based stats for characters/monsters"
   },
   "sidebar": {
     "newProject": "New Project",
@@ -71,6 +72,10 @@
     "deleteRow": "Delete Row",
     "deleteColumn": "Delete Column",
     "rename": "Rename",
+    "duplicate": "Duplicate",
+    "closeTab": "Close Tab",
+    "closeOthers": "Close Other Tabs",
+    "closeAll": "Close All Tabs",
     "rowCount": "{count} rows",
     "colCount": "{count} columns",
     "selectCellFor": "Select a cell for {field}",
@@ -321,6 +326,7 @@
     "balanceValidator": "Balance Validator",
     "difficultyCurve": "Difficulty Curve",
     "simulation": "Combat Simulation",
+    "entityDefinition": "Entity Definition",
     "dropHere": "Drag from sidebar to add",
     "rightClickToReturn": "Right-click to return to sidebar",
     "dropToMove": "Drop here to move",
@@ -2327,5 +2333,48 @@
     "clearHistory": "Clear All History",
     "fullscreen": "Fullscreen",
     "axisRange": "Axis Range"
+  },
+  "entityDefinition": {
+    "title": "Entity Definition",
+    "sectionEntity": "Select Entity",
+    "sectionGrowth": "Growth Curve",
+    "sectionOverride": "Overrides",
+    "sectionGenerate": "Preview & Generate",
+    "selectEntity": "Select an entity",
+    "noEntities": "No sheets created with Entity Definition template",
+    "createTemplate": "Create Template",
+    "levelRange": "Level Range",
+    "previewLevels": "Preview",
+    "level": "Level",
+    "addOverride": "Add Override",
+    "overrideLevel": "Level",
+    "removeOverride": "Remove",
+    "noOverrides": "You can manually set stats for specific levels",
+    "outputMode": "Output Mode",
+    "outputModeNew": "Create New Sheet",
+    "outputModeReplace": "Replace Existing Sheet",
+    "sheetNamePattern": "Sheet Name Pattern",
+    "sheetNamePatternHint": "{name} will be replaced with entity name",
+    "generate": "Generate Level Table",
+    "generateAll": "Generate All",
+    "generating": "Generating...",
+    "generatingProgress": "Generating {current}/{total}...",
+    "generateSuccess": "Level table has been generated",
+    "generateAllSuccess": "Level tables for {count} entities have been generated",
+    "curveTypes": {
+      "linear": "Linear",
+      "exponential": "Exponential",
+      "logarithmic": "Logarithmic",
+      "quadratic": "Quadratic",
+      "scurve": "S-Curve"
+    },
+    "entityTypes": {
+      "character": "Character",
+      "monster": "Monster",
+      "npc": "NPC",
+      "item": "Item"
+    },
+    "previewRows": "Preview Rows",
+    "totalRows": "Total {count} rows will be generated"
   }
 }

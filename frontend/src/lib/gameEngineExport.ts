@@ -122,6 +122,11 @@ function getExportFieldName(column: Column, caseType: 'camel' | 'pascal' = 'came
   return caseType === 'pascal' ? toPascalCase(column.name) : toCamelCase(column.name);
 }
 
+// 내보내기 제외되지 않은 컬럼만 필터링
+function getExportableColumns(sheet: Sheet): Column[] {
+  return sheet.columns.filter(col => !col.exportExcluded);
+}
+
 // 값 포맷팅 (C#)
 function formatCSharpValue(value: CellValue, type: string): string {
   if (value === null || value === undefined) {
@@ -158,8 +163,9 @@ export function generateUnityScriptableObject(sheet: Sheet, className?: string, 
   const computedRows = computeSheetValues(sheet, project);
   const sampleRow = computedRows[0];
 
-  // 컬럼 정보 수집
-  const fields = sheet.columns.map(col => ({
+  // 컬럼 정보 수집 (exportExcluded 제외)
+  const exportableColumns = getExportableColumns(sheet);
+  const fields = exportableColumns.map(col => ({
     name: getExportFieldName(col, 'camel'),
     type: toCSharpType(col, sampleRow?.[col.id]),
     originalName: col.name,
@@ -209,11 +215,12 @@ export function generateUnityJson(sheet: Sheet, project?: Project): string {
   // 수식 계산된 값 가져오기
   const computedRows = computeSheetValues(sheet, project);
   const sampleRow = computedRows[0];
+  const exportableColumns = getExportableColumns(sheet);
 
   const items = computedRows.map(computedRow => {
     const item: Record<string, unknown> = {};
 
-    for (const col of sheet.columns) {
+    for (const col of exportableColumns) {
       const fieldName = getExportFieldName(col, 'camel');
       const type = toCSharpType(col, sampleRow?.[col.id]);
       const rawValue = computedRow[col.id];
@@ -247,6 +254,7 @@ export function generateUnrealDataTable(sheet: Sheet, structName?: string, proje
   // 수식 계산된 값 가져오기
   const computedRows = computeSheetValues(sheet, project);
   const sampleRow = computedRows[0];
+  const exportableColumns = getExportableColumns(sheet);
 
   let code = `#pragma once
 
@@ -262,8 +270,8 @@ struct ${name} : public FTableRowBase
 public:
 `;
 
-  // 필드 정의
-  for (const col of sheet.columns) {
+  // 필드 정의 (exportExcluded 제외)
+  for (const col of exportableColumns) {
     const fieldName = getExportFieldName(col, 'pascal');
     const type = toUnrealType(col, sampleRow?.[col.id]);
 
@@ -277,7 +285,7 @@ public:
 
 /*
  * CSV 데이터 (Content/Data 폴더에 저장):
- * 첫 행: Name,${sheet.columns.map(c => getExportFieldName(c, 'pascal')).join(',')}
+ * 첫 행: Name,${exportableColumns.map(c => getExportFieldName(c, 'pascal')).join(',')}
  */
 `;
 
@@ -290,9 +298,10 @@ public:
 export function generateUnrealCsv(sheet: Sheet, project?: Project): string {
   // 수식 계산된 값 가져오기
   const computedRows = computeSheetValues(sheet, project);
+  const exportableColumns = getExportableColumns(sheet);
 
-  // 헤더
-  const headers = ['Name', ...sheet.columns.map(c => getExportFieldName(c, 'pascal'))];
+  // 헤더 (exportExcluded 제외)
+  const headers = ['Name', ...exportableColumns.map(c => getExportFieldName(c, 'pascal'))];
   let csv = headers.join(',') + '\n';
 
   // 데이터 행
@@ -301,7 +310,7 @@ export function generateUnrealCsv(sheet: Sheet, project?: Project): string {
     const rowName = `Row_${i + 1}`;
 
     const values = [rowName];
-    for (const col of sheet.columns) {
+    for (const col of exportableColumns) {
       let value = computedRow[col.id];
       if (value === null || value === undefined) value = '';
       // CSV 이스케이프
@@ -336,11 +345,12 @@ extends Resource
   // 수식 계산된 값 가져오기
   const computedRows = computeSheetValues(sheet, project);
   const sampleRow = computedRows[0];
+  const exportableColumns = getExportableColumns(sheet);
 
   code += `class Item:
 `;
 
-  for (const col of sheet.columns) {
+  for (const col of exportableColumns) {
     const fieldName = getExportFieldName(col, 'camel').replace(/^_/, '');
     let type = 'String';
 
@@ -374,7 +384,7 @@ static func load_from_json(path: String) -> ${name}:
 \t\tvar item = Item.new()
 `;
 
-  for (const col of sheet.columns) {
+  for (const col of exportableColumns) {
     const fieldName = getExportFieldName(col, 'camel').replace(/^_/, '');
     code += `\t\titem.${fieldName} = item_data["${fieldName}"]\n`;
   }

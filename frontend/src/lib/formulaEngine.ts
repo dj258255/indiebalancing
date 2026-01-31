@@ -617,11 +617,12 @@ interface SheetReferenceResult {
 
 /**
  * 시트의 전체 행을 계산하여 computedRows 반환
+ * (외부에서도 사용 가능 - useComputedRows, useEntityDefinition 등)
  */
-function computeSheetRows(
+export function computeSheetRows(
   sheet: Sheet,
   sheets: Sheet[],
-  recursionDepth: number
+  recursionDepth: number = 0
 ): Record<string, CellValue>[] {
   if (recursionDepth >= MAX_RECURSION_DEPTH) {
     return sheet.rows.map(r => r.cells as Record<string, CellValue>);

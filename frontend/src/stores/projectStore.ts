@@ -614,23 +614,31 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const now = Date.now();
 
     set((state) => ({
-      projects: state.projects.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              sheets: p.sheets.map((s) =>
-                s.id === sheetId
-                  ? {
-                      ...s,
-                      rows: [...s.rows, { id, cells }],
-                      updatedAt: now,
-                    }
-                  : s
-              ),
+      projects: state.projects.map((p) => {
+        if (p.id !== projectId) return p;
+
+        return {
+          ...p,
+          sheets: p.sheets.map((s) => {
+            if (s.id !== sheetId) return s;
+
+            // 수식 열의 formula를 자동으로 셀에 채워넣기
+            const formulaCells: Record<string, CellValue> = {};
+            s.columns.forEach((col) => {
+              if (col.type === 'formula' && col.formula) {
+                formulaCells[col.id] = col.formula;
+              }
+            });
+
+            return {
+              ...s,
+              rows: [...s.rows, { id, cells: { ...formulaCells, ...cells } }],
               updatedAt: now,
-            }
-          : p
-      ),
+            };
+          }),
+          updatedAt: now,
+        };
+      }),
     }));
 
     return id;
@@ -641,27 +649,35 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     const now = Date.now();
 
     set((state) => ({
-      projects: state.projects.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              sheets: p.sheets.map((s) =>
-                s.id === sheetId
-                  ? {
-                      ...s,
-                      rows: [
-                        ...s.rows.slice(0, atIndex),
-                        { id, cells },
-                        ...s.rows.slice(atIndex),
-                      ],
-                      updatedAt: now,
-                    }
-                  : s
-              ),
+      projects: state.projects.map((p) => {
+        if (p.id !== projectId) return p;
+
+        return {
+          ...p,
+          sheets: p.sheets.map((s) => {
+            if (s.id !== sheetId) return s;
+
+            // 수식 열의 formula를 자동으로 셀에 채워넣기
+            const formulaCells: Record<string, CellValue> = {};
+            s.columns.forEach((col) => {
+              if (col.type === 'formula' && col.formula) {
+                formulaCells[col.id] = col.formula;
+              }
+            });
+
+            return {
+              ...s,
+              rows: [
+                ...s.rows.slice(0, atIndex),
+                { id, cells: { ...formulaCells, ...cells } },
+                ...s.rows.slice(atIndex),
+              ],
               updatedAt: now,
-            }
-          : p
-      ),
+            };
+          }),
+          updatedAt: now,
+        };
+      }),
     }));
 
     return id;
@@ -831,29 +847,38 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   addMultipleRows: (projectId, sheetId, count) => {
     const now = Date.now();
-    const newRows: Row[] = Array.from({ length: count }, () => ({
-      id: uuidv4(),
-      cells: {},
-    }));
 
     set((state) => ({
-      projects: state.projects.map((p) =>
-        p.id === projectId
-          ? {
-              ...p,
-              sheets: p.sheets.map((s) =>
-                s.id === sheetId
-                  ? {
-                      ...s,
-                      rows: [...s.rows, ...newRows],
-                      updatedAt: now,
-                    }
-                  : s
-              ),
+      projects: state.projects.map((p) => {
+        if (p.id !== projectId) return p;
+
+        return {
+          ...p,
+          sheets: p.sheets.map((s) => {
+            if (s.id !== sheetId) return s;
+
+            // 수식 열의 formula를 자동으로 셀에 채워넣기
+            const formulaCells: Record<string, CellValue> = {};
+            s.columns.forEach((col) => {
+              if (col.type === 'formula' && col.formula) {
+                formulaCells[col.id] = col.formula;
+              }
+            });
+
+            const newRows: Row[] = Array.from({ length: count }, () => ({
+              id: uuidv4(),
+              cells: { ...formulaCells },
+            }));
+
+            return {
+              ...s,
+              rows: [...s.rows, ...newRows],
               updatedAt: now,
-            }
-          : p
-      ),
+            };
+          }),
+          updatedAt: now,
+        };
+      }),
     }));
   },
 

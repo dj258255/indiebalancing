@@ -110,6 +110,9 @@ export interface ReferenceError {
 // 성장 곡선 타입
 export type CurveType = 'linear' | 'exponential' | 'logarithmic' | 'quadratic' | 'scurve';
 
+// 오버라이드 보간 방식
+export type InterpolationType = 'linear' | 'step' | 'ease-in-out';
+
 export interface CurveParams {
   type: CurveType;
   base: number;
@@ -143,4 +146,68 @@ export interface StorageMetadata {
   lastSaved: number;
   lastBackup: number;
   version: string;
+}
+
+// ============================================
+// 엔티티 정의 시스템 (레벨별 스탯 자동 생성)
+// ============================================
+
+// 스탯별 성장 곡선 설정
+export interface StatGrowthConfig {
+  curveType: CurveType;
+  growthRate: number;      // 성장률 (예: 1.08 = 8% 증가)
+}
+
+// 오버라이드 포인트 (특정 레벨의 스탯을 수동 지정)
+export interface StatOverride {
+  level: number;
+  stats: Record<string, number>;  // 스탯명 -> 값
+}
+
+// 엔티티 정의 (캐릭터/몬스터 등)
+export interface EntityDefinition {
+  id: string;
+  name: string;
+  entityType: 'character' | 'monster' | 'npc' | 'item';
+
+  // 기본 스탯 (레벨 1 기준)
+  baseStats: Record<string, number>;  // { hp: 1000, atk: 100, def: 50 }
+
+  // 스탯별 성장 곡선 설정
+  growthCurves: Record<string, StatGrowthConfig>;
+
+  // 최대 레벨
+  maxLevel: number;
+
+  // 오버라이드 포인트 (선택적)
+  overrides: StatOverride[];
+
+  // 추가 메타데이터
+  tags?: string[];
+  description?: string;
+}
+
+// 레벨 테이블 생성 설정
+export interface LevelTableConfig {
+  entityIds: string[];      // 생성할 엔티티 ID 목록
+  minLevel: number;         // 시작 레벨 (보통 1)
+  maxLevel: number;         // 최대 레벨
+  outputMode: 'new-sheet' | 'current-sheet' | 'per-entity';
+  sheetNamePattern?: string; // 시트명 패턴 (예: "{entity}_레벨테이블")
+}
+
+// 생성된 레벨 테이블 행
+export interface LevelTableRow {
+  entityId: string;
+  entityName: string;
+  level: number;
+  stats: Record<string, number>;
+  isOverridden: Record<string, boolean>;  // 어떤 스탯이 오버라이드되었는지
+}
+
+// 시트 메타데이터 (확장)
+export interface SheetMetadata {
+  type?: 'standard' | 'entity-definition' | 'level-table';
+  sourceEntityIds?: string[];  // 레벨 테이블인 경우: 원본 엔티티 ID들
+  generatedAt?: number;
 }

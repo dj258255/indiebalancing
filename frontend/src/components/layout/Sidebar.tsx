@@ -41,6 +41,7 @@ interface SidebarProps {
   onToggleBalanceValidator?: () => void;
   onToggleDifficultyCurve?: () => void;
   onToggleSimulation?: () => void;
+  onToggleEntityDefinition?: () => void;
   activeTools?: {
     calculator?: boolean;
     comparison?: boolean;
@@ -56,6 +57,7 @@ interface SidebarProps {
     balanceValidator?: boolean;
     difficultyCurve?: boolean;
     simulation?: boolean;
+    entityDefinition?: boolean;
   };
 }
 
@@ -79,6 +81,7 @@ export default function Sidebar({
   onToggleBalanceValidator,
   onToggleDifficultyCurve,
   onToggleSimulation,
+  onToggleEntityDefinition,
   activeTools = {},
 }: SidebarProps) {
   const t = useTranslations();
@@ -191,6 +194,7 @@ export default function Sidebar({
     balanceValidator: onToggleBalanceValidator,
     difficultyCurve: onToggleDifficultyCurve,
     simulation: onToggleSimulation,
+    entityDefinition: onToggleEntityDefinition,
   };
 
   // 모바일에서는 모든 도구 표시

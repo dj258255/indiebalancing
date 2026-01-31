@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect, useCallback } from 'react';
-import { FunctionSquare, Shield, TrendingUp, Swords, Calculator, PieChart, BarChart3, GitCompare, AlertTriangle, Target, Coins, BarChart2, PenTool, Activity } from 'lucide-react';
+import { FunctionSquare, Shield, TrendingUp, Swords, Calculator, PieChart, BarChart3, GitCompare, AlertTriangle, Target, Coins, BarChart2, PenTool, Activity, Users } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useToolLayoutStore, AllToolId, PanelToolId } from '@/stores/toolLayoutStore';
 import { cn } from '@/lib/utils';
@@ -26,12 +26,14 @@ interface BottomToolbarProps {
     balanceValidator: boolean;
     difficultyCurve: boolean;
     simulation: boolean;
+    entityDefinition: boolean;
   };
   setShow: {
     formulaHelper: (value: boolean) => void;
     balanceValidator: (value: boolean) => void;
     difficultyCurve: (value: boolean) => void;
     simulation: (value: boolean) => void;
+    entityDefinition: (value: boolean) => void;
   };
   // 모든 도구의 활성 상태 (점 표시용)
   activeTools?: {
@@ -64,6 +66,7 @@ const TOOL_CONFIG: Record<AllToolId, { icon: typeof FunctionSquare; color: strin
   balanceValidator: { icon: Shield, color: '#22c55e', labelKey: 'bottomTabs.balanceValidator' },
   difficultyCurve: { icon: TrendingUp, color: '#8b5cf6', labelKey: 'bottomTabs.difficultyCurve' },
   simulation: { icon: Swords, color: '#ef4444', labelKey: 'bottomTabs.simulation' },
+  entityDefinition: { icon: Users, color: '#06b6d4', labelKey: 'bottomTabs.entityDefinition' },
   calculator: { icon: Calculator, color: '#8b5cf6', labelKey: 'sidebar.calculator' },
   comparison: { icon: PieChart, color: '#3b82f6', labelKey: 'sidebar.comparison' },
   chart: { icon: BarChart3, color: '#22c55e', labelKey: 'sidebar.chart' },
@@ -77,7 +80,7 @@ const TOOL_CONFIG: Record<AllToolId, { icon: typeof FunctionSquare; color: strin
 };
 
 const isPanelTool = (toolId: AllToolId): toolId is PanelToolId => {
-  return ['formulaHelper', 'balanceValidator', 'difficultyCurve', 'simulation'].includes(toolId);
+  return ['formulaHelper', 'balanceValidator', 'difficultyCurve', 'simulation', 'entityDefinition'].includes(toolId);
 };
 
 // 인접 아이템 스케일 계산 (macOS Dock 효과)
@@ -577,6 +580,7 @@ function getIconPath(toolId: AllToolId): string {
     economy: '<circle cx="8" cy="8" r="6"/><path d="M18.09 10.37A6 6 0 1 1 10.34 18"/><path d="M7 6h1v4"/><path d="m16.71 13.88.7.71-2.82 2.82"/>',
     dpsVariance: '<line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>',
     curveFitting: '<path d="M12 19l7-7 3 3-7 7-3-3z"/><path d="M18 13l-1.5-7.5L2 2l3.5 14.5L13 18l5-5z"/><path d="M2 2l7.586 7.586"/><circle cx="11" cy="11" r="2"/>',
+    entityDefinition: '<path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/>',
   };
   return paths[toolId] || '';
 }

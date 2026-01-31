@@ -17,7 +17,8 @@
     "formulaHelper": "다양한 게임 밸런스 수식을 제공합니다",
     "balanceValidator": "밸런스 규칙 준수 여부를 검증합니다",
     "difficultyCurve": "스테이지별 난이도 곡선을 설계합니다",
-    "simulation": "유닛 간 전투를 시뮬레이션합니다"
+    "simulation": "유닛 간 전투를 시뮬레이션합니다",
+    "entityDefinition": "캐릭터/몬스터의 레벨별 스탯을 정의합니다"
   },
   "sidebar": {
     "newProject": "새 프로젝트",
@@ -72,6 +73,9 @@
     "deleteColumn": "열 삭제",
     "rename": "이름 변경",
     "duplicate": "복제",
+    "closeTab": "탭 닫기",
+    "closeOthers": "다른 탭 모두 닫기",
+    "closeAll": "모든 탭 닫기",
     "rowCount": "{count}개 행",
     "colCount": "{count}개 열",
     "selectCellFor": "{field}에 사용할 셀을 선택하세요",
@@ -322,6 +326,7 @@
     "balanceValidator": "밸런스 검증기",
     "difficultyCurve": "난이도 곡선",
     "simulation": "전투 시뮬레이션",
+    "entityDefinition": "엔티티 정의",
     "dropHere": "사이드바에서 드래그해서 추가",
     "rightClickToReturn": "우클릭으로 사이드바로 돌리기",
     "dropToMove": "여기에 놓으면 이동됩니다",
@@ -2331,5 +2336,48 @@
     "clearHistory": "기록 전체 삭제",
     "fullscreen": "전체화면",
     "axisRange": "축 범위"
+  },
+  "entityDefinition": {
+    "title": "엔티티 정의",
+    "sectionEntity": "엔티티 선택",
+    "sectionGrowth": "성장 곡선",
+    "sectionOverride": "오버라이드",
+    "sectionGenerate": "미리보기 & 생성",
+    "selectEntity": "엔티티를 선택하세요",
+    "noEntities": "엔티티정의 템플릿으로 만든 시트가 없습니다",
+    "createTemplate": "템플릿 생성하기",
+    "levelRange": "레벨 범위",
+    "previewLevels": "미리보기",
+    "level": "레벨",
+    "addOverride": "오버라이드 추가",
+    "overrideLevel": "레벨",
+    "removeOverride": "삭제",
+    "noOverrides": "특정 레벨의 스탯을 수동으로 지정할 수 있습니다",
+    "outputMode": "출력 방식",
+    "outputModeNew": "새 시트 생성",
+    "outputModeReplace": "기존 시트 교체",
+    "sheetNamePattern": "시트 이름 패턴",
+    "sheetNamePatternHint": "{name}은 엔티티 이름으로 대체됩니다",
+    "generate": "레벨 테이블 생성",
+    "generateAll": "전체 생성",
+    "generating": "생성 중...",
+    "generatingProgress": "{current}/{total} 생성 중...",
+    "generateSuccess": "레벨 테이블이 생성되었습니다",
+    "generateAllSuccess": "{count}개 엔티티의 레벨 테이블이 생성되었습니다",
+    "curveTypes": {
+      "linear": "선형",
+      "exponential": "지수",
+      "logarithmic": "로그",
+      "quadratic": "2차",
+      "scurve": "S커브"
+    },
+    "entityTypes": {
+      "character": "캐릭터",
+      "monster": "몬스터",
+      "npc": "NPC",
+      "item": "아이템"
+    },
+    "previewRows": "행 미리보기",
+    "totalRows": "총 {count}행 생성 예정"
   }
 }

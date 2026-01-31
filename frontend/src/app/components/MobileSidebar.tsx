@@ -22,6 +22,7 @@ interface SidebarCallbacks {
   onToggleBalanceValidator?: () => void;
   onToggleDifficultyCurve?: () => void;
   onToggleSimulation?: () => void;
+  onToggleEntityDefinition?: () => void;
 }
 
 interface MobileSidebarProps {
@@ -43,6 +44,7 @@ interface MobileSidebarProps {
     balanceValidator?: boolean;
     difficultyCurve?: boolean;
     simulation?: boolean;
+    entityDefinition?: boolean;
   };
 }
 
