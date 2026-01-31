@@ -38,6 +38,7 @@ export default function CustomSelect({
   const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 });
   const selectRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null);
 
   const selectedOption = options.find(opt => opt.value === value);
 
@@ -63,11 +64,15 @@ export default function CustomSelect({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 스크롤 시 드롭다운 닫기
+  // 외부 스크롤 시 드롭다운 닫기 (드롭다운 내부 스크롤은 제외)
   useEffect(() => {
     if (!isOpen) return;
 
-    function handleScroll() {
+    function handleScroll(e: Event) {
+      // 드롭다운 내부 스크롤은 무시
+      if (dropdownRef.current && dropdownRef.current.contains(e.target as Node)) {
+        return;
+      }
       setIsOpen(false);
     }
 
@@ -83,6 +88,7 @@ export default function CustomSelect({
 
   const dropdown = isOpen && typeof document !== 'undefined' ? createPortal(
     <div
+      ref={dropdownRef}
       className="fixed z-[9999] py-1 rounded-xl shadow-lg border overflow-y-auto"
       style={{
         background: 'var(--bg-primary)',
