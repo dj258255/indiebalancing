@@ -72,6 +72,8 @@ export default function BalanceAnalysisPanel({
     currentSheet,
     columnMapping,
     setColumnMapping,
+    selectedProjectId,
+    setSelectedProjectId,
     selectedSheetId,
     setSelectedSheetId,
     runMatchupAnalysis,
@@ -101,9 +103,12 @@ export default function BalanceAnalysisPanel({
         />
       )}
 
-      {/* 시트 선택 */}
+      {/* 프로젝트/시트 선택 */}
       <div className="px-3 pt-3">
         <SheetSelector
+          selectedProjectId={selectedProjectId}
+          onProjectChange={setSelectedProjectId}
+          showProjectSelector={true}
           selectedSheetId={selectedSheetId}
           onSheetChange={setSelectedSheetId}
           label="분석할 시트"

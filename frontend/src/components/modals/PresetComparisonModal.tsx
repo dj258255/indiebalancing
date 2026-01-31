@@ -8,6 +8,7 @@ import type { Sheet } from '@/types';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useTranslations } from 'next-intl';
 import CustomSelect from '@/components/ui/CustomSelect';
+import SheetSelector from '@/components/panels/SheetSelector';
 
 interface PresetComparisonModalProps {
   onClose: () => void;
@@ -21,9 +22,13 @@ export default function PresetComparisonModal({ onClose, isPanel = false, showHe
   useEscapeKey(onClose);
 
   const t = useTranslations('presetComparison');
-  const { projects, currentProjectId } = useProjectStore();
+  const { projects, currentProjectId, currentSheetId } = useProjectStore();
 
-  const currentProject = projects.find(p => p.id === currentProjectId);
+  // 프로젝트 및 시트 선택 상태
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(currentProjectId || '');
+  const [selectedSheetId, setSelectedSheetId] = useState<string>(currentSheetId || '');
+
+  const currentProject = projects.find(p => p.id === selectedProjectId);
   const sheets = currentProject?.sheets || [];
 
   // 상태
@@ -121,7 +126,7 @@ export default function PresetComparisonModal({ onClose, isPanel = false, showHe
 
   // 공통 wrapper 클래스
   const wrapperClass = isPanel
-    ? "flex flex-col h-full"
+    ? "flex flex-col h-full min-w-0"
     : "fixed inset-0 modal-overlay flex items-center justify-center z-[1100] p-4";
 
   const cardClass = isPanel
@@ -187,6 +192,22 @@ export default function PresetComparisonModal({ onClose, isPanel = false, showHe
               </div>
             </div>
           )}
+          {/* 프로젝트 선택 */}
+          <SheetSelector
+            selectedProjectId={selectedProjectId}
+            onProjectChange={(projectId) => {
+              setSelectedProjectId(projectId);
+              setOldSheetId('');
+              setNewSheetId('');
+              setResult(null);
+            }}
+            showProjectSelector={true}
+            hideSheetSelector={true}
+            selectedSheetId={null}
+            onSheetChange={() => {}}
+            color="#6366f1"
+          />
+
           {/* 비교 대상 선택 - 반응형 */}
           <div className="flex flex-col sm:flex-row gap-3 sm:gap-4 sm:items-end">
             <div className="flex-1 min-w-0">
@@ -493,10 +514,13 @@ export default function PresetComparisonModal({ onClose, isPanel = false, showHe
             </div>
           )}
 
-          {/* 시트가 없을 때 */}
+          {/* 시트가 없을 때 - 비교 대상 선택 영역 아래에 안내 메시지 */}
           {sheets.length === 0 && (
-            <div className="text-center py-12">
-              <GitCompare className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--text-tertiary)' }} />
+            <div
+              className="rounded-xl p-4 text-center"
+              style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)' }}
+            >
+              <GitCompare className="w-8 h-8 mx-auto mb-2" style={{ color: 'var(--text-tertiary)' }} />
               <p className="text-sm" style={{ color: 'var(--text-tertiary)' }}>
                 {t('noSheets')}<br />
                 {t('noSheetsDesc')}

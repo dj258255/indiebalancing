@@ -47,10 +47,11 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
 
   const { projects, currentProjectId, currentSheetId } = useProjectStore();
 
-  const currentProject = projects.find(p => p.id === currentProjectId);
-
-  // 선택된 시트 (기본값: 현재 시트)
+  // 프로젝트 및 시트 선택 상태
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(currentProjectId || '');
   const [selectedSheetId, setSelectedSheetId] = useState<string>(currentSheetId || '');
+
+  const currentProject = projects.find(p => p.id === selectedProjectId);
   const selectedSheet = currentProject?.sheets.find(s => s.id === selectedSheetId);
 
   // 상태
@@ -122,8 +123,15 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
     <div className="flex flex-col h-full">
       {/* 내용 */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
-        {/* 시트 선택 */}
+        {/* 프로젝트/시트 선택 */}
         <SheetSelector
+          selectedProjectId={selectedProjectId}
+          onProjectChange={(projectId) => {
+            setSelectedProjectId(projectId);
+            setHasAnalyzed(false);
+            setIssues([]);
+          }}
+          showProjectSelector={true}
           selectedSheetId={selectedSheetId}
           onSheetChange={(sheetId) => {
             setSelectedSheetId(sheetId);

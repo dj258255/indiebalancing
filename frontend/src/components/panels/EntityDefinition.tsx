@@ -61,6 +61,11 @@ export default function EntityDefinition({ onClose, showHelp = false }: EntityDe
   const t = useTranslations('entityDefinition');
 
   const {
+    // 프로젝트 선택
+    projects,
+    selectedProjectId,
+    selectProject,
+    // 시트 선택
     availableSheets,
     selectedSourceSheetId,
     selectSourceSheet,
@@ -113,11 +118,14 @@ export default function EntityDefinition({ onClose, showHelp = false }: EntityDe
         {/* ===== 도움말 ===== */}
         {showHelp && <HelpPanel />}
 
-        {/* ===== 시트 선택 ===== */}
+        {/* ===== 프로젝트/시트 선택 ===== */}
         <SheetSelector
+          projects={projects}
+          selectedProjectId={selectedProjectId}
           sheets={availableSheets}
           selectedSheetId={selectedSourceSheetId}
-          onSelect={selectSourceSheet}
+          onProjectSelect={selectProject}
+          onSheetSelect={selectSourceSheet}
         />
 
         {/* 시트가 선택된 경우에만 스탯 정의 및 엔티티 섹션 표시 */}

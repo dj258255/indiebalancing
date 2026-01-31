@@ -53,12 +53,14 @@ const PANEL_COLOR = '#7c7ff2'; // 소프트 인디고
 
 export default function ComparisonChart({ onClose, isPanel = false, showHelp = false, setShowHelp }: ComparisonChartProps) {
   const { projects, currentProjectId, currentSheetId, selectedRows, clearSelectedRows, deselectRow } = useProjectStore();
-  const currentProject = projects.find(p => p.id === currentProjectId);
   const t = useTranslations('comparisonChart');
   useEscapeKey(onClose);
 
-  // 선택된 시트 (기본값: 현재 시트)
+  // 프로젝트 및 시트 선택 상태
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(currentProjectId || '');
   const [selectedSheetId, setSelectedSheetId] = useState<string>(currentSheetId || '');
+
+  const currentProject = projects.find(p => p.id === selectedProjectId);
   const selectedSheet = currentProject?.sheets.find(s => s.id === selectedSheetId);
 
   const [activeTab, setActiveTab] = useState<'radar' | 'bar' | 'histogram'>('radar');
@@ -287,9 +289,16 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
           </div>
         )}
 
-        {/* 시트 선택 */}
+        {/* 프로젝트/시트 선택 */}
         <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border-primary)' }}>
           <SheetSelector
+            selectedProjectId={selectedProjectId}
+            onProjectChange={(projectId) => {
+              setSelectedProjectId(projectId);
+              setItems([]);
+              setSelectedColumns([]);
+            }}
+            showProjectSelector={true}
             selectedSheetId={selectedSheetId}
             onSheetChange={(sheetId) => {
               setSelectedSheetId(sheetId);
@@ -520,6 +529,7 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
                       color={PANEL_COLOR}
                       size="sm"
                       className="flex-1 max-w-xs"
+                      maxHeight="none"
                     />
                     {items.length > 0 && (
                       <span className="glass-badge text-sm px-2 py-1" style={{ color: 'var(--text-secondary)' }}>

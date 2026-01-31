@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import { FileSpreadsheet, ChevronDown, Check } from 'lucide-react';
+import { FileSpreadsheet, FolderOpen, ChevronDown, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useProjectStore } from '@/stores/projectStore';
 import type { Sheet } from '@/types';
@@ -9,6 +9,11 @@ import type { Sheet } from '@/types';
 interface SheetSelectorProps {
   selectedSheetId: string | null;
   onSheetChange: (sheetId: string) => void;
+  // 프로젝트 선택 지원 (선택적)
+  selectedProjectId?: string | null;
+  onProjectChange?: (projectId: string) => void;
+  showProjectSelector?: boolean;
+  hideSheetSelector?: boolean; // 시트 선택 숨기기 (프로젝트만 선택)
   label?: string;
   color?: string;
   className?: string;
@@ -17,36 +22,48 @@ interface SheetSelectorProps {
 export default function SheetSelector({
   selectedSheetId,
   onSheetChange,
+  selectedProjectId,
+  onProjectChange,
+  showProjectSelector = false,
+  hideSheetSelector = false,
   label = '분석할 시트',
   color = '#3db88a',
   className,
 }: SheetSelectorProps) {
   const { projects, currentProjectId } = useProjectStore();
-  const currentProject = projects.find(p => p.id === currentProjectId);
+
+  // 프로젝트 선택이 활성화된 경우 선택된 프로젝트 사용, 아니면 현재 프로젝트
+  const effectiveProjectId = showProjectSelector && selectedProjectId ? selectedProjectId : currentProjectId;
+  const currentProject = projects.find(p => p.id === effectiveProjectId);
   const sheets = currentProject?.sheets || [];
 
-  const [isOpen, setIsOpen] = useState(false);
-  const selectRef = useRef<HTMLDivElement>(null);
+  const [isProjectOpen, setIsProjectOpen] = useState(false);
+  const [isSheetOpen, setIsSheetOpen] = useState(false);
+  const projectRef = useRef<HTMLDivElement>(null);
+  const sheetRef = useRef<HTMLDivElement>(null);
 
   const selectedSheet = sheets.find(s => s.id === selectedSheetId);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (selectRef.current && !selectRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+      if (projectRef.current && !projectRef.current.contains(event.target as Node)) {
+        setIsProjectOpen(false);
+      }
+      if (sheetRef.current && !sheetRef.current.contains(event.target as Node)) {
+        setIsSheetOpen(false);
       }
     }
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // 시트가 없으면 안내 메시지
-  if (sheets.length === 0) {
+  // 프로젝트가 없으면 안내 메시지
+  if (projects.length === 0) {
     return (
       <div className={cn('glass-card p-4', className)}>
         <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
-          <FileSpreadsheet className="w-4 h-4" />
-          <span>프로젝트에 시트가 없습니다.</span>
+          <FolderOpen className="w-4 h-4" />
+          <span>프로젝트가 없습니다. 새 프로젝트를 만들어주세요.</span>
         </div>
       </div>
     );
@@ -61,67 +78,155 @@ export default function SheetSelector({
         >
           <FileSpreadsheet className="w-4 h-4 text-white" />
         </div>
-        <div className="flex-1 min-w-0">
-          <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
-            {label}
-          </label>
-          <div ref={selectRef} className="relative">
-            <button
-              type="button"
-              onClick={() => setIsOpen(!isOpen)}
-              className="w-full glass-input flex items-center justify-between gap-2 text-sm px-3 py-2"
-              style={{ color: 'var(--text-primary)' }}
-            >
-              <span className="truncate font-medium">
-                {selectedSheet?.name || '시트를 선택하세요'}
-              </span>
-              <ChevronDown
-                className={cn('w-4 h-4 shrink-0 transition-transform', isOpen && 'rotate-180')}
-                style={{ color: 'var(--text-secondary)' }}
-              />
-            </button>
-            {isOpen && (
-              <div
-                className="absolute z-50 w-full mt-1 py-1 rounded-xl shadow-lg border overflow-hidden max-h-60 overflow-y-auto"
-                style={{
-                  background: 'var(--bg-primary)',
-                  borderColor: 'var(--border-primary)',
-                }}
-              >
-                {sheets.map((sheet) => (
-                  <button
-                    key={sheet.id}
-                    type="button"
-                    onClick={() => {
-                      onSheetChange(sheet.id);
-                      setIsOpen(false);
-                    }}
-                    className={cn(
-                      'w-full px-3 py-2 text-left text-sm transition-colors flex items-center justify-between',
-                      sheet.id === selectedSheetId
-                        ? 'font-medium'
-                        : 'hover:bg-[var(--bg-secondary)]'
-                    )}
+
+        <div className="flex-1 min-w-0 flex gap-2">
+          {/* 프로젝트 선택 */}
+          {showProjectSelector && onProjectChange && (
+            <div className="flex-1 min-w-0">
+              <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+                프로젝트
+              </label>
+              <div ref={projectRef} className="relative">
+                <button
+                  type="button"
+                  onClick={() => setIsProjectOpen(!isProjectOpen)}
+                  className="w-full glass-input flex items-center justify-between gap-2 text-sm px-3 py-2"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <FolderOpen className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--text-secondary)' }} />
+                    <span className="truncate font-medium">
+                      {currentProject?.name || '선택하세요'}
+                    </span>
+                  </div>
+                  <ChevronDown
+                    className={cn('w-4 h-4 shrink-0 transition-transform', isProjectOpen && 'rotate-180')}
+                    style={{ color: 'var(--text-secondary)' }}
+                  />
+                </button>
+                {isProjectOpen && (
+                  <div
+                    className="absolute z-50 w-full mt-1 py-1 rounded-xl shadow-lg border overflow-hidden max-h-60 overflow-y-auto"
                     style={{
-                      color: sheet.id === selectedSheetId ? color : 'var(--text-primary)',
-                      background: sheet.id === selectedSheetId ? `${color}15` : undefined,
+                      background: 'var(--bg-primary)',
+                      borderColor: 'var(--border-primary)',
                     }}
                   >
-                    <div className="flex items-center gap-2">
-                      <FileSpreadsheet className="w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} />
-                      <span>{sheet.name}</span>
-                      <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
-                        ({sheet.rows.length}행)
-                      </span>
-                    </div>
-                    {sheet.id === selectedSheetId && (
-                      <Check className="w-4 h-4" style={{ color }} />
-                    )}
-                  </button>
-                ))}
+                    {projects.map((project) => (
+                      <button
+                        key={project.id}
+                        type="button"
+                        onClick={() => {
+                          onProjectChange(project.id);
+                          // 프로젝트 변경 시 첫 번째 시트 자동 선택
+                          if (project.sheets.length > 0) {
+                            onSheetChange(project.sheets[0].id);
+                          }
+                          setIsProjectOpen(false);
+                        }}
+                        className={cn(
+                          'w-full px-3 py-2 text-left text-sm transition-colors flex items-center justify-between',
+                          project.id === effectiveProjectId
+                            ? 'font-medium'
+                            : 'hover:bg-[var(--bg-secondary)]'
+                        )}
+                        style={{
+                          color: project.id === effectiveProjectId ? color : 'var(--text-primary)',
+                          background: project.id === effectiveProjectId ? `${color}15` : undefined,
+                        }}
+                      >
+                        <div className="flex items-center gap-2">
+                          <FolderOpen className="w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} />
+                          <span className="truncate">{project.name}</span>
+                          <span className="text-xs shrink-0" style={{ color: 'var(--text-tertiary)' }}>
+                            ({project.sheets.length}시트)
+                          </span>
+                        </div>
+                        {project.id === effectiveProjectId && (
+                          <Check className="w-4 h-4 shrink-0" style={{ color }} />
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
               </div>
-            )}
+            </div>
+          )}
+
+          {/* 시트 선택 */}
+          {!hideSheetSelector && (
+          <div className={showProjectSelector ? 'flex-1 min-w-0' : 'flex-1'}>
+            <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>
+              {label}
+            </label>
+            <div ref={sheetRef} className="relative">
+              <button
+                type="button"
+                onClick={() => sheets.length > 0 && setIsSheetOpen(!isSheetOpen)}
+                disabled={sheets.length === 0}
+                className={cn(
+                  'w-full glass-input flex items-center justify-between gap-2 text-sm px-3 py-2',
+                  sheets.length === 0 && 'opacity-50 cursor-not-allowed'
+                )}
+                style={{ color: 'var(--text-primary)' }}
+              >
+                <div className="flex items-center gap-2 truncate">
+                  <FileSpreadsheet className="w-3.5 h-3.5 shrink-0" style={{ color: 'var(--text-secondary)' }} />
+                  <span className="truncate font-medium">
+                    {sheets.length === 0
+                      ? '시트 없음'
+                      : selectedSheet?.name || '시트를 선택하세요'}
+                  </span>
+                </div>
+                <ChevronDown
+                  className={cn('w-4 h-4 shrink-0 transition-transform', isSheetOpen && 'rotate-180')}
+                  style={{ color: 'var(--text-secondary)' }}
+                />
+              </button>
+              {isSheetOpen && sheets.length > 0 && (
+                <div
+                  className="absolute z-50 w-full mt-1 py-1 rounded-xl shadow-lg border overflow-hidden max-h-60 overflow-y-auto"
+                  style={{
+                    background: 'var(--bg-primary)',
+                    borderColor: 'var(--border-primary)',
+                  }}
+                >
+                  {sheets.map((sheet) => (
+                    <button
+                      key={sheet.id}
+                      type="button"
+                      onClick={() => {
+                        onSheetChange(sheet.id);
+                        setIsSheetOpen(false);
+                      }}
+                      className={cn(
+                        'w-full px-3 py-2 text-left text-sm transition-colors flex items-center justify-between',
+                        sheet.id === selectedSheetId
+                          ? 'font-medium'
+                          : 'hover:bg-[var(--bg-secondary)]'
+                      )}
+                      style={{
+                        color: sheet.id === selectedSheetId ? color : 'var(--text-primary)',
+                        background: sheet.id === selectedSheetId ? `${color}15` : undefined,
+                      }}
+                    >
+                      <div className="flex items-center gap-2">
+                        <FileSpreadsheet className="w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} />
+                        <span>{sheet.name}</span>
+                        <span className="text-xs" style={{ color: 'var(--text-tertiary)' }}>
+                          ({sheet.rows.length}행)
+                        </span>
+                      </div>
+                      {sheet.id === selectedSheetId && (
+                        <Check className="w-4 h-4" style={{ color }} />
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
+          )}
         </div>
       </div>
     </div>

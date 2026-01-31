@@ -48,7 +48,8 @@ export function useBalanceAnalysisState(
   const [internalShowHelp, setInternalShowHelp] = useState(false);
   const [showTabDropdown, setShowTabDropdown] = useState(false);
 
-  // 선택된 시트 (기본값: 현재 시트)
+  // 프로젝트 및 시트 선택 상태
+  const [selectedProjectId, setSelectedProjectId] = useState<string>(currentProjectId || '');
   const [selectedSheetId, setSelectedSheetId] = useState<string>(currentSheetId || '');
 
   // 컬럼 매핑 상태
@@ -58,7 +59,7 @@ export function useBalanceAnalysisState(
   const showHelp = externalShowHelp !== undefined ? externalShowHelp : internalShowHelp;
   const setShowHelp = externalSetShowHelp || setInternalShowHelp;
 
-  const currentProject = projects.find(p => p.id === currentProjectId);
+  const currentProject = projects.find(p => p.id === selectedProjectId);
   const currentSheet = currentProject?.sheets.find(s => s.id === selectedSheetId);
 
   // 시트가 변경되면 컬럼 자동 감지
@@ -169,6 +170,20 @@ export function useBalanceAnalysisState(
     setCorrelationResult(result);
   };
 
+  // 프로젝트 변경 시 시트 초기화 및 분석 결과 초기화
+  const handleProjectChange = (projectId: string) => {
+    setSelectedProjectId(projectId);
+    const project = projects.find(p => p.id === projectId);
+    if (project && project.sheets.length > 0) {
+      setSelectedSheetId(project.sheets[0].id);
+    } else {
+      setSelectedSheetId('');
+    }
+    setMatchupResult(null);
+    setPowerResult(null);
+    setCorrelationResult(null);
+  };
+
   // 시트 변경 시 분석 결과 초기화
   const handleSheetChange = (sheetId: string) => {
     setSelectedSheetId(sheetId);
@@ -197,7 +212,10 @@ export function useBalanceAnalysisState(
     currentSheet,
     columnMapping,
     setColumnMapping,
-    // 시트 선택
+    // 프로젝트/시트 선택
+    projects,
+    selectedProjectId,
+    setSelectedProjectId: handleProjectChange,
     selectedSheetId,
     setSelectedSheetId: handleSheetChange,
     // 액션

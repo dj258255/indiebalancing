@@ -54,9 +54,9 @@ export interface EntityDefinitionState {
 
 export function useEntityDefinition() {
   const store = useProjectStore();
-  const currentProject = store.projects.find(p => p.id === store.currentProjectId);
 
   // ===== State =====
+  const [selectedProjectId, setSelectedProjectId] = useState<string | null>(null);
   const [selectedSourceSheetId, setSelectedSourceSheetId] = useState<string | null>(null);
   const [idColumn, setIdColumn] = useState<string>('');
   const [nameColumn, setNameColumn] = useState<string>('');
@@ -81,10 +81,25 @@ export function useEntityDefinition() {
   const [interpolationType, setInterpolationType] = useState<InterpolationType>('linear');
   const [tagFilter, setTagFilter] = useState<string | null>(null);
 
+  // ===== 선택된 프로젝트 (없으면 현재 프로젝트) =====
+  const effectiveProjectId = selectedProjectId || store.currentProjectId;
+  const currentProject = store.projects.find(p => p.id === effectiveProjectId);
+
   // ===== 사용 가능한 시트 목록 =====
   const availableSheets = useMemo(() => {
     return currentProject?.sheets || [];
   }, [currentProject]);
+
+  // ===== 프로젝트 변경 핸들러 =====
+  const selectProject = useCallback((projectId: string) => {
+    setSelectedProjectId(projectId);
+    // 프로젝트 변경 시 시트 선택 초기화
+    setSelectedSourceSheetId(null);
+    setSelectedEntityId(null);
+    setIdColumn('');
+    setNameColumn('');
+    setLevelColumn('');
+  }, []);
 
   // ===== 선택된 소스 시트 =====
   const selectedSourceSheet = useMemo(() => {
@@ -477,6 +492,11 @@ export function useEntityDefinition() {
   }, [currentProject, entities, sheetNamePattern, store, exportFieldNames, statDefinitions, idColumn, nameColumn, levelColumn]);
 
   return {
+    // 프로젝트 선택
+    projects: store.projects,
+    selectedProjectId: effectiveProjectId,
+    selectProject,
+
     // 시트 선택
     availableSheets,
     selectedSourceSheetId,
