@@ -48,6 +48,9 @@ export function useBalanceAnalysisState(
   const [internalShowHelp, setInternalShowHelp] = useState(false);
   const [showTabDropdown, setShowTabDropdown] = useState(false);
 
+  // 선택된 시트 (기본값: 현재 시트)
+  const [selectedSheetId, setSelectedSheetId] = useState<string>(currentSheetId || '');
+
   // 컬럼 매핑 상태
   const [columnMapping, setColumnMapping] = useState<ColumnMapping>({});
 
@@ -56,7 +59,7 @@ export function useBalanceAnalysisState(
   const setShowHelp = externalSetShowHelp || setInternalShowHelp;
 
   const currentProject = projects.find(p => p.id === currentProjectId);
-  const currentSheet = currentProject?.sheets.find(s => s.id === currentSheetId);
+  const currentSheet = currentProject?.sheets.find(s => s.id === selectedSheetId);
 
   // 시트가 변경되면 컬럼 자동 감지
   useEffect(() => {
@@ -166,6 +169,14 @@ export function useBalanceAnalysisState(
     setCorrelationResult(result);
   };
 
+  // 시트 변경 시 분석 결과 초기화
+  const handleSheetChange = (sheetId: string) => {
+    setSelectedSheetId(sheetId);
+    setMatchupResult(null);
+    setPowerResult(null);
+    setCorrelationResult(null);
+  };
+
   return {
     // 상태
     activeTab,
@@ -186,6 +197,9 @@ export function useBalanceAnalysisState(
     currentSheet,
     columnMapping,
     setColumnMapping,
+    // 시트 선택
+    selectedSheetId,
+    setSelectedSheetId: handleSheetChange,
     // 액션
     runMatchupAnalysis,
     runPowerAnalysis,

@@ -1,10 +1,15 @@
 /**
  * DifficultyChart - 난이도 곡선 시각화 컴포넌트
+ *
+ * 현업 게임 디자이너 수준의 시각화:
+ * - 플로우 존 시각화 (지루함/몰입/불안)
+ * - 휴식 포인트 표시
+ * - DDA 조정 표시
  */
 
 'use client';
 
-import { TrendingUp, Maximize2 } from 'lucide-react';
+import { TrendingUp, Maximize2, Coffee } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -15,11 +20,21 @@ import {
   ResponsiveContainer,
   ReferenceLine,
   Legend,
+  ReferenceArea,
+  Area,
+  ComposedChart,
 } from 'recharts';
 import { useTranslations } from 'next-intl';
-import type { DifficultySegment } from '../hooks';
+import type { DifficultySegment, RestPoint, FlowZone } from '../hooks';
 
 const PANEL_COLOR = '#9179f2';
+
+// 플로우 존 색상
+const FLOW_ZONE_COLORS: Record<FlowZone, string> = {
+  boredom: '#3db88a',  // 녹색 - 지루함 (너무 쉬움)
+  flow: '#5a9cf5',     // 파란색 - 몰입 (적정)
+  anxiety: '#e86161',  // 빨간색 - 불안 (너무 어려움)
+};
 
 interface DifficultyChartProps {
   curveData: DifficultySegment[];
@@ -29,6 +44,8 @@ interface DifficultyChartProps {
   setHoveredStage: (stage: number | null) => void;
   hoveredData: DifficultySegment | null;
   onShowFullscreen: () => void;
+  showFlowZones?: boolean;
+  restPoints?: RestPoint[];
 }
 
 export function DifficultyChart({
@@ -39,8 +56,13 @@ export function DifficultyChart({
   setHoveredStage,
   hoveredData,
   onShowFullscreen,
+  showFlowZones = true,
+  restPoints = [],
 }: DifficultyChartProps) {
   const t = useTranslations('difficultyCurve');
+
+  // 플로우 존 구간 계산
+  const flowZoneAreas = showFlowZones ? calculateFlowZoneAreas(curveData) : [];
 
   return (
     <div className="space-y-3">
@@ -70,6 +92,29 @@ export function DifficultyChart({
               margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
             >
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
+
+              {/* 플로우 존 배경 영역 */}
+              {flowZoneAreas.map((area, idx) => (
+                <ReferenceArea
+                  key={`flow-${idx}`}
+                  x1={area.start}
+                  x2={area.end}
+                  fill={FLOW_ZONE_COLORS[area.zone]}
+                  fillOpacity={0.15}
+                />
+              ))}
+
+              {/* 휴식 포인트 영역 */}
+              {restPoints.map((rp) => (
+                <ReferenceArea
+                  key={`rest-${rp.stage}`}
+                  x1={rp.stage}
+                  x2={rp.stage + rp.duration}
+                  fill="#e5a440"
+                  fillOpacity={0.15}
+                />
+              ))}
+
               <XAxis
                 dataKey="stage"
                 tick={{ fontSize: 10, fill: 'var(--text-secondary)' }}
@@ -109,6 +154,32 @@ export function DifficultyChart({
                       }}>
                         {t('ratio')}: {segment?.ratio.toFixed(2)}x {segment && segment.ratio >= 1 ? '(Clear)' : '(Wall)'}
                       </div>
+                      {/* 플로우 존 표시 */}
+                      {segment && (
+                        <div style={{
+                          marginTop: 4,
+                          fontSize: 10,
+                          color: FLOW_ZONE_COLORS[segment.flowZone],
+                        }}>
+                          {segment.flowZone === 'boredom' ? t('boredom') :
+                           segment.flowZone === 'flow' ? t('flow') : t('anxiety')}
+                          {segment.isRestPoint && (
+                            <span style={{ marginLeft: 6, color: '#e5a440' }}>
+                              ☕ {t('restPoint')}
+                            </span>
+                          )}
+                        </div>
+                      )}
+                      {/* DDA 조정 표시 */}
+                      {segment && segment.ddaAdjustment !== 0 && (
+                        <div style={{
+                          marginTop: 2,
+                          fontSize: 10,
+                          color: segment.ddaAdjustment > 0 ? '#3db88a' : '#e86161',
+                        }}>
+                          DDA: {segment.ddaAdjustment > 0 ? '+' : ''}{Math.round(segment.ddaAdjustment * 100)}%
+                        </div>
+                      )}
                     </div>
                   );
                 }}
@@ -156,6 +227,7 @@ export function DifficultyChart({
           hoveredStage={hoveredStage}
           setHoveredStage={setHoveredStage}
           hoveredData={hoveredData}
+          showFlowZones={showFlowZones}
         />
       </div>
     </div>
@@ -168,6 +240,7 @@ interface RatioChartProps {
   hoveredStage: number | null;
   setHoveredStage: (stage: number | null) => void;
   hoveredData: DifficultySegment | null;
+  showFlowZones?: boolean;
 }
 
 function RatioChart({
@@ -176,8 +249,12 @@ function RatioChart({
   hoveredStage,
   setHoveredStage,
   hoveredData,
+  showFlowZones = true,
 }: RatioChartProps) {
   const t = useTranslations('difficultyCurve');
+
+  // 플로우 존 구간 계산
+  const flowZoneAreas = showFlowZones ? calculateFlowZoneAreas(curveData) : [];
 
   return (
     <div className="mt-3 space-y-1">
@@ -185,29 +262,59 @@ function RatioChart({
         <span>{t('ratio')} ({t('player')}/{t('enemy')})</span>
         <div className="flex items-center gap-3">
           <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full" style={{ background: '#3db88a' }} />
-            1.3+
+            <span className="w-2 h-2 rounded-full" style={{ background: FLOW_ZONE_COLORS.boredom }} />
+            {t('boredom')}
           </span>
           <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full" style={{ background: '#5a9cf5' }} />
-            1.0-1.3
+            <span className="w-2 h-2 rounded-full" style={{ background: FLOW_ZONE_COLORS.flow }} />
+            {t('flow')}
+          </span>
+          <span className="flex items-center gap-1">
+            <span className="w-2 h-2 rounded-full" style={{ background: FLOW_ZONE_COLORS.anxiety }} />
+            {t('anxiety')}
           </span>
           <span className="flex items-center gap-1">
             <span className="w-2 h-2 rounded-full" style={{ background: '#e5a440' }} />
-            0.8-1.0
-          </span>
-          <span className="flex items-center gap-1">
-            <span className="w-2 h-2 rounded-full" style={{ background: '#e86161' }} />
-            &lt;0.8
+            {t('restPoint')}
           </span>
         </div>
       </div>
       {/* 비율 막대 그래프 */}
       <div
-        className="relative h-12 rounded-lg"
+        className="relative h-12 rounded-lg overflow-hidden"
         style={{ background: 'var(--bg-tertiary)' }}
         onMouseLeave={() => setHoveredStage(null)}
       >
+        {/* 플로우 존 배경 영역 */}
+        {showFlowZones && flowZoneAreas.map((area, idx) => {
+          const startPercent = ((area.start - 1) / curveData.length) * 100;
+          const widthPercent = ((area.end - area.start + 1) / curveData.length) * 100;
+          const showLabel = widthPercent > 15; // 15% 이상일 때만 라벨 표시
+
+          return (
+            <div
+              key={`zone-bg-${idx}`}
+              className="absolute top-0 bottom-0 pointer-events-none"
+              style={{
+                left: `${startPercent}%`,
+                width: `${widthPercent}%`,
+                background: FLOW_ZONE_COLORS[area.zone],
+                opacity: 0.12,
+              }}
+            >
+              {showLabel && (
+                <div
+                  className="absolute top-0.5 left-1/2 -translate-x-1/2 text-[10px] font-medium"
+                  style={{ color: FLOW_ZONE_COLORS[area.zone], opacity: 0.9 }}
+                >
+                  {area.zone === 'boredom' ? t('boredom') :
+                   area.zone === 'flow' ? t('flow') : t('anxiety')}
+                </div>
+              )}
+            </div>
+          );
+        })}
+
         {/* 기준선 (비율 1.0) */}
         <div
           className="absolute left-0 right-0 border-t border-dashed z-10 pointer-events-none"
@@ -226,11 +333,8 @@ function RatioChart({
             const normalizedRatio = Math.min(Math.max(d.ratio, 0.5), 2.0);
             const height = ((normalizedRatio - 0.5) / 1.5) * 100;
 
-            let color: string;
-            if (d.ratio >= 1.3) color = '#3db88a';
-            else if (d.ratio >= 1.0) color = '#5a9cf5';
-            else if (d.ratio >= 0.8) color = '#e5a440';
-            else color = '#e86161';
+            // 플로우 존 기반 색상
+            const color = FLOW_ZONE_COLORS[d.flowZone];
 
             const isHovered = hoveredStage === d.stage;
 
@@ -270,16 +374,19 @@ function RatioChart({
               {t('stage')} {hoveredData.stage}
             </span>
             <span style={{
-              color: hoveredData.ratio >= 1.3 ? '#3db88a' :
-                     hoveredData.ratio >= 1.0 ? '#5a9cf5' :
-                     hoveredData.ratio >= 0.8 ? '#e5a440' : '#e86161',
+              color: FLOW_ZONE_COLORS[hoveredData.flowZone],
               fontWeight: 600
             }}>
               {hoveredData.ratio.toFixed(2)}x
-              ({hoveredData.ratio >= 1.3 ? 'Easy' :
-                hoveredData.ratio >= 1.0 ? 'Clear' :
-                hoveredData.ratio >= 0.8 ? 'Hard' : 'Wall'})
+              ({hoveredData.flowZone === 'boredom' ? t('boredom') :
+                hoveredData.flowZone === 'flow' ? t('flow') : t('anxiety')})
             </span>
+            {hoveredData.isRestPoint && (
+              <span className="flex items-center gap-1" style={{ color: '#e5a440' }}>
+                <Coffee className="w-3 h-3" />
+                {t('restPoint')}
+              </span>
+            )}
             <span className="ml-auto">
               {t('player')}: {hoveredData.playerPower.toLocaleString()} / {t('enemy')}: {hoveredData.enemyPower.toLocaleString()}
             </span>
@@ -294,4 +401,39 @@ function RatioChart({
       </div>
     </div>
   );
+}
+
+// 플로우 존 연속 구간 계산 헬퍼
+function calculateFlowZoneAreas(curveData: DifficultySegment[]): Array<{
+  start: number;
+  end: number;
+  zone: FlowZone;
+}> {
+  if (curveData.length === 0) return [];
+
+  const areas: Array<{ start: number; end: number; zone: FlowZone }> = [];
+  let currentZone = curveData[0].flowZone;
+  let startStage = curveData[0].stage;
+
+  for (let i = 1; i < curveData.length; i++) {
+    const segment = curveData[i];
+    if (segment.flowZone !== currentZone) {
+      areas.push({
+        start: startStage,
+        end: curveData[i - 1].stage,
+        zone: currentZone,
+      });
+      currentZone = segment.flowZone;
+      startStage = segment.stage;
+    }
+  }
+
+  // 마지막 구간 추가
+  areas.push({
+    start: startStage,
+    end: curveData[curveData.length - 1].stage,
+    zone: currentZone,
+  });
+
+  return areas;
 }

@@ -8,6 +8,7 @@ import type { Sheet } from '@/types';
 import type { BattleConfig, DefenseFormulaType, ArmorPenetrationConfig } from '@/lib/simulation/types';
 import type { ColumnMapping } from '../hooks';
 import { useTranslations } from 'next-intl';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 interface BattleSettingsProps {
   runs: number;
@@ -59,65 +60,53 @@ export function BattleSettings({
           <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
             {t('runs')}
           </label>
-          <select
-            value={runs}
-            onChange={(e) => setRuns(Number(e.target.value))}
-            className="w-full px-2 py-1.5 rounded text-sm"
-            style={{
-              background: 'var(--bg-primary)',
-              border: '1px solid var(--border-primary)',
-              color: 'var(--text-primary)',
-            }}
-          >
-            <option value={1000}>{t('iterations.1000')}</option>
-            <option value={5000}>{t('iterations.5000')}</option>
-            <option value={10000}>{t('iterations.10000')}</option>
-            <option value={50000}>{t('iterations.50000')}</option>
-            <option value={100000}>{t('iterations.100000')}</option>
-          </select>
+          <CustomSelect
+            value={String(runs)}
+            onChange={(v) => setRuns(Number(v))}
+            options={[
+              { value: '1000', label: t('iterations.1000') },
+              { value: '5000', label: t('iterations.5000') },
+              { value: '10000', label: t('iterations.10000') },
+              { value: '50000', label: t('iterations.50000') },
+              { value: '100000', label: t('iterations.100000') },
+            ]}
+            size="sm"
+          />
         </div>
 
         <div>
           <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
             {t('damageFormula')}
           </label>
-          <select
-            value={damageFormula}
-            onChange={(e) => setDamageFormula(e.target.value as BattleConfig['damageFormula'])}
-            className="w-full px-2 py-1.5 rounded text-sm"
-            style={{
-              background: 'var(--bg-primary)',
-              border: '1px solid var(--border-primary)',
-              color: 'var(--text-primary)',
-            }}
-          >
-            <option value="simple">{t('formulas.simple')}</option>
-            <option value="mmorpg">{t('formulas.mmorpg')}</option>
-            <option value="percentage">{t('formulas.percentage')}</option>
-            <option value="random">{t('formulas.random')}</option>
-            <option value="multiplicative">{t('formulas.multiplicative')}</option>
-          </select>
+          <CustomSelect
+            value={damageFormula || 'simple'}
+            onChange={(v) => setDamageFormula(v as BattleConfig['damageFormula'])}
+            options={[
+              { value: 'simple', label: t('formulas.simple') },
+              { value: 'mmorpg', label: t('formulas.mmorpg') },
+              { value: 'percentage', label: t('formulas.percentage') },
+              { value: 'random', label: t('formulas.random') },
+              { value: 'multiplicative', label: t('formulas.multiplicative') },
+            ]}
+            size="sm"
+          />
         </div>
 
         <div>
           <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
             {t('defenseFormula')}
           </label>
-          <select
+          <CustomSelect
             value={defenseFormula}
-            onChange={(e) => setDefenseFormula(e.target.value as DefenseFormulaType)}
-            className="w-full px-2 py-1.5 rounded text-sm"
-            style={{
-              background: 'var(--bg-primary)',
-              border: '1px solid var(--border-primary)',
-              color: 'var(--text-primary)',
-            }}
-          >
-            <option value="subtractive">{t('defFormulas.subtractive')}</option>
-            <option value="divisive">{t('defFormulas.divisive')}</option>
-            <option value="multiplicative">{t('defFormulas.multiplicative')}</option>
-            <option value="logarithmic">{t('defFormulas.logarithmic')}</option>
-          </select>
+            onChange={(v) => setDefenseFormula(v as DefenseFormulaType)}
+            options={[
+              { value: 'subtractive', label: t('defFormulas.subtractive') },
+              { value: 'divisive', label: t('defFormulas.divisive') },
+              { value: 'multiplicative', label: t('defFormulas.multiplicative') },
+              { value: 'logarithmic', label: t('defFormulas.logarithmic') },
+            ]}
+            size="sm"
+          />
         </div>
 
         <div>
@@ -231,24 +220,18 @@ export function BattleSettings({
                 <label className="block text-sm mb-1" style={{ color: 'var(--text-secondary)' }}>
                   {label}
                 </label>
-                <select
+                <CustomSelect
                   value={columnMapping[key]}
-                  onChange={(e) => setColumnMapping({ ...columnMapping, [key]: e.target.value })}
-                  className="w-full px-2 py-1 rounded text-sm"
-                  style={{
-                    background: 'var(--bg-primary)',
-                    border: '1px solid var(--border-primary)',
-                    color: 'var(--text-primary)',
-                  }}
-                >
-                  <option value="">{t('autoDetect')}</option>
-                  {currentSheet.columns.map((col) => (
-                    <option key={col.id} value={col.id}>
-                      {col.name}
-                      {autoDetectedColumns[key] === col.id ? ` (${t('detected')})` : ''}
-                    </option>
-                  ))}
-                </select>
+                  onChange={(v) => setColumnMapping({ ...columnMapping, [key]: v })}
+                  options={[
+                    { value: '', label: t('autoDetect') },
+                    ...currentSheet.columns.map((col) => ({
+                      value: col.id,
+                      label: col.name + (autoDetectedColumns[key] === col.id ? ` (${t('detected')})` : ''),
+                    })),
+                  ]}
+                  size="sm"
+                />
               </div>
             ))}
           </div>

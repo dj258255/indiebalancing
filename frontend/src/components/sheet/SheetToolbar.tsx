@@ -24,6 +24,7 @@ import {
   StickyNote,
   X,
 } from 'lucide-react';
+import CustomSelect from '@/components/ui/CustomSelect';
 import { useSheetUIStore, DEFAULT_CELL_STYLE } from '@/stores/sheetUIStore';
 import { useHistoryStore } from '@/stores/historyStore';
 import type { CellStyle } from '@/types';
@@ -437,29 +438,16 @@ export default function SheetToolbar({
           </button>
         </Tooltip>
         <Tooltip label={t('toolbar.fontSize')}>
-          <div className="relative">
-            <select
-              value={currentCellStyle.fontSize || DEFAULT_CELL_STYLE.fontSize}
-              onChange={(e) => handleFontSizeChange(Number(e.target.value))}
-              disabled={disabled}
-              className="appearance-none pl-2 pr-6 py-1 text-xs font-medium rounded border cursor-pointer min-w-[50px] text-center"
-              style={{
-                background: 'var(--bg-primary)',
-                borderColor: 'var(--border-primary)',
-                color: 'var(--text-primary)',
-              }}
-            >
-              {FONT_SIZES.map((size) => (
-                <option key={size} value={size}>
-                  {size}
-                </option>
-              ))}
-            </select>
-            <ChevronDown
-              className="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none"
-              style={{ color: 'var(--text-tertiary)' }}
-            />
-          </div>
+          <CustomSelect
+            value={String(currentCellStyle.fontSize || DEFAULT_CELL_STYLE.fontSize)}
+            onChange={(v) => handleFontSizeChange(Number(v))}
+            disabled={disabled}
+            options={FONT_SIZES.map((size) => ({
+              value: String(size),
+              label: String(size),
+            }))}
+            size="sm"
+          />
         </Tooltip>
         <Tooltip label={t('toolbar.increaseFontSize')}>
           <button
@@ -674,30 +662,20 @@ export default function SheetToolbar({
           </button>
         </Tooltip>
         <Tooltip label={t('toolbar.zoom')}>
-          <div className="relative">
-            <select
-              value={zoomLevel}
-              onChange={(e) => setZoom(Number(e.target.value))}
-              className="appearance-none pl-2 pr-6 py-1 text-xs font-medium rounded border cursor-pointer min-w-[65px] text-center"
-              style={{
-                background: 'var(--bg-primary)',
-                borderColor: 'var(--border-primary)',
-                color: 'var(--text-primary)',
-              }}
-            >
-              <option value={0.5}>50%</option>
-              <option value={0.75}>75%</option>
-              <option value={1.0}>100%</option>
-              <option value={1.25}>125%</option>
-              <option value={1.5}>150%</option>
-              <option value={1.75}>175%</option>
-              <option value={2.0}>200%</option>
-            </select>
-            <ChevronDown
-              className="absolute right-1 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none"
-              style={{ color: 'var(--text-tertiary)' }}
-            />
-          </div>
+          <CustomSelect
+            value={String(zoomLevel)}
+            onChange={(v) => setZoom(Number(v))}
+            options={[
+              { value: '0.5', label: '50%' },
+              { value: '0.75', label: '75%' },
+              { value: '1', label: '100%' },
+              { value: '1.25', label: '125%' },
+              { value: '1.5', label: '150%' },
+              { value: '1.75', label: '175%' },
+              { value: '2', label: '200%' },
+            ]}
+            size="sm"
+          />
         </Tooltip>
         <Tooltip label={t('toolbar.zoomIn')}>
           <button

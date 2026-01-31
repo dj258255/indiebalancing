@@ -1,7 +1,7 @@
 'use client';
 
 import { useState } from 'react';
-import { X, Search, FileSpreadsheet, Check, Filter, Link2, ChevronDown } from 'lucide-react';
+import { X, Search, FileSpreadsheet, Check, Filter, Link2 } from 'lucide-react';
 import {
   sheetTemplates,
   templateCategories,
@@ -14,6 +14,7 @@ import { useProjectStore } from '@/stores/projectStore';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { useEscapeKey } from '@/hooks';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 interface TemplateSelectorProps {
   projectId: string;
@@ -176,30 +177,15 @@ export default function TemplateSelector({ projectId, onClose, onSelect }: Templ
               <label className="text-sm font-medium whitespace-nowrap" style={{ color: 'var(--text-secondary)' }}>
                 {t('templateSelector.targetProject')}
               </label>
-              <div className="relative">
-                <select
-                  value={targetProjectId}
-                  onChange={(e) => setTargetProjectId(e.target.value)}
-                  className="appearance-none pl-3 pr-8 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 cursor-pointer min-w-[140px]"
-                  style={{
-                    background: 'var(--bg-primary)',
-                    borderColor: 'var(--border-primary)',
-                    color: 'var(--text-primary)',
-                    // @ts-expect-error CSS custom property
-                    '--tw-ring-color': 'var(--accent)',
-                  }}
-                >
-                  {projects.map((p) => (
-                    <option key={p.id} value={p.id}>
-                      {p.name}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
-                  style={{ color: 'var(--text-secondary)' }}
-                />
-              </div>
+              <CustomSelect
+                value={targetProjectId}
+                onChange={(v) => setTargetProjectId(v)}
+                options={projects.map((p) => ({
+                  value: p.id,
+                  label: p.name,
+                }))}
+                size="md"
+              />
             </div>
 
             {/* 구분선 */}

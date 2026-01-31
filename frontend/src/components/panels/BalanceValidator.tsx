@@ -21,6 +21,7 @@ import { useTranslations } from 'next-intl';
 import { useEscapeKey } from '@/hooks';
 import { useProjectStore } from '@/stores/projectStore';
 import { Tooltip } from '@/components/ui/Tooltip';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 const PANEL_COLOR = '#3db88a'; // 소프트 그린
 
@@ -395,15 +396,16 @@ export default function BalanceValidator({ onClose, showHelp = false, setShowHel
                     onChange={(e) => updateUnit(index, 'name', e.target.value)}
                     className="glass-input flex-1 text-sm font-medium"
                   />
-                  <select
+                  <CustomSelect
                     value={unit.role}
-                    onChange={(e) => updateUnit(index, 'role', e.target.value)}
-                    className="glass-select !py-2 text-sm"
-                  >
-                    {Object.entries(ROLE_EXPECTATIONS).map(([key]) => (
-                      <option key={key} value={key}>{t(`roles.${key}`)}</option>
-                    ))}
-                  </select>
+                    onChange={(v) => updateUnit(index, 'role', v)}
+                    options={Object.entries(ROLE_EXPECTATIONS).map(([key]) => ({
+                      value: key,
+                      label: t(`roles.${key}`),
+                    }))}
+                    color={PANEL_COLOR}
+                    size="sm"
+                  />
                   <div
                     className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0"
                     style={{ background: `${role.color}20` }}
@@ -507,25 +509,23 @@ export default function BalanceValidator({ onClose, showHelp = false, setShowHel
               </h4>
             </div>
             <div className="flex items-center gap-2 mb-3">
-              <select
-                value={selectedUnits[0]}
-                onChange={(e) => setSelectedUnits([Number(e.target.value), selectedUnits[1]])}
-                className="glass-select flex-1 text-sm"
-              >
-                {units.map((u, i) => (
-                  <option key={i} value={i}>{u.name}</option>
-                ))}
-              </select>
+              <CustomSelect
+                value={String(selectedUnits[0])}
+                onChange={(v) => setSelectedUnits([Number(v), selectedUnits[1]])}
+                options={units.map((u, i) => ({ value: String(i), label: u.name }))}
+                color={PANEL_COLOR}
+                size="sm"
+                className="flex-1"
+              />
               <span className="text-sm font-bold px-2" style={{ color: 'var(--text-secondary)' }}>VS</span>
-              <select
-                value={selectedUnits[1]}
-                onChange={(e) => setSelectedUnits([selectedUnits[0], Number(e.target.value)])}
-                className="glass-select flex-1 text-sm"
-              >
-                {units.map((u, i) => (
-                  <option key={i} value={i}>{u.name}</option>
-                ))}
-              </select>
+              <CustomSelect
+                value={String(selectedUnits[1])}
+                onChange={(v) => setSelectedUnits([selectedUnits[0], Number(v)])}
+                options={units.map((u, i) => ({ value: String(i), label: u.name }))}
+                color={PANEL_COLOR}
+                size="sm"
+                className="flex-1"
+              />
               <button
                 onClick={runSimulation}
                 disabled={selectedUnits[0] === selectedUnits[1]}

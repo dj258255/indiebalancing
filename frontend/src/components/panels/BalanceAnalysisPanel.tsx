@@ -3,6 +3,7 @@
 import { GitBranch, TrendingUp, BarChart2, AlertTriangle, Target, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
+import SheetSelector from './SheetSelector';
 
 // 커스텀 스크롤바 스타일
 const customScrollStyle = `
@@ -71,6 +72,8 @@ export default function BalanceAnalysisPanel({
     currentSheet,
     columnMapping,
     setColumnMapping,
+    selectedSheetId,
+    setSelectedSheetId,
     runMatchupAnalysis,
     runPowerAnalysis,
     runCorrelationAnalysis,
@@ -97,6 +100,16 @@ export default function BalanceAnalysisPanel({
           onClose={() => setShowMatrixModal(false)}
         />
       )}
+
+      {/* 시트 선택 */}
+      <div className="px-3 pt-3">
+        <SheetSelector
+          selectedSheetId={selectedSheetId}
+          onSheetChange={setSelectedSheetId}
+          label="분석할 시트"
+          color="#7c7ff2"
+        />
+      </div>
 
       {/* 분석 유형 선택 드롭다운 */}
       <div className="flex items-center gap-2 px-3 py-2 border-b" style={{ borderColor: 'var(--border-primary)' }}>

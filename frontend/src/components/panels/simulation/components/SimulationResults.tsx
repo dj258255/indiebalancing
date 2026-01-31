@@ -10,6 +10,7 @@ import { Histogram } from './Histogram';
 import { HpTimelineGraph } from './HpTimelineGraph';
 import { ConfidenceBar } from './ConfidenceBar';
 import { useTranslations } from 'next-intl';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 interface SimulationResultsProps {
   result: SimulationResult;
@@ -288,20 +289,15 @@ export function SimulationResults({
               <Clock className="w-4 h-4" style={{ color: 'var(--accent)' }} />
               <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t('sampleBattleLog')}</span>
             </div>
-            <select
-              value={selectedBattleIndex}
-              onChange={(e) => setSelectedBattleIndex(Number(e.target.value))}
-              className="px-2 py-1 rounded text-sm"
-              style={{
-                background: 'var(--bg-primary)',
-                border: '1px solid var(--border-primary)',
-                color: 'var(--text-primary)'
-              }}
-            >
-              {result.sampleBattles.map((_, i) => (
-                <option key={i} value={i}>{t('battle')} #{i + 1}</option>
-              ))}
-            </select>
+            <CustomSelect
+              value={String(selectedBattleIndex)}
+              onChange={(v) => setSelectedBattleIndex(Number(v))}
+              options={result.sampleBattles.map((_, i) => ({
+                value: String(i),
+                label: `${t('battle')} #${i + 1}`
+              }))}
+              size="sm"
+            />
           </div>
 
           {/* HP 타임라인 그래프 */}

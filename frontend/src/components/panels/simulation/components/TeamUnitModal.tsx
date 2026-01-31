@@ -8,6 +8,7 @@ import type { UnitStats, Skill } from '@/lib/simulation/types';
 import { SkillEditor } from './SkillEditor';
 import { useProjectStore } from '@/stores/projectStore';
 import { Tooltip } from '@/components/ui/Tooltip';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 // 셀 선택 가능한 스탯 입력 필드
 function StatField({
@@ -219,9 +220,10 @@ export function TeamUnitModal({
           {units.length > 0 && (
             <div>
               <label className="block text-sm mb-2" style={{ color: 'var(--text-secondary)' }}>{t('loadFromSheet')}</label>
-              <select
-                onChange={(e) => {
-                  const selected = units.find(u => u.id === e.target.value);
+              <CustomSelect
+                value=""
+                onChange={(v) => {
+                  const selected = units.find(u => u.id === v);
                   if (selected) {
                     setEditUnit({
                       ...selected,
@@ -230,15 +232,14 @@ export function TeamUnitModal({
                     });
                   }
                 }}
-                className="w-full px-3 py-2 rounded-lg text-sm"
-                style={{ background: 'var(--bg-tertiary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                defaultValue=""
-              >
-                <option value="" disabled>{t('select')}</option>
-                {units.map(u => (
-                  <option key={u.id} value={u.id}>{u.name} (HP:{u.maxHp} ATK:{u.atk})</option>
-                ))}
-              </select>
+                placeholder={t('select')}
+                options={units.map(u => ({
+                  value: u.id,
+                  label: `${u.name} (HP:${u.maxHp} ATK:${u.atk})`
+                }))}
+                color={color}
+                size="md"
+              />
             </div>
           )}
 

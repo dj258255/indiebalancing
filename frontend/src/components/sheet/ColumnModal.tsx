@@ -5,6 +5,7 @@ import { X, Check, HelpCircle, Lock, Globe } from 'lucide-react';
 import { useTranslations } from 'next-intl';
 import { useEscapeKey } from '@/hooks';
 import FormulaAutocomplete from './FormulaAutocomplete';
+import CustomSelect from '@/components/ui/CustomSelect';
 import type { Column, ColumnType, DataType, ValidationConfig, Sheet } from '@/types';
 
 interface ColumnModalProps {
@@ -286,21 +287,17 @@ export default function ColumnModal({
                 <label className="block text-xs font-medium mb-1" style={{ color: 'var(--text-tertiary)' }}>
                   {t('column.dataType')}
                 </label>
-                <select
+                <CustomSelect
                   value={dataType}
-                  onChange={(e) => setDataType(e.target.value as DataType)}
-                  className="w-full px-2 py-1.5 text-sm border rounded"
-                  style={{
-                    background: 'var(--bg-primary)',
-                    borderColor: 'var(--border-primary)',
-                    color: 'var(--text-primary)'
-                  }}
-                >
-                  <option value="any">{t('column.dataTypeAuto')}</option>
-                  <option value="number">{t('column.dataTypeNumber')}</option>
-                  <option value="integer">{t('column.dataTypeInteger')}</option>
-                  <option value="text">{t('column.dataTypeText')}</option>
-                </select>
+                  onChange={(v) => setDataType(v as DataType)}
+                  options={[
+                    { value: 'any', label: t('column.dataTypeAuto') },
+                    { value: 'number', label: t('column.dataTypeNumber') },
+                    { value: 'integer', label: t('column.dataTypeInteger') },
+                    { value: 'text', label: t('column.dataTypeText') },
+                  ]}
+                  size="sm"
+                />
               </div>
 
               {(dataType === 'number' || dataType === 'integer' || dataType === 'any') && (

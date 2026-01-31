@@ -4,7 +4,7 @@
 
 'use client';
 
-import { TrendingUp, X, ZoomIn, ZoomOut, RotateCcw, Move } from 'lucide-react';
+import { TrendingUp, X, ZoomIn, ZoomOut, RotateCcw, Move, Coffee, Activity } from 'lucide-react';
 import {
   LineChart,
   Line,
@@ -14,12 +14,20 @@ import {
   Tooltip,
   ResponsiveContainer,
   ReferenceLine,
+  ReferenceArea,
   Legend,
 } from 'recharts';
 import { useTranslations } from 'next-intl';
-import type { DifficultySegment, MilestoneData } from '../hooks';
+import type { DifficultySegment, MilestoneData, RestPoint, FlowZone } from '../hooks';
 
 const PANEL_COLOR = '#9179f2';
+
+// 플로우 존 색상
+const FLOW_ZONE_COLORS: Record<FlowZone, string> = {
+  boredom: '#3db88a',
+  flow: '#5a9cf5',
+  anxiety: '#e86161',
+};
 
 interface FullscreenChartProps {
   curveData: DifficultySegment[];
@@ -37,6 +45,16 @@ interface FullscreenChartProps {
   onPanEnd: () => void;
   onWheel: (e: React.WheelEvent) => void;
   onClose: () => void;
+  showFlowZones?: boolean;
+  restPoints?: RestPoint[];
+  flowZoneStats?: {
+    boredom: number;
+    flow: number;
+    anxiety: number;
+    boredomPercent: number;
+    flowPercent: number;
+    anxietyPercent: number;
+  };
 }
 
 export function FullscreenChart({
@@ -55,8 +73,14 @@ export function FullscreenChart({
   onPanEnd,
   onWheel,
   onClose,
+  showFlowZones = true,
+  restPoints = [],
+  flowZoneStats,
 }: FullscreenChartProps) {
   const t = useTranslations('difficultyCurve');
+
+  // 플로우 존 구간 계산
+  const flowZoneAreas = showFlowZones ? calculateFlowZoneAreas(curveData) : [];
 
   const handleClose = () => {
     onResetView();
@@ -156,6 +180,28 @@ export function FullscreenChart({
                 margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
               >
                 <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
+
+                {/* 플로우 존 배경 영역 */}
+                {flowZoneAreas.map((area, idx) => (
+                  <ReferenceArea
+                    key={`flow-${idx}`}
+                    x1={area.start}
+                    x2={area.end}
+                    fill={FLOW_ZONE_COLORS[area.zone]}
+                    fillOpacity={0.1}
+                  />
+                ))}
+
+                {/* 휴식 포인트 영역 */}
+                {restPoints.map((rp) => (
+                  <ReferenceArea
+                    key={`rest-${rp.stage}`}
+                    x1={rp.stage}
+                    x2={rp.stage + rp.duration}
+                    fill="#e5a440"
+                    fillOpacity={0.2}
+                  />
+                ))}
                 <XAxis
                   dataKey="stage"
                   tick={{ fontSize: 12, fill: 'var(--text-secondary)' }}
@@ -202,9 +248,25 @@ export function FullscreenChart({
                           </div>
                         ))}
                         {segment && (
-                          <div style={{ fontSize: 11, color: ratio >= 1 ? '#3db88a' : '#e86161', marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--border-primary)' }}>
-                            {t('player')}/{t('enemy')}: {ratio.toFixed(2)}x
-                          </div>
+                          <>
+                            <div style={{ fontSize: 11, color: ratio >= 1 ? '#3db88a' : '#e86161', marginTop: 6, paddingTop: 6, borderTop: '1px solid var(--border-primary)' }}>
+                              {t('player')}/{t('enemy')}: {ratio.toFixed(2)}x
+                            </div>
+                            <div style={{ fontSize: 10, color: FLOW_ZONE_COLORS[segment.flowZone], marginTop: 4 }}>
+                              {segment.flowZone === 'boredom' ? t('boredom') :
+                               segment.flowZone === 'flow' ? t('flow') : t('anxiety')}
+                              {segment.isRestPoint && (
+                                <span style={{ marginLeft: 6, color: '#e5a440' }}>
+                                  ☕ {t('restPoint')}
+                                </span>
+                              )}
+                            </div>
+                            {segment.ddaAdjustment !== 0 && (
+                              <div style={{ fontSize: 10, color: segment.ddaAdjustment > 0 ? '#3db88a' : '#e86161', marginTop: 2 }}>
+                                DDA: {segment.ddaAdjustment > 0 ? '+' : ''}{Math.round(segment.ddaAdjustment * 100)}%
+                              </div>
+                            )}
+                          </>
                         )}
                       </div>
                     );
@@ -263,21 +325,87 @@ export function FullscreenChart({
           </div>
         </div>
 
-        {/* 모달 푸터 - 조작 안내 */}
+        {/* 모달 푸터 - 조작 안내 + 플로우 존 통계 */}
         <div
-          className="px-5 py-3 border-t flex items-center justify-center gap-6 text-sm shrink-0"
+          className="px-5 py-3 border-t flex items-center justify-between text-sm shrink-0"
           style={{ borderColor: 'var(--border-primary)', background: 'var(--bg-secondary)', color: 'var(--text-secondary)' }}
         >
-          <div className="flex items-center gap-1.5">
-            <Move className="w-3.5 h-3.5" />
-            <span>{t('dragToMove')}</span>
-          </div>
-          <div className="flex items-center gap-1.5">
-            <ZoomIn className="w-3.5 h-3.5" />
-            <span>{t('scrollToZoom')}</span>
+          {/* 플로우 존 통계 */}
+          {flowZoneStats && (
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1.5">
+                <Activity className="w-3.5 h-3.5" style={{ color: '#5a9cf5' }} />
+                <span>{t('flowZone')}:</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full" style={{ background: FLOW_ZONE_COLORS.boredom }} />
+                <span>{flowZoneStats.boredomPercent}%</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full" style={{ background: FLOW_ZONE_COLORS.flow }} />
+                <span>{flowZoneStats.flowPercent}%</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full" style={{ background: FLOW_ZONE_COLORS.anxiety }} />
+                <span>{flowZoneStats.anxietyPercent}%</span>
+              </div>
+              {restPoints.length > 0 && (
+                <div className="flex items-center gap-1">
+                  <Coffee className="w-3 h-3" style={{ color: '#e5a440' }} />
+                  <span>{restPoints.length}</span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* 조작 안내 */}
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-1.5">
+              <Move className="w-3.5 h-3.5" />
+              <span>{t('dragToMove')}</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <ZoomIn className="w-3.5 h-3.5" />
+              <span>{t('scrollToZoom')}</span>
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
+}
+
+// 플로우 존 연속 구간 계산 헬퍼
+function calculateFlowZoneAreas(curveData: DifficultySegment[]): Array<{
+  start: number;
+  end: number;
+  zone: FlowZone;
+}> {
+  if (curveData.length === 0) return [];
+
+  const areas: Array<{ start: number; end: number; zone: FlowZone }> = [];
+  let currentZone = curveData[0].flowZone;
+  let startStage = curveData[0].stage;
+
+  for (let i = 1; i < curveData.length; i++) {
+    const segment = curveData[i];
+    if (segment.flowZone !== currentZone) {
+      areas.push({
+        start: startStage,
+        end: curveData[i - 1].stage,
+        zone: currentZone,
+      });
+      currentZone = segment.flowZone;
+      startStage = segment.stage;
+    }
+  }
+
+  // 마지막 구간 추가
+  areas.push({
+    start: startStage,
+    end: curveData[curveData.length - 1].stage,
+    zone: currentZone,
+  });
+
+  return areas;
 }

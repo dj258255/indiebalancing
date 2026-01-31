@@ -7,6 +7,7 @@ import { compareSheets, createSnapshot, getChangeColor, formatDiff, type Compari
 import type { Sheet } from '@/types';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useTranslations } from 'next-intl';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 interface PresetComparisonModalProps {
   onClose: () => void;
@@ -193,23 +194,18 @@ export default function PresetComparisonModal({ onClose, isPanel = false, showHe
                 {t('before')}
               </label>
               <div className="flex gap-2">
-                <select
-                  value={oldSheetId}
-                  onChange={(e) => setOldSheetId(e.target.value)}
-                  className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm truncate"
-                  style={{
-                    background: 'var(--bg-tertiary)',
-                    border: '1px solid var(--border-primary)',
-                    color: 'var(--text-primary)'
-                  }}
-                >
-                  <option value="">{t('select')}</option>
-                  {sources.map(s => (
-                    <option key={s.id} value={s.id}>
-                      [{s.type === 'snapshot' ? t('snapshot') : t('sheet')}] {s.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex-1 min-w-0">
+                  <CustomSelect
+                    value={oldSheetId}
+                    onChange={(v) => setOldSheetId(v)}
+                    placeholder={t('select')}
+                    options={sources.map(s => ({
+                      value: s.id,
+                      label: `[${s.type === 'snapshot' ? t('snapshot') : t('sheet')}] ${s.name}`,
+                    }))}
+                    size="md"
+                  />
+                </div>
                 {oldSheetId && sources.find(s => s.id === oldSheetId)?.type === 'sheet' && (
                   <button
                     onClick={() => handleCreateSnapshot(oldSheetId)}
@@ -234,23 +230,18 @@ export default function PresetComparisonModal({ onClose, isPanel = false, showHe
                 {t('after')}
               </label>
               <div className="flex gap-2">
-                <select
-                  value={newSheetId}
-                  onChange={(e) => setNewSheetId(e.target.value)}
-                  className="flex-1 min-w-0 px-3 py-2 rounded-lg text-sm truncate"
-                  style={{
-                    background: 'var(--bg-tertiary)',
-                    border: '1px solid var(--border-primary)',
-                    color: 'var(--text-primary)'
-                  }}
-                >
-                  <option value="">{t('select')}</option>
-                  {sources.map(s => (
-                    <option key={s.id} value={s.id}>
-                      [{s.type === 'snapshot' ? t('snapshot') : t('sheet')}] {s.name}
-                    </option>
-                  ))}
-                </select>
+                <div className="flex-1 min-w-0">
+                  <CustomSelect
+                    value={newSheetId}
+                    onChange={(v) => setNewSheetId(v)}
+                    placeholder={t('select')}
+                    options={sources.map(s => ({
+                      value: s.id,
+                      label: `[${s.type === 'snapshot' ? t('snapshot') : t('sheet')}] ${s.name}`,
+                    }))}
+                    size="md"
+                  />
+                </div>
                 {newSheetId && sources.find(s => s.id === newSheetId)?.type === 'sheet' && (
                   <button
                     onClick={() => handleCreateSnapshot(newSheetId)}

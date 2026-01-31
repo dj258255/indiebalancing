@@ -14,12 +14,15 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
+  Cell,
 } from 'recharts';
 import { X, Trash2, Download, Check, HelpCircle, ChevronDown, ChevronUp, BarChart3, PieChart, TrendingUp } from 'lucide-react';
 import { useProjectStore } from '@/stores/projectStore';
 import { cn } from '@/lib/utils';
 import { useTranslations } from 'next-intl';
 import { useEscapeKey } from '@/hooks';
+import SheetSelector from './SheetSelector';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 interface ComparisonChartProps {
   onClose: () => void;
@@ -49,50 +52,54 @@ const COLORS = [
 const PANEL_COLOR = '#7c7ff2'; // 소프트 인디고
 
 export default function ComparisonChart({ onClose, isPanel = false, showHelp = false, setShowHelp }: ComparisonChartProps) {
-  const { getCurrentProject, getCurrentSheet, selectedRows, clearSelectedRows, deselectRow } = useProjectStore();
-  const currentProject = getCurrentProject();
-  const currentSheet = getCurrentSheet();
+  const { projects, currentProjectId, currentSheetId, selectedRows, clearSelectedRows, deselectRow } = useProjectStore();
+  const currentProject = projects.find(p => p.id === currentProjectId);
   const t = useTranslations('comparisonChart');
   useEscapeKey(onClose);
+
+  // 선택된 시트 (기본값: 현재 시트)
+  const [selectedSheetId, setSelectedSheetId] = useState<string>(currentSheetId || '');
+  const selectedSheet = currentProject?.sheets.find(s => s.id === selectedSheetId);
 
   const [activeTab, setActiveTab] = useState<'radar' | 'bar' | 'histogram'>('radar');
   const [items, setItems] = useState<ComparisonItem[]>([]);
   const [selectedColumns, setSelectedColumns] = useState<string[]>([]);
+  const [hoveredBar, setHoveredBar] = useState<{ stat: string; name: string; value: number; color: string } | null>(null);
 
   // 숫자 컬럼만 필터링
   const numericColumns = useMemo(() => {
-    if (!currentSheet) return [];
-    return currentSheet.columns.filter(
+    if (!selectedSheet) return [];
+    return selectedSheet.columns.filter(
       (col) => col.type === 'general' || col.type === 'formula'
     );
-  }, [currentSheet]);
+  }, [selectedSheet]);
 
   // 행 데이터
   const availableRows = useMemo(() => {
-    if (!currentSheet) return [];
-    return currentSheet.rows.map((row, index) => {
+    if (!selectedSheet) return [];
+    return selectedSheet.rows.map((row, index) => {
       const namePatterns = ['이름', 'name', 'Name', '캐릭터', '캐릭터명', '유닛', '아이템', '무기', '스킬'];
       const idPatterns = ['ID', 'id', 'Id'];
 
-      let nameCol = currentSheet.columns.find((c) => namePatterns.includes(c.name));
+      let nameCol = selectedSheet.columns.find((c) => namePatterns.includes(c.name));
       if (!nameCol) {
-        nameCol = currentSheet.columns.find((c) => c.type === 'general');
+        nameCol = selectedSheet.columns.find((c) => c.type === 'general');
       }
 
-      const idCol = currentSheet.columns.find((c) => idPatterns.includes(c.name));
+      const idCol = selectedSheet.columns.find((c) => idPatterns.includes(c.name));
 
       let name = '';
       if (nameCol && row.cells[nameCol.id]) {
-        name = `${currentSheet.name} - ${index + 1}행 (${row.cells[nameCol.id]})`;
+        name = `${selectedSheet.name} - ${index + 1}행 (${row.cells[nameCol.id]})`;
       } else if (idCol && row.cells[idCol.id]) {
-        name = `${currentSheet.name} - ${index + 1}행 (${row.cells[idCol.id]})`;
+        name = `${selectedSheet.name} - ${index + 1}행 (${row.cells[idCol.id]})`;
       } else {
-        name = `${currentSheet.name} - ${index + 1}행`;
+        name = `${selectedSheet.name} - ${index + 1}행`;
       }
 
       return { id: row.id, name, cells: row.cells };
     });
-  }, [currentSheet]);
+  }, [selectedSheet]);
 
   // 아이템 추가/제거
   const addItem = (rowId: string) => {
@@ -167,12 +174,12 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
   // 히스토그램 데이터
   const [histogramColumn, setHistogramColumn] = useState<string>('');
   const histogramData = useMemo(() => {
-    if (!currentSheet || !histogramColumn) return [];
+    if (!selectedSheet || !histogramColumn) return [];
 
-    const col = currentSheet.columns.find((c) => c.name === histogramColumn);
+    const col = selectedSheet.columns.find((c) => c.name === histogramColumn);
     if (!col) return [];
 
-    const values = currentSheet.rows
+    const values = selectedSheet.rows
       .map((row) => row.cells[col.id])
       .filter((v): v is number => typeof v === 'number');
 
@@ -203,9 +210,9 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
     });
 
     return bins;
-  }, [currentSheet, histogramColumn]);
+  }, [selectedSheet, histogramColumn]);
 
-  const hasSheet = currentProject && currentSheet;
+  const hasSheet = currentProject && selectedSheet;
 
   const tabs = [
     { id: 'radar' as const, label: t('tabs.radar'), icon: PieChart, color: PANEL_COLOR },
@@ -256,7 +263,7 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
                 </h2>
                 {hasSheet && (
                   <p className="text-sm mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                    {t('visualizeData', { sheetName: currentSheet.name })}
+                    {t('visualizeData', { sheetName: selectedSheet.name })}
                   </p>
                 )}
               </div>
@@ -279,6 +286,20 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
             </div>
           </div>
         )}
+
+        {/* 시트 선택 */}
+        <div className="px-4 py-3 border-b" style={{ borderColor: 'var(--border-primary)' }}>
+          <SheetSelector
+            selectedSheetId={selectedSheetId}
+            onSheetChange={(sheetId) => {
+              setSelectedSheetId(sheetId);
+              setItems([]);
+              setSelectedColumns([]);
+            }}
+            label={t('selectSheet')}
+            color={PANEL_COLOR}
+          />
+        </div>
 
         {/* 모달 모드 도움말 */}
         {!isPanel && showHelp && (
@@ -355,8 +376,8 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
                             if (!isNaN(num)) values[key] = num;
                           }
                         });
-                        const rowIdx = currentSheet?.rows.findIndex(r => r.id === row.rowId) ?? -1;
-                        const itemName = `${currentSheet?.name || t('sheet')} - ${t('rowNum', { num: rowIdx + 1 })}`;
+                        const rowIdx = selectedSheet?.rows.findIndex(r => r.id === row.rowId) ?? -1;
+                        const itemName = `${selectedSheet?.name || t('sheet')} - ${t('rowNum', { num: rowIdx + 1 })}`;
                         setItems((prev) => [
                           ...prev,
                           {
@@ -392,8 +413,8 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
             <div className="flex flex-wrap gap-2">
               {selectedRows.map((row) => {
                 const isAdded = items.some((i) => i.id === row.rowId);
-                const rowIndex = currentSheet?.rows.findIndex(r => r.id === row.rowId) ?? -1;
-                const displayName = `${currentSheet?.name || t('sheet')} - ${t('rowNum', { num: rowIndex + 1 })}`;
+                const rowIndex = selectedSheet?.rows.findIndex(r => r.id === row.rowId) ?? -1;
+                const displayName = `${selectedSheet?.name || t('sheet')} - ${t('rowNum', { num: rowIndex + 1 })}`;
                 return (
                   <div
                     key={row.rowId}
@@ -487,20 +508,19 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
                 <div className="mb-4">
                   <div className="flex items-center gap-3 mb-2">
                     <h4 className="font-semibold text-sm" style={{ color: 'var(--text-secondary)' }}>{t('compareTarget')}</h4>
-                    <select
-                      onChange={(e) => addItem(e.target.value)}
+                    <CustomSelect
                       value=""
-                      className="glass-select text-sm flex-1 max-w-xs"
-                    >
-                      <option value="">{t('addTarget')}</option>
-                      {availableRows
-                        .filter((r) => !items.find((i) => i.id === r.id))
-                        .map((row) => (
-                          <option key={row.id} value={row.id}>
-                            {row.name}
-                          </option>
-                        ))}
-                    </select>
+                      onChange={(v) => v && addItem(v)}
+                      options={[
+                        { value: '', label: t('addTarget') },
+                        ...availableRows
+                          .filter((r) => !items.find((i) => i.id === r.id))
+                          .map((row) => ({ value: row.id, label: row.name }))
+                      ]}
+                      color={PANEL_COLOR}
+                      size="sm"
+                      className="flex-1 max-w-xs"
+                    />
                     {items.length > 0 && (
                       <span className="glass-badge text-sm px-2 py-1" style={{ color: 'var(--text-secondary)' }}>
                         {t('itemCount', { count: items.length })}
@@ -586,25 +606,23 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
                 <div className="flex items-center gap-4 flex-wrap">
                   <div className="flex items-center gap-2">
                     <h4 className="font-semibold text-sm" style={{ color: 'var(--text-secondary)' }}>{t('columnToAnalyze')}</h4>
-                    <select
+                    <CustomSelect
                       value={histogramColumn}
-                      onChange={(e) => setHistogramColumn(e.target.value)}
-                      className="glass-select text-sm"
-                    >
-                      <option value="">{t('select')}</option>
-                      {numericColumns.map((col) => (
-                        <option key={col.id} value={col.name}>
-                          {col.name}
-                        </option>
-                      ))}
-                    </select>
+                      onChange={setHistogramColumn}
+                      options={[
+                        { value: '', label: t('select') },
+                        ...numericColumns.map((col) => ({ value: col.name, label: col.name }))
+                      ]}
+                      color="#e5a440"
+                      size="sm"
+                    />
                   </div>
 
                   {histogramColumn && histogramData.length > 0 && (
                     <div className="flex items-center gap-4 text-sm">
                       <div className="flex items-center gap-1.5">
                         <span style={{ color: 'var(--text-secondary)' }}>{t('totalCount')}:</span>
-                        <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{currentSheet.rows.length}</span>
+                        <span className="font-bold" style={{ color: 'var(--text-primary)' }}>{selectedSheet.rows.length}</span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span style={{ color: 'var(--text-secondary)' }}>{t('minimum')}:</span>
@@ -679,18 +697,60 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
                       </div>
                     ) : (
                       <>
-                        <div className="flex-1" style={{ minHeight: 0 }}>
+                        <div className="flex-1 relative" style={{ minHeight: 0 }} onMouseLeave={() => setHoveredBar(null)}>
                           <ResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
                             <BarChart data={barData}>
                               <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
                               <XAxis dataKey="stat" tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
                               <YAxis tick={{ fontSize: 11, fill: 'var(--text-secondary)' }} />
-                              <Tooltip contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '12px' }} />
                               {items.map((item) => (
-                                <Bar key={item.id} dataKey={item.name} fill={item.color} radius={[4, 4, 0, 0]} />
+                                <Bar
+                                  key={item.id}
+                                  dataKey={item.name}
+                                  fill={item.color}
+                                  radius={[4, 4, 0, 0]}
+                                  onMouseEnter={(data) => {
+                                    if (data && data.payload) {
+                                      setHoveredBar({
+                                        stat: data.payload.stat,
+                                        name: item.name,
+                                        value: data.payload[item.name] as number,
+                                        color: item.color
+                                      });
+                                    }
+                                  }}
+                                  onMouseLeave={() => setHoveredBar(null)}
+                                >
+                                  {barData.map((entry, index) => (
+                                    <Cell
+                                      key={`cell-${index}`}
+                                      fillOpacity={hoveredBar ? (hoveredBar.name === item.name && hoveredBar.stat === entry.stat ? 1 : 0.4) : 1}
+                                      style={{ cursor: 'pointer', transition: 'fill-opacity 0.15s' }}
+                                    />
+                                  ))}
+                                </Bar>
                               ))}
                             </BarChart>
                           </ResponsiveContainer>
+                          {/* Custom Tooltip - 해당 막대만 표시 */}
+                          {hoveredBar && (
+                            <div
+                              className="absolute pointer-events-none z-10"
+                              style={{
+                                top: '50%',
+                                left: '50%',
+                                transform: 'translate(-50%, -100%)',
+                              }}
+                            >
+                              <div style={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '12px', padding: '8px 12px', boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+                                <p style={{ color: 'var(--text-secondary)', fontSize: '12px', marginBottom: '4px' }}>{hoveredBar.stat}</p>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <div style={{ width: '10px', height: '10px', borderRadius: '2px', background: hoveredBar.color }} />
+                                  <span style={{ color: 'var(--text-primary)', fontSize: '13px', fontWeight: 600 }}>{hoveredBar.name}: {hoveredBar.value.toLocaleString()}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                         {/* Legend */}
                         <div className="shrink-0 flex flex-wrap justify-center items-center gap-3 pt-3 border-t" style={{ borderColor: 'var(--border-primary)' }}>

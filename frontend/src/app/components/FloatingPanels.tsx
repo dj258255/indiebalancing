@@ -92,6 +92,8 @@ export default function FloatingPanels({
       background: 'var(--bg-primary)',
       border: '1px solid var(--border-primary)',
       boxShadow: '4px 4px 20px rgba(0,0,0,0.15)',
+      // 셀 선택 모드일 때는 클릭이 시트로 통과하도록
+      pointerEvents: cellSelectionMode.active ? 'none' as const : 'auto' as const,
     };
   };
 
@@ -119,11 +121,7 @@ export default function FloatingPanels({
       {panels.calculator.show && (
         <div
           className="fixed hidden md:flex flex-col rounded-xl overflow-hidden"
-          style={{
-            ...getPanelStyle('calculator'),
-            // 셀 선택 모드일 때는 클릭이 통과하도록
-            pointerEvents: cellSelectionMode.active ? 'none' : 'auto',
-          }}
+          style={getPanelStyle('calculator')}
           onMouseDown={() => bringToFront('calculator')}
         >
           <Calculator

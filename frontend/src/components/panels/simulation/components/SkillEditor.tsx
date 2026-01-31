@@ -5,6 +5,7 @@ import { useTranslations } from 'next-intl';
 import { Plus, Trash2, Zap, Heart, Shield, RotateCcw, Target, Users, Grid3X3 } from 'lucide-react';
 import type { Skill, SkillType } from '@/lib/simulation/types';
 import { useProjectStore } from '@/stores/projectStore';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 interface SkillEditorProps {
   skills: Skill[];
@@ -379,15 +380,15 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
                           <label className="text-sm font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>
                             {t('damageType')}
                           </label>
-                          <select
+                          <CustomSelect
                             value={skill.damageType}
-                            onChange={(e) => updateSkill(skill.id, { damageType: e.target.value as 'flat' | 'multiplier' })}
-                            className="w-full px-2 py-1.5 rounded text-sm"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                          >
-                            <option value="multiplier">{t('atkMultiplier')}</option>
-                            <option value="flat">{t('flatDamage')}</option>
-                          </select>
+                            onChange={(v) => updateSkill(skill.id, { damageType: v as 'flat' | 'multiplier' })}
+                            options={[
+                              { value: 'multiplier', label: t('atkMultiplier') },
+                              { value: 'flat', label: t('flatDamage') },
+                            ]}
+                            size="sm"
+                          />
                         </div>
                         <NumberInputWithCell
                           label={skill.damageType === 'multiplier' ? t('multiplier') : t('damage')}
@@ -405,15 +406,15 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
                           <label className="text-sm font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>
                             {t('healType')}
                           </label>
-                          <select
+                          <CustomSelect
                             value={skill.healType || 'percent'}
-                            onChange={(e) => updateSkill(skill.id, { healType: e.target.value as 'flat' | 'percent' })}
-                            className="w-full px-2 py-1.5 rounded text-sm"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                          >
-                            <option value="percent">{t('percentHeal')}</option>
-                            <option value="flat">{t('flatHeal')}</option>
-                          </select>
+                            onChange={(v) => updateSkill(skill.id, { healType: v as 'flat' | 'percent' })}
+                            options={[
+                              { value: 'percent', label: t('percentHeal') },
+                              { value: 'flat', label: t('flatHeal') },
+                            ]}
+                            size="sm"
+                          />
                         </div>
                         <NumberInputWithCell
                           label={skill.healType === 'percent' ? t('healPercent') : t('healAmount')}
@@ -467,15 +468,15 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
                             {t('reviveTarget')}
                           </label>
                           {isTeamBattle ? (
-                            <select
+                            <CustomSelect
                               value={skill.reviveTarget || 'ally'}
-                              onChange={(e) => updateSkill(skill.id, { reviveTarget: e.target.value as 'self' | 'ally' })}
-                              className="w-full px-2 py-1.5 rounded text-sm"
-                              style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                            >
-                              <option value="self">{t('reviveTargetSelf')}</option>
-                              <option value="ally">{t('reviveTargetAlly')}</option>
-                            </select>
+                              onChange={(v) => updateSkill(skill.id, { reviveTarget: v as 'self' | 'ally' })}
+                              options={[
+                                { value: 'self', label: t('reviveTargetSelf') },
+                                { value: 'ally', label: t('reviveTargetAlly') },
+                              ]}
+                              size="sm"
+                            />
                           ) : (
                             <div
                               className="w-full px-2 py-1.5 rounded text-sm"
@@ -511,17 +512,17 @@ export function SkillEditor({ skills, onSkillsChange, color = 'var(--primary-blu
                           <label className="text-sm font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>
                             {t('aoeTargetMode')}
                           </label>
-                          <select
+                          <CustomSelect
                             value={skill.aoeTargetMode || 'all'}
-                            onChange={(e) => updateSkill(skill.id, { aoeTargetMode: e.target.value as Skill['aoeTargetMode'] })}
-                            className="w-full px-2 py-1.5 rounded text-sm"
-                            style={{ background: 'var(--bg-secondary)', border: '1px solid var(--border-primary)', color: 'var(--text-primary)' }}
-                          >
-                            <option value="all">{t('targetAll')}</option>
-                            <option value="random">{t('targetRandom')}</option>
-                            <option value="lowest_hp">{t('targetLowestHp')}</option>
-                            <option value="highest_hp">{t('targetHighestHp')}</option>
-                          </select>
+                            onChange={(v) => updateSkill(skill.id, { aoeTargetMode: v as Skill['aoeTargetMode'] })}
+                            options={[
+                              { value: 'all', label: t('targetAll') },
+                              { value: 'random', label: t('targetRandom') },
+                              { value: 'lowest_hp', label: t('targetLowestHp') },
+                              { value: 'highest_hp', label: t('targetHighestHp') },
+                            ]}
+                            size="sm"
+                          />
                         </div>
                       </div>
                     )}

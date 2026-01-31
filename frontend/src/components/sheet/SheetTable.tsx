@@ -81,6 +81,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     updateRow,
     cellSelectionMode,
     cancelCellSelection,
+    completeCellSelection,
     projects,
   } = useProjectStore();
 
@@ -449,6 +450,19 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
       // 컨테이너의 clearSelection이 호출되지 않도록 버블링 중단
       e.stopPropagation();
 
+      // 셀 선택 모드가 활성화된 경우: 셀 값을 콜백으로 전달
+      if (cellSelectionMode.active) {
+        const ri = sheet.rows.findIndex((r) => r.id === rowId);
+        if (ri !== -1) {
+          // 수식 컬럼의 경우 계산된 값 사용
+          const computedValue = computedRows[ri]?.[columnId];
+          const rawValue = computedValue ?? sheet.rows[ri]?.cells[columnId];
+          const numValue = typeof rawValue === 'number' ? rawValue : parseFloat(String(rawValue || 0));
+          completeCellSelection(isNaN(numValue) ? 0 : numValue, rowId, columnId);
+        }
+        return;
+      }
+
       // 터치가 아닌 경우 Ctrl/Meta/Shift 키 처리
       if (e.pointerType !== 'touch') {
         if (e.ctrlKey || e.metaKey || e.shiftKey) return;
@@ -493,6 +507,9 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
       selectCellByIndex,
       clearSelection,
       setFormulaBarValue,
+      cellSelectionMode,
+      completeCellSelection,
+      computedRows,
     ]
   );
 

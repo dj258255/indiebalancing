@@ -8,6 +8,7 @@ import { X, TrendingUp, GitBranch, AlertTriangle, Maximize2 } from 'lucide-react
 import type { PerfectImbalanceResult } from '@/lib/balanceAnalysis';
 import type { Column } from '@/types';
 import { ColumnMappingConfig, type ColumnMapping } from './ColumnMappingConfig';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 const PANEL_COLOR = '#7c7ff2';
 
@@ -75,18 +76,20 @@ export function MatchupAnalysis({
 
       <div className="flex items-end gap-3">
         <div className="flex-1">
-          <label className="text-sm" style={{ color: 'var(--text-secondary)' }}>
+          <label className="text-sm mb-1 block" style={{ color: 'var(--text-secondary)' }}>
             매치당 시뮬레이션 횟수
           </label>
-          <select
-            value={runsPerMatch}
-            onChange={(e) => setRunsPerMatch(Number(e.target.value))}
-            className="glass-select w-full mt-1 px-2 py-1.5 rounded text-sm"
-          >
-            <option value={20}>20회 (빠름)</option>
-            <option value={50}>50회 (균형)</option>
-            <option value={100}>100회 (정확)</option>
-          </select>
+          <CustomSelect
+            value={String(runsPerMatch)}
+            onChange={(v) => setRunsPerMatch(Number(v))}
+            options={[
+              { value: '20', label: '20회 (빠름)' },
+              { value: '50', label: '50회 (균형)' },
+              { value: '100', label: '100회 (정확)' },
+            ]}
+            color={PANEL_COLOR}
+            size="sm"
+          />
         </div>
         <button
           onClick={onRunAnalysis}

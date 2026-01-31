@@ -6,6 +6,7 @@ import { Trash2, MousePointer, PenTool, Copy, Check, Download, RotateCcw, Trendi
 import { useTheme } from '@/contexts/ThemeContext';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import CustomSelect from '@/components/ui/CustomSelect';
 import { oneDark, oneLight } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import { useEscapeKey } from '@/hooks';
 import { cn } from '@/lib/utils';
@@ -627,15 +628,17 @@ export default function CurveFittingPanel({ onClose, showHelp, setShowHelp }: Cu
             <div className="flex items-center justify-between">
               <h4 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('formulaCode')}</h4>
               <div className="flex items-center gap-2">
-                <select
+                <CustomSelect
                   value={codeLanguage}
-                  onChange={(e) => setCodeLanguage(e.target.value as CodeLanguage)}
-                  className="glass-select text-sm"
-                >
-                  <option value="typescript">TypeScript</option>
-                  <option value="csharp">C#</option>
-                  <option value="python">Python</option>
-                </select>
+                  onChange={(v) => setCodeLanguage(v as CodeLanguage)}
+                  options={[
+                    { value: 'typescript', label: 'TypeScript' },
+                    { value: 'csharp', label: 'C#' },
+                    { value: 'python', label: 'Python' },
+                  ]}
+                  color={PANEL_COLOR}
+                  size="sm"
+                />
                 <button
                   className="glass-button-primary !px-3 !py-1.5 text-sm flex items-center gap-1.5"
                   onClick={handleCopyCode}

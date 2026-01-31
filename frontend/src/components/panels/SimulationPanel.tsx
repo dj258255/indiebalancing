@@ -4,6 +4,7 @@ import { Play, RefreshCw, User, Grid3X3, Swords } from 'lucide-react';
 import { useProjectStore } from '@/stores/projectStore';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useTranslations } from 'next-intl';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 // 분리된 훅과 컴포넌트들
 import { useSimulationState } from './simulation/hooks';
@@ -284,23 +285,19 @@ function OneVsOneMode({ state, actions, startCellSelection, t }: OneVsOneModePro
             </>
           )}
         </button>
-        <select
-          value={state.runs}
-          onChange={(e) => state.setRuns(Number(e.target.value))}
+        <CustomSelect
+          value={String(state.runs)}
+          onChange={(v) => state.setRuns(Number(v))}
           disabled={state.isRunning}
-          className="px-3 py-2.5 rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
-          style={{
-            background: 'var(--bg-tertiary)',
-            border: '1px solid var(--border-primary)',
-            color: 'var(--text-primary)'
-          }}
-        >
-          <option value={1000}>1K</option>
-          <option value={5000}>5K</option>
-          <option value={10000}>10K</option>
-          <option value={50000}>50K</option>
-          <option value={100000}>100K</option>
-        </select>
+          options={[
+            { value: '1000', label: '1K' },
+            { value: '5000', label: '5K' },
+            { value: '10000', label: '10K' },
+            { value: '50000', label: '50K' },
+            { value: '100000', label: '100K' },
+          ]}
+          size="sm"
+        />
       </div>
 
       {/* 진행률 바 */}

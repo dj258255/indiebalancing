@@ -6,9 +6,10 @@ import {
   Coins, Plus, Trash2, TrendingUp, TrendingDown,
   AlertTriangle, CheckCircle, RefreshCw, Download,
   ArrowUpCircle, ArrowDownCircle, Info,
-  Maximize2, X, Grid3X3
+  Maximize2, X, Grid3X3, Users, User, Layers
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import CustomSelect from '@/components/ui/CustomSelect';
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer
@@ -16,12 +17,19 @@ import {
 import {
   simulateEconomy,
   calculateBalanceSuggestions,
+  simulateSinglePlayerEconomy,
   DEFAULT_FAUCETS,
   DEFAULT_SINKS,
   DEFAULT_CONFIG,
+  DEFAULT_SINGLE_SOURCES,
+  DEFAULT_SINGLE_SINKS,
+  DEFAULT_SINGLE_CONFIG,
   type Faucet,
   type Sink,
-  type EconomyConfig
+  type EconomyConfig,
+  type SinglePlayerSource,
+  type SinglePlayerSink,
+  type SinglePlayerConfig
 } from '@/lib/economySimulator';
 import { useProjectStore } from '@/stores/projectStore';
 import { Tooltip as TooltipUI } from '@/components/ui/Tooltip';
@@ -41,15 +49,33 @@ export default function EconomyPanel({ showHelp, setShowHelp, onClose }: Economy
     if (onClose) onClose();
   });
 
+  // 게임 모드 (online/single)
+  const [gameMode, setGameMode] = useState<'online' | 'single'>('online');
+
+  // 온라인 게임 상태
   const [faucets, setFaucets] = useState<Faucet[]>(DEFAULT_FAUCETS);
   const [sinks, setSinks] = useState<Sink[]>(DEFAULT_SINKS);
   const [config, setConfig] = useState<EconomyConfig>(DEFAULT_CONFIG);
   const [activeTab, setActiveTab] = useState<'faucets' | 'sinks' | 'config'>('faucets');
   const [fullscreenChart, setFullscreenChart] = useState(false);
 
+  // 싱글 게임 상태
+  const [singleSources, setSingleSources] = useState<SinglePlayerSource[]>(DEFAULT_SINGLE_SOURCES);
+  const [singleSinks, setSingleSinks] = useState<SinglePlayerSink[]>(DEFAULT_SINGLE_SINKS);
+  const [singleConfig, setSingleConfig] = useState<SinglePlayerConfig>(DEFAULT_SINGLE_CONFIG);
+  const [singleActiveTab, setSingleActiveTab] = useState<'sources' | 'sinks' | 'config'>('sources');
+
+  // 온라인 게임 결과
   const result = useMemo(() => simulateEconomy(faucets, sinks, config), [faucets, sinks, config]);
   const suggestions = useMemo(() => calculateBalanceSuggestions(faucets, sinks, config), [faucets, sinks, config]);
 
+  // 싱글 게임 결과
+  const singleResult = useMemo(
+    () => simulateSinglePlayerEconomy(singleSources, singleSinks, singleConfig),
+    [singleSources, singleSinks, singleConfig]
+  );
+
+  // 온라인 게임 함수들
   const addFaucet = () => {
     setFaucets([...faucets, { id: `faucet_${Date.now()}`, name: t('newFaucet'), ratePerHour: 100, playerPercentage: 0.5 }]);
   };
@@ -66,20 +92,59 @@ export default function EconomyPanel({ showHelp, setShowHelp, onClose }: Economy
     setSinks(sinks.map(s => s.id === id ? { ...s, ...updates } : s));
   };
 
+  // 싱글 게임 함수들
+  const addSingleSource = () => {
+    setSingleSources([...singleSources, {
+      id: `source_${Date.now()}`,
+      name: t('newSource'),
+      baseAmount: 50,
+      growthType: 'linear',
+      growthRate: 10,
+      occurrence: 'per_stage'
+    }]);
+  };
+
+  const addSingleSink = () => {
+    setSingleSinks([...singleSinks, {
+      id: `sink_${Date.now()}`,
+      name: t('newSink'),
+      baseCost: 30,
+      growthType: 'linear',
+      growthRate: 5,
+      category: 'consumable',
+      isRequired: false,
+      frequency: 1
+    }]);
+  };
+
+  const updateSingleSource = (id: string, updates: Partial<SinglePlayerSource>) => {
+    setSingleSources(singleSources.map(s => s.id === id ? { ...s, ...updates } : s));
+  };
+
+  const updateSingleSink = (id: string, updates: Partial<SinglePlayerSink>) => {
+    setSingleSinks(singleSinks.map(s => s.id === id ? { ...s, ...updates } : s));
+  };
+
   const handleExport = () => {
-    const data = { config, faucets, sinks, result, suggestions, exportedAt: new Date().toISOString() };
+    const data = gameMode === 'online'
+      ? { mode: 'online', config, faucets, sinks, result, suggestions, exportedAt: new Date().toISOString() }
+      : { mode: 'single', config: singleConfig, sources: singleSources, sinks: singleSinks, result: singleResult, exportedAt: new Date().toISOString() };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `economy-simulation-${Date.now()}.json`;
+    a.download = `economy-simulation-${gameMode}-${Date.now()}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
 
   const formatNumber = (n: number) => {
-    if (n >= 1000000) return `${(n / 1000000).toFixed(1)}M`;
-    if (n >= 1000) return `${(n / 1000).toFixed(1)}K`;
+    const absN = Math.abs(n);
+    const sign = n < 0 ? '-' : '';
+    if (absN >= 1e12) return `${sign}${(absN / 1e12).toFixed(1)}T`;
+    if (absN >= 1e9) return `${sign}${(absN / 1e9).toFixed(1)}B`;
+    if (absN >= 1e6) return `${sign}${(absN / 1e6).toFixed(1)}M`;
+    if (absN >= 1e3) return `${sign}${(absN / 1e3).toFixed(1)}K`;
     return n.toFixed(0);
   };
 
@@ -124,6 +189,49 @@ export default function EconomyPanel({ showHelp, setShowHelp, onClose }: Economy
           </div>
         )}
 
+        {/* Game Mode Toggle */}
+        <div className="px-4 pt-4 pb-2 shrink-0">
+          <div className="glass-section p-1 flex gap-1">
+            <button
+              onClick={() => setGameMode('online')}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all',
+                gameMode === 'online'
+                  ? 'shadow-sm'
+                  : 'hover:bg-black/5 dark:hover:bg-white/5'
+              )}
+              style={{
+                background: gameMode === 'online' ? `linear-gradient(135deg, ${PANEL_COLOR}20, ${PANEL_COLOR}10)` : 'transparent',
+                color: gameMode === 'online' ? PANEL_COLOR : 'var(--text-secondary)',
+                border: gameMode === 'online' ? `1px solid ${PANEL_COLOR}40` : '1px solid transparent'
+              }}
+            >
+              <Users className="w-4 h-4" />
+              {t('modeOnline')}
+            </button>
+            <button
+              onClick={() => setGameMode('single')}
+              className={cn(
+                'flex-1 flex items-center justify-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-all',
+                gameMode === 'single'
+                  ? 'shadow-sm'
+                  : 'hover:bg-black/5 dark:hover:bg-white/5'
+              )}
+              style={{
+                background: gameMode === 'single' ? `linear-gradient(135deg, ${PANEL_COLOR}20, ${PANEL_COLOR}10)` : 'transparent',
+                color: gameMode === 'single' ? PANEL_COLOR : 'var(--text-secondary)',
+                border: gameMode === 'single' ? `1px solid ${PANEL_COLOR}40` : '1px solid transparent'
+              }}
+            >
+              <User className="w-4 h-4" />
+              {t('modeSingle')}
+            </button>
+          </div>
+        </div>
+
+        {/* Online Mode Content */}
+        {gameMode === 'online' && (
+          <>
         {/* Header Summary */}
         <div className="p-4 shrink-0">
           <div className="grid grid-cols-4 gap-2">
@@ -334,6 +442,270 @@ export default function EconomyPanel({ showHelp, setShowHelp, onClose }: Economy
             </div>
           </div>
         </div>
+          </>
+        )}
+
+        {/* Single Player Mode Content */}
+        {gameMode === 'single' && (
+          <>
+            {/* Header Summary */}
+            <div className="p-4 shrink-0">
+              <div className="grid grid-cols-4 gap-2">
+                <div className="glass-stat">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <ArrowUpCircle className="w-3.5 h-3.5" style={{ color: '#3db88a' }} />
+                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('totalIncome')}</span>
+                  </div>
+                  <div className="text-lg font-bold" style={{ color: '#3db88a' }}>{formatNumber(singleResult.totalIncome)}</div>
+                </div>
+                <div className="glass-stat">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <ArrowDownCircle className="w-3.5 h-3.5" style={{ color: '#e86161' }} />
+                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('totalExpense')}</span>
+                  </div>
+                  <div className="text-lg font-bold" style={{ color: '#e86161' }}>{formatNumber(singleResult.totalExpense)}</div>
+                </div>
+                <div className="glass-stat">
+                  <div className="flex items-center gap-1.5 mb-1">
+                    <Coins className="w-3.5 h-3.5" style={{ color: '#5a9cf5' }} />
+                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('finalBalance')}</span>
+                  </div>
+                  <div className="text-lg font-bold" style={{ color: '#5a9cf5' }}>{formatNumber(singleResult.finalBalance)}</div>
+                </div>
+                <div className="glass-stat" style={{ background: `linear-gradient(135deg, ${singleResult.pacing.isBalanced ? '#3db88a' : '#e5a440'}15, ${singleResult.pacing.isBalanced ? '#3db88a' : '#e5a440'}05)` }}>
+                  <div className="flex items-center gap-1.5 mb-1">
+                    {singleResult.pacing.isBalanced ? <CheckCircle className="w-3.5 h-3.5" style={{ color: '#3db88a' }} /> : <AlertTriangle className="w-3.5 h-3.5" style={{ color: '#e5a440' }} />}
+                    <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>{t('balance')}</span>
+                  </div>
+                  <div className="text-lg font-bold" style={{ color: singleResult.pacing.isBalanced ? '#3db88a' : '#e5a440' }}>{singleResult.incomeToExpenseRatio.toFixed(2)}</div>
+                </div>
+              </div>
+
+              {/* Pinch Points Warning */}
+              {singleResult.pinchPoints.filter(p => p.severity !== 'minor').length > 0 && (
+                <div className="mt-3 glass-section p-2" style={{ background: 'rgba(245, 158, 11, 0.1)' }}>
+                  {singleResult.pinchPoints.filter(p => p.severity !== 'minor').slice(0, 3).map((p, i) => (
+                    <div key={i} className="flex items-start gap-2 text-sm" style={{ color: p.severity === 'critical' ? '#e86161' : '#e5a440' }}>
+                      <AlertTriangle className="w-3 h-3 mt-0.5 shrink-0" />
+                      <span>{p.message}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Tabs */}
+            <div className="px-4">
+              <div className="glass-tabs">
+                {(['sources', 'sinks', 'config'] as const).map(tab => (
+                  <button
+                    key={tab}
+                    onClick={() => setSingleActiveTab(tab)}
+                    className={cn('glass-tab flex-1 text-center', singleActiveTab === tab && 'active')}
+                  >
+                    {tab === 'sources' && <>{t('sources')} ({singleSources.length})</>}
+                    {tab === 'sinks' && <>{t('sinks')} ({singleSinks.length})</>}
+                    {tab === 'config' && <>{t('settings')}</>}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Tab Content */}
+            <div className="p-4 space-y-4">
+              {singleActiveTab === 'sources' && (
+                <div className="flex flex-wrap gap-2">
+                  {singleSources.map(source => (
+                    <div key={source.id} className="glass-card p-3 space-y-2 flex-1 min-w-[260px] max-w-[320px]" style={{ borderLeft: '3px solid #3db88a' }}>
+                      <div className="flex items-center justify-between">
+                        <input type="text" value={source.name} onChange={(e) => updateSingleSource(source.id, { name: e.target.value })} className="text-sm font-semibold bg-transparent border-none outline-none flex-1" style={{ color: 'var(--text-primary)' }} />
+                        <button onClick={() => setSingleSources(singleSources.filter(s => s.id !== source.id))} className="p-1 rounded-lg hover:bg-red-500/20"><Trash2 className="w-3 h-3" style={{ color: 'var(--text-secondary)' }} /></button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <GlassInputField label={t('baseAmount')} value={source.baseAmount} onChange={(v) => updateSingleSource(source.id, { baseAmount: v })} />
+                        <div>
+                          <label className="text-sm font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('growthType')}</label>
+                          <CustomSelect
+                            value={source.growthType}
+                            onChange={(v) => updateSingleSource(source.id, { growthType: v as SinglePlayerSource['growthType'] })}
+                            options={[
+                              { value: 'linear', label: t('growthLinear') },
+                              { value: 'exponential', label: t('growthExponential') },
+                              { value: 'logarithmic', label: t('growthLogarithmic') },
+                            ]}
+                            color="#3db88a"
+                            size="sm"
+                          />
+                        </div>
+                        <GlassInputField label={t('growthRate')} value={source.growthRate} onChange={(v) => updateSingleSource(source.id, { growthRate: v })} step={0.01} />
+                        <div>
+                          <label className="text-sm font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('occurrence')}</label>
+                          <CustomSelect
+                            value={source.occurrence}
+                            onChange={(v) => updateSingleSource(source.id, { occurrence: v as SinglePlayerSource['occurrence'] })}
+                            options={[
+                              { value: 'per_stage', label: t('perStage') },
+                              { value: 'per_enemy', label: t('perEnemy') },
+                              { value: 'per_boss', label: t('perBoss') },
+                              { value: 'milestone', label: t('milestone') },
+                            ]}
+                            color="#3db88a"
+                            size="sm"
+                          />
+                        </div>
+                        {(source.occurrence === 'per_enemy' || source.occurrence === 'per_boss') && (
+                          <GlassInputField label={t('occurrenceCount')} value={source.occurrenceCount || 1} onChange={(v) => updateSingleSource(source.id, { occurrenceCount: v })} />
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                  <button onClick={addSingleSource} className="glass-card flex items-center justify-center gap-2 px-4 py-3 text-sm min-w-[120px]" style={{ color: '#3db88a', borderStyle: 'dashed' }}>
+                    <Plus className="w-3 h-3" /> {t('addSource')}
+                  </button>
+                </div>
+              )}
+
+              {singleActiveTab === 'sinks' && (
+                <div className="flex flex-wrap gap-2">
+                  {singleSinks.map(sink => (
+                    <div key={sink.id} className="glass-card p-3 space-y-2 flex-1 min-w-[260px] max-w-[320px]" style={{ borderLeft: '3px solid #e86161' }}>
+                      <div className="flex items-center justify-between">
+                        <input type="text" value={sink.name} onChange={(e) => updateSingleSink(sink.id, { name: e.target.value })} className="text-sm font-semibold bg-transparent border-none outline-none flex-1" style={{ color: 'var(--text-primary)' }} />
+                        <button onClick={() => setSingleSinks(singleSinks.filter(s => s.id !== sink.id))} className="p-1 rounded-lg hover:bg-red-500/20"><Trash2 className="w-3 h-3" style={{ color: 'var(--text-secondary)' }} /></button>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2">
+                        <GlassInputField label={t('baseCost')} value={sink.baseCost} onChange={(v) => updateSingleSink(sink.id, { baseCost: v })} />
+                        <div>
+                          <label className="text-sm font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('growthType')}</label>
+                          <CustomSelect
+                            value={sink.growthType}
+                            onChange={(v) => updateSingleSink(sink.id, { growthType: v as SinglePlayerSink['growthType'] })}
+                            options={[
+                              { value: 'linear', label: t('growthLinear') },
+                              { value: 'exponential', label: t('growthExponential') },
+                              { value: 'logarithmic', label: t('growthLogarithmic') },
+                            ]}
+                            color="#e86161"
+                            size="sm"
+                          />
+                        </div>
+                        <GlassInputField label={t('growthRate')} value={sink.growthRate} onChange={(v) => updateSingleSink(sink.id, { growthRate: v })} step={0.01} />
+                        <GlassInputField label={t('frequency')} value={sink.frequency} onChange={(v) => updateSingleSink(sink.id, { frequency: v })} step={0.1} />
+                        <div>
+                          <label className="text-sm font-medium mb-1 block" style={{ color: 'var(--text-secondary)' }}>{t('category')}</label>
+                          <CustomSelect
+                            value={sink.category}
+                            onChange={(v) => updateSingleSink(sink.id, { category: v as SinglePlayerSink['category'] })}
+                            options={[
+                              { value: 'upgrade', label: t('categoryUpgrade') },
+                              { value: 'consumable', label: t('categoryConsumable') },
+                              { value: 'unlock', label: t('categoryUnlock') },
+                              { value: 'repair', label: t('categoryRepair') },
+                              { value: 'optional', label: t('categoryOptional') },
+                            ]}
+                            color="#e86161"
+                            size="sm"
+                          />
+                        </div>
+                        <div className="flex flex-col">
+                          <label className="text-sm font-medium mb-1" style={{ color: 'var(--text-secondary)' }}>{t('required')}</label>
+                          <button
+                            onClick={() => updateSingleSink(sink.id, { isRequired: !sink.isRequired })}
+                            className="flex items-center gap-2 px-2 py-1.5 rounded text-sm transition-colors"
+                            style={{
+                              background: sink.isRequired ? 'rgba(232, 97, 97, 0.15)' : 'var(--bg-secondary)',
+                              border: `1px solid ${sink.isRequired ? 'rgba(232, 97, 97, 0.4)' : 'var(--border-primary)'}`,
+                              color: sink.isRequired ? '#e86161' : 'var(--text-secondary)'
+                            }}
+                          >
+                            <div className={cn("w-7 h-4 rounded-full relative transition-colors duration-200", sink.isRequired ? "bg-red-500" : "bg-[var(--bg-tertiary)]")} style={{ border: sink.isRequired ? 'none' : '1px solid var(--border-secondary)' }}>
+                              <span className={cn("absolute top-1/2 -translate-y-1/2 w-3 h-3 rounded-full transition-all duration-200 shadow-sm", sink.isRequired ? "left-[14px] bg-white" : "left-0.5 bg-[var(--text-secondary)]")} />
+                            </div>
+                            <span>{sink.isRequired ? 'ON' : 'OFF'}</span>
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                  <button onClick={addSingleSink} className="glass-card flex items-center justify-center gap-2 px-4 py-3 text-sm min-w-[120px]" style={{ color: '#e86161', borderStyle: 'dashed' }}>
+                    <Plus className="w-3 h-3" /> {t('addSink')}
+                  </button>
+                </div>
+              )}
+
+              {singleActiveTab === 'config' && (
+                <div className="flex flex-wrap gap-3 items-end">
+                  <GlassConfigInput label={t('currencyName')} value={singleConfig.currencyName} onChange={(v) => setSingleConfig({ ...singleConfig, currencyName: String(v) })} type="text" />
+                  <GlassConfigInput label={t('totalStages')} value={singleConfig.totalStages} onChange={(v) => setSingleConfig({ ...singleConfig, totalStages: Number(v) })} />
+                  <GlassConfigInput label={t('initialCurrency')} value={singleConfig.initialCurrency} onChange={(v) => setSingleConfig({ ...singleConfig, initialCurrency: Number(v) })} />
+                  <GlassConfigInput label={t('earlyGameEnd')} value={singleConfig.earlyGameEnd} onChange={(v) => setSingleConfig({ ...singleConfig, earlyGameEnd: Number(v) })} />
+                  <GlassConfigInput label={t('midGameEnd')} value={singleConfig.midGameEnd} onChange={(v) => setSingleConfig({ ...singleConfig, midGameEnd: Number(v) })} />
+                  <GlassConfigInput label={t('difficultyMultiplier')} value={singleConfig.difficultyMultiplier} onChange={(v) => setSingleConfig({ ...singleConfig, difficultyMultiplier: Number(v) })} step={0.1} />
+                  <button onClick={() => { setSingleSources(DEFAULT_SINGLE_SOURCES); setSingleSinks(DEFAULT_SINGLE_SINKS); setSingleConfig(DEFAULT_SINGLE_CONFIG); }} className="glass-button flex items-center gap-1.5 text-sm">
+                    <RefreshCw className="w-3 h-3" /> {t('resetDefaults')}
+                  </button>
+                  <button onClick={handleExport} className="glass-button-primary flex items-center gap-1.5 text-sm">
+                    <Download className="w-3 h-3" /> {t('exportResults')}
+                  </button>
+                </div>
+              )}
+
+              {/* Balance Chart */}
+              <div className="glass-card p-4">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>{t('balanceOverStages')} ({singleConfig.totalStages} {t('stages')})</h3>
+                  <button onClick={() => setFullscreenChart(true)} className="p-1.5 rounded-lg transition-colors hover:bg-black/5 dark:hover:bg-white/5"><Maximize2 className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} /></button>
+                </div>
+                <div className="h-48">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={singleResult.stageData.filter((_, i) => i % Math.max(1, Math.floor(singleConfig.totalStages / 50)) === 0 || i === singleResult.stageData.length - 1)}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
+                      <XAxis dataKey="stage" tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} axisLine={{ stroke: 'var(--border-primary)' }} />
+                      <YAxis tick={{ fill: 'var(--text-secondary)', fontSize: 10 }} axisLine={{ stroke: 'var(--border-primary)' }} tickFormatter={(v) => formatNumber(v)} />
+                      <Tooltip contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '12px', fontSize: '12px' }} formatter={(value: number, name: string) => [formatNumber(value), name === 'cumulativeBalance' ? t('balance') : name === 'income' ? t('income') : t('expense')]} labelFormatter={(stage) => `${t('stage')} ${stage}`} />
+                      <Line type="monotone" dataKey="cumulativeBalance" stroke="#5a9cf5" strokeWidth={2} dot={false} name="cumulativeBalance" />
+                      <Line type="monotone" dataKey="income" stroke="#3db88a" strokeWidth={1} dot={false} name="income" />
+                      <Line type="monotone" dataKey="expense" stroke="#e86161" strokeWidth={1} dot={false} name="expense" />
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Pacing Analysis */}
+              <div className="grid grid-cols-3 gap-3">
+                {(['early', 'mid', 'late'] as const).map((phase, idx) => {
+                  const ratio = phase === 'early' ? singleResult.pacing.earlyGameRatio : phase === 'mid' ? singleResult.pacing.midGameRatio : singleResult.pacing.lateGameRatio;
+                  const targetRatio = phase === 'early' ? 1.2 : phase === 'mid' ? 1.0 : 0.9;
+                  const isGood = ratio >= targetRatio * 0.9;
+                  return (
+                    <div key={phase} className="glass-card p-3">
+                      <h4 className="text-sm font-semibold mb-2" style={{ color: 'var(--text-primary)' }}>
+                        {phase === 'early' ? t('phaseEarly') : phase === 'mid' ? t('phaseMid') : t('phaseLate')}
+                      </h4>
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="text-xl font-bold" style={{ color: isGood ? '#3db88a' : '#e5a440' }}>{ratio.toFixed(2)}</div>
+                        <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>({t('target')}: {targetRatio})</div>
+                      </div>
+                      <div className="glass-progress h-2">
+                        <div className="glass-progress-bar" style={{ width: `${Math.min(100, (ratio / 2) * 100)}%`, background: isGood ? '#3db88a' : '#e5a440' }} />
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Recommendations */}
+              <div className="glass-card p-4" style={{ background: `linear-gradient(135deg, ${singleResult.pacing.isBalanced ? '#3db88a' : '#e5a440'}10, transparent)` }}>
+                <h3 className="text-sm font-semibold mb-2 flex items-center gap-2" style={{ color: singleResult.pacing.isBalanced ? '#3db88a' : '#e5a440' }}><Info className="w-4 h-4" /> {t('recommendations')}</h3>
+                <div className="space-y-1">
+                  {singleResult.recommendations.map((rec, i) => (
+                    <p key={i} className="text-sm" style={{ color: 'var(--text-secondary)' }}>• {rec}</p>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </>
+        )}
       </div>
 
       {/* Fullscreen Chart Modal */}
@@ -341,19 +713,42 @@ export default function EconomyPanel({ showHelp, setShowHelp, onClose }: Economy
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4" style={{ background: 'rgba(0, 0, 0, 0.8)' }} onClick={() => setFullscreenChart(false)}>
           <div className="glass-panel w-full h-[90vh] sm:h-full max-w-6xl sm:max-h-[90vh] p-4 sm:p-6 flex flex-col rounded-t-2xl sm:rounded-2xl" onClick={(e) => e.stopPropagation()}>
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>{t('supplyOverTime')} ({config.simulationDays}{t('days')})</h2>
+              <h2 className="text-lg font-semibold" style={{ color: 'var(--text-primary)' }}>
+                {gameMode === 'online'
+                  ? `${t('supplyOverTime')} (${config.simulationDays}${t('days')})`
+                  : `${t('balanceOverStages')} (${singleConfig.totalStages} ${t('stages')})`
+                }
+              </h2>
               <button onClick={() => setFullscreenChart(false)} className="glass-button !p-2"><X className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} /></button>
             </div>
             <div className="flex-1 min-h-0">
-              <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={result.supplyOverTime}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
-                  <XAxis dataKey="day" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} axisLine={{ stroke: 'var(--border-primary)' }} />
-                  <YAxis tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} axisLine={{ stroke: 'var(--border-primary)' }} tickFormatter={(v) => formatNumber(v)} />
-                  <Tooltip contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '12px', fontSize: '14px' }} formatter={(value: number) => [formatNumber(value), t('supply')]} labelFormatter={(day) => `Day ${day}`} />
-                  <Line type="monotone" dataKey="supply" stroke="#5a9cf5" strokeWidth={2} dot={false} />
-                </LineChart>
-              </ResponsiveContainer>
+              {gameMode === 'online' ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={result.supplyOverTime}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
+                    <XAxis dataKey="day" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} axisLine={{ stroke: 'var(--border-primary)' }} />
+                    <YAxis tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} axisLine={{ stroke: 'var(--border-primary)' }} tickFormatter={(v) => formatNumber(v)} />
+                    <Tooltip contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '12px', fontSize: '14px' }} formatter={(value: number) => [formatNumber(value), t('supply')]} labelFormatter={(day) => `Day ${day}`} />
+                    <Line type="monotone" dataKey="supply" stroke="#5a9cf5" strokeWidth={2} dot={false} />
+                  </LineChart>
+                </ResponsiveContainer>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={singleResult.stageData}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
+                    <XAxis dataKey="stage" tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} axisLine={{ stroke: 'var(--border-primary)' }} />
+                    <YAxis tick={{ fill: 'var(--text-secondary)', fontSize: 12 }} axisLine={{ stroke: 'var(--border-primary)' }} tickFormatter={(v) => formatNumber(v)} />
+                    <Tooltip
+                      contentStyle={{ background: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: '12px', fontSize: '14px' }}
+                      formatter={(value: number, name: string) => [formatNumber(value), name === 'cumulativeBalance' ? t('balance') : name === 'income' ? t('income') : t('expense')]}
+                      labelFormatter={(stage) => `${t('stage')} ${stage}`}
+                    />
+                    <Line type="monotone" dataKey="cumulativeBalance" stroke="#5a9cf5" strokeWidth={2} dot={false} name="cumulativeBalance" />
+                    <Line type="monotone" dataKey="income" stroke="#3db88a" strokeWidth={1.5} dot={false} name="income" />
+                    <Line type="monotone" dataKey="expense" stroke="#e86161" strokeWidth={1.5} dot={false} name="expense" />
+                  </LineChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
         </div>

@@ -21,6 +21,7 @@ import { useProjectStore } from '@/stores/projectStore';
 import { detectImbalances, getSeverityColor, type ImbalanceIssue, type Severity, type DetectionConfig } from '@/lib/imbalanceDetector';
 import { useEscapeKey } from '@/hooks/useEscapeKey';
 import { useTranslations } from 'next-intl';
+import SheetSelector from './SheetSelector';
 
 const PANEL_COLOR = '#e5a440'; // 소프트 앰버
 
@@ -47,7 +48,10 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
   const { projects, currentProjectId, currentSheetId } = useProjectStore();
 
   const currentProject = projects.find(p => p.id === currentProjectId);
-  const currentSheet = currentProject?.sheets.find(s => s.id === currentSheetId);
+
+  // 선택된 시트 (기본값: 현재 시트)
+  const [selectedSheetId, setSelectedSheetId] = useState<string>(currentSheetId || '');
+  const selectedSheet = currentProject?.sheets.find(s => s.id === selectedSheetId);
 
   // 상태
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -72,14 +76,14 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
 
   // 분석 실행
   const runAnalysis = () => {
-    if (!currentSheet) return;
+    if (!selectedSheet) return;
 
     setIsAnalyzing(true);
     setHasAnalyzed(false);
 
     // 비동기처럼 보이게 (UI 업데이트 허용)
     setTimeout(() => {
-      const detected = detectImbalances(currentSheet, config);
+      const detected = detectImbalances(selectedSheet, config);
       setIssues(detected);
       setHasAnalyzed(true);
       setIsAnalyzing(false);
@@ -118,6 +122,18 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
     <div className="flex flex-col h-full">
       {/* 내용 */}
       <div className="flex-1 overflow-y-auto overflow-x-hidden p-4 space-y-4">
+        {/* 시트 선택 */}
+        <SheetSelector
+          selectedSheetId={selectedSheetId}
+          onSheetChange={(sheetId) => {
+            setSelectedSheetId(sheetId);
+            setHasAnalyzed(false);
+            setIssues([]);
+          }}
+          label={t('selectSheet')}
+          color={PANEL_COLOR}
+        />
+
         {/* 도움말 패널 */}
         {showHelp && (
           <div className="mb-4 glass-card p-3 rounded-lg animate-slideDown">
@@ -295,7 +311,7 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
         {/* 분석 버튼 */}
         <button
           onClick={runAnalysis}
-          disabled={!currentSheet || isAnalyzing}
+          disabled={!selectedSheet || isAnalyzing}
           className="glass-button-primary w-full py-2.5 rounded-lg font-medium flex items-center justify-center gap-2 disabled:opacity-50"
           style={{
             background: isAnalyzing ? 'var(--bg-tertiary)' : PANEL_COLOR,
@@ -452,7 +468,7 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
 
                           <div className="flex flex-wrap gap-1">
                             {issue.affectedColumns.map(colId => {
-                              const col = currentSheet?.columns.find(c => c.id === colId);
+                              const col = selectedSheet?.columns.find(c => c.id === colId);
                               return (
                                 <span
                                   key={colId}
@@ -474,7 +490,7 @@ export default function ImbalanceDetectorPanel({ onClose, showHelp: externalShow
         )}
 
         {/* 시트가 없을 때 */}
-        {!currentSheet && (
+        {!selectedSheet && (
           <div className="glass-card text-center py-8 rounded-lg">
             <AlertTriangle className="w-12 h-12 mx-auto mb-4" style={{ color: 'var(--text-secondary)' }} />
             <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>

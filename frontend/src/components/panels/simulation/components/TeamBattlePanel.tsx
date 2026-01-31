@@ -12,6 +12,7 @@ import { UnitPicker } from './UnitPicker';
 import { Histogram } from './Histogram';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { useTranslations } from 'next-intl';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 interface UnitWithSkills extends UnitStats {
   skills?: Skill[];
@@ -290,22 +291,18 @@ export function TeamBattlePanel({
             </>
           )}
         </button>
-        <select
-          value={runs}
-          onChange={(e) => setRuns(Number(e.target.value))}
+        <CustomSelect
+          value={String(runs)}
+          onChange={(v) => setRuns(Number(v))}
           disabled={isRunning}
-          className="px-3 py-2.5 rounded-lg font-medium text-sm transition-colors disabled:opacity-50"
-          style={{
-            background: 'var(--bg-tertiary)',
-            border: '1px solid var(--border-primary)',
-            color: 'var(--text-primary)'
-          }}
-        >
-          <option value={100}>100</option>
-          <option value={500}>500</option>
-          <option value={1000}>1K</option>
-          <option value={5000}>5K</option>
-        </select>
+          options={[
+            { value: '100', label: '100' },
+            { value: '500', label: '500' },
+            { value: '1000', label: '1K' },
+            { value: '5000', label: '5K' },
+          ]}
+          size="sm"
+        />
       </div>
 
       {/* 팀 전투 결과 */}
@@ -727,20 +724,15 @@ function TeamBattleResults({ teamResult, team1Units, team2Units }: TeamBattleRes
                   <Clock className="w-4 h-4" style={{ color: 'var(--accent)' }} />
                   <span className="text-sm font-medium" style={{ color: 'var(--text-primary)' }}>{t('sampleBattleLog')}</span>
                 </div>
-                <select
-                  value={selectedSampleIndex}
-                  onChange={(e) => setSelectedSampleIndex(Number(e.target.value))}
-                  className="px-2 py-1 rounded text-sm"
-                  style={{
-                    background: 'var(--bg-primary)',
-                    border: '1px solid var(--border-primary)',
-                    color: 'var(--text-primary)'
-                  }}
-                >
-                  {teamResult.sampleBattles.map((_, i) => (
-                    <option key={i} value={i}>{t('battle')} #{i + 1}</option>
-                  ))}
-                </select>
+                <CustomSelect
+                  value={String(selectedSampleIndex)}
+                  onChange={(v) => setSelectedSampleIndex(Number(v))}
+                  options={teamResult.sampleBattles.map((_, i) => ({
+                    value: String(i),
+                    label: `${t('battle')} #${i + 1}`
+                  }))}
+                  size="sm"
+                />
               </div>
 
               {/* 샘플 전투 요약 */}

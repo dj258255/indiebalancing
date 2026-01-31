@@ -8,6 +8,7 @@ import { DPS, TTK, EHP, DAMAGE, SCALE } from '@/lib/formulaEngine';
 import { useProjectStore } from '@/stores/projectStore';
 import { Tooltip } from '@/components/ui/Tooltip';
 import { useEscapeKey } from '@/hooks';
+import CustomSelect from '@/components/ui/CustomSelect';
 
 const PANEL_COLOR = '#9179f2'; // 소프트 퍼플
 
@@ -323,12 +324,18 @@ export default function Calculator({ onClose, isPanel = false, showHelp = false,
                 <GlassInputField label={t('growthRate')} value={scaleInputs.rate} onChange={(v) => setScaleInputs({ ...scaleInputs, rate: v })} step={0.01} />
                 <div>
                   <label className="block text-sm font-medium mb-1.5" style={{ color: 'var(--text-secondary)' }}>{t('curveType')}</label>
-                  <select value={scaleInputs.curveType} onChange={(e) => setScaleInputs({ ...scaleInputs, curveType: e.target.value })} className="glass-select w-full">
-                    <option value="linear">{t('curveLinear')}</option>
-                    <option value="exponential">{t('curveExponential')}</option>
-                    <option value="logarithmic">{t('curveLogarithmic')}</option>
-                    <option value="quadratic">{t('curveQuadratic')}</option>
-                  </select>
+                  <CustomSelect
+                    value={scaleInputs.curveType}
+                    onChange={(v) => setScaleInputs({ ...scaleInputs, curveType: v })}
+                    options={[
+                      { value: 'linear', label: t('curveLinear') },
+                      { value: 'exponential', label: t('curveExponential') },
+                      { value: 'logarithmic', label: t('curveLogarithmic') },
+                      { value: 'quadratic', label: t('curveQuadratic') },
+                    ]}
+                    color={tabColor}
+                    size="sm"
+                  />
                 </div>
               </div>
               {CURVE_TYPE_HELP[scaleInputs.curveType] && (
