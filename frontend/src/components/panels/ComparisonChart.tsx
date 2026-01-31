@@ -184,16 +184,16 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
     });
   }, [items, uniqueSelectedColumns]);
 
-  // 히스토그램 데이터
+  // 히스토그램 데이터 (수식 계산된 값 사용)
   const [histogramColumn, setHistogramColumn] = useState<string>('');
   const histogramData = useMemo(() => {
-    if (!selectedSheet || !histogramColumn) return [];
+    if (!selectedSheet || !histogramColumn || computedRows.length === 0) return [];
 
     const col = selectedSheet.columns.find((c) => c.name === histogramColumn);
     if (!col) return [];
 
-    const values = selectedSheet.rows
-      .map((row) => row.cells[col.id])
+    const values = computedRows
+      .map((row) => row[col.id])
       .filter((v): v is number => typeof v === 'number');
 
     if (values.length === 0) return [];
@@ -223,7 +223,7 @@ export default function ComparisonChart({ onClose, isPanel = false, showHelp = f
     });
 
     return bins;
-  }, [selectedSheet, histogramColumn]);
+  }, [selectedSheet, histogramColumn, computedRows]);
 
   const hasSheet = currentProject && selectedSheet;
 
