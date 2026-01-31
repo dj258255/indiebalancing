@@ -2063,7 +2063,7 @@
       "welcome": {
         "title": "Welcome to Game Balance Tool",
         "description": "Manage character stats, weapon damage, level tables, and calculate them with game-specific formulas. Use it like Excel, but with built-in functions like DAMAGE, DPS, and SCALE.",
-        "tip": "💡 Drag tools between the left sidebar and bottom dock to customize your workspace!"
+        "tip": "Drag tools between the left sidebar and bottom dock to customize your workspace!"
       },
       "tools": {
         "title": "14 Analysis Tools",
