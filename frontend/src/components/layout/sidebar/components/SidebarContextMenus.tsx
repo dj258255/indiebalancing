@@ -4,15 +4,17 @@
 
 'use client';
 
-import { Edit2, Trash2, Copy, Plus, Code } from 'lucide-react';
+import { Edit2, Trash2, Copy, Plus, Code, FolderPlus, Folder } from 'lucide-react';
 import { ConfirmDialog } from '@/components/ui';
 import { useTranslations } from 'next-intl';
 import type {
   SheetContextMenuState,
   ProjectContextMenuState,
+  FolderContextMenuState,
   SheetMoveConfirmState,
   SheetDeleteConfirmState,
   ProjectDeleteConfirmState,
+  FolderDeleteConfirmState,
 } from '../hooks/useSidebarState';
 
 // === Sheet Context Menu ===
@@ -112,6 +114,7 @@ interface ProjectContextMenuProps {
   menu: ProjectContextMenuState | null;
   menuRef: React.RefObject<HTMLDivElement | null>;
   onNewSheet: (projectId: string) => void;
+  onNewFolder: (projectId: string) => void;
   onRename: (projectId: string, projectName: string) => void;
   onDuplicate: (projectId: string) => void;
   onDelete: (projectId: string, projectName: string) => void;
@@ -122,6 +125,7 @@ export function ProjectContextMenu({
   menu,
   menuRef,
   onNewSheet,
+  onNewFolder,
   onRename,
   onDuplicate,
   onDelete,
@@ -155,6 +159,19 @@ export function ProjectContextMenu({
         <Plus className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
         {t('sheet.newSheet')}
       </button>
+      <button
+        onClick={() => {
+          onNewFolder(menu.projectId);
+          onClose();
+        }}
+        className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
+        style={{ color: 'var(--text-primary)' }}
+        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+      >
+        <FolderPlus className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+        {t('folder.newFolder')}
+      </button>
       <div className="my-1 border-t" style={{ borderColor: 'var(--border-primary)' }} />
       <button
         onClick={() => {
@@ -186,6 +203,99 @@ export function ProjectContextMenu({
       <button
         onClick={() => {
           onDelete(menu.projectId, menu.projectName);
+          onClose();
+        }}
+        className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
+        style={{ color: 'var(--danger)' }}
+        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+      >
+        <Trash2 className="w-4 h-4" />
+        {t('common.delete')}
+      </button>
+    </div>
+  );
+}
+
+// === Folder Context Menu ===
+interface FolderContextMenuProps {
+  menu: FolderContextMenuState | null;
+  menuRef: React.RefObject<HTMLDivElement | null>;
+  onNewSheet: (projectId: string, folderId: string) => void;
+  onNewSubfolder: (projectId: string, parentId: string) => void;
+  onRename: (folderId: string, folderName: string) => void;
+  onDelete: (projectId: string, folderId: string, folderName: string) => void;
+  onClose: () => void;
+}
+
+export function FolderContextMenu({
+  menu,
+  menuRef,
+  onNewSheet,
+  onNewSubfolder,
+  onRename,
+  onDelete,
+  onClose,
+}: FolderContextMenuProps) {
+  const t = useTranslations();
+
+  if (!menu) return null;
+
+  return (
+    <div
+      ref={menuRef}
+      className="fixed z-50 min-w-[140px] py-1 rounded-lg shadow-lg border"
+      style={{
+        left: menu.x,
+        top: menu.y,
+        background: 'var(--bg-primary)',
+        borderColor: 'var(--border-primary)',
+      }}
+    >
+      <button
+        onClick={() => {
+          onNewSheet(menu.projectId, menu.folderId);
+          onClose();
+        }}
+        className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
+        style={{ color: 'var(--text-primary)' }}
+        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+      >
+        <Plus className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+        {t('sheet.newSheet')}
+      </button>
+      <button
+        onClick={() => {
+          onNewSubfolder(menu.projectId, menu.folderId);
+          onClose();
+        }}
+        className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
+        style={{ color: 'var(--text-primary)' }}
+        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+      >
+        <FolderPlus className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+        {t('folder.newSubfolder')}
+      </button>
+      <div className="my-1 border-t" style={{ borderColor: 'var(--border-primary)' }} />
+      <button
+        onClick={() => {
+          onRename(menu.folderId, menu.folderName);
+          onClose();
+        }}
+        className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
+        style={{ color: 'var(--text-primary)' }}
+        onMouseEnter={(e) => e.currentTarget.style.background = 'var(--bg-hover)'}
+        onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+      >
+        <Edit2 className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+        {t('folder.rename')}
+      </button>
+      <div className="my-1 border-t" style={{ borderColor: 'var(--border-primary)' }} />
+      <button
+        onClick={() => {
+          onDelete(menu.projectId, menu.folderId, menu.folderName);
           onClose();
         }}
         className="w-full flex items-center gap-2 px-3 py-2 text-sm transition-colors text-left"
@@ -285,6 +395,9 @@ interface ConfirmDialogsProps {
   projectDeleteConfirm: ProjectDeleteConfirmState | null;
   setProjectDeleteConfirm: (value: null) => void;
   onDeleteProject: (projectId: string) => void;
+  folderDeleteConfirm?: FolderDeleteConfirmState | null;
+  setFolderDeleteConfirm?: (value: null) => void;
+  onDeleteFolder?: (projectId: string, folderId: string) => void;
 }
 
 export function ConfirmDialogs({
@@ -297,6 +410,9 @@ export function ConfirmDialogs({
   projectDeleteConfirm,
   setProjectDeleteConfirm,
   onDeleteProject,
+  folderDeleteConfirm,
+  setFolderDeleteConfirm,
+  onDeleteFolder,
 }: ConfirmDialogsProps) {
   const t = useTranslations();
 
@@ -346,6 +462,21 @@ export function ConfirmDialogs({
         cancelText={t('common.cancel')}
         variant="danger"
       />
+
+      {folderDeleteConfirm && setFolderDeleteConfirm && onDeleteFolder && (
+        <ConfirmDialog
+          isOpen={!!folderDeleteConfirm}
+          onClose={() => setFolderDeleteConfirm(null)}
+          onConfirm={() => {
+            onDeleteFolder(folderDeleteConfirm.projectId, folderDeleteConfirm.folderId);
+          }}
+          title={t('folder.deleteFolder')}
+          message={t('folder.deleteConfirm', { name: folderDeleteConfirm.folderName })}
+          confirmText={t('common.delete')}
+          cancelText={t('common.cancel')}
+          variant="danger"
+        />
+      )}
     </>
   );
 }

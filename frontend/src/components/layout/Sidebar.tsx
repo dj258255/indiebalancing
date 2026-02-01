@@ -261,6 +261,10 @@ export default function Sidebar({
           updateSheet={projectStore.updateSheet}
           reorderProjects={projectStore.reorderProjects}
           reorderSheets={projectStore.reorderSheets}
+          toggleFolderExpanded={projectStore.toggleFolderExpanded}
+          updateFolder={projectStore.updateFolder}
+          moveSheetToFolder={projectStore.moveSheetToFolder}
+          moveFolderToFolder={projectStore.moveFolderToFolder}
           onSheetContextMenu={(e, projectId, sheetId, sheetName, exportClassName) => {
             setSheetContextMenu({
               x: e.clientX,
@@ -365,6 +369,10 @@ export default function Sidebar({
         menuRef={projectContextMenuRef}
         onNewSheet={(projectId) => {
           projectStore.createSheet(projectId, t('sheet.newSheet'));
+          setExpandedProjects((prev) => new Set([...prev, projectId]));
+        }}
+        onNewFolder={(projectId) => {
+          projectStore.createFolder(projectId, t('folder.newFolder'));
           setExpandedProjects((prev) => new Set([...prev, projectId]));
         }}
         onRename={handleStartEdit}

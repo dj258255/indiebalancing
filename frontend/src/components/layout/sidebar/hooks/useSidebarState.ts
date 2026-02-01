@@ -32,6 +32,22 @@ export interface ProjectContextMenuState {
   projectName: string;
 }
 
+// 폴더 컨텍스트 메뉴 상태 타입
+export interface FolderContextMenuState {
+  x: number;
+  y: number;
+  projectId: string;
+  folderId: string;
+  folderName: string;
+}
+
+// 폴더 삭제 확인 상태 타입
+export interface FolderDeleteConfirmState {
+  projectId: string;
+  folderId: string;
+  folderName: string;
+}
+
 // 확인 다이얼로그 상태 타입
 export interface SheetMoveConfirmState {
   fromProjectId: string;

@@ -1,6 +1,6 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
-import type { Project, Sheet, Column, Row, CellValue, ColumnType, Sticker, CellStyle } from '@/types';
+import type { Project, Sheet, Column, Row, CellValue, ColumnType, Sticker, CellStyle, Folder } from '@/types';
 import { getSampleById } from '@/data/sampleProjects';
 
 // 기본 셀 스타일 (스타일이 없는 셀에 적용되는 기본값)
@@ -45,7 +45,7 @@ export interface ProjectState {
   // 프로젝트 액션
   createProject: (name: string, description?: string) => string;
   createFromSample: (sampleId: string, name: string, t: (key: string) => string, description?: string) => string | null;
-  updateProject: (id: string, updates: Partial<Pick<Project, 'name' | 'description'>>) => void;
+  updateProject: (id: string, updates: Partial<Pick<Project, 'name' | 'description' | 'syncMode' | 'syncRoomId'>>) => void;
   deleteProject: (id: string) => void;
   duplicateProject: (id: string) => string;
   reorderProjects: (fromIndex: number, toIndex: number) => void;
@@ -103,6 +103,15 @@ export interface ProjectState {
   startCellSelection: (fieldLabel: string, callback: (value: number, rowId?: string, columnId?: string) => void) => void;
   completeCellSelection: (value: number, rowId?: string, columnId?: string) => void;
   cancelCellSelection: () => void;
+
+  // 폴더 액션
+  createFolder: (projectId: string, name: string, parentId?: string) => string;
+  updateFolder: (projectId: string, folderId: string, updates: Partial<Pick<Folder, 'name' | 'color' | 'isExpanded'>>) => void;
+  deleteFolder: (projectId: string, folderId: string, deleteContents?: boolean) => void;
+  toggleFolderExpanded: (projectId: string, folderId: string) => void;
+  moveSheetToFolder: (projectId: string, sheetId: string, folderId: string | null) => void;
+  moveFolderToFolder: (projectId: string, folderId: string, parentId: string | null) => void;
+  reorderFolders: (projectId: string, parentId: string | null, fromIndex: number, toIndex: number) => void;
 }
 
 export const useProjectStore = create<ProjectState>((set, get) => ({
@@ -366,13 +375,18 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
 
   setCurrentSheet: (id) => {
     if (id) {
-      // 시트를 선택하면 자동으로 탭 열기
-      set((state) => ({
-        currentSheetId: id,
-        openSheetTabs: state.openSheetTabs.includes(id)
-          ? state.openSheetTabs
-          : [...state.openSheetTabs, id],
-      }));
+      // 시트를 선택하면 자동으로 탭 열기 및 해당 프로젝트도 선택
+      set((state) => {
+        // 시트가 속한 프로젝트 찾기
+        const project = state.projects.find(p => p.sheets.some(s => s.id === id));
+        return {
+          currentSheetId: id,
+          currentProjectId: project?.id ?? state.currentProjectId,
+          openSheetTabs: state.openSheetTabs.includes(id)
+            ? state.openSheetTabs
+            : [...state.openSheetTabs, id],
+        };
+      });
     } else {
       set({ currentSheetId: id });
     }
@@ -1066,5 +1080,180 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     set({
       cellSelectionMode: { active: false, fieldLabel: '', callback: null }
     });
+  },
+
+  // 폴더 액션
+  createFolder: (projectId, name, parentId) => {
+    const id = uuidv4();
+    const now = Date.now();
+    const newFolder: Folder = {
+      id,
+      name,
+      parentId,
+      isExpanded: true,
+      createdAt: now,
+      updatedAt: now,
+    };
+
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? { ...p, folders: [...(p.folders || []), newFolder], updatedAt: now }
+          : p
+      ),
+    }));
+
+    return id;
+  },
+
+  updateFolder: (projectId, folderId, updates) => {
+    const now = Date.now();
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              folders: (p.folders || []).map((f) =>
+                f.id === folderId ? { ...f, ...updates, updatedAt: now } : f
+              ),
+              updatedAt: now,
+            }
+          : p
+      ),
+    }));
+  },
+
+  deleteFolder: (projectId, folderId, deleteContents = false) => {
+    const now = Date.now();
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id !== projectId) return p;
+
+        // 삭제할 폴더와 모든 하위 폴더 ID 수집
+        const foldersToDelete = new Set<string>();
+        const collectFolders = (id: string) => {
+          foldersToDelete.add(id);
+          (p.folders || [])
+            .filter((f) => f.parentId === id)
+            .forEach((f) => collectFolders(f.id));
+        };
+        collectFolders(folderId);
+
+        let newSheets = p.sheets;
+        if (deleteContents) {
+          // 폴더 내 시트도 삭제
+          newSheets = p.sheets.filter((s) => !s.folderId || !foldersToDelete.has(s.folderId));
+        } else {
+          // 폴더 내 시트를 루트로 이동
+          newSheets = p.sheets.map((s) =>
+            s.folderId && foldersToDelete.has(s.folderId)
+              ? { ...s, folderId: undefined, updatedAt: now }
+              : s
+          );
+        }
+
+        return {
+          ...p,
+          folders: (p.folders || []).filter((f) => !foldersToDelete.has(f.id)),
+          sheets: newSheets,
+          updatedAt: now,
+        };
+      }),
+    }));
+  },
+
+  toggleFolderExpanded: (projectId, folderId) => {
+    const now = Date.now();
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              folders: (p.folders || []).map((f) =>
+                f.id === folderId ? { ...f, isExpanded: !f.isExpanded, updatedAt: now } : f
+              ),
+              updatedAt: now,
+            }
+          : p
+      ),
+    }));
+  },
+
+  moveSheetToFolder: (projectId, sheetId, folderId) => {
+    const now = Date.now();
+    set((state) => ({
+      projects: state.projects.map((p) =>
+        p.id === projectId
+          ? {
+              ...p,
+              sheets: p.sheets.map((s) =>
+                s.id === sheetId
+                  ? { ...s, folderId: folderId || undefined, updatedAt: now }
+                  : s
+              ),
+              updatedAt: now,
+            }
+          : p
+      ),
+    }));
+  },
+
+  moveFolderToFolder: (projectId, folderId, parentId) => {
+    const now = Date.now();
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id !== projectId) return p;
+
+        // 순환 참조 방지: parentId가 folderId의 하위 폴더인지 확인
+        const isDescendant = (checkId: string | undefined, ancestorId: string): boolean => {
+          if (!checkId) return false;
+          if (checkId === ancestorId) return true;
+          const folder = (p.folders || []).find((f) => f.id === checkId);
+          return folder ? isDescendant(folder.parentId, ancestorId) : false;
+        };
+
+        if (parentId && isDescendant(parentId, folderId)) {
+          // 순환 참조 발생 - 이동하지 않음
+          return p;
+        }
+
+        return {
+          ...p,
+          folders: (p.folders || []).map((f) =>
+            f.id === folderId
+              ? { ...f, parentId: parentId || undefined, updatedAt: now }
+              : f
+          ),
+          updatedAt: now,
+        };
+      }),
+    }));
+  },
+
+  reorderFolders: (projectId, parentId, fromIndex, toIndex) => {
+    const now = Date.now();
+    set((state) => ({
+      projects: state.projects.map((p) => {
+        if (p.id !== projectId) return p;
+
+        // 같은 부모 폴더 내의 폴더들만 추출
+        const sameLevelFolders = (p.folders || []).filter((f) =>
+          parentId ? f.parentId === parentId : !f.parentId
+        );
+        const otherFolders = (p.folders || []).filter((f) =>
+          parentId ? f.parentId !== parentId : f.parentId
+        );
+
+        // 순서 변경
+        const [removed] = sameLevelFolders.splice(fromIndex, 1);
+        sameLevelFolders.splice(toIndex, 0, removed);
+
+        return {
+          ...p,
+          folders: [...otherFolders, ...sameLevelFolders],
+          updatedAt: now,
+        };
+      }),
+    }));
   },
 }));

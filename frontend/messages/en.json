@@ -104,6 +104,14 @@
     "csvImportSuccess": "Imported CSV as new sheet '{name}'. ({cols} columns, {rows} rows)",
     "csvImportEmpty": "CSV file is empty."
   },
+  "folder": {
+    "newFolder": "New Folder",
+    "newSubfolder": "Add Subfolder",
+    "rename": "Rename",
+    "deleteFolder": "Delete Folder",
+    "deleteConfirm": "Delete folder \"{name}\"? Sheets inside will be moved to root.",
+    "emptyFolder": "Empty folder"
+  },
   "common": {
     "save": "Save",
     "cancel": "Cancel",
@@ -200,7 +208,17 @@
     "themeDark": "Dark",
     "themeSystem": "System",
     "autoSave": "Auto Save",
-    "autoSaveInterval": "Auto Save Interval"
+    "autoSaveInterval": "Auto Save Interval",
+    "sync": "Sync",
+    "currentMode": "Current Mode",
+    "localMode": "Local Mode",
+    "cloudMode": "Cloud Mode",
+    "serverUrl": "Server URL",
+    "serverUrlHint": "Enter cloud sync server URL. Leave empty for local mode.",
+    "notLoggedIn": "Login required",
+    "login": "Login",
+    "logout": "Logout",
+    "localModeDescription": "Currently in local mode. All data is stored in your browser. Set a server URL to enable cloud sync."
   },
   "calculator": {
     "title": "Game Balance Calculator",

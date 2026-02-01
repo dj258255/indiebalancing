@@ -1,3 +1,17 @@
+// 폴더 타입 (시트들을 그룹화)
+export interface Folder {
+  id: string;
+  name: string;
+  color?: string;           // 폴더 색상 (선택적)
+  parentId?: string;        // 상위 폴더 ID (중첩 폴더용, 없으면 루트)
+  isExpanded?: boolean;     // 폴더 펼침 상태
+  createdAt: number;
+  updatedAt: number;
+}
+
+// 동기화 모드
+export type ProjectSyncMode = 'local' | 'cloud';
+
 // 프로젝트 타입
 export interface Project {
   id: string;
@@ -6,6 +20,10 @@ export interface Project {
   createdAt: number;
   updatedAt: number;
   sheets: Sheet[];
+  folders?: Folder[];       // 폴더 목록
+  // 동기화 설정
+  syncMode?: ProjectSyncMode;  // 'local' (기본) | 'cloud'
+  syncRoomId?: string;         // 클라우드 모드 시 협업 룸 ID
 }
 
 // 스티커 타입
@@ -29,6 +47,7 @@ export interface Sheet {
   rows: Row[];
   stickers?: Sticker[];  // 스티커 목록
   exportClassName?: string;  // 게임 엔진 내보내기 시 사용할 클래스명 (영문)
+  folderId?: string;     // 소속 폴더 ID (없으면 루트)
   createdAt: number;
   updatedAt: number;
 }

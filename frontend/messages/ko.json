@@ -104,6 +104,14 @@
     "csvImportSuccess": "CSV 파일을 새 시트 '{name}'으로 가져왔습니다. ({cols}열, {rows}행)",
     "csvImportEmpty": "CSV 파일에 데이터가 없습니다."
   },
+  "folder": {
+    "newFolder": "새 폴더",
+    "newSubfolder": "하위 폴더 추가",
+    "rename": "이름 변경",
+    "deleteFolder": "폴더 삭제",
+    "deleteConfirm": "\"{name}\" 폴더를 삭제하시겠습니까? 폴더 내 시트는 루트로 이동됩니다.",
+    "emptyFolder": "빈 폴더"
+  },
   "common": {
     "save": "저장",
     "cancel": "취소",
@@ -200,7 +208,17 @@
     "themeDark": "다크",
     "themeSystem": "시스템",
     "autoSave": "자동 저장",
-    "autoSaveInterval": "자동 저장 간격"
+    "autoSaveInterval": "자동 저장 간격",
+    "sync": "동기화",
+    "currentMode": "현재 모드",
+    "localMode": "로컬 모드",
+    "cloudMode": "클라우드 모드",
+    "serverUrl": "서버 URL",
+    "serverUrlHint": "클라우드 동기화 서버 주소를 입력하세요. 비워두면 로컬 모드로 동작합니다.",
+    "notLoggedIn": "로그인이 필요합니다",
+    "login": "로그인",
+    "logout": "로그아웃",
+    "localModeDescription": "현재 로컬 모드입니다. 모든 데이터는 브라우저에 저장됩니다. 클라우드 동기화를 원하면 서버 URL을 설정하세요."
   },
   "calculator": {
     "title": "게임 밸런스 계산기",
