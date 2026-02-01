@@ -1,28 +1,29 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import dynamic from 'next/dynamic';
 import { HelpCircle } from 'lucide-react';
 import { useTranslations } from 'next-intl';
-import {
-  Calculator,
-  ComparisonChart,
-  GrowthCurveChart,
-  BalanceAnalysisPanel,
-  ImbalanceDetectorPanel,
-  GoalSolverPanel,
-  FormulaHelper,
-  BalanceValidator,
-  DifficultyCurve,
-  SimulationPanel,
-  EconomyPanel,
-  DPSVariancePanel,
-  CurveFittingPanel,
-  EntityDefinition,
-} from '@/components/panels';
-import { PresetComparisonModal } from '@/components/modals';
 import { ToolPanelRenderer } from '@/components/layout';
 import { TOOL_CONFIGS } from '@/config/toolConfig';
 import type { DraggableState } from '@/hooks';
+
+// Dynamic imports for code splitting - 패널이 열릴 때만 로드
+const Calculator = dynamic(() => import('@/components/panels/Calculator'), { ssr: false });
+const ComparisonChart = dynamic(() => import('@/components/panels/ComparisonChart'), { ssr: false });
+const GrowthCurveChart = dynamic(() => import('@/components/panels/GrowthCurveChart'), { ssr: false });
+const BalanceAnalysisPanel = dynamic(() => import('@/components/panels/BalanceAnalysisPanel'), { ssr: false });
+const ImbalanceDetectorPanel = dynamic(() => import('@/components/panels/ImbalanceDetectorPanel'), { ssr: false });
+const GoalSolverPanel = dynamic(() => import('@/components/panels/GoalSolverPanel'), { ssr: false });
+const FormulaHelper = dynamic(() => import('@/components/panels/FormulaHelper'), { ssr: false });
+const BalanceValidator = dynamic(() => import('@/components/panels/BalanceValidator'), { ssr: false });
+const DifficultyCurve = dynamic(() => import('@/components/panels/DifficultyCurve'), { ssr: false });
+const SimulationPanel = dynamic(() => import('@/components/panels/SimulationPanel'), { ssr: false });
+const EconomyPanel = dynamic(() => import('@/components/panels/EconomyPanel'), { ssr: false });
+const DPSVariancePanel = dynamic(() => import('@/components/panels/DPSVariancePanel'), { ssr: false });
+const CurveFittingPanel = dynamic(() => import('@/components/panels/CurveFittingPanel'), { ssr: false });
+const EntityDefinition = dynamic(() => import('@/components/panels/EntityDefinition'), { ssr: false });
+const PresetComparisonModal = dynamic(() => import('@/components/modals/PresetComparisonModal'), { ssr: false });
 
 // 도움말 버튼 컴포넌트
 function HelpButton({
@@ -44,6 +45,8 @@ function HelpButton({
         background: showHelp ? `${color}20` : undefined,
         border: showHelp ? `1px solid ${color}` : '1px solid var(--border-secondary)',
       }}
+      aria-label={showHelp ? '도움말 닫기' : '도움말 보기'}
+      aria-pressed={showHelp}
     >
       <HelpCircle
         className="w-4 h-4"

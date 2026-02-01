@@ -83,6 +83,7 @@ export default function Modal({
                 onClick={onClose}
                 className="p-1.5 sm:p-1 rounded-lg hover:bg-gray-500/20 transition-colors"
                 style={{ color: 'var(--text-secondary)' }}
+                aria-label="모달 닫기"
               >
                 <X className="w-5 h-5" />
               </button>

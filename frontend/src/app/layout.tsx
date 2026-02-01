@@ -13,14 +13,14 @@ const inter = Inter({ subsets: ["latin"] });
  *
  * - width: device-width - 디바이스 너비에 맞춤
  * - initialScale: 1 - 초기 줌 레벨
- * - maximumScale: 1 - 스프레드시트 앱은 핀치줌 방지 권장
- * - userScalable: false - 더블탭 줌 방지 (스프레드시트 조작과 충돌 방지)
+ * - maximumScale: 5 - 접근성 가이드라인에 따라 최대 5배 줌 허용
+ * - userScalable: true - 접근성을 위해 사용자 확대/축소 허용
  */
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1,
-  maximumScale: 1,
-  userScalable: false,
+  maximumScale: 5,
+  userScalable: true,
   viewportFit: 'cover', // 노치 디바이스 지원
 };
 

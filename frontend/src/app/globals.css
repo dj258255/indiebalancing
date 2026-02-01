@@ -207,9 +207,10 @@
   --bg-sidebar-active: #4f8cdb;
 
   /* 텍스트 - 순흑색 대신 부드러운 다크그레이 */
+  /* 접근성: WCAG AA 기준 4.5:1 대비율 충족 */
   --text-primary: #1a1f2e;
   --text-secondary: #4a5568;
-  --text-tertiary: #718096;
+  --text-tertiary: #5a6578; /* 기존 #718096에서 대비 개선 */
   --text-sidebar: #f7fafc;
   --text-sidebar-muted: rgba(247, 250, 252, 0.75);
 
@@ -276,9 +277,10 @@
   --bg-sidebar-active: #5a9cf5;
 
   /* 텍스트 - 순백색 대신 소프트 화이트 (할레이션 효과 방지) */
+  /* 접근성: WCAG AA 기준 4.5:1 대비율 충족 */
   --text-primary: #e8ecf2;
   --text-secondary: #a8b4c4;
-  --text-tertiary: #7d8a9d;
+  --text-tertiary: #8d9aad; /* 기존 #7d8a9d에서 대비 개선 */
   --text-sidebar: #e8ecf2;
   --text-sidebar-muted: rgba(232, 236, 242, 0.72);
 

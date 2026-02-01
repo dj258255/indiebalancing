@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState, useRef, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { useProjectStore } from '@/stores/projectStore';
 import { useHistoryStore } from '@/stores/historyStore';
@@ -20,29 +21,26 @@ import { Sidebar, SheetTabs } from '@/components/layout';
 // Sheet components
 import { SheetTable, StickerLayer } from '@/components/sheet';
 
-// Modal components
-import {
-  SettingsModal,
-  ReferencesModal,
-  OnboardingGuide,
-  useOnboardingStatus,
-  ExportModal,
-  ImportModal,
-} from '@/components/modals';
+// Modal components - Dynamic imports for code splitting
+import { useOnboardingStatus } from '@/components/modals';
 
-// Panel components
-import {
-  Calculator,
-  ComparisonChart,
-  GrowthCurveChart,
-  BalanceAnalysisPanel,
-  BalanceValidator,
-  ImbalanceDetectorPanel,
-  GoalSolverPanel,
-  DifficultyCurve,
-  SimulationPanel,
-  FormulaHelper,
-} from '@/components/panels';
+const SettingsModal = dynamic(() => import('@/components/modals/SettingsModal'), { ssr: false });
+const ReferencesModal = dynamic(() => import('@/components/modals/ReferencesModal'), { ssr: false });
+const OnboardingGuide = dynamic(() => import('@/components/modals/OnboardingGuide'), { ssr: false });
+const ExportModal = dynamic(() => import('@/components/modals/ExportModal'), { ssr: false });
+const ImportModal = dynamic(() => import('@/components/modals/ImportModal'), { ssr: false });
+
+// Panel components - Dynamic imports for code splitting
+const Calculator = dynamic(() => import('@/components/panels/Calculator'), { ssr: false });
+const ComparisonChart = dynamic(() => import('@/components/panels/ComparisonChart'), { ssr: false });
+const GrowthCurveChart = dynamic(() => import('@/components/panels/GrowthCurveChart'), { ssr: false });
+const BalanceAnalysisPanel = dynamic(() => import('@/components/panels/BalanceAnalysisPanel'), { ssr: false });
+const BalanceValidator = dynamic(() => import('@/components/panels/BalanceValidator'), { ssr: false });
+const ImbalanceDetectorPanel = dynamic(() => import('@/components/panels/ImbalanceDetectorPanel'), { ssr: false });
+const GoalSolverPanel = dynamic(() => import('@/components/panels/GoalSolverPanel'), { ssr: false });
+const DifficultyCurve = dynamic(() => import('@/components/panels/DifficultyCurve'), { ssr: false });
+const SimulationPanel = dynamic(() => import('@/components/panels/SimulationPanel'), { ssr: false });
+const FormulaHelper = dynamic(() => import('@/components/panels/FormulaHelper'), { ssr: false });
 
 // UI components
 import { DraggablePanel } from '@/components/ui';
@@ -381,7 +379,7 @@ export default function Home() {
   }
 
   return (
-    <div className="h-screen flex" style={{ background: 'var(--bg-secondary)' }}>
+    <main className="h-screen flex" style={{ background: 'var(--bg-secondary)' }}>
       {/* Mobile Header */}
       <MobileHeader onMenuClick={() => setShowMobileSidebar(true)} />
 
@@ -714,6 +712,6 @@ export default function Home() {
 
       {/* Trash Drop Zone (드래그로 패널 닫기) */}
       <TrashDropZone onClosePanel={handleCloseDraggingPanel} />
-    </div>
+    </main>
   );
 }

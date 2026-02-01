@@ -104,6 +104,7 @@ export default function PanelHeader({
             onClick={onClose}
             className="p-1.5 rounded-lg transition-all hover:bg-[var(--bg-hover)] opacity-60 hover:opacity-100"
             style={{ color: 'var(--text-tertiary)' }}
+            aria-label="패널 닫기"
           >
             <X className="w-4 h-4" />
           </button>

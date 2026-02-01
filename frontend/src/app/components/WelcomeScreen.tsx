@@ -17,9 +17,9 @@ export default function WelcomeScreen() {
         </p>
 
         <div className="card p-6 text-left mb-6">
-          <h3 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
+          <h2 className="font-semibold mb-4" style={{ color: 'var(--text-primary)' }}>
             {t('features.title')}
-          </h3>
+          </h2>
           <div className="grid grid-cols-2 gap-3">
             <FeatureItem
               title={t('features.gameFormula')}
