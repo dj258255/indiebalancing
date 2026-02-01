@@ -164,7 +164,20 @@ function StickerItem({ sticker, projectId, sheetId, containerRef }: StickerItemP
 
   // 폰트 크기 조절
   const currentFontSize = sticker.fontSize || DEFAULT_FONT_SIZE;
-  const currentIndex = FONT_SIZES.indexOf(currentFontSize);
+
+  // 현재 폰트 크기에 가장 가까운 인덱스 찾기 (배열에 없는 값도 처리)
+  const findClosestIndex = (size: number): number => {
+    const exactIndex = FONT_SIZES.indexOf(size);
+    if (exactIndex !== -1) return exactIndex;
+
+    // 배열에 없는 값이면 가장 가까운 인덱스 찾기
+    for (let i = 0; i < FONT_SIZES.length; i++) {
+      if (FONT_SIZES[i] >= size) return i;
+    }
+    return FONT_SIZES.length - 1;
+  };
+
+  const currentIndex = findClosestIndex(currentFontSize);
 
   const handleFontSizeDecrease = (e: React.MouseEvent) => {
     e.stopPropagation();

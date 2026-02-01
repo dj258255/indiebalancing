@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { v4 as uuidv4 } from 'uuid';
 import type { Project, Sheet, Column, Row, CellValue, ColumnType, Sticker, CellStyle } from '@/types';
+import { getSampleById } from '@/data/sampleProjects';
 
 // 기본 셀 스타일 (스타일이 없는 셀에 적용되는 기본값)
 const DEFAULT_CELL_STYLE: CellStyle = {
@@ -43,6 +44,7 @@ export interface ProjectState {
 
   // 프로젝트 액션
   createProject: (name: string, description?: string) => string;
+  createFromSample: (sampleId: string, name: string, t: (key: string) => string, description?: string) => string | null;
   updateProject: (id: string, updates: Partial<Pick<Project, 'name' | 'description'>>) => void;
   deleteProject: (id: string) => void;
   duplicateProject: (id: string) => string;
@@ -133,6 +135,24 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
     }));
 
     return id;
+  },
+
+  createFromSample: (sampleId, name, t, description) => {
+    const sample = getSampleById(sampleId);
+    if (!sample) return null;
+
+    const project = sample.createProject(t);
+    project.name = name;
+    project.description = description || '';
+
+    set((state) => ({
+      projects: [...state.projects, project],
+      currentProjectId: project.id,
+      currentSheetId: project.sheets.length > 0 ? project.sheets[0].id : null,
+      openSheetTabs: project.sheets.length > 0 ? [project.sheets[0].id] : [],
+    }));
+
+    return project.id;
   },
 
   updateProject: (id, updates) => {
@@ -268,11 +288,24 @@ export const useProjectStore = create<ProjectState>((set, get) => ({
   createSheet: (projectId, name, exportClassName) => {
     const id = uuidv4();
     const now = Date.now();
+
+    // 기본 2열 생성
+    const defaultColumns = [
+      { id: uuidv4(), name: 'Column1', type: 'general' as const, width: 120 },
+      { id: uuidv4(), name: 'Column2', type: 'general' as const, width: 120 },
+    ];
+
+    // 기본 2행 생성
+    const defaultRows = [
+      { id: uuidv4(), cells: { [defaultColumns[0].id]: '', [defaultColumns[1].id]: '' } },
+      { id: uuidv4(), cells: { [defaultColumns[0].id]: '', [defaultColumns[1].id]: '' } },
+    ];
+
     const newSheet: Sheet = {
       id,
       name,
-      columns: [],
-      rows: [],
+      columns: defaultColumns,
+      rows: defaultRows,
       exportClassName: exportClassName || undefined,
       createdAt: now,
       updatedAt: now,

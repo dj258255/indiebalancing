@@ -5,7 +5,8 @@ import dynamic from 'next/dynamic';
 import { useTranslations } from 'next-intl';
 import { useProjectStore } from '@/stores/projectStore';
 import { useHistoryStore } from '@/stores/historyStore';
-import { usePanelManager, useProjectHistory } from '@/hooks';
+import { usePanelManager, useProjectHistory, useTour } from '@/hooks';
+import { getTourByProjectId } from '@/data/tourSteps';
 import {
   loadProjects,
   saveAllProjects,
@@ -44,6 +45,9 @@ const FormulaHelper = dynamic(() => import('@/components/panels/FormulaHelper'),
 
 // UI components
 import { DraggablePanel } from '@/components/ui';
+
+// Tour components
+import { InteractiveTour } from '@/components/tour';
 
 // Sub-components
 import LoadingScreen from './components/LoadingScreen';
@@ -93,6 +97,9 @@ export default function Home() {
     addRow,
     updateCell,
   } = useProjectStore();
+
+  // Tour hook
+  const { startTour } = useTour();
 
   // History
   const {
@@ -188,6 +195,9 @@ export default function Home() {
   const currentSheet = currentProject?.sheets.find((s) => s.id === currentSheetId) || null;
   const isModalOpen = showOnboarding || showReferences || showExportModal || showImportModal;
 
+  // Track projects that have shown tour (using project creation time as marker)
+  const shownToursRef = useRef<Set<string>>(new Set());
+
   // Initial data load
   useEffect(() => {
     const init = async () => {
@@ -259,6 +269,42 @@ export default function Home() {
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [showHistoryPanel]);
+
+  // Start tour for sample projects when first opened
+  useEffect(() => {
+    if (!currentProject || !currentSheet || isLoading) return;
+
+    // Check if this project was just created (within last 2 seconds)
+    const isNewProject = Date.now() - currentProject.createdAt < 2000;
+
+    // Check if we haven't shown the tour for this project yet
+    if (isNewProject && !shownToursRef.current.has(currentProject.id)) {
+      // Try to find a tour for this project
+      // Match by project name pattern to identify sample projects
+      let sampleId: string | null = null;
+
+      if (currentProject.name.includes('RPG') || currentProject.name.includes('캐릭터')) {
+        sampleId = 'rpg-character';
+      } else if (currentProject.name.includes('Weapon') || currentProject.name.includes('무기')) {
+        sampleId = 'weapon-balance';
+      } else if (currentProject.name.includes('EXP') || currentProject.name.includes('경험치')) {
+        sampleId = 'exp-curve';
+      } else if (currentProject.name.includes('Gacha') || currentProject.name.includes('가챠')) {
+        sampleId = 'gacha-rates';
+      }
+
+      if (sampleId) {
+        const tour = getTourByProjectId(sampleId);
+        if (tour) {
+          // Small delay to let the sheet render
+          setTimeout(() => {
+            startTour(tour);
+            shownToursRef.current.add(currentProject.id);
+          }, 500);
+        }
+      }
+    }
+  }, [currentProject, currentSheet, isLoading, startTour]);
 
   // Sidebar callbacks - 패널 열 때 위치 초기화
   const sidebarCallbacks = {
@@ -712,6 +758,9 @@ export default function Home() {
 
       {/* Trash Drop Zone (드래그로 패널 닫기) */}
       <TrashDropZone onClosePanel={handleCloseDraggingPanel} />
+
+      {/* Interactive Tour */}
+      <InteractiveTour tableContainerRef={sheetContainerRef} />
     </main>
   );
 }

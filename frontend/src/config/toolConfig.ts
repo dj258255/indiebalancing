@@ -25,6 +25,8 @@ export interface ToolConfig {
   // 도구별 최적 기본 크기
   defaultWidth?: number;
   defaultHeight?: number;
+  // 초보자 모드에서 숨길지 여부 (true면 고급 도구)
+  isAdvanced?: boolean;
 }
 
 export const TOOL_CONFIGS: Record<AllToolId, ToolConfig> = {
@@ -36,6 +38,7 @@ export const TOOL_CONFIGS: Record<AllToolId, ToolConfig> = {
     defaultIndex: 0,
     defaultWidth: 480,
     defaultHeight: 600,
+    isAdvanced: false, // 초보자 도구
   },
   comparison: {
     icon: PieChart,
@@ -45,6 +48,7 @@ export const TOOL_CONFIGS: Record<AllToolId, ToolConfig> = {
     defaultIndex: 1,
     defaultWidth: 680,
     defaultHeight: 600,
+    isAdvanced: false, // 초보자 도구
   },
   chart: {
     icon: BarChart3,
@@ -54,6 +58,7 @@ export const TOOL_CONFIGS: Record<AllToolId, ToolConfig> = {
     defaultIndex: 2,
     defaultWidth: 580,
     defaultHeight: 550,
+    isAdvanced: false, // 초보자 도구
   },
   presetComparison: {
     icon: GitCompare,
@@ -63,6 +68,7 @@ export const TOOL_CONFIGS: Record<AllToolId, ToolConfig> = {
     defaultIndex: 3,
     defaultWidth: 580,
     defaultHeight: 550,
+    isAdvanced: true, // 고급 도구
   },
   imbalanceDetector: {
     icon: AlertTriangle,
@@ -72,6 +78,7 @@ export const TOOL_CONFIGS: Record<AllToolId, ToolConfig> = {
     defaultIndex: 4,
     defaultWidth: 520,
     defaultHeight: 600,
+    isAdvanced: true, // 고급 도구
   },
   goalSolver: {
     icon: Target,
@@ -81,6 +88,7 @@ export const TOOL_CONFIGS: Record<AllToolId, ToolConfig> = {
     defaultIndex: 5,
     defaultWidth: 500,
     defaultHeight: 550,
+    isAdvanced: true, // 고급 도구
   },
   balanceAnalysis: {
     icon: TrendingUp,
@@ -90,6 +98,7 @@ export const TOOL_CONFIGS: Record<AllToolId, ToolConfig> = {
     defaultIndex: 6,
     defaultWidth: 580,
     defaultHeight: 600,
+    isAdvanced: true, // 고급 도구
   },
   economy: {
     icon: Coins,
@@ -99,6 +108,7 @@ export const TOOL_CONFIGS: Record<AllToolId, ToolConfig> = {
     defaultIndex: 7,
     defaultWidth: 650,
     defaultHeight: 650,
+    isAdvanced: true, // 고급 도구
   },
   dpsVariance: {
     icon: BarChart2,
@@ -108,6 +118,7 @@ export const TOOL_CONFIGS: Record<AllToolId, ToolConfig> = {
     defaultIndex: 8,
     defaultWidth: 580,
     defaultHeight: 600,
+    isAdvanced: true, // 고급 도구
   },
   curveFitting: {
     icon: PenTool,
@@ -117,6 +128,7 @@ export const TOOL_CONFIGS: Record<AllToolId, ToolConfig> = {
     defaultIndex: 9,
     defaultWidth: 650,
     defaultHeight: 650,
+    isAdvanced: true, // 고급 도구
   },
   formulaHelper: {
     icon: FunctionSquare,
@@ -126,6 +138,7 @@ export const TOOL_CONFIGS: Record<AllToolId, ToolConfig> = {
     defaultIndex: 0,
     defaultWidth: 500,
     defaultHeight: 550,
+    isAdvanced: true, // 고급 도구
   },
   balanceValidator: {
     icon: Shield,
@@ -135,6 +148,7 @@ export const TOOL_CONFIGS: Record<AllToolId, ToolConfig> = {
     defaultIndex: 1,
     defaultWidth: 520,
     defaultHeight: 580,
+    isAdvanced: true, // 고급 도구
   },
   difficultyCurve: {
     icon: TrendingUp,
@@ -144,6 +158,7 @@ export const TOOL_CONFIGS: Record<AllToolId, ToolConfig> = {
     defaultIndex: 2,
     defaultWidth: 580,
     defaultHeight: 600,
+    isAdvanced: true, // 고급 도구
   },
   simulation: {
     icon: Swords,
@@ -153,6 +168,7 @@ export const TOOL_CONFIGS: Record<AllToolId, ToolConfig> = {
     defaultIndex: 3,
     defaultWidth: 700,
     defaultHeight: 700,
+    isAdvanced: true, // 고급 도구
   },
   entityDefinition: {
     icon: Users,
@@ -162,5 +178,6 @@ export const TOOL_CONFIGS: Record<AllToolId, ToolConfig> = {
     defaultIndex: 4,
     defaultWidth: 550,
     defaultHeight: 650,
+    isAdvanced: true, // 고급 도구
   },
 };

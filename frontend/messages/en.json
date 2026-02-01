@@ -37,6 +37,8 @@
     "references": "References",
     "settings": "Settings",
     "help": "User Guide",
+    "beginnerMode": "Beginner Mode",
+    "beginnerModeDescription": "Show only essential tools",
     "gameEngineExport": "Code Gen",
     "gameEngineImport": "Import Code",
     "noSheet": "No sheets",
@@ -320,6 +322,50 @@
     "growthCurveDesc": "Linear, Exponential, S-Curve",
     "autoSave": "Auto Save",
     "autoSaveDesc": "Browser storage, JSON export"
+  },
+  "samples": {
+    "title": "Start with a Sample Project",
+    "subtitle": "Jump right in with a real example",
+    "createButton": "Start with this sample",
+    "orEmpty": "Or start with an empty project",
+    "rpgCharacter": {
+      "name": "RPG Character Stats",
+      "description": "Compare HP/ATK/DEF/DPS of Warrior, Mage, and Archer"
+    },
+    "weaponBalance": {
+      "name": "Weapon Balancing",
+      "description": "Analyze DPS and cost-efficiency by weapon type"
+    },
+    "expCurve": {
+      "name": "Level-Up EXP Curve",
+      "description": "Calculate required EXP and playtime per level"
+    },
+    "gachaRates": {
+      "name": "Gacha Rate Calculator",
+      "description": "Calculate rates, pity, and expected costs by grade"
+    },
+    "stickers": {
+      "rpgCharacter": {
+        "dps": "[Why DPS?]\nDPS (Damage Per Second) helps compare characters with different attack speeds. A slow but powerful character vs a fast but weak one - which is stronger?",
+        "ehp": "[Why EHP?]\nEHP (Effective HP) shows true survivability. DEF reduces damage taken, so 1000 HP with 50 DEF is actually tankier than 1200 HP with 0 DEF.",
+        "balance": "[Balance Check]\nCompare DPS and EHP ratios. If Assassin has 3x DPS but only 0.5x EHP vs Paladin, is that balanced? Adjust stats until roles feel distinct but fair."
+      },
+      "weaponBalance": {
+        "efficiency": "[Why Efficiency?]\nEfficiency = DPS/Price. This reveals if expensive weapons are worth it. A 5000g sword with 2x DPS of a 100g sword is actually worse value!",
+        "crit": "[Why Crit in DPS?]\nCrit adds burst potential. Formula: ATK*Speed*(1+CritRate*0.5). The 0.5 multiplier assumes 50% crit damage bonus. Adjust based on your game.",
+        "balance": "[Balance Check]\nLook for efficiency outliers. If Ice Dagger has 2x efficiency of others, it breaks progression. Either nerf it or buff alternatives."
+      },
+      "expCurve": {
+        "exponential": "[Why Exponential?]\n100*1.15^(Level-1) creates smooth difficulty scaling. Linear growth feels too easy late-game. Exponential keeps challenge consistent.",
+        "playtime": "[Why PlayTime?]\nTotalEXP/50 estimates minutes to reach each level (assuming 50 EXP/min). Use this to ensure Lv20 is reachable in your target playtime.",
+        "tuning": "[Tuning Tips]\n- 1.10 = casual (slow growth)\n- 1.15 = standard RPG\n- 1.25 = hardcore grind\nChange the base (1.15) to adjust your game feel."
+      },
+      "gachaRates": {
+        "expected": "[Why Expected Pulls?]\n100/Rate gives average pulls needed. But with Pity, we use MIN() to cap it. This shows realistic cost for players.",
+        "pity": "[Why Pity System?]\nPity guarantees SSR at 90 pulls max. Without it, some players never get SSR (bad luck protection). MaxCost shows worst-case spending.",
+        "monetization": "[Monetization Check]\nIf MaxCost > $100 USD equivalent, consider: Is your game F2P friendly? Compare with industry standards (Genshin: ~$200 for guarantee)."
+      }
+    }
   },
   "bottomTabs": {
     "formulaHelper": "Formula Helper",
@@ -2060,6 +2106,11 @@
       }
     },
     "steps": {
+      "sampleSelect": {
+        "title": "What do you want to balance?",
+        "description": "Select a sample project to start with real data right away. Each sample comes with pre-configured formulas and example data.",
+        "tip": "Select a sample and click 'Start with this sample' to begin immediately!"
+      },
       "welcome": {
         "title": "Welcome to Game Balance Tool",
         "description": "Manage character stats, weapon damage, level tables, and calculate them with game-specific formulas. Use it like Excel, but with built-in functions like DAMAGE, DPS, and SCALE.",
@@ -2376,5 +2427,97 @@
     },
     "previewRows": "Preview Rows",
     "totalRows": "Total {count} rows will be generated"
+  },
+  "tour": {
+    "step": "Step",
+    "next": "Next",
+    "previous": "Previous",
+    "finish": "Finish",
+    "skip": "Skip",
+    "action": {
+      "click": "Click",
+      "edit": "Edit",
+      "observe": "Observe"
+    },
+    "rpgCharacter": {
+      "welcome": {
+        "title": "Welcome to RPG Character Balancing!",
+        "description": "This sample shows how to balance RPG character stats. Each character has HP, ATK, DEF, SPD stats, and DPS and EHP are automatically calculated based on these values."
+      },
+      "atk": {
+        "title": "ATK is the base attack power",
+        "description": "The ATK column represents each character's base attack power. This value is directly used in DPS (Damage Per Second) calculations."
+      },
+      "dps": {
+        "title": "Check the DPS formula",
+        "description": "DPS = ATK × SPD. Click this cell to see the formula. Damage per second is calculated by multiplying attack power and attack speed."
+      },
+      "hp": {
+        "title": "Try changing the Warrior's HP value",
+        "description": "Try editing the value directly. When you change HP, EHP (Effective HP) will automatically update. We recommend changing it from 1200 to 1500."
+      },
+      "ehp": {
+        "title": "EHP updates automatically",
+        "description": "EHP (Effective HP) = HP × (1 + DEF/100). Higher defense increases effective HP. When you change HP, this value also changes."
+      },
+      "tools": {
+        "title": "Now you understand the basics!",
+        "description": "Use the comparison chart tool in the left sidebar to visually compare characters. You can also use the imbalance detector to find balance issues."
+      }
+    },
+    "weaponBalance": {
+      "welcome": {
+        "title": "Weapon Balance Sample",
+        "description": "This sample shows how to compare weapon performance and cost efficiency."
+      },
+      "dps": {
+        "title": "DPS shows weapon damage output",
+        "description": "DPS = ATK × Speed × (1 + CritRate × 0.5). Critical rate is also considered."
+      },
+      "efficiency": {
+        "title": "Efficiency shows cost-effectiveness",
+        "description": "Efficiency = DPS / Price × 1000. Higher values mean better performance for the same price."
+      },
+      "compare": {
+        "title": "Compare weapons",
+        "description": "Compare stats across weapons to balance them. Use the comparison chart tool for easier analysis."
+      }
+    },
+    "expCurve": {
+      "welcome": {
+        "title": "Level-up EXP Curve Sample",
+        "description": "This sample shows how to design an experience curve that controls game leveling speed."
+      },
+      "formula": {
+        "title": "Check the EXP formula",
+        "description": "RequiredEXP = ROUND(100 × POW(1.15, Level-1)). This creates an exponential curve that increases by 15% each level."
+      },
+      "growthRate": {
+        "title": "Check the growth rate",
+        "description": "The GrowthRate column shows the increase rate compared to the previous level. You can verify it increases at a constant rate (15%)."
+      },
+      "visualize": {
+        "title": "Visualize with growth curve chart",
+        "description": "Use the growth curve tool in the left sidebar to view experience by level as a graph."
+      }
+    },
+    "gachaRates": {
+      "welcome": {
+        "title": "Gacha Probability Calculation Sample",
+        "description": "This sample shows how to calculate gacha system probabilities and expected costs."
+      },
+      "pity": {
+        "title": "Check the pity system",
+        "description": "The SSR pity is 90 pulls. This means you're guaranteed to get an SSR within 90 pulls."
+      },
+      "expectedCost": {
+        "title": "Check expected cost",
+        "description": "ExpectedCost is the average cost to pull that rarity. For SSR, it's about 50,000 currency."
+      },
+      "adjustRates": {
+        "title": "Try adjusting the rates",
+        "description": "Change the Rate value to see how expected cost changes. Increasing from 0.6% to 1.0% significantly reduces cost."
+      }
+    }
   }
 }

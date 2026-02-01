@@ -3,6 +3,7 @@
 import { useTranslations } from 'next-intl';
 import { deleteProjectFromDB } from '@/lib/storage';
 import { AllToolId } from '@/stores/toolLayoutStore';
+import { useSheetUIStore } from '@/stores/sheetUIStore';
 
 // 분리된 훅과 컴포넌트들
 import { useSidebarState, useSidebarDragDrop } from './sidebar/hooks';

@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
 import type { CellStyle } from '@/types';
 
 // 기본 셀 스타일 (스타일이 지정되지 않은 셀의 기본값)
@@ -70,7 +71,9 @@ interface SheetUIState {
 // 줌 레벨 스텝
 const ZOOM_LEVELS = [0.5, 0.75, 1.0, 1.25, 1.5, 1.75, 2.0];
 
-export const useSheetUIStore = create<SheetUIState>((set, get) => ({
+export const useSheetUIStore = create<SheetUIState>()(
+  persist(
+    (set, get) => ({
   // 초기 상태
   zoomLevel: 1.0,
   columnHeaderFontSize: 12,
@@ -209,4 +212,9 @@ export const useSheetUIStore = create<SheetUIState>((set, get) => ({
       currentCellStyle: { ...state.currentCellStyle, ...updates },
     }));
   },
-}));
+    }),
+    {
+      name: 'sheet-ui',
+    }
+  )
+);

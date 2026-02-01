@@ -351,6 +351,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
   // ========== 핸들러 ==========
 
   // 에디터 위치 계산 - 실제 셀 DOM 요소의 크기를 직접 사용
+  // transform: scale() 사용 시 getBoundingClientRect()는 scale된 좌표 반환
   const refreshEditorPosition = useCallback(() => {
     if (!editingCell || !tableContainerRef.current) return null;
 
@@ -365,7 +366,7 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     const scrollLeft = tableContainerRef.current.scrollLeft;
     const scrollTop = tableContainerRef.current.scrollTop;
 
-    // 실제 셀 요소의 크기를 그대로 사용 (border, padding 포함)
+    // getBoundingClientRect()는 이미 scale된 크기 반환
     return {
       top: cellRect.top - containerRect.top + scrollTop,
       left: cellRect.left - containerRect.left + scrollLeft,
@@ -701,11 +702,18 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
     getCoreRowModel: getCoreRowModel(),
   });
 
-  // 행 가상화 - TanStack Virtual 공식 패턴
+  // 행 가상화 - TanStack Virtual 공식 패턴 + Zoom 지원
   // 참고: https://tanstack.com/virtual/latest/docs/examples/react/table
+  // 참고: https://github.com/TanStack/virtual/discussions/248 (zoom + virtualization)
+  //
+  // 핵심: transform: scale()이 테이블에 적용되므로:
+  // - estimateSize는 스케일되지 않은 원본 값 반환
+  // - measureElement에서 getBoundingClientRect()는 스케일된 값 반환 → zoomLevel로 나눔
+  // - virtualRow.start/size는 스케일되지 않은 값 → CSS transform이 자동 스케일
   const rowVirtualizer = useVirtualizer({
     count: table.getRowModel().rows.length,
     getScrollElement: () => tableContainerRef.current,
+    // 스케일되지 않은 원본 높이 반환 (transform: scale()이 자동으로 스케일함)
     estimateSize: useCallback(
       (index: number) => {
         const row = table.getRowModel().rows[index];
@@ -713,19 +721,24 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
       },
       [rowHeights]
     ),
-    // TanStack 공식 예제: measureElement로 실제 DOM 높이 측정
+    // getBoundingClientRect()는 스케일된 값을 반환하므로 zoomLevel로 나눠서 정규화
     // Firefox는 getBoundingClientRect 이슈가 있어서 제외
     measureElement:
       typeof window !== 'undefined' && navigator.userAgent.indexOf('Firefox') === -1
-        ? (element) => element?.getBoundingClientRect().height
+        ? (element) => {
+            const scaledHeight = element?.getBoundingClientRect().height ?? 0;
+            // 스케일된 높이를 원본 높이로 변환
+            return scaledHeight / zoomLevel;
+          }
         : undefined,
-    overscan: 10,
+    // zoom 레벨에 따라 overscan 동적 조절
+    overscan: Math.max(10, Math.ceil(15 / zoomLevel)),
   });
 
-  // 행 높이 변경 시 가상화 시스템에 알림 - useLayoutEffect 사용 (페인트 전에 실행)
+  // 행 높이 또는 줌 레벨 변경 시 가상화 시스템에 알림
   useLayoutEffect(() => {
     rowVirtualizer.measure();
-  }, [rowHeights, rowVirtualizer]);
+  }, [rowHeights, zoomLevel, rowVirtualizer]);
 
   // ========== RENDER ==========
   return (
@@ -943,17 +956,30 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
             </>
           )}
 
-          {/* 테이블 */}
-          <table
-            className="border-collapse table-fixed"
+          {/* 테이블 줌 래퍼 - transform: scale() + GPU 가속 */}
+          <div
             style={{
-              width: tableWidth,
-              minWidth: tableWidth,
-              transform: `scale(${zoomLevel})`,
-              transformOrigin: 'left top',
-              contain: 'layout style paint',
+              width: tableWidth * zoomLevel,
+              minWidth: tableWidth * zoomLevel,
+              height: (headerHeight + rowVirtualizer.getTotalSize()) * zoomLevel,
+              minHeight: (headerHeight + rowVirtualizer.getTotalSize()) * zoomLevel,
             }}
           >
+            <table
+              className="border-collapse table-fixed"
+              style={{
+                width: tableWidth,
+                minWidth: tableWidth,
+                transform: `scale(${zoomLevel})`,
+                transformOrigin: '0 0',
+                // GPU 가속 및 렌더링 최적화
+                willChange: 'transform',
+                backfaceVisibility: 'hidden',
+                // 서브픽셀 안티앨리어싱 개선
+                WebkitFontSmoothing: 'antialiased',
+                MozOsxFontSmoothing: 'grayscale',
+              }}
+            >
             {/* 헤더 - TanStack Table 패턴: display: flex */}
             <thead
               className={cn('sticky top-0 z-10', resizingHeader && 'select-none')}
@@ -1402,7 +1428,8 @@ export default function SheetTable({ projectId, sheet, onAddMemo }: SheetTablePr
                 })
               )}
             </tbody>
-          </table>
+            </table>
+          </div>
         </div>
       </div>
 

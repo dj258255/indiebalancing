@@ -3,6 +3,8 @@
 import { useState, useEffect } from 'react';
 import { useTranslations } from 'next-intl';
 import { useEscapeKey } from '@/hooks';
+import { SAMPLE_PROJECTS } from '@/data/sampleProjects';
+import { useProjectStore } from '@/stores/projectStore';
 import {
   ChevronRight,
   ChevronLeft,
@@ -24,6 +26,8 @@ import {
   PieChart,
   AlertTriangle,
   FunctionSquare,
+  Shield,
+  Rocket,
 } from 'lucide-react';
 
 interface OnboardingGuideProps {
@@ -44,7 +48,24 @@ interface TutorialStep {
   isGuidelinesStep?: boolean;
   isSurveyStep?: boolean;
   isToolsStep?: boolean;
+  isSampleStep?: boolean;
 }
+
+// 아이콘 매핑
+const sampleIconMap: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
+  Swords,
+  Shield,
+  TrendingUp,
+  Sparkles,
+};
+
+// 카테고리별 색상
+const sampleCategoryColors: Record<string, { bg: string; border: string; text: string }> = {
+  combat: { bg: 'var(--error-light)', border: 'var(--error)', text: 'var(--error)' },
+  economy: { bg: 'var(--warning-light)', border: 'var(--warning)', text: 'var(--warning)' },
+  progression: { bg: 'var(--success-light)', border: 'var(--success)', text: 'var(--success)' },
+  gacha: { bg: 'var(--primary-purple-light)', border: 'var(--primary-purple)', text: 'var(--primary-purple)' },
+};
 
 // Helper function to get guidelines data with translations
 const getGuidelinesData = (t: (key: string) => string) => [
@@ -169,10 +190,11 @@ const getToolsCategoriesData = (t: (key: string) => string) => [
 // Helper function to get tutorial steps with translations
 const getTutorialSteps = (t: (key: string) => string): TutorialStep[] => [
   {
-    id: 'welcome',
-    title: t('onboarding.steps.welcome.title'),
-    description: t('onboarding.steps.welcome.description'),
-    tip: t('onboarding.steps.welcome.tip'),
+    id: 'sample-select',
+    title: t('onboarding.steps.sampleSelect.title'),
+    description: t('onboarding.steps.sampleSelect.description'),
+    tip: t('onboarding.steps.sampleSelect.tip'),
+    isSampleStep: true,
   },
   {
     id: 'tools',
@@ -277,6 +299,8 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
   const t = useTranslations();
   const [currentStep, setCurrentStep] = useState(0);
   const [completedSteps, setCompletedSteps] = useState<Set<number>>(new Set());
+  const [selectedSample, setSelectedSample] = useState<string | null>(null);
+  const createFromSample = useProjectStore((state) => state.createFromSample);
 
   // ESC 키로 닫기
   useEscapeKey(onClose);
@@ -309,6 +333,21 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
   const handleSkip = () => {
     localStorage.setItem('powerbalance_onboarding_completed', 'true');
     onClose();
+  };
+
+  const handleSampleSelect = (sampleId: string) => {
+    setSelectedSample(sampleId);
+  };
+
+  const handleStartWithSample = () => {
+    if (selectedSample) {
+      const sample = SAMPLE_PROJECTS.find(s => s.id === selectedSample);
+      if (sample) {
+        const name = t(sample.nameKey as 'samples.rpgCharacter.name');
+        createFromSample(selectedSample, name, t);
+        handleComplete();
+      }
+    }
   };
 
   const step = TUTORIAL_STEPS[currentStep];
@@ -451,6 +490,60 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* 샘플 프로젝트 선택 UI */}
+          {step.isSampleStep && (
+            <div className="space-y-3 mb-4 flex-1 overflow-y-auto pr-2">
+              <div className="grid grid-cols-2 gap-3">
+                {SAMPLE_PROJECTS.map((sample) => {
+                  const IconComponent = sampleIconMap[sample.icon] || Swords;
+                  const colors = sampleCategoryColors[sample.category];
+                  const isSelected = selectedSample === sample.id;
+
+                  return (
+                    <button
+                      key={sample.id}
+                      onClick={() => handleSampleSelect(sample.id)}
+                      className="p-3 rounded-xl border-2 text-left transition-all hover:scale-[1.02] active:scale-[0.98]"
+                      style={{
+                        background: isSelected ? colors.bg : 'var(--bg-tertiary)',
+                        borderColor: isSelected ? colors.border : 'transparent',
+                      }}
+                    >
+                      <div className="flex items-start gap-3">
+                        <div
+                          className="w-9 h-9 rounded-lg flex items-center justify-center shrink-0"
+                          style={{ background: colors.bg }}
+                        >
+                          <IconComponent className="w-4 h-4" style={{ color: colors.text }} />
+                        </div>
+                        <div className="min-w-0">
+                          <div className="font-medium text-sm mb-0.5" style={{ color: 'var(--text-primary)' }}>
+                            {t(sample.nameKey as 'samples.rpgCharacter.name')}
+                          </div>
+                          <div className="text-xs leading-relaxed" style={{ color: 'var(--text-tertiary)' }}>
+                            {t(sample.descriptionKey as 'samples.rpgCharacter.description')}
+                          </div>
+                        </div>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* 샘플로 바로 시작 버튼 */}
+              {selectedSample && (
+                <button
+                  onClick={handleStartWithSample}
+                  className="w-full py-3 rounded-lg font-medium flex items-center justify-center gap-2 transition-all hover:opacity-90"
+                  style={{ background: 'var(--primary-blue)', color: 'white' }}
+                >
+                  <Rocket className="w-4 h-4" />
+                  {t('samples.createButton')}
+                </button>
+              )}
             </div>
           )}
 
