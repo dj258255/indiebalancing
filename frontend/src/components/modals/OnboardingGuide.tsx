@@ -19,8 +19,6 @@ import {
   Sparkles,
   Layers,
   Swords,
-  Gift,
-  ExternalLink,
   Calculator,
   BarChart3,
   PieChart,
@@ -578,44 +576,9 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
             </div>
           )}
 
-          {/* 설문 이벤트 UI */}
+          {/* 피드백 & 오픈소스 안내 */}
           {step.isSurveyStep && (
             <div className="space-y-4 mb-4 flex-1">
-              {/* 이벤트 배너 */}
-              <div
-                className="p-4 rounded-xl border-2 border-dashed"
-                style={{ borderColor: 'var(--warning)', background: 'var(--warning-light)' }}
-              >
-                <div className="flex items-center gap-3 mb-3">
-                  <div
-                    className="w-10 h-10 rounded-full flex items-center justify-center"
-                    style={{ background: 'var(--warning)' }}
-                  >
-                    <Gift className="w-5 h-5 text-white" />
-                  </div>
-                  <div>
-                    <div className="font-bold" style={{ color: 'var(--text-primary)' }}>
-                      {t('onboarding.steps.survey.eventTitle')}
-                    </div>
-                    <div className="text-sm" style={{ color: 'var(--text-secondary)' }}>
-                      {t('onboarding.steps.survey.eventSubtitle')}
-                    </div>
-                  </div>
-                </div>
-
-                <a
-                  href="https://docs.google.com/forms/d/e/1FAIpQLSfDLtkPGgVXckztCnJtwl1O04J162pUadf11mNUW-_8xaDVqg/viewform"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-lg font-medium transition-opacity hover:opacity-90"
-                  style={{ background: 'var(--warning)', color: 'white' }}
-                >
-                  {t('onboarding.steps.survey.surveyButton')}
-                  <ExternalLink className="w-4 h-4" />
-                </a>
-              </div>
-
-              {/* 개선점 요청 */}
               <div
                 className="p-4 rounded-lg"
                 style={{ background: 'var(--bg-tertiary)' }}
@@ -630,7 +593,6 @@ export default function OnboardingGuide({ onClose }: OnboardingGuideProps) {
                 </ul>
               </div>
 
-              {/* 오픈소스 안내 */}
               <div className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-tertiary)' }}>
                 <span>📦</span>
                 <span>{t('onboarding.steps.survey.openSource')}</span>

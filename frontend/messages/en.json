@@ -2176,12 +2176,9 @@
         }
       },
       "survey": {
-        "title": "🍔 MVP Feedback Event",
+        "title": "Feedback & Open Source",
         "description": "This is still in early stages with much room for improvement. Please let us know if you find any UI/UX issues, missing features, or areas that need work!",
         "tip": "PC/Tablet recommended (mobile experience is limited)",
-        "eventTitle": "Burger Giveaway Event!",
-        "eventSubtitle": "3 lucky survey participants will win a burger set",
-        "surveyButton": "Take Survey",
         "feedbackRequest": "We're looking for feedback on:",
         "feedbackItem1": "Pain points while using the tool",
         "feedbackItem2": "Features you'd like to see",
